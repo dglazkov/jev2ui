@@ -396,9 +396,22 @@ PROJECT=my-project ./deploy.sh      # the same, in a container (Dockerfile), on 
 
 The session is the browser's, the shelf of baked components included, so the process holds nothing that
 matters: designs already read, which are only a saving. It is kept to one instance to bound what a busy day
-can spend, not because a second would be wrong. Made photographs are kept in `.cache/photos`, or wherever `PHOTOS_DIR` says;
-on Cloud Run that is a mounted bucket, so they outlast the instance. There is no login and no rate limit:
-whoever has the URL spends the keys.
+can spend, and because the day's runs are counted there. Made photographs are kept in `.cache/photos`, or wherever `PHOTOS_DIR` says;
+on Cloud Run that is a mounted bucket, so they outlast the instance.
+
+### Signing in: a name to count against
+
+Left alone, whoever has the URL spends the keys. With `FIREBASE_PROJECT` and `FIREBASE_API_KEY` set (the
+project's Firebase web app; Google enabled as a sign-in provider, the served domain authorized), both pages
+stand behind a Google sign-in. Nobody is turned away: the point of a name is that a day's runs can be counted
+against it. The browser asks `/api/config` whether to sign anyone in, fetches Firebase only if so, and sends
+the ID token with every request (`src/web/session.ts`); the server checks its signature against Google's keys
+and takes a run from that person's `DAILY_RUNS` (50 unless said) for each screen made, answering 429 when
+they are gone (`src/server/auth.ts`). What is left rides back in a header and shows beside the person's name.
+Photographs are served to anyone: an `<img>` cannot say who is asking, and their names are hashes.
+
+The count is the process's own. It forgets when the instance is replaced or idles away, so an allowance can
+be more generous than it says and is never short; and it is one more reason there is one instance.
 
 ## Results so far
 
@@ -492,7 +505,9 @@ src/server/hybrid.ts    the sections pipeline
 src/server/baseline.ts  Gemini writing A2UI directly
 src/server/validate.ts  schema and reference validation
 src/server/run.ts       event stream, stats, end-of-run validation
-src/server/http.ts      the routes: /api/design, /api/generate (Server-Sent Events), /api/photo
+src/server/http.ts      the routes: /api/design, /api/generate (Server-Sent Events), /api/photo, /api/config
+src/server/auth.ts      who is asking (a Firebase ID token), and what is left of their runs today
+src/web/session.ts      signing in with Google; the gate and the badge both pages show; fetch that says who is asking
 src/server/main.ts      the deployed server: the routes and the built front end (vite.config.ts mounts them in dev)
 src/web/app.ts          the design tool; compare.ts is the side-by-side page (both use @a2ui/lit's v0.9 renderer)
 src/eval.ts             CLI comparison

@@ -1,4 +1,6 @@
 // The pipelines over HTTP: two JSON routes and one of Server-Sent Events.
+// Where sign-in is on (auth.ts), each wants to know who is asking, and a run
+// is taken from that person's allowance for the day.
 //
 // Two servers mount this. In development it is the Vite dev server
 // (vite.config.ts), which loads the pipelines through Vite so that edits to
@@ -55,7 +57,7 @@ async function photo(load: Load, id: string, res: ServerResponse) {
   res.end(made.bytes);
 }
 
-async function generate(load: Load, url: URL, req: IncomingMessage, res: ServerResponse) {
+async function generate(load: Load, url: URL, req: IncomingMessage, res: ServerResponse, person: unknown) {
   const body = req.method === "POST" ? await readJson(req).catch(() => ({})) : {};
   const prompt = String(body.prompt ?? url.searchParams.get("prompt") ?? "").trim();
   const mode = body.mode ?? url.searchParams.get("mode") ?? "mock";
@@ -64,6 +66,14 @@ async function generate(load: Load, url: URL, req: IncomingMessage, res: ServerR
     res.end("expected a prompt, and mode=mock|jobs|hybrid|baseline");
     return;
   }
+  const auth = await load("auth");
+  if (person && !auth.spend(person)) {
+    allowance(res, auth, person);
+    res.statusCode = 429;
+    res.end(`Today's ${auth.DAILY_RUNS} runs are used up. There are more tomorrow (the day turns over at midnight UTC).`);
+    return;
+  }
+  allowance(res, auth, person);
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
@@ -92,14 +102,36 @@ async function generate(load: Load, url: URL, req: IncomingMessage, res: ServerR
   res.end();
 }
 
+/** Every answer says what is left of the day's allowance, so the browser can show it. */
+function allowance(res: ServerResponse, auth: any, person: unknown) {
+  if (!person) return;
+  res.setHeader("X-Runs-Left", String(auth.left(person)));
+  res.setHeader("X-Runs-Daily", String(auth.DAILY_RUNS));
+}
+
 /** Answers a request under /api/ and resolves true, or resolves false: it was for someone else. */
 export function api(load: Load) {
   return async (req: IncomingMessage, res: ServerResponse): Promise<boolean> => {
     const url = new URL(req.url ?? "", "http://localhost");
-    if (url.pathname === "/api/design") await design(load, req, res);
-    else if (url.pathname === "/api/generate") await generate(load, url, req, res);
-    else if (url.pathname.startsWith("/api/photo/")) await photo(load, url.pathname.slice("/api/photo/".length), res);
-    else return false;
+    // A photograph is asked for by an <img>, which cannot say who is asking. Its name is a hash, and serving it costs nothing.
+    if (url.pathname.startsWith("/api/photo/")) return await photo(load, url.pathname.slice("/api/photo/".length), res), true;
+    if (!["/api/config", "/api/design", "/api/generate"].includes(url.pathname)) return false;
+    const auth = await load("auth");
+    if (url.pathname === "/api/config") {
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ firebase: auth.firebase }));
+      return true;
+    }
+    const person = auth.firebase ? await auth.whoIs(req.headers.authorization) : undefined;
+    if (auth.firebase && !person) {
+      res.statusCode = 401;
+      res.end("sign in first");
+      return true;
+    }
+    if (url.pathname === "/api/design") {
+      allowance(res, auth, person);
+      await design(load, req, res);
+    } else await generate(load, url, req, res, person);
     return true;
   };
 }

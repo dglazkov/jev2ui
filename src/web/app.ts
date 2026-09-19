@@ -9,6 +9,7 @@ import type { A2uiMessage, Decision, PipelineEvent, RunStats } from "../shared/e
 import type { DesignReport, Theme } from "../shared/design.js";
 import type { Journey, Via } from "../shared/journey.js";
 import type { Baked } from "../shared/kit.js";
+import { session, streamEvents } from "./session.js";
 
 const EXAMPLES = [
   "Settings screen for a podcast app",
@@ -59,22 +60,6 @@ const BACKS_OUT = /^(cancel|close|back|dismiss|not now|no\b|never mind|keep|go b
 /** Top-bar actions that act in place. */
 const IN_PLACE = new Set(["favorite", "more_vert", "share"]);
 
-/** Server-Sent Events over a POST, which EventSource cannot make. */
-async function streamEvents(body: unknown, signal: AbortSignal, onEvent: (event: PipelineEvent) => void) {
-  const response = await fetch("/api/generate", { method: "POST", body: JSON.stringify(body), signal });
-  if (!response.ok || !response.body) throw new Error(await response.text());
-  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-  let buffer = "";
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) return;
-    buffer += value;
-    const frames = buffer.split("\n\n");
-    buffer = frames.pop()!;
-    for (const frame of frames) if (frame.startsWith("data: ")) onEvent(JSON.parse(frame.slice(6)));
-  }
-}
-
 const requestedFonts = new Set<string>();
 function loadFonts(theme: Theme) {
   for (const family of theme.fonts) {
@@ -116,6 +101,11 @@ export class App extends LitElement {
   private abort: AbortController | undefined;
   private designRequest = 0;
   private editTimer: ReturnType<typeof setTimeout> | undefined;
+
+  constructor() {
+    super();
+    session.attach(this);
+  }
 
   // Light DOM, so the theme variables set on the device frame reach the renderer.
   protected createRenderRoot() {
@@ -167,7 +157,7 @@ export class App extends LitElement {
     const request = ++this.designRequest;
     this.designBusy = true;
     try {
-      const response = await fetch("/api/design", { method: "POST", body: JSON.stringify(source) });
+      const response = await session.fetch("/api/design", { method: "POST", body: JSON.stringify(source) });
       if (!response.ok) throw new Error(await response.text());
       const { report, markdown } = await response.json();
       if (request !== this.designRequest) return;
@@ -452,6 +442,8 @@ export class App extends LitElement {
   }
 
   render() {
+    const gate = session.gate();
+    if (gate) return gate;
     const here = this.current;
     const s = here?.stats;
     const theme = this.report?.theme;
@@ -464,7 +456,7 @@ export class App extends LitElement {
     return html`
       <header class="top">
         <h1>jev2ui <small>describe a screen, get a mock, tap through it</small></h1>
-        <a href="/compare.html">compare pipelines →</a>
+        <span class="aside">${session.badge()}<a href="/compare.html">compare pipelines →</a></span>
       </header>
       <div class="workbench">
         <aside class="controls">

@@ -2,9 +2,16 @@
 # Builds the container (Dockerfile) with Cloud Build and puts it on Cloud Run.
 #
 #   PROJECT=my-project ./deploy.sh
+#   PROJECT=my-project FIREBASE_API_KEY=AIza... ./deploy.sh    # behind Google sign-in
 #
-# One instance at most, to bound what it can spend: there is no login, and the
-# process holds nothing a second one would miss. The keys come from Secret Manager, and made
+# With FIREBASE_API_KEY (the web API key of the project's Firebase app, which is
+# not a secret; Google must be enabled as a sign-in provider, and the service's
+# domain authorized, in Firebase Authentication), everyone signs in and gets
+# DAILY_RUNS runs a day (src/server/auth.ts). It is said once: a later deploy
+# without it leaves sign-in as it was. A service never given it has no login.
+#
+# One instance at most: the day's runs are counted in the process, and it bounds
+# what a busy day can spend. The keys come from Secret Manager, and made
 # photographs are kept in a bucket mounted where PHOTOS_DIR says. The project
 # needs, once: secrets GEMINI_API_KEY and JEV_API_KEY, a bucket $PROJECT-photos,
 # and a service account jev2ui-run that can read the first and write the second.
@@ -15,7 +22,7 @@ REGION=${REGION:-us-central1}
 gcloud run deploy jev2ui --project "$PROJECT" --region "$REGION" --source . \
   --service-account "jev2ui-run@$PROJECT.iam.gserviceaccount.com" \
   --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest,JEV_API_KEY=JEV_API_KEY:latest \
-  --set-env-vars PHOTOS_DIR=/data/photos \
+  --update-env-vars "PHOTOS_DIR=/data/photos${FIREBASE_API_KEY:+,FIREBASE_PROJECT=$PROJECT,FIREBASE_API_KEY=$FIREBASE_API_KEY}${DAILY_RUNS:+,DAILY_RUNS=$DAILY_RUNS}" \
   --execution-environment gen2 \
   --add-volume "name=photos,type=cloud-storage,bucket=$PROJECT-photos,mount-options=uid=1000;gid=1000" \
   --add-volume-mount volume=photos,mount-path=/data/photos \

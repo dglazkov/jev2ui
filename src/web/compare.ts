@@ -4,7 +4,8 @@ import { ContextProvider } from "@lit/context";
 import { MessageProcessor, type SurfaceModel } from "@a2ui/web_core/v0_9";
 import { basicCatalog, Context } from "@a2ui/lit/v0_9";
 import { renderMarkdown } from "@a2ui/markdown-it";
-import type { Decision, PipelineEvent, RunStats } from "../shared/events.js";
+import type { Decision, RunStats } from "../shared/events.js";
+import { session, streamEvents } from "./session.js";
 
 const EXAMPLES = [
   "Delete my account and all of its data",
@@ -33,7 +34,7 @@ export class RunPanel extends LitElement {
   @state() private stats: RunStats | undefined;
   @state() private firstPaintMs: number | undefined;
   @state() private running = false;
-  private source: EventSource | undefined;
+  private abort: AbortController | undefined;
 
   // Light DOM, so the renderer's injected theme variables and page CSS both apply.
   protected createRenderRoot() {
@@ -41,7 +42,7 @@ export class RunPanel extends LitElement {
   }
 
   start(prompt: string) {
-    this.source?.close();
+    this.abort?.abort();
     this.surface = undefined;
     this.log = [];
     this.stats = undefined;
@@ -53,10 +54,8 @@ export class RunPanel extends LitElement {
     });
     processor.onSurfaceCreated((surface) => (this.surface = surface));
 
-    const query = new URLSearchParams({ mode: this.mode, prompt });
-    const source = (this.source = new EventSource(`/api/generate?${query}`));
-    source.onmessage = (message) => {
-      const event: PipelineEvent = JSON.parse(message.data);
+    const abort = (this.abort = new AbortController());
+    streamEvents({ mode: this.mode, prompt }, abort.signal, (event) => {
       switch (event.type) {
         case "a2ui":
           try {
@@ -74,20 +73,14 @@ export class RunPanel extends LitElement {
           break;
         case "error":
           this.note("bad", event.message, event.at);
-          this.finish();
           break;
         case "done":
           this.stats = event.stats;
-          this.finish();
           break;
       }
-    };
-    source.onerror = () => this.finish();
-  }
-
-  private finish() {
-    this.running = false;
-    this.source?.close();
+    })
+      .catch((error) => abort.signal.aborted || this.note("bad", (error as Error).message))
+      .finally(() => abort.signal.aborted || (this.running = false));
   }
 
   private note(tone: "bad" | "plain", text: string, at = this.stats?.totalMs ?? 0) {
@@ -159,6 +152,7 @@ export class App extends LitElement {
 
   constructor() {
     super();
+    session.attach(this);
     // Text components pull their markdown renderer from context.
     new ContextProvider(this, { context: Context.markdown, initialValue: renderMarkdown });
   }
@@ -170,8 +164,10 @@ export class App extends LitElement {
   }
 
   render() {
+    const gate = session.gate();
+    if (gate) return gate;
     return html`
-      <h1>jev2ui <small>Jev decides · Gemini writes · code assembles A2UI</small></h1>
+      <h1>jev2ui <small>Jev decides · Gemini writes · code assembles A2UI</small> ${session.badge()}</h1>
       <form
         class="prompt"
         @submit=${(e: Event) => {

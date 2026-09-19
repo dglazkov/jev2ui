@@ -34,6 +34,8 @@
     "@lit/context": "^1.1.6",
     "@typesafe-ai/sdk": "^0.6.0",
     "dotenv": "^18.0.1",
+    "firebase": "^12.19.0",
+    "jose": "^6.2.12",
     "lit": "^3.3.3",
     "partial-json": "^0.1.7",
     "tsx": "^4.23.13",

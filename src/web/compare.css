@@ -26,6 +26,10 @@ h1 small {
   color: var(--muted);
 }
 
+h1 .session {
+  float: right;
+}
+
 .prompt {
   display: flex;
   gap: 8px;
