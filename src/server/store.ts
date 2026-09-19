@@ -64,13 +64,34 @@ export async function list(collection: string): Promise<Doc[]> {
   return (found?.documents ?? []).map(doc);
 }
 
+const fieldsOf = (data: Record<string, Plain>) => Object.fromEntries(Object.entries(data).map(([key, value]) => [key, wrap(value)]));
+
 /** Makes the document at a path, or replaces all of it. */
 export async function write(path: string, data: Record<string, Plain>): Promise<void> {
-  await call("PATCH", `/${path}`, { fields: Object.fromEntries(Object.entries(data).map(([key, value]) => [key, wrap(value)])) });
+  await call("PATCH", `/${path}`, { fields: fieldsOf(data) });
 }
 
 export async function remove(path: string): Promise<void> {
   await call("DELETE", `/${path}`);
+}
+
+/** Several documents made (or replaced) and several removed, all or none. */
+export async function commit(made: Array<{ path: string; data: Record<string, Plain> }>, removed: string[] = []): Promise<void> {
+  const writes = [...made.map(({ path, data }) => ({ update: { name: `${DATABASE}/documents/${path}`, fields: fieldsOf(data) } })), ...removed.map((path) => ({ delete: `${DATABASE}/documents/${path}` }))];
+  await call("POST", ":commit", { writes });
+}
+
+/** Sets some fields of a document, leaving the rest. */
+export async function update(path: string, data: Record<string, Plain>): Promise<void> {
+  const mask = Object.keys(data).map((key) => `updateMask.fieldPaths=${encodeURIComponent(key)}`).join("&");
+  await call("PATCH", `/${path}?${mask}`, { fields: fieldsOf(data) });
+}
+
+/** The documents of a collection in which a field is a value, with only some fields of each. Still for small answers: three hundred. */
+export async function where(collection: string, field: string, value: Plain, select: string[]): Promise<Doc[]> {
+  const structuredQuery = { from: [{ collectionId: collection }], where: { fieldFilter: { field: { fieldPath: field }, op: "EQUAL", value: wrap(value) } }, select: { fields: select.map((fieldPath) => ({ fieldPath })) }, limit: 300 };
+  const found: any[] = (await call("POST", ":runQuery", { structuredQuery })) ?? [];
+  return found.filter((one) => one.document).map((one) => doc(one.document));
 }
 
 /**

@@ -56,7 +56,12 @@ class Session {
     }
   }
 
-  private async signIn() {
+  /** Whether the person may have things made: on the list, or on a server with no list. */
+  get makes() {
+    return this.state === "in" || this.state === "open";
+  }
+
+  async signIn() {
     if (!this.auth) return;
     const { GoogleAuthProvider, signInWithPopup } = await import("firebase/auth");
     try {

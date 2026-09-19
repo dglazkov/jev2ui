@@ -1,4 +1,4 @@
-// The pipelines over HTTP: two JSON routes and one of Server-Sent Events; and who may use them.
+// The pipelines over HTTP: two JSON routes and one of Server-Sent Events; who may use them; and what they saved.
 // Where sign-in is on (auth.ts), each wants to know who is asking and that the
 // list lets them make things, and a run is taken from their allowance for the day.
 //
@@ -16,11 +16,14 @@ export type Load = (module: string) => Promise<any>;
 /** A DESIGN.md is the largest thing anyone sends. */
 const LARGEST_BODY = 1 << 20;
 
-async function readJson(req: IncomingMessage): Promise<any> {
+/** An app that has been tapped through for a while, to be saved. */
+const LARGEST_APP = 8 << 20;
+
+async function readJson(req: IncomingMessage, largest = LARGEST_BODY): Promise<any> {
   let body = "";
   for await (const chunk of req) {
     body += chunk;
-    if (body.length > LARGEST_BODY) throw new Error("too much was sent");
+    if (body.length > largest) throw new Error("too much was sent");
   }
   return JSON.parse(body || "{}");
 }
@@ -117,6 +120,37 @@ async function accessList(url: URL, req: IncomingMessage, res: ServerResponse, a
   res.end(JSON.stringify(await auth.everything()));
 }
 
+// Saved apps (apps.ts). Saving is for those the list lets make things. Opening is for anyone, signed in or not,
+// if the app is shared by link: reading costs the models nothing, so it needs no name.
+//   GET /api/apps        what the person has saved          POST /api/apps          saves one, answers {id}
+//   GET /api/apps/<id>   {about, app}                       PATCH {visibility}, DELETE: its owner's to do
+async function savedApps(load: Load, id: string, req: IncomingMessage, res: ServerResponse, auth: any) {
+  const refuse = (status: number, why: string) => void ((res.statusCode = status), res.end(why));
+  const json = (value: unknown) => void (res.setHeader("Content-Type", "application/json"), res.end(JSON.stringify(value)));
+  if (!auth.firebase) return refuse(404, "nothing is saved here: nobody has to sign in, so nothing would be anybody's");
+  const apps = await load("apps");
+  const person = await auth.whoIs(req.headers.authorization);
+  if (id && req.method === "GET") {
+    const found = await apps.open(id, person);
+    return found ? json(found) : refuse(404, "there is no such app, or it is not shared");
+  }
+  if (!person) return refuse(401, "sign in first");
+  if (!id && req.method === "GET") return json({ apps: await apps.mine(person) });
+  const grant = await auth.access(person);
+  if (!id && req.method === "POST") {
+    if (!grant) return refuse(403, "saving is for the people who can make things here");
+    const saved = await apps.save(person, await readJson(req, LARGEST_APP).catch(() => undefined));
+    return "wrong" in saved ? refuse(400, `this cannot be saved: ${saved.wrong}`) : json(saved);
+  }
+  if (id && req.method === "PATCH") {
+    const { visibility } = await readJson(req).catch(() => ({}));
+    if (visibility !== "private" && visibility !== "link") return refuse(400, "visibility is private or link");
+    return (await apps.share(id, person, visibility)) ? json({ id, visibility }) : refuse(404, "there is no such app of yours");
+  }
+  if (id && req.method === "DELETE") return (await apps.forget(id, person, grant?.role === "admin")) ? json({ id }) : refuse(404, "there is no such app of yours");
+  refuse(405, "not something an app can be asked");
+}
+
 /** Who is asking, and what the list grants them; `auth` is the module that said so (auth.ts). */
 interface Asking {
   auth: any;
@@ -137,8 +171,10 @@ export function api(load: Load) {
     const url = new URL(req.url ?? "", "http://localhost");
     // A photograph is asked for by an <img>, which cannot say who is asking. Its name is a hash, and serving it costs nothing.
     if (url.pathname.startsWith("/api/photo/")) return await photo(load, url.pathname.slice("/api/photo/".length), res), true;
-    if (!["/api/config", "/api/me", "/api/access", "/api/design", "/api/generate"].includes(url.pathname)) return false;
+    const saved = url.pathname.match(/^\/api\/apps(?:\/([^/]*))?$/);
+    if (!saved && !["/api/config", "/api/me", "/api/access", "/api/design", "/api/generate"].includes(url.pathname)) return false;
     const auth = await load("auth");
+    if (saved) return await savedApps(load, saved[1] ?? "", req, res, auth), true;
     const json = (value: unknown) => (res.setHeader("Content-Type", "application/json"), res.end(JSON.stringify(value)));
     if (url.pathname === "/api/config") return json({ firebase: auth.firebase }), true;
 

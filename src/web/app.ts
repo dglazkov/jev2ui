@@ -9,6 +9,7 @@ import type { A2uiMessage, Decision, PipelineEvent, RunStats } from "../shared/e
 import type { DesignReport, Theme } from "../shared/design.js";
 import type { Journey, Via } from "../shared/journey.js";
 import type { Baked } from "../shared/kit.js";
+import type { SavedAbout, SavedApp, Visibility } from "../shared/saved.js";
 import { session, streamEvents } from "./session.js";
 
 const EXAMPLES = [
@@ -102,6 +103,17 @@ export class App extends LitElement {
   private designRequest = 0;
   private editTimer: ReturnType<typeof setTimeout> | undefined;
 
+  /** The saved app that is showing (shared/saved.ts), until the session moves on from it. */
+  @state() private saved: SavedAbout | undefined;
+  /** What the person has saved. */
+  @state() private library: SavedAbout[] = [];
+  @state() private saveError = "";
+  /** What a visitor tapped that leads to a screen nobody has made. */
+  @state() private unmade = "";
+  /** The app a link names (`?app=<id>`), until it has been opened or has turned out not to be there. */
+  private linked = new URLSearchParams(location.search).get("app");
+  private libraryFor = "";
+
   constructor() {
     super();
     session.attach(this);
@@ -114,6 +126,12 @@ export class App extends LitElement {
 
   private get current(): Screen | undefined {
     return this.stack.at(-1);
+  }
+
+  protected willUpdate() {
+    // Who is asking decides whether a private app opens, so a link waits until that is known.
+    if (this.linked && session.state !== "loading") void this.openSaved(this.linked);
+    if (session.state === "in" && this.libraryFor !== session.email) void this.loadLibrary();
   }
 
   protected updated() {
@@ -214,6 +232,9 @@ export class App extends LitElement {
     const key = via.kind === "nav" ? `nav:${via.label}` : `${here.id}:${via.kind}:${via.label}`;
     let screen = this.screens.get(key);
     const made = !screen;
+    // Looking is free; a screen nobody has made yet takes a run, and a run takes a name.
+    if (made && !session.makes) return void (this.unmade = via.label);
+    this.unmade = "";
     screen ??= this.open(key, via.kind === "nav", { prompt: this.app, journey: { app: this.app, from: { title: here.title, archetype: here.archetype }, via, ...(this.nav ? { nav: this.nav } : {}) } });
     // The navigation bar switches between main screens, and a way back from the first screen makes the one it came from. Everything else drills in.
     this.stack = via.kind === "nav" || via.kind === "back" ? [screen] : [...this.stack, screen];
@@ -260,7 +281,110 @@ export class App extends LitElement {
     return [...shelf.values()];
   }
 
+  // --- Saved apps -------------------------------------------------------------
+
+  /** The session as it would be saved: every screen that got as far as being drawn, and each of the ways to it. */
+  private snapshot(): SavedApp {
+    const kept = [...new Set(this.screens.values())].filter((screen) => !screen.running && screen.messages.length);
+    const ids = new Set(kept.map((screen) => screen.id));
+    const stack = this.stack.filter((screen) => ids.has(screen.id)).map((screen) => screen.id);
+    return {
+      version: 1,
+      app: this.app,
+      ...(this.nav ? { nav: this.nav } : {}),
+      design: { choice: this.choice, markdown: this.markdown, seed: this.seed, ...(this.report ? { report: this.report as unknown as Record<string, unknown> } : {}) },
+      screens: kept.map(({ running, key, ...screen }) => ({ ...screen, keys: [...this.screens].filter(([, other]) => other.id === screen.id).map(([k]) => k) })) as unknown as SavedApp["screens"],
+      stack: stack.length ? stack : [kept[0].id],
+    };
+  }
+
+  private restore(app: SavedApp) {
+    this.abort?.abort();
+    this.app = this.prompt = app.app;
+    this.nav = app.nav;
+    this.choice = app.design.choice === CUSTOM ? CUSTOM : AUTO;
+    this.markdown = app.design.markdown;
+    this.seed = app.design.seed;
+    this.designRequest++;
+    if (app.design.report) this.applyDesign(app.design.report as unknown as DesignReport);
+    this.screens = new Map();
+    const byId = new Map<number, Screen>();
+    for (const { keys, ...saved } of app.screens) {
+      const screen = { ...saved, key: keys[0], running: false } as unknown as Screen;
+      byId.set(screen.id, screen);
+      for (const key of keys) this.screens.set(key, screen);
+    }
+    this.nextId = Math.max(...byId.keys()) + 1;
+    this.stack = app.stack.map((id) => byId.get(id)!).filter(Boolean);
+    this.tick++;
+  }
+
+  /** The session is no longer the saved app that was showing: something was made, or made again. */
+  private movedOn() {
+    if (!this.saved && !new URLSearchParams(location.search).has("app")) return;
+    this.saved = undefined;
+    history.replaceState(null, "", location.pathname);
+  }
+
+  private async openSaved(id: string) {
+    this.linked = null;
+    try {
+      const response = await session.fetch(`/api/apps/${encodeURIComponent(id)}`);
+      if (!response.ok) throw new Error(await response.text());
+      const { about, app } = (await response.json()) as { about: SavedAbout; app: SavedApp };
+      this.restore(app);
+      this.saved = about;
+      this.saveError = "";
+      history.replaceState(null, "", `?app=${about.id}`);
+    } catch (error) {
+      this.saveError = (error as Error).message;
+    }
+  }
+
+  private async loadLibrary() {
+    this.libraryFor = session.email;
+    const response = await session.fetch("/api/apps").catch(() => undefined);
+    if (response?.ok) this.library = (await response.json()).apps;
+  }
+
+  /** Saves the session, and with `share` lets anyone who has the link open it; the link goes to the clipboard. */
+  private async save(share: boolean) {
+    try {
+      const response = await session.fetch("/api/apps", { method: "POST", body: JSON.stringify(this.snapshot()) });
+      if (!response.ok) throw new Error(await response.text());
+      const { id } = await response.json();
+      if (share) await this.setVisibility(id, "link");
+      await this.loadLibrary();
+      this.saved = this.library.find((one) => one.id === id);
+      this.saveError = "";
+      history.replaceState(null, "", `?app=${id}`);
+      if (share) await this.copy("share", this.linkTo(id));
+      else this.flash("save");
+    } catch (error) {
+      this.saveError = (error as Error).message;
+    }
+  }
+
+  private linkTo(id: string) {
+    return `${location.origin}/?app=${id}`;
+  }
+
+  private async setVisibility(id: string, visibility: Visibility) {
+    const response = await session.fetch(`/api/apps/${id}`, { method: "PATCH", body: JSON.stringify({ visibility }) });
+    if (!response.ok) throw new Error(await response.text());
+    this.library = this.library.map((one) => (one.id === id ? { ...one, visibility } : one));
+    if (this.saved?.id === id) this.saved = { ...this.saved, visibility };
+  }
+
+  private async forget(id: string) {
+    const response = await session.fetch(`/api/apps/${id}`, { method: "DELETE" });
+    if (!response.ok) return void (this.saveError = await response.text());
+    this.library = this.library.filter((one) => one.id !== id);
+    if (this.saved?.id === id) this.movedOn();
+  }
+
   private async run(screen: Screen) {
+    this.movedOn();
     // A screen made anew has no use for the shelf; any other is told what the app has baked, as of now.
     const shelf = screen.request.journey && !screen.request.fresh ? this.shelf : [];
     const request = shelf.length ? { ...screen.request, journey: { ...screen.request.journey!, shelf } } : screen.request;
@@ -332,6 +456,11 @@ export class App extends LitElement {
 
   private async copy(what: string, text: string) {
     await navigator.clipboard.writeText(text);
+    this.flash(what);
+  }
+
+  /** Says for a moment, on the button that did it, that a thing was done. */
+  private flash(what: string) {
     this.copied = what;
     setTimeout(() => (this.copied = ""), 1200);
   }
@@ -441,9 +570,47 @@ export class App extends LitElement {
     `;
   }
 
+  /** What someone who cannot make things sees in place of the prompt: what they are looking at, and the way in. */
+  private renderVisitor() {
+    return html`
+      <section class="visitor">
+        <h2>A saved app</h2>
+        <p class="about">${this.saved?.title}</p>
+        <p class="hint">${this.saved?.screens} ${this.saved?.screens === 1 ? "screen" : "screens"}, made by ${this.saved?.owner || "someone"}. Tap through it: every screen that was made is here.</p>
+        ${session.state === "out"
+          ? html`<p class="hint">Making screens takes a name, and a place on the list.</p>
+              <button class="primary" @click=${() => session.signIn()}>Sign in with Google</button>`
+          : nothing}
+        ${session.state === "stranger" ? html`<p class="hint">You are signed in as ${session.email}, which is not on the list of people who can make things here.</p>` : nothing}
+      </section>
+    `;
+  }
+
+  private renderLibrary() {
+    if (session.state !== "in" || !this.library.length) return nothing;
+    return html`
+      <section class="library">
+        <h2>Saved</h2>
+        ${this.library.map(
+          (one) => html`<div class="saved" aria-current=${one.id === this.saved?.id}>
+            <button class="open" title=${one.title} @click=${() => this.openSaved(one.id)}>${one.title}<small>${one.screens} ${one.screens === 1 ? "screen" : "screens"} · ${new Date(one.created).toLocaleDateString()}</small></button>
+            <span class="acts">
+              <button class="link" title=${one.visibility === "link" ? "Anyone with the link can open it. Make it yours alone again." : "Only you can open it. Let anyone with the link."} @click=${() => this.setVisibility(one.id, one.visibility === "link" ? "private" : "link").catch((error) => (this.saveError = error.message))}>
+                ${one.visibility === "link" ? "shared" : "private"}
+              </button>
+              ${one.visibility === "link" ? html`<button class="link" @click=${() => this.copy(`link:${one.id}`, this.linkTo(one.id))}>${this.copied === `link:${one.id}` ? "copied" : "copy link"}</button>` : nothing}
+              <button class="link" @click=${() => this.forget(one.id)}>delete</button>
+            </span>
+          </div>`,
+        )}
+      </section>
+    `;
+  }
+
   render() {
-    const gate = session.gate();
-    if (gate) return gate;
+    // A saved app is for anyone its owner shares it with, signed in or not; everything else waits for a name.
+    const gate = this.saved || this.linked ? undefined : session.gate();
+    if (gate) return html`${gate}${this.saveError ? html`<p class="gate-note note bad">${this.saveError}</p>` : nothing}`;
     const here = this.current;
     const s = here?.stats;
     const theme = this.report?.theme;
@@ -460,7 +627,9 @@ export class App extends LitElement {
       </header>
       <div class="workbench">
         <aside class="controls">
+          ${session.makes ? nothing : this.renderVisitor()}
           <form
+            ?hidden=${!session.makes}
             class="prompt"
             @submit=${(e: Event) => {
               e.preventDefault();
@@ -482,8 +651,12 @@ export class App extends LitElement {
             ></textarea>
             <button type="submit">${here?.running ? "Mocking…" : "Mock it"}</button>
           </form>
-          <div class="examples">${EXAMPLES.map((example) => html`<button @click=${() => this.generate(example)}>${example}</button>`)}</div>
-          ${this.renderDesign()}
+          ${session.makes
+            ? html`<div class="examples">${EXAMPLES.map((example) => html`<button @click=${() => this.generate(example)}>${example}</button>`)}</div>
+                ${this.renderDesign()}`
+            : nothing}
+          ${this.saveError ? html`<p class="note bad">${this.saveError}</p>` : nothing}
+          ${this.renderLibrary()}
         </aside>
 
         <section class="stage">
@@ -495,13 +668,17 @@ export class App extends LitElement {
             </div>
             <!-- Every pill is there from the start, empty until its figure arrives, so the shelf never re-wraps and pushes the mock down. -->
             <div class="stats">
-              <button class="again" ?disabled=${!here || here.running} @click=${() => this.regenerate()} title="Make this page again" aria-label="Regenerate this page">↻</button>
+              <button class="again" ?disabled=${!here || here.running || !session.makes} @click=${() => this.regenerate()} title="Make this page again" aria-label="Regenerate this page">↻</button>
               <span class="pill first ${here?.firstPaintMs === undefined ? "pending" : ""}">first UI ${here?.firstPaintMs ?? "–"} ms</span>
               <span class="pill total ${s ? "" : "pending"}">done ${s?.totalMs ?? "–"} ms</span>
               <span class="pill cost ${s ? "" : "pending"}">${s?.jevCalls ?? "–"} Jev · ${s?.geminiOutputTokens ?? "–"} Gemini tok</span>
               <span class="pill verdict ${s ? (s.valid ? "good" : "bad") : "pending"}">${s && !s.valid ? "invalid tree" : "valid tree"}</span>
             </div>
             <div class="exports">
+              ${session.state === "in"
+                ? html`<button ?disabled=${!painted || here!.running} @click=${() => this.save(false)} title="Keep this app, every screen of it, to open again">${this.copied === "save" ? "Saved" : "Save"}</button>
+                    <button ?disabled=${!painted || here!.running} @click=${() => this.save(true)} title="Save it, and let anyone with the link open it: they need not sign in">${this.copied === "share" ? "Link copied" : "Share"}</button>`
+                : nothing}
               <button ?disabled=${!painted} @click=${() => this.copy("a2ui", JSON.stringify(here!.messages, null, 2))}>
                 ${this.copied === "a2ui" ? "Copied" : "Copy messages"}
               </button>
@@ -516,6 +693,7 @@ export class App extends LitElement {
                     title=${screen.key}
                     @click=${() => {
                       this.stack = [screen];
+                      this.unmade = "";
                       this.tick++;
                     }}
                   >
@@ -523,6 +701,12 @@ export class App extends LitElement {
                   </button>`,
                 )}
               </nav>`
+            : nothing}
+          ${this.unmade && !session.makes
+            ? html`<p class="stale">
+                Nobody has made the screen that "${this.unmade}" leads to, and making one takes a name.
+                ${session.state === "out" ? html`<button class="link" @click=${() => session.signIn()}>Sign in with Google</button>` : nothing}
+              </p>`
             : nothing}
           ${stale ? html`<p class="stale">This design lays the screen out differently. <button class="link" @click=${() => this.generate()}>Mock it again</button></p>` : nothing}
           <div class="device ${this.device}" style="max-width:${DEVICES[this.device]}px">

@@ -434,6 +434,32 @@ read the old figure. What is left rides back in a header and shows beside the pe
 reach the database (no rules are published for it); `src/server/store.ts` is the three REST calls used.
 Photographs are served to anyone: an `<img>` cannot say who is asking, and their names are hashes.
 
+### Saving and sharing: an app is a document, and a link opens it
+
+The session is the browser's, so saving one is the browser sending all of it (`src/shared/saved.ts`): the
+description, the design it is painted with (the reading included, so that painting asks nothing of a model),
+and every screen with its messages, trace, each of the ways to it, and the request it was made from. A
+screen's messages are everything there is to know about it, baked components included, so a saved app
+brings its shelf along. The server keeps it in Firestore (`src/server/apps.ts`): `apps/<id>` says whose it is
+and who may open it, and `apps/<id>/parts` holds the app, a document for the head and one per screen, since a
+document holds a megabyte and a well-explored app is more than that.
+
+A saved app does not change. Its id is a hash of what it is and who saved it, so it cannot be guessed, saving
+the same session twice is one app, and nobody's save lands on anybody else's; a session that has moved on
+saves as another. What can change is beside it: **Save** keeps it for its owner, **Share** also lets anyone
+who has the link open it (`/?app=<id>`), and the owner can take that back, or delete it, from the list of
+what they have saved. To everyone else a private app is no app at all (404).
+
+Reading is open: opening a shared app needs no sign-in, and calls no model. A visitor taps through every
+screen that was made; a tap that leads to one nobody has made says so, and offers the way in, because making
+it takes a run and a run takes a name. Someone who can make things picks the app up where it was left, shelf
+and navigation and all, and what they make from there is theirs to save.
+
+What a browser sends to be saved has been out of our hands, and other people will open it. Its baked
+components are checked exactly as a shelf is (the id must be the hash of the source, and the source must pass
+the lint), and they run where every baked component runs, in a sandboxed frame. The rest is text and trees,
+which the renderer escapes and draws and never runs.
+
 ## Results so far
 
 One run of `npm run eval` (11 prompts, `gemini-3.5-flash-lite`, `jev-1.13.0`, a paid-tier Gemini key).
@@ -526,9 +552,11 @@ src/server/hybrid.ts    the sections pipeline
 src/server/baseline.ts  Gemini writing A2UI directly
 src/server/validate.ts  schema and reference validation
 src/server/run.ts       event stream, stats, end-of-run validation
-src/server/http.ts      the routes: /api/design, /api/generate (Server-Sent Events), /api/photo, /api/config, /api/me, /api/access
+src/server/http.ts      the routes: /api/design, /api/generate (Server-Sent Events), /api/photo, /api/config, /api/me, /api/access, /api/apps
 src/server/auth.ts      who is asking (a Firebase ID token), what the access list grants them, what is left of their runs today
-src/server/store.ts     Firestore over REST: the access list and the day's counts
+src/server/store.ts     Firestore over REST: the access list, the day's counts, saved apps
+src/shared/saved.ts     an app, saved: the whole session as a document
+src/server/apps.ts      saved apps in Firestore: whose they are, who may open them
 src/web/access.ts       the access list, for admins (access.html)
 src/web/session.ts      signing in with Google; the gate and the badge both pages show; fetch that says who is asking
 src/server/main.ts      the deployed server: the routes and the built front end (vite.config.ts mounts them in dev)
