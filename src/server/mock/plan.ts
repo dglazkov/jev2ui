@@ -24,7 +24,8 @@ import { choice, noul, type Questions } from "@typesafe-ai/sdk";
 import type { Decision } from "../../shared/events.js";
 import { ICON_OPTIONS, readIcon } from "./icons.js";
 
-const CONTEXT = "A developer describes one screen of an app in `screen`. A designer is working out what that screen is made of.";
+const CONTEXT =
+  "A developer describes one screen of an app in `screen`. A designer is working out what that screen is made of. If present, `app` says what app it belongs to and `reached_by` says how the person got to this screen.";
 const ask = (question: string) => ({ context: CONTEXT, question });
 
 export const BLOCKS = ["banner", "hero", "filters", "stats", "list", "groups", "facts", "prose", "steps", "form", "actions"] as const;
@@ -41,6 +42,8 @@ interface Archetype {
   /** Commit-style screens keep their call to action pinned to the bottom edge (Material: bottom app bar; HIG: toolbar). */
   stickyActions?: boolean;
   dialog?: boolean;
+  /** Opens with a symbol and a headline saying how it went, in place of an app bar title. */
+  outcome?: boolean;
 }
 
 export const ARCHETYPES: Record<string, Archetype> = {
@@ -86,8 +89,15 @@ export const ARCHETYPES: Record<string, Archetype> = {
     expects: ["list", "facts"],
     stickyActions: true,
   },
+  result: {
+    criteria: "The outcome of something the person just did: a success message, a confirmation, a receipt, an error, nothing found.",
+    order: ["prose", "facts", "steps", "actions"],
+    expects: ["facts", "actions"],
+    outcome: true,
+  },
   confirm: {
-    criteria: "One short decision about one thing: confirm, delete, approve, allow, a dialog or alert.",
+    atLeast: 2,
+    criteria: "One short decision about one thing, asked before it happens: confirm, delete, approve, allow, a dialog or alert.",
     order: ["prose", "facts", "actions"],
     expects: ["prose", "actions"],
     dialog: true,
@@ -298,7 +308,7 @@ export function planQuestions(): Questions {
   return q;
 }
 
-export function readPlan(answers: Record<string, any>): { plan: ScreenPlan; screenIcon: string | null; decisions: Decision[] } {
+export function readPlan(answers: Record<string, any>, known: { topLevel?: boolean } = {}): { plan: ScreenPlan; screenIcon: string | null; decisions: Decision[] } {
   const decisions: Decision[] = [];
   const pick = <T extends string>(id: string, label: string): T => {
     decisions.push({ id, question: label, answer: answers[id].choice, p: answers[id].probabilities[answers[id].choice] });
@@ -341,7 +351,9 @@ export function readPlan(answers: Record<string, any>): { plan: ScreenPlan; scre
   if (blocks.includes("form")) blocks = blocks.filter((b) => b !== "actions");
 
   const has = (b: Block) => blocks.includes(b);
-  const topLevel = !shape.dialog && yes("top_level", "a main screen of the app?");
+  // How the person got here settles this without asking: the navigation bar leads to main screens, everything else drills in.
+  const topLevel = !shape.dialog && !shape.outcome && (known.topLevel ?? yes("top_level", "a main screen of the app?"));
+  if (known.topLevel !== undefined) decisions.push({ id: "top_level", question: "a main screen of the app?", answer: topLevel ? "yes" : "no", p: 1, note: "settled by how the person got here" });
   const action = shape.dialog ? "none" : pick<string>("app_bar_action", "top bar action");
   const list: ListAnatomy = { layout: "rows", leading: "none", trailing: "none", parts: [] };
   if (has("list")) {
@@ -370,8 +382,8 @@ export function readPlan(answers: Record<string, any>): { plan: ScreenPlan; scre
     contained: true,
   };
   // Only a dialog shows it: Material and HIG both lead an alert with a symbol of what it is about.
-  const screenIcon = shape.dialog ? (readIcon(answers.screen_icon) ?? null) : null;
-  if (shape.dialog) decisions.push({ id: "screen_icon", question: "symbol", answer: screenIcon ?? "none", p: answers.screen_icon.probabilities[answers.screen_icon.choice] });
+  const screenIcon = shape.dialog || shape.outcome ? (readIcon(answers.screen_icon) ?? null) : null;
+  if (screenIcon !== null || shape.dialog) decisions.push({ id: "screen_icon", question: "symbol", answer: screenIcon ?? "none", p: answers.screen_icon.probabilities[answers.screen_icon.choice] });
   return { plan, screenIcon, decisions };
 }
 

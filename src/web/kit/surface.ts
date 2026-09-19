@@ -47,9 +47,37 @@ export class KitSurface extends LitElement {
     return this;
   }
 
-  reset() {
-    this.components = new Map();
-    this.data = {};
+  private applied = 0;
+  private source: unknown[] | undefined;
+
+  /** Brings the surface up to date with a growing list of messages. A different list starts it over. */
+  sync(messages: Array<Record<string, any>>) {
+    if (messages !== this.source) {
+      this.source = messages;
+      this.applied = 0;
+      this.components = new Map();
+      this.data = {};
+    }
+    for (; this.applied < messages.length; this.applied++) this.apply(messages[this.applied]);
+    this.requestUpdate();
+  }
+
+  get isDialog() {
+    return Boolean(this.components.get("root")?.dialog);
+  }
+
+  /** Everything a person can tap reports what it is and the data behind it; what happens next is up to the host. */
+  private tap(kind: string, label: unknown, scope?: Scope, extra: Record<string, unknown> = {}) {
+    // A tap on one thing carries that thing; a button that acts on the whole screen carries what the screen showed.
+    const whole = kind === "action" || kind === "submit";
+    const data = scope?.base ? this.read(scope.base) : whole ? JSON.parse(JSON.stringify(this.data, (key, value) => (key === "imageUrl" || key === "nav" ? undefined : value))) : undefined;
+    this.dispatchEvent(new CustomEvent("kit-tap", { detail: { kind, label: String(label ?? ""), data, title: this.read("/header/title"), ...extra }, bubbles: true }));
+  }
+
+  /** Switches and checkboxes change their own state in place, so a mock feels alive without a round trip. */
+  private flip(scope: Scope) {
+    const item = this.read(scope.base);
+    if (item && typeof item === "object") item.on = !item.on;
     this.requestUpdate();
   }
 
@@ -136,9 +164,9 @@ export class KitSurface extends LitElement {
   drawAppBar(c: Component, s: Scope) {
     const leading = { back: "arrow_back", close: "close", menu: "menu" }[c.leading as string];
     return html`<header class="k-appbar">
-      ${leading ? html`<button class="k-iconbtn" aria-label=${c.leading}>${this.icon(leading)}</button>` : nothing}
+      ${leading ? html`<button class="k-iconbtn" aria-label=${c.leading} @click=${() => this.tap("back", c.leading)}>${this.icon(leading)}</button>` : nothing}
       <h1 class="k-appbar-title ${leading ? "" : "k-large"}">${c.title === undefined ? nothing : this.words(c.title, s, 40)}</h1>
-      ${(c.actions ?? []).map((name: string) => html`<button class="k-iconbtn" aria-label=${name}>${this.icon(name)}</button>`)}
+      ${(c.actions ?? []).map((name: string) => html`<button class="k-iconbtn" aria-label=${name} @click=${() => this.tap("appbar", name)}>${this.icon(name)}</button>`)}
     </header>`;
   }
 
@@ -148,7 +176,7 @@ export class KitSurface extends LitElement {
     if (!items.length) return html`<nav class="k-navbar"><span class="k-skel" style="width:70%"></span></nav>`;
     return html`<nav class="k-navbar">
       ${items.slice(0, 5).map(
-        (item, i) => html`<a class=${i === active ? "k-active" : ""}>
+        (item, i) => html`<a class=${i === active ? "k-active" : ""} @click=${() => i !== active && this.tap("nav", item?.label, undefined, { index: i })}>
           ${c.icons === false ? nothing : html`<span class="k-navpill">${this.icon(item?.icon ?? "circle")}</span>`}
           <span>${item?.label ?? ""}</span>
         </a>`,
@@ -286,7 +314,7 @@ export class KitSurface extends LitElement {
   }
 
   drawListItem(c: Component, s: Scope) {
-    return html`<div class="k-item" style=${this.flex(c)}>
+    return html`<div class="k-item k-tappable" style=${this.flex(c)} @click=${() => this.tap("item", this.value(c.headline, s), s)}>
       ${c.leading ? html`<div class="k-item-leading">${this.node(c.leading, s)}</div>` : nothing}
       <div class="k-item-main">
         ${c.overline !== undefined && this.has(c.overline, s) ? html`<div class="k-text k-label k-tone-muted">${this.value(c.overline, s)}</div>` : nothing}
@@ -306,7 +334,8 @@ export class KitSurface extends LitElement {
     const on = Boolean(this.value(c.on, s));
     const icon = this.value(c.icon, s);
     const value = this.value(c.value, s);
-    return html`<div class="k-item k-setting ${control === "danger" ? "k-tone-danger" : ""}">
+    const press = () => (control === "switch" || control === "check" ? this.flip(s) : this.tap("row", this.value(c.label, s), s));
+    return html`<div class="k-item k-setting k-tappable ${control === "danger" ? "k-tone-danger" : ""}" @click=${press}>
       ${icon ? html`<div class="k-item-leading"><span class="k-icon-wrap k-tone-muted">${this.icon(icon)}</span></div>` : nothing}
       <div class="k-item-main">
         <div class="k-text k-body">${this.words(c.label, s, 45)}</div>
@@ -337,17 +366,22 @@ export class KitSurface extends LitElement {
 
   drawButton(c: Component, s: Scope) {
     const classes = `k-button k-${this.value(c.variant, s) ?? "secondary"} ${c.full ? "k-full" : ""} ${c.small ? "k-small" : ""}`;
-    const fire = () => this.dispatchEvent(new CustomEvent("kit-action", { detail: { name: c.event ?? "press", label: this.value(c.label, s) }, bubbles: true }));
+    const fire = (e: Event) => {
+      e.stopPropagation(); // a button on a list item acts on the item; it does not open it
+      this.tap(c.event ?? "action", this.value(c.label, s), s, { variant: this.value(c.variant, s) });
+    };
     return html`<button class=${classes} style=${this.flex(c)} @click=${fire}>${this.icon(this.value(c.icon, s))}<span>${this.words(c.label, s, 70)}</span></button>`;
   }
 
   drawSwitch(c: Component, s: Scope) {
-    return html`<span class="k-switch ${this.value(c.on, s) ? "k-checked" : ""}"><i></i></span>`;
+    const flip = (e: Event) => (e.stopPropagation(), this.flip(s));
+    return html`<span class="k-switch k-tappable ${this.value(c.on, s) ? "k-checked" : ""}" @click=${flip}><i></i></span>`;
   }
 
   drawCheckbox(c: Component, s: Scope) {
     const on = Boolean(this.value(c.on, s));
-    return html`<span class="k-check ${on ? "k-checked" : ""}">${on ? this.icon("check") : nothing}</span>`;
+    const flip = (e: Event) => (e.stopPropagation(), this.flip(s));
+    return html`<span class="k-check k-tappable ${on ? "k-checked" : ""}" @click=${flip}>${on ? this.icon("check") : nothing}</span>`;
   }
 
   drawField(c: Component, s: Scope) {

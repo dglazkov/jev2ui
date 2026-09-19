@@ -80,7 +80,7 @@ const BUILDERS: Record<Block, (plan: ScreenPlan) => C[]> = {
       if (leading === "number") out.push({ id: "item_leading", component: "Numeral" });
     }
     if (trailing === "chevron") out.push({ id: "item_trailing", component: "Icon", name: "chevron_right", tone: "muted", size: 20 });
-    if (trailing === "button") out.push({ id: "item_trailing", component: "Button", label: at("/list/actionLabel"), small: true, event: "item" });
+    if (trailing === "button") out.push({ id: "item_trailing", component: "Button", label: at("/list/actionLabel"), small: true, event: "itemAction" });
     if (trailing === "switch") out.push({ id: "item_trailing", component: "Switch", on: at("on") });
     if (trailing === "checkbox") out.push({ id: "item_trailing", component: "Checkbox", on: at("on") });
     return out;
@@ -150,16 +150,17 @@ export function screen(plan: ScreenPlan, screenIcon: string | null): C[] {
 
   // A feed, a dashboard and a settings page are named by their bar; the others earn a line of introduction.
   // A profile opens with the person instead, and a lead photograph would compete with them.
-  const intro = !plan.person && !["feed", "dashboard", "settings"].includes(plan.archetype);
-  const body = [...(plan.person ? ["person"] : []), ...(intro ? ["intro"] : []), ...inBody.filter((b) => !(plan.person && b === "hero"))];
+  const outcome = !!shape.outcome;
+  const intro = !plan.person && !outcome && !["feed", "dashboard", "settings"].includes(plan.archetype);
+  const body = [...(plan.person ? ["person"] : []), ...(outcome ? ["outcome"] : []), ...(intro ? ["intro"] : []), ...inBody.filter((b) => !(plan.person && b === "hero"))];
   return [
     { id: "root", component: "Screen", appBar: "appbar", body: "body", ...(sticky ? { sticky: "sticky" } : {}), ...(plan.topLevel ? { navBar: "navbar" } : {}) },
     {
       id: "appbar",
       component: "AppBar",
       // On a profile the person is the title.
-      ...(plan.person ? {} : { title: at("/header/title") }),
-      leading: plan.topLevel ? "none" : plan.archetype === "form" ? "close" : "back",
+      ...(plan.person || outcome ? {} : { title: at("/header/title") }),
+      leading: plan.topLevel ? "none" : plan.archetype === "form" || outcome ? "close" : "back",
       actions: plan.appBarAction ? [plan.appBarAction] : [],
     },
     { id: "body", component: "Stack", gap: "lg", children: body },
@@ -169,6 +170,14 @@ export function screen(plan: ScreenPlan, screenIcon: string | null): C[] {
           { id: "person_avatar", component: "Avatar", name: at("/header/title"), size: 88 },
           { id: "person_name", component: "Text", role: "headline", text: at("/header/title") },
           { id: "person_line", component: "Text", tone: "muted", text: at("/header/subtitle") },
+        ] as C[])
+      : []),
+    ...(outcome
+      ? ([
+          { id: "outcome", component: "Stack", gap: "sm", align: "center", children: [...(plan.icons && screenIcon ? ["outcome_icon"] : []), "outcome_title", "outcome_line"] },
+          { id: "outcome_icon", component: "Icon", name: screenIcon ?? "check_circle", boxed: true, size: 32 },
+          { id: "outcome_title", component: "Text", role: "headline", text: at("/header/title") },
+          { id: "outcome_line", component: "Text", tone: "muted", text: at("/header/subtitle") },
         ] as C[])
       : []),
     ...(intro ? [{ id: "intro", component: "Text", tone: "muted", text: at("/header/subtitle") } as C] : []),
@@ -274,10 +283,21 @@ Write what the real app would show to a typical signed-in person: specific, plau
 Other parts of the same screen are written separately, so stay strictly within your part and do not repeat the screen title.
 Keep every string short. Do not describe the UI, do not mention buttons or layout, and do not use HTML.`;
 
-export function partPrompt(description: string, part: Part, plan: ScreenPlan | null, voice: string, agreeWith?: unknown): string {
+export interface Setting {
+  voice: string;
+  /** The app the screen belongs to and how the person got here, when it was reached by a tap. */
+  app?: string;
+  reachedBy?: string;
+  about?: unknown;
+}
+
+export function partPrompt(description: string, part: Part, plan: ScreenPlan | null, setting: Setting, agreeWith?: unknown): string {
+  const { voice } = setting;
+  const journey = setting.app ? `The app: ${setting.app}\nThe person got to this screen by ${setting.reachedBy}.\n` : "";
+  const about = setting.about ? `What the previous screen already showed about this, which this screen must agree with and build on:\n${JSON.stringify(setting.about)}\n` : "";
   const parts = plan ? `The screen is a ${plan.archetype} screen with these parts: header, ${plan.blocks.join(", ")}.\n` : "";
   // The Overview of a DESIGN.md describes the brand; the words should sound like it.
-  const brand = voice ? `The product's brand, for tone of voice only:\n${voice}\n` : "";
+  const brand = voice ? `The brand's voice. Take the tone from it and nothing else; what the product is and sells is in the description above, not here:\n${voice}\n` : "";
   const given = agreeWith ? `Already on the screen, which your figures must agree with:\n${JSON.stringify(agreeWith)}\n` : "";
-  return `Screen description: ${description}\n${parts}${brand}${given}Write the "${part}" part.`;
+  return `${journey}Screen description: ${description}\n${about}${parts}${brand}${given}Write the "${part}" part.`;
 }

@@ -326,12 +326,71 @@ h2 small {
   height: 760px;
 }
 
-kit-surface[hidden] {
-  display: none;
+/* Screens are layers: a new page slides over the last, a dialog fades in above the screen it came from. */
+kit-surface.layer {
+  position: absolute;
+  inset: 0;
+  animation: screen-in 0.22s ease-out;
+}
+
+kit-surface.layer.over {
+  animation: dialog-in 0.18s ease-out;
+}
+
+kit-surface.layer.over .k-screen {
+  background: none;
+}
+
+kit-surface.layer.over .k-scroll {
+  background: color-mix(in srgb, #000 45%, transparent);
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0.4;
+    translate: 24px 0;
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin: 0 0 14px;
+}
+
+.flow button {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 10px;
+  font-size: 12px;
+  text-align: left;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.flow button small {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.flow button[aria-current="true"] {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
 }
 
 .empty {
-  margin: 120px 0;
+  position: relative;
+  margin: 120px 24px;
   font-family: system-ui, sans-serif;
   text-align: center;
   opacity: 0.55;

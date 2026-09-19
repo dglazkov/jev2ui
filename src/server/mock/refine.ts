@@ -26,6 +26,7 @@ const CONTROLS = {
   switch: "A setting that is simply on or off and takes effect at once: notifications, dark mode, autoplay, sync.",
   value: "A setting with one current value picked from several, changed on another page: language, quality, theme, frequency, units.",
   nav: "Not a setting itself but a way into another page: account, privacy, help, about, manage something.",
+  check: "One of several alternative options listed together, of which one is chosen: the choices of a single setting, such as '10 seconds', '30 seconds', 'High', 'Low'.",
   danger: "A final or destructive account action: sign out, delete account, clear data, reset.",
 };
 
@@ -43,7 +44,7 @@ async function ask(run: Run, stage: string, state: unknown, questions: Questions
 }
 
 /** One request per group of settings: for every row, its control, its symbol, and whether it starts switched on. */
-export async function refineGroup(run: Run, screen: string, g: number, group: any, icons: boolean): Promise<Decoration[]> {
+export async function refineGroup(run: Run, screen: string, g: number, group: any, icons: boolean, chosen?: string): Promise<Decoration[]> {
   const rows: any[] = Array.isArray(group?.rows) ? group.rows : [];
   if (!rows.length) return [];
   const questions: Questions = {};
@@ -59,14 +60,19 @@ export async function refineGroup(run: Run, screen: string, g: number, group: an
   const state = { screen, group: group.title, ...Object.fromEntries(rows.map((row, r) => [`row_${r}`, row])) };
   await ask(run, `Jev: rows of "${group.title}"`, state, questions, (a) => {
     symbols &&= rows.every((_, r) => readIcon(a[`icon_${r}`]));
+    // Exactly one option of a picker is chosen: the value the person saw on the row they tapped, else the likeliest.
+    const options = rows.map((_, r) => r).filter((r) => a[`control_${r}`].choice === "check");
+    const same = (x: unknown, y: unknown) => String(x).trim().toLowerCase() === String(y).trim().toLowerCase();
+    const picked = options.find((r) => chosen && same(rows[r].label, chosen)) ?? options.sort((x, y) => a[`on_${y}`].noul - a[`on_${x}`].noul)[0];
     return rows.map((row, r) => {
       let control = a[`control_${r}`].choice as string;
       let note: string | undefined;
       // A row can only show a value if one was written, and one that has a value is not a switch.
       if (control === "value" && !row.value) [control, note] = ["nav", "read as a value, but none was written"];
+      if (control === "check") symbols = false;
       if (control === "switch" && row.value) [control, note] = ["value", `read as a switch, but it has the value "${row.value}"`];
       const icon = symbols ? readIcon(a[`icon_${r}`]) : undefined;
-      out.push({ at: [g, "rows", r], values: { control, on: a[`on_${r}`].noul >= 0.5, ...(icon ? { icon } : {}) } });
+      out.push({ at: [g, "rows", r], values: { control, on: control === "check" ? r === picked : a[`on_${r}`].noul >= 0.5, ...(icon ? { icon } : {}), ...(control === "check" ? { value: undefined } : {}) } });
       return { id: `control_${r}`, question: row.label, answer: `${control}${icon ? ` · ${icon}` : ""}`, p: a[`control_${r}`].probabilities[a[`control_${r}`].choice], ...(note ? { note } : {}) };
     });
   });

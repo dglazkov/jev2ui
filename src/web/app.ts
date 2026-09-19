@@ -1,11 +1,13 @@
 import { LitElement, html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { repeat } from "lit/directives/repeat.js";
 import "./kit/surface.js";
 import "./kit/kit.css";
 import type { KitSurface } from "./kit/surface.js";
 import type { A2uiMessage, Decision, PipelineEvent, RunStats } from "../shared/events.js";
 import type { DesignReport, Theme } from "../shared/design.js";
+import type { Journey, Via } from "../shared/journey.js";
 
 const EXAMPLES = [
   "Settings screen for a podcast app",
@@ -36,6 +38,31 @@ type Device = keyof typeof DEVICES;
 type LogEntry =
   | { kind: "stage"; at: number; stage: string; ms: number; detail?: string; decisions: Decision[]; tokens?: { input: number; output: number } }
   | { kind: "note"; at: number; tone: "bad" | "plain"; text: string };
+
+/**
+ * One screen of the prototype. A session is a graph of these that grows as the person taps around: a tap that
+ * has been followed before shows the screen it made then, so the prototype holds still while it is explored.
+ */
+interface Screen {
+  id: number;
+  /** What leads here: `nav:Saved`, or `3:item:Il Corvo Pasta` for a tap on screen 3. */
+  key: string;
+  title: string;
+  archetype: string;
+  topLevel: boolean;
+  dialog: boolean;
+  messages: A2uiMessage[];
+  log: LogEntry[];
+  stats?: RunStats;
+  firstPaintMs?: number;
+  running: boolean;
+  builtWith?: string;
+}
+
+/** A button that backs out of a dialog goes back; it does not lead anywhere new. */
+const BACKS_OUT = /^(cancel|close|back|dismiss|not now|no\b|never mind|keep|go back|done|ok)/i;
+/** Top-bar actions that act in place. */
+const IN_PLACE = new Set(["favorite", "more_vert", "share"]);
 
 /** Server-Sent Events over a POST, which EventSource cannot make. */
 async function streamEvents(body: unknown, signal: AbortSignal, onEvent: (event: PipelineEvent) => void) {
@@ -79,16 +106,16 @@ export class App extends LitElement {
   @state() private designError = "";
   @state() private designBusy = false;
 
-  @state() private painted = false;
-  @state() private log: LogEntry[] = [];
-  @state() private stats: RunStats | undefined;
-  @state() private firstPaintMs: number | undefined;
-  @state() private running = false;
   @state() private copied = "";
-  /** The design decisions the current mock's component tree was built with. */
-  @state() private builtWith: string | undefined;
+  /** Bumped whenever a screen changes; screens are mutated in place as their messages stream in. */
+  @state() private tick = 0;
 
-  private messages: A2uiMessage[] = [];
+  // The session: what app this is, every screen made for it, and the way back.
+  private app = "";
+  private nav: Journey["nav"];
+  private screens = new Map<string, Screen>();
+  private stack: Screen[] = [];
+  private nextId = 1;
   private abort: AbortController | undefined;
   private designRequest = 0;
   private editTimer: ReturnType<typeof setTimeout> | undefined;
@@ -98,8 +125,13 @@ export class App extends LitElement {
     return this;
   }
 
-  private get kit() {
-    return this.querySelector<KitSurface>("kit-surface")!;
+  private get current(): Screen | undefined {
+    return this.stack.at(-1);
+  }
+
+  protected updated() {
+    const byId = new Map([...this.screens.values()].map((screen) => [String(screen.id), screen]));
+    for (const surface of this.querySelectorAll<KitSurface>("kit-surface")) surface.sync(byId.get(surface.dataset.screen!)?.messages ?? []);
   }
 
   // --- Design -----------------------------------------------------------------
@@ -109,7 +141,7 @@ export class App extends LitElement {
     this.designError = "";
     if (choice === AUTO) {
       // Mixed from the prompt at generation time; if a mock is showing, mix for it now.
-      if (this.painted) void this.loadDesign({ brief: this.prompt });
+      if (this.current) void this.loadDesign({ brief: this.app });
       return;
     }
     this.markdown = choice === CUSTOM ? (localStorage.getItem(STORED_DESIGN) ?? this.markdown) : PRESETS.find((p) => p.id === choice)!.markdown;
@@ -149,58 +181,107 @@ export class App extends LitElement {
 
   // --- Mock -------------------------------------------------------------------
 
-  private async generate(prompt = this.prompt) {
+  /** A new description starts a new app. */
+  private generate(prompt = this.prompt) {
     this.prompt = prompt;
     if (!prompt.trim()) return;
+    this.app = prompt;
+    this.nav = undefined;
+    this.screens = new Map();
+    this.nextId = 1;
+    const screen = this.open("start", true);
+    this.stack = [screen];
+    void this.run(screen, { prompt });
+  }
+
+  private open(key: string, topLevel: boolean): Screen {
+    const screen: Screen = { id: this.nextId++, key, title: "", archetype: "", topLevel, dialog: false, messages: [], log: [], running: true };
+    this.screens.set(key, screen);
+    return screen;
+  }
+
+  /** What a tap does: go back, show the screen this tap made before, or have a new one made. */
+  private follow(detail: { kind: string; label: string; data?: Record<string, unknown>; index?: number; variant?: string }) {
+    const here = this.current;
+    if (!here) return;
+    const kind = (detail.kind === "item" && detail.variant !== undefined ? "itemAction" : detail.kind) as Via["kind"];
+    if (kind === "appbar" && IN_PLACE.has(detail.label)) return;
+    const backsOut = kind === "back" || ((kind === "action" || kind === "submit") && here.dialog && (BACKS_OUT.test(detail.label) || detail.variant === "secondary"));
+    if (backsOut && this.stack.length > 1) {
+      this.stack = this.stack.slice(0, -1);
+      return void this.tick++;
+    }
+    const via: Via = { kind: backsOut ? "back" : kind, label: detail.label, ...(detail.data ? { data: detail.data } : {}), ...(detail.index !== undefined ? { index: detail.index } : {}) };
+    const key = via.kind === "nav" ? `nav:${via.label}` : `${here.id}:${via.kind}:${via.label}`;
+    let screen = this.screens.get(key);
+    const made = !screen;
+    screen ??= this.open(key, via.kind === "nav");
+    // The navigation bar switches between main screens, and a way back from the first screen makes the one it came from. Everything else drills in.
+    this.stack = via.kind === "nav" || via.kind === "back" ? [screen] : [...this.stack, screen];
+    this.tick++;
+    if (made) {
+      const journey: Journey = { app: this.app, from: { title: here.title, archetype: here.archetype }, via, ...(this.nav ? { nav: this.nav } : {}) };
+      // Whatever design the first screen was painted with, the rest of the app keeps: a mixed one is pinned.
+      void this.run(screen, { prompt: this.app, journey });
+    }
+  }
+
+  private async run(screen: Screen, request: { prompt: string; journey?: Journey }) {
     this.abort?.abort();
     const abort = (this.abort = new AbortController());
-    this.painted = false;
-    this.kit.reset();
-    this.log = [];
-    this.stats = undefined;
-    this.firstPaintMs = undefined;
-    this.messages = [];
-    this.running = true;
-
+    const markdown = this.choice === AUTO && !request.journey ? undefined : this.markdown;
+    const note = (tone: "bad" | "plain", text: string, at = 0) => void (screen.log = [...screen.log, { kind: "note", at, tone, text }]);
     try {
-      await streamEvents({ prompt, markdown: this.choice === AUTO ? undefined : this.markdown }, abort.signal, (event) => {
+      await streamEvents({ ...request, markdown }, abort.signal, (event) => {
         switch (event.type) {
           case "design":
             this.designRequest++; // a reading in flight is older than this one
             this.applyDesign(event.report, event.markdown);
-            this.builtWith = event.report.structure;
+            screen.builtWith = event.report.structure;
             break;
-          case "a2ui":
-            this.messages.push(event.message);
-            this.kit.apply(event.message);
-            if ("updateComponents" in event.message) {
-              this.firstPaintMs ??= event.at;
-              this.painted = true;
+          case "a2ui": {
+            screen.messages.push(event.message);
+            const message = event.message as Record<string, any>;
+            const root = message.updateComponents?.components.find((c: any) => c.id === "root");
+            if (root) {
+              screen.firstPaintMs ??= event.at;
+              screen.dialog = Boolean(root.dialog);
+              screen.topLevel = Boolean(root.navBar);
+            }
+            const data = message.updateDataModel;
+            if (data?.path === "/header" && data.value?.title) screen.title = data.value.title;
+            // The first screen with a navigation bar establishes it for the app, symbols included once they arrive.
+            if (data?.path === "/nav" && Array.isArray(data.value?.items) && !request.journey?.nav) {
+              this.nav = { items: data.value.items };
+              const active = data.value.items[data.value.active ?? 0]?.label;
+              if (active && screen.key === "start") this.screens.set(`nav:${active}`, screen);
             }
             break;
+          }
           case "trace":
-            this.log = [...this.log, { kind: "stage", decisions: [], ...event }];
+            screen.log = [...screen.log, { kind: "stage", decisions: [], ...event }];
+            if (event.stage === "Jev: plan the screen") screen.archetype = event.decisions?.find((d) => d.id === "archetype")?.answer ?? "";
             break;
           case "invalid":
-            for (const text of event.errors) this.note("bad", text, event.at);
+            for (const text of event.errors) note("bad", text, event.at);
             break;
           case "error":
-            this.note("bad", event.message, event.at);
+            note("bad", event.message, event.at);
             break;
           case "done":
-            this.stats = event.stats;
+            screen.stats = event.stats;
             break;
         }
+        this.tick++;
       });
     } catch (error) {
-      if (!abort.signal.aborted) this.note("bad", (error as Error).message);
+      if (!abort.signal.aborted) note("bad", (error as Error).message);
     } finally {
-      if (this.abort === abort) this.running = false;
+      screen.running = false;
+      // A screen abandoned before it was planned would be a dead end; forget it so the tap can be tried again.
+      if (!screen.messages.length) this.screens.delete(screen.key);
+      this.tick++;
     }
-  }
-
-  private note(tone: "bad" | "plain", text: string, at = this.stats?.totalMs ?? 0) {
-    this.log = [...this.log, { kind: "note", at, tone, text }];
   }
 
   private async copy(what: string, text: string) {
@@ -276,8 +357,8 @@ export class App extends LitElement {
     return html`
       <aside class="trace">
         <h2>Trace</h2>
-        ${this.log.length === 0 ? html`<p class="hint">Every decision Jev makes shows up here, with its probability.</p>` : nothing}
-        ${this.log.map((entry) =>
+        ${!this.current?.log.length ? html`<p class="hint">Every decision Jev makes shows up here, with its probability.</p>` : nothing}
+        ${(this.current?.log ?? []).map((entry) =>
           entry.kind === "note"
             ? html`<p class="note ${entry.tone}">${entry.text}</p>`
             : html`
@@ -309,15 +390,18 @@ export class App extends LitElement {
   }
 
   render() {
-    const s = this.stats;
+    const here = this.current;
+    const s = here?.stats;
     const theme = this.report?.theme;
-    const frame = theme
-      ? { ...theme.vars, "color-scheme": theme.colorScheme, background: theme.vars["--k-page"] }
-      : {};
-    const stale = this.painted && !this.running && this.report && this.builtWith !== undefined && this.report.structure !== this.builtWith;
+    const frame = theme ? { ...theme.vars, "color-scheme": theme.colorScheme, background: theme.vars["--k-page"] } : {};
+    const painted = Boolean(here?.firstPaintMs !== undefined);
+    const stale = painted && !here!.running && this.report && here!.builtWith !== undefined && this.report.structure !== here!.builtWith;
+    // A dialog sits over the screen it was opened from.
+    const layers = here?.dialog && this.stack.length > 1 ? this.stack.slice(-2) : here ? [here] : [];
+    const made = [...new Set(this.screens.values())];
     return html`
       <header class="top">
-        <h1>jev2ui <small>describe a screen, get a mock</small></h1>
+        <h1>jev2ui <small>describe a screen, get a mock, tap through it</small></h1>
         <a href="/compare.html">compare pipelines →</a>
       </header>
       <div class="workbench">
@@ -326,7 +410,7 @@ export class App extends LitElement {
             class="prompt"
             @submit=${(e: Event) => {
               e.preventDefault();
-              void this.generate();
+              this.generate();
             }}
           >
             <textarea
@@ -338,11 +422,11 @@ export class App extends LitElement {
               @keydown=${(e: KeyboardEvent) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  void this.generate();
+                  this.generate();
                 }
               }}
             ></textarea>
-            <button type="submit">${this.running ? "Mocking…" : "Mock it"}</button>
+            <button type="submit">${here?.running ? "Mocking…" : "Mock it"}</button>
           </form>
           <div class="examples">${EXAMPLES.map((example) => html`<button @click=${() => this.generate(example)}>${example}</button>`)}</div>
           ${this.renderDesign()}
@@ -356,7 +440,7 @@ export class App extends LitElement {
               )}
             </div>
             <div class="stats">
-              ${this.firstPaintMs !== undefined ? html`<span class="pill">first UI ${this.firstPaintMs} ms</span>` : nothing}
+              ${here?.firstPaintMs !== undefined ? html`<span class="pill">first UI ${here.firstPaintMs} ms</span>` : nothing}
               ${s
                 ? html`<span class="pill">done ${s.totalMs} ms</span>
                     <span class="pill">${s.jevCalls} Jev · ${s.geminiOutputTokens} Gemini tok</span>
@@ -364,20 +448,37 @@ export class App extends LitElement {
                 : nothing}
             </div>
             <div class="exports">
-              <button ?disabled=${!this.painted} @click=${() => this.copy("a2ui", JSON.stringify(this.messages, null, 2))}>
+              <button ?disabled=${!painted} @click=${() => this.copy("a2ui", JSON.stringify(here!.messages, null, 2))}>
                 ${this.copied === "a2ui" ? "Copied" : "Copy messages"}
               </button>
               <button ?disabled=${!theme} @click=${() => this.copy("css", this.themeCss())}>${this.copied === "css" ? "Copied" : "Copy theme CSS"}</button>
             </div>
           </div>
+          ${made.length > 1
+            ? html`<nav class="flow" aria-label="Screens made so far">
+                ${made.map(
+                  (screen) => html`<button
+                    aria-current=${screen === here}
+                    title=${screen.key}
+                    @click=${() => {
+                      this.stack = [screen];
+                      this.tick++;
+                    }}
+                  >
+                    ${screen.title || "…"}<small>${screen.archetype}</small>
+                  </button>`,
+                )}
+              </nav>`
+            : nothing}
           ${stale ? html`<p class="stale">This design lays the screen out differently. <button class="link" @click=${() => this.generate()}>Mock it again</button></p>` : nothing}
           <div class="device ${this.device}" style="max-width:${DEVICES[this.device]}px">
-            <div class="screen" style=${styleMap(frame)}>
-              <kit-surface
-                @kit-action=${(e: CustomEvent) => this.note("plain", `pressed "${e.detail.label}" (${e.detail.name})`)}
-                ?hidden=${!this.painted}
-              ></kit-surface>
-              ${this.painted ? nothing : html`<p class="empty">${this.running ? "Planning the screen…" : "Describe a screen and it appears here."}</p>`}
+            <div class="screen" style=${styleMap(frame)} @kit-tap=${(e: CustomEvent) => this.follow(e.detail)}>
+              ${repeat(
+                layers,
+                (screen) => screen.id,
+                (screen, i) => html`<kit-surface class="layer ${screen.dialog && i > 0 ? "over" : ""}" data-screen=${screen.id} ?inert=${i < layers.length - 1}></kit-surface>`,
+              )}
+              ${painted ? nothing : html`<p class="empty">${here?.running ? "Planning the screen…" : "Describe a screen and it appears here. Then tap anything."}</p>`}
             </div>
           </div>
         </section>

@@ -1,6 +1,7 @@
 # jev2ui
 
-A design tool for developers: describe the screen you want, get a mock of it, painted by your
+A design tool for developers: describe the screen you want, get a mock of it, tap through it into screens that
+are designed as you go, all painted by your
 [DESIGN.md](https://github.com/google-labs-code/design.md).
 
 Under it is an experiment: build a screen from a text prompt using [TypeSafe's Jev](https://docs.typesafe.ai/)
@@ -54,6 +55,34 @@ got wrong: a navigation bar only on top-level screens and a back arrow on the re
 action per screen, red if it destroys something; no second set of buttons competing with a form's submit;
 picture layouts only for things with a look; rows in a group all lead with a symbol or none do; a bill's totals
 are written after its line items and shown them, so that it adds up.
+
+### Tapping through: the prototype designs itself as you go
+
+Every tappable thing in a mock is a link to a screen that does not exist yet. Tap it and the screen is made,
+in the same app, in the same second and a half.
+
+1. **The renderer reports the tap** with what it was and the data behind it: the list item's object, the
+   settings row's, or, for a button that acts on the whole screen, everything the screen showed.
+2. **Code turns the tap into the next screen's description** (`src/server/mock/link.ts`); no model is needed,
+   because what was tapped already says what comes next. An item becomes "Arthur Pendelton: the page for this
+   one item"; a row showing a value becomes "Choose Skip forward: the available options for this one setting,
+   with '30 seconds' currently chosen"; a destructive row becomes "Confirm: Sign out"; a submit button becomes
+   "The outcome of 'Place order'". That description goes through the same planning as one a developer typed,
+   with the app and the way the person got there alongside it, which Jev reads well.
+3. **Code keeps it one app.** How the person arrived settles what Jev would otherwise guess: the navigation
+   bar leads to main screens and everything else drills in, with a way back. The design is pinned, a mixed one
+   included. The navigation bar is established once and reused, symbols and all. Writers are shown what the
+   previous screen said about the thing that was tapped and must agree with it, so the walker who was
+   "Chelsea, $25.00, 4.8 (98)" in the list still is on his page, and the receipt totals what the checkout did.
+   Pictures are seeded by title, so a thumbnail and its lead photograph match for free.
+4. **The browser keeps the session** (`src/web/app.ts`): a graph of screens keyed by the link that made them,
+   and a back stack. A tap followed before shows the screen it made then, so the prototype holds still while
+   it is explored. A `confirm` screen is a dialog laid over the screen it came from, and its Cancel goes back.
+   Switches and checkboxes flip in place. The strip above the device lists every screen made so far.
+
+Two archetypes exist mostly for this: `result` (the outcome of something just done) and the picker that a
+settings screen turns into when it was reached from a value row, whose options are check rows with the
+current value ticked.
 
 ### The kit: a humble fork of A2UI
 
@@ -294,7 +323,9 @@ rather than a benchmark.
   component, a builder, a content schema, and a question whose criteria say when to use it.
 - Symbol questions are expensive: 175 options each, asked per row, which is why a settings screen costs
   around 19k Jev input tokens against 7k for most screens.
-- Mocks are static. Switches, fields and chips draw their state but do not change it.
+- Fields and chips draw their state but do not change it, and a form's values do not travel to the next screen.
+- A session lives in the page: reload and the prototype is gone. There is no export of the whole flow yet.
+- Nothing is prefetched; a Jev plan is cheap enough (about 250 ms) to start on hover.
 - Hover and pressed variants in a DESIGN.md are mostly ignored.
 
 ## Layout
@@ -309,6 +340,8 @@ src/shared/kit.ts           the kit: component schemas of the A2UI fork, shared 
 src/server/mock/plan.ts     the grammar (archetypes, blocks, anatomy) and the questions that fill it
 src/server/mock/screen.ts   plan to component tree; and the content schema Gemini is asked to fill
 src/server/mock/refine.ts   per-instance decisions from the content, written into the data model
+src/server/mock/link.ts     from a tap to the description of the screen it leads to
+src/shared/journey.ts       what the browser tells the server about how the person got here
 src/server/mock/icons.ts    the symbols Jev chooses among
 src/server/mock/pipeline.ts the mock pipeline
 src/web/kit/                the kit's renderer and stylesheet

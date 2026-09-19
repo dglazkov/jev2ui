@@ -851,3 +851,20 @@ kit-surface {
   display: flex;
   justify-content: space-between;
 }
+
+/* --- Taps ---------------------------------------------------------------------- */
+
+.k-tappable,
+.k-navbar a,
+.k-iconbtn {
+  cursor: pointer;
+}
+
+.k-item.k-tappable:hover,
+.k-iconbtn:hover {
+  background: color-mix(in srgb, var(--k-text) 5%, transparent);
+}
+
+.k-button:hover {
+  filter: brightness(0.96);
+}
