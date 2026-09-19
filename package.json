@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc",
-    "eval": "tsx src/eval.ts"
+    "eval": "tsx src/eval.ts",
+    "probe:jtbd": "tsx src/probe/jtbd.ts"
   },
   "repository": {
     "type": "git",
