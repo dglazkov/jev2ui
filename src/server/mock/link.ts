@@ -46,6 +46,8 @@ export function destination({ app, from, via }: Journey): Destination {
             : `${title}: a sub-page of settings`;
       return { screen, reachedBy: `tapping the row "${title}" on ${here}`, topLevel: false, about: via.data };
     }
+    case "part":
+      return { screen: `${title}: the page for this one part of the ${via.component ?? "component"} on ${here}`, reachedBy: `opening "${title}" in the ${via.component ?? "component"} on ${here}`, topLevel: false, about: via.data };
     case "nav":
       return { screen: `${via.label}: one of the main screens of the app that "${app}" belongs to`, reachedBy: `tapping "${via.label}" in the app's main navigation`, topLevel: true };
     case "appbar":

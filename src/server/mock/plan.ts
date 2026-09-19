@@ -30,7 +30,7 @@ const CONTEXT =
   "A developer describes one screen of an app in `screen`. A designer is working out what that screen is made of. If present, `first_screen` describes the first screen that was designed for the same app, which tells you what app this is, and `reached_by` says how the person got to the screen being designed now.";
 const ask = (question: string) => ({ context: CONTEXT, question });
 
-export const BLOCKS = ["banner", "hero", "filters", "stats", "list", "groups", "facts", "prose", "steps", "form", "actions"] as const;
+export const BLOCKS = ["banner", "hero", "filters", "custom", "stats", "list", "groups", "facts", "prose", "steps", "form", "actions"] as const;
 export type Block = (typeof BLOCKS)[number];
 
 interface Archetype {
@@ -53,21 +53,21 @@ interface Archetype {
 export const ARCHETYPES: Record<string, Archetype> = {
   feed: {
     criteria: "A collection to look through: search results, a catalogue, a feed, an inbox, a directory, a list of records.",
-    order: ["filters", "banner", "list"],
+    order: ["filters", "banner", "custom", "list"],
     requires: ["list"],
     expects: ["list"],
   },
   dashboard: {
     atLeast: 2,
     criteria: "Numbers and status at a glance: usage, health, progress, balances, today's summary.",
-    order: ["banner", "stats", "facts", "list"],
+    order: ["banner", "custom", "stats", "facts", "list"],
     requires: ["stats"],
     expects: ["stats"],
   },
   detail: {
     atLeast: 2,
     criteria: "One thing in depth: a product, a place, an article, a profile, an event, an order, a recipe's overview.",
-    order: ["hero", "stats", "prose", "facts", "steps", "list", "actions"],
+    order: ["hero", "custom", "stats", "prose", "facts", "steps", "list", "actions"],
     // A page about one thing shows the thing. Jev hovers just under certainty for hikes, recipes and rooms, so the picture is expected and not an extra.
     expects: ["hero", "prose", "facts"],
     stickyActions: true,
@@ -75,7 +75,7 @@ export const ARCHETYPES: Record<string, Archetype> = {
   guide: {
     atLeast: 2,
     criteria: "Instructions followed in order: a how-to, a method, troubleshooting, an onboarding checklist.",
-    order: ["hero", "prose", "facts", "steps", "actions"],
+    order: ["hero", "prose", "custom", "facts", "steps", "actions"],
     requires: ["steps"],
     expects: ["hero", "steps"],
     stickyActions: true,
@@ -88,14 +88,14 @@ export const ARCHETYPES: Record<string, Archetype> = {
   },
   form: {
     criteria: "Data entry: sign-up, booking, creating or editing a record, a survey, a contact form.",
-    order: ["prose", "form"],
+    order: ["prose", "custom", "form"],
     requires: ["form"],
     expects: ["form"],
   },
   checkout: {
     atLeast: 2,
     criteria: "Review and commit: a cart, a checkout, an order or booking summary with totals, payment.",
-    order: ["banner", "list", "facts", "form", "actions"],
+    order: ["banner", "custom", "list", "facts", "form", "actions"],
     expects: ["list", "facts"],
     stickyActions: true,
   },
@@ -115,6 +115,8 @@ export const ARCHETYPES: Record<string, Archetype> = {
 };
 const EXPECTED_THRESHOLD = 0.4;
 const EXTRA_THRESHOLD = 0.75;
+/** Probed (src/probe/custom.ts): screens the kit can draw came back at 0.14 or less, the rest at 0.57 or more. */
+const CUSTOM_THRESHOLD = 0.55;
 
 const BLOCK_QUESTIONS: Record<Block, { q: string; yes: string; no: string }> = {
   banner: {
@@ -132,6 +134,12 @@ const BLOCK_QUESTIONS: Record<Block, { q: string; yes: string; no: string }> = {
     q: "Will the person need to search or narrow down what is shown?",
     yes: "There are many items, more than fit on a screen, in recognisable categories.",
     no: "There are only a few items, or nothing to narrow.",
+  },
+  custom: {
+    // The one block the kit has no component for. What it is gets baked at run time (bake.ts); the grammar only knows that it is there.
+    q: "Is the heart of this screen something that has to be drawn specially for it?",
+    yes: "A map, a seating plan, a timer face, a dial, a game board, a floor plan, a piano keyboard, a colour wheel, a chart, a month calendar, a body diagram.",
+    no: "Everything on it can be shown with lists, cards, photographs, figures, text, form fields and buttons.",
   },
   stats: {
     q: "Are there a few headline numbers the person wants at a glance?",
@@ -241,6 +249,34 @@ const ITEM_PARTS = {
 } as const;
 export type ItemPart = keyof typeof ITEM_PARTS;
 
+// --- The contract of a custom component -----------------------------------------
+// Jev cannot say what the thing is, and does not have to: the description already does. It settles what the
+// thing is held to, so that whatever gets baked fits the screen: what the person does with it, the box it gets,
+// and whether it shows the list's own items.
+
+const CUSTOM_USE = {
+  watch: "It shows something that changes on its own and the person keeps an eye on: a timer, a gauge, a tuner, a live position, a level.",
+  pick: "The person picks one or more parts of it: a seat, a day, a table, a room, a place on a map.",
+  adjust: "The person drags, turns or plays it directly: a dial, a colour wheel, a keyboard, a board with pieces, a drawing surface.",
+  read: "It is a picture of data or of a place that the person only reads: a chart, a diagram, a route, a plan.",
+} as const;
+export type CustomUse = keyof typeof CUSTOM_USE;
+
+export const CUSTOM_SIZE = {
+  strip: { ratio: "3:1", criteria: "A thin band across the screen: a sparkline, a timeline, a week of days, a waveform." },
+  wide: { ratio: "16:9", criteria: "A landscape panel: a chart, a small map, a route preview." },
+  square: { ratio: "1:1", criteria: "A square: a ring, a dial, a clock face, a board, a wheel." },
+  tall: { ratio: "3:4", criteria: "Most of the height of the screen: a map to explore, a seating plan, a floor plan, a month calendar." },
+} as const;
+export type CustomSize = keyof typeof CUSTOM_SIZE;
+
+export interface CustomContract {
+  use: CustomUse;
+  size: CustomSize;
+  /** It draws the items the screen also lists (pins for the places, bars for the categories), so both read `/list/items`. */
+  linked: boolean;
+}
+
 /** Material top app bar: at most a couple of actions, the most used one first. */
 const APP_BAR_ACTIONS: Record<string, { icon: string | null; criteria: string }> = {
   none: { icon: null, criteria: "The screen needs no action in its top bar." },
@@ -276,6 +312,8 @@ export interface ScreenPlan {
   person: boolean;
   appBarAction: string | null;
   list: ListAnatomy;
+  /** Set when the screen has a custom block. */
+  custom?: CustomContract;
   search: boolean;
   statDeltas: boolean;
   factsTotal: boolean;
@@ -321,6 +359,12 @@ export function planQuestions(): Questions {
       true: "An order summary, a bill, a receipt or a cost breakdown.",
       false: "Independent details that do not sum.",
     }),
+    custom_use: choice(ask("If the screen has something drawn specially for it, what does the person do with that thing?"), CUSTOM_USE),
+    custom_size: choice(ask("If the screen has something drawn specially for it, how much room does that thing need?"), Object.fromEntries(Object.entries(CUSTOM_SIZE).map(([k, v]) => [k, v.criteria]))),
+    custom_linked: noul(ask("If the screen has something drawn specially for it, does that thing show the very same items that the screen also lists?"), {
+      true: "Pins for the places in the list, bars for the categories in the list, dots for the events in the list.",
+      false: "It shows one thing of its own, or the screen has no list of items.",
+    }),
   };
   for (const block of BLOCKS) {
     const { q: question, yes, no } = BLOCK_QUESTIONS[block];
@@ -358,14 +402,15 @@ export function readPlan(answers: Record<string, any>, known: { topLevel?: boole
     const p: number = answers[`has_${block}`].noul;
     const expected = shape.expects.includes(block);
     const required = !!shape.requires?.includes(block);
-    const keep = required || p >= (expected ? EXPECTED_THRESHOLD : EXTRA_THRESHOLD);
+    const needs = block === "custom" ? CUSTOM_THRESHOLD : expected ? EXPECTED_THRESHOLD : EXTRA_THRESHOLD;
+    const keep = required || p >= needs;
     decisions.push({
       id: `has_${block}`,
       question: `${block}?`,
       answer: keep ? "yes" : "no",
       p,
       ...(required && p < EXPECTED_THRESHOLD ? { note: `a ${archetype} screen always has one` } : {}),
-      ...(!keep && p >= 0.5 ? { note: `an extra on a ${archetype} screen; needs ${EXTRA_THRESHOLD}` } : {}),
+      ...(!keep && p >= 0.5 ? { note: `an extra on a ${archetype} screen; needs ${needs}` } : {}),
     });
     return keep;
   });
@@ -375,7 +420,7 @@ export function readPlan(answers: Record<string, any>, known: { topLevel?: boole
     }
   }
   // Independent answers under-include as easily as they over-include. A thin screen takes its next likeliest blocks.
-  const spare = shape.order.filter((b) => !blocks.includes(b) && b !== "banner").sort((x, y) => answers[`has_${y}`].noul - answers[`has_${x}`].noul);
+  const spare = shape.order.filter((b) => !blocks.includes(b) && b !== "banner" && b !== "custom").sort((x, y) => answers[`has_${y}`].noul - answers[`has_${x}`].noul);
   while (blocks.length < (shape.atLeast ?? 1) && spare.length) {
     const block = spare.shift()!;
     blocks = shape.order.filter((b) => blocks.includes(b) || b === block);
@@ -414,6 +459,9 @@ export function readPlan(answers: Record<string, any>, known: { topLevel?: boole
     person: archetype === "detail" && yes("person", "about one person?"),
     appBarAction: APP_BAR_ACTIONS[action].icon,
     list,
+    ...(has("custom")
+      ? { custom: { use: pick<CustomUse>("custom_use", "with the custom part, the person…"), size: pick<CustomSize>("custom_size", "room it needs"), linked: has("list") && yes("custom_linked", "draws the listed items?") } }
+      : {}),
     search: has("filters") && yes("search", "search field?"),
     statDeltas: has("stats") && yes("stat_deltas", "numbers tracked over time?"),
     factsTotal: has("facts") && yes("facts_total", "details sum to a total?"),

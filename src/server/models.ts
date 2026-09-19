@@ -6,6 +6,8 @@ import type { Decision } from "../shared/events.js";
 
 export const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash-lite";
 export const JEV_MODEL = process.env.JEV_MODEL ?? "jev-latest";
+/** Writes code, not words, and only when a screen needs something the kit cannot draw (mock/bake.ts). */
+export const BAKER_MODEL = process.env.BAKER_MODEL ?? "gemini-3.8-flash";
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -103,4 +105,31 @@ export async function streamGeminiJson(
     }
   }
   return { text, ms: performance.now() - start, firstChunkMs, inputTokens, outputTokens };
+}
+
+/** One whole JSON response from the model that bakes components. Nothing waits on it, so it is not streamed. */
+export async function bakeGeminiJson(request: { system: string; prompt: string; schema: unknown }): Promise<GeminiResult> {
+  gemini ??= new GoogleGenAI({ apiKey: requireEnv("GEMINI_API_KEY") });
+  const start = performance.now();
+  geminiRequestTimes.push(Date.now());
+  const response = await gemini.models.generateContent({
+    model: BAKER_MODEL,
+    contents: request.prompt,
+    config: {
+      systemInstruction: request.system,
+      responseMimeType: "application/json",
+      responseJsonSchema: request.schema,
+      thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+      temperature: 0.6,
+    },
+  });
+  const usage = response.usageMetadata;
+  const ms = performance.now() - start;
+  return {
+    text: response.text ?? "",
+    ms,
+    firstChunkMs: ms,
+    inputTokens: usage?.promptTokenCount ?? 0,
+    outputTokens: (usage?.candidatesTokenCount ?? 0) + (usage?.thoughtsTokenCount ?? 0),
+  };
 }

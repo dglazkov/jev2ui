@@ -6,13 +6,16 @@
 //   plan   the design overrules the plan where they disagree; the whole tree
 //          is sent, bound to data paths; one writer per block starts
 //   words  stream into the data model; text that has not arrived shimmers
+//   bake   a screen that needs something the kit cannot draw has a slot for it;
+//          Gemini bakes what goes there, or Jev finds it on the app's shelf
 //   refine as each group, list or form field completes, Jev reads it and its
 //          answers (control, symbol, tone, primary) join the data beside it
 //   photos as each pictured item completes, Jev picks its photograph from the
 //          library; if none suits, the image model makes one (pictures.ts)
 //
 // Gemini never sees a component and Jev never writes a word, so the tree is
-// valid by construction, and it is on screen before the first word is.
+// valid by construction, and it is on screen before the first word is. The one
+// exception is what fills a custom slot, which is checked instead (bake.ts).
 
 import { ContentStreams, type PartHooks } from "../content.js";
 import { loadDesign, type DesignSource } from "../design-source.js";
@@ -22,6 +25,7 @@ import { Run, SURFACE_ID } from "../run.js";
 import { KIT_CATALOG_ID } from "../../shared/kit.js";
 import type { PipelineEvent } from "../../shared/events.js";
 import type { Journey } from "../../shared/journey.js";
+import { bakeCustom } from "./bake.js";
 import { destination } from "./link.js";
 import { applyDesign, planQuestions, readPlan, type ScreenPlan } from "./plan.js";
 import { Pictures, itemWords } from "./pictures.js";
@@ -52,8 +56,9 @@ class Decorations {
 /**
  * `source` is the developer's DESIGN.md, or the brief and seed of a mix; without one, Jev mixes a design from the description.
  * With a `journey`, the screen is the one a tap leads to, in the same app as the screen it was tapped on.
+ * `fresh` is set when the developer asks for a screen again: whatever is custom on it is baked anew.
  */
-export function runMock(described: string, source?: DesignSource, journey?: Journey): AsyncGenerator<PipelineEvent> {
+export function runMock(described: string, source?: DesignSource, journey?: Journey, fresh = false): AsyncGenerator<PipelineEvent> {
   const markdown = source && "markdown" in source ? source.markdown : undefined;
   const run = new Run("mock");
   const surfaceId = SURFACE_ID;
@@ -183,7 +188,9 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
       const active = nav.items.findIndex((item) => item.label === journey!.via.label);
       run.send({ updateDataModel: { surfaceId, path: "/nav", value: { items: nav.items, active: Math.max(0, active) } } });
     }
-    const parts: Part[] = ["header", ...(plan.topLevel && !nav ? (["nav"] as Part[]) : []), ...plan.blocks.filter((b): b is Exclude<typeof b, "hero"> => b !== "hero")];
+    // Baking takes seconds, not milliseconds. It starts now and the slot shimmers, like a picture that has not loaded.
+    if (plan.custom) streams.spawn(bakeCustom(run, surfaceId, prompt, plan, { ...setting, voice: setting.voice || (mixed ? parseDesign(mixed).voice : "") }, fresh));
+    const parts: Part[] = ["header", ...(plan.topLevel && !nav ? (["nav"] as Part[]) : []), ...plan.blocks.filter((b): b is Exclude<typeof b, "hero" | "custom"> => b !== "hero" && b !== "custom")];
     streams.open(new Set<string>(parts));
     // Writers cannot see each other, so a bill would not add up. Totals wait for the line items and are shown them.
     const billed = plan.factsTotal && plan.blocks.includes("list");

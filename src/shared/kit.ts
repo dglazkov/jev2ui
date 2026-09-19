@@ -18,6 +18,12 @@
 //   Banner      tone, icon, title, text               Polaris
 //   Text roles  display … caption                     the DESIGN.md typography scale itself
 //
+// Added: a catalog that grows while it is in use. A `Custom` component is a slot
+// for something no catalog has (a map, a timer face, a seating plan). What fills
+// it arrives later, in a `defineComponent` message, the way the pixels of an
+// Image arrive after the box that holds them. Which definition a slot uses is
+// data (`use` is bound), so the tree still ships before anything is baked.
+//
 // The schemas are shared: the server validates what it emits against them,
 // and the renderer (src/web/kit) draws them.
 
@@ -85,6 +91,9 @@ export const KIT = {
   }),
   SettingRow: z.object({ icon: str.optional(), label: str, detail: str.optional(), value: str.optional(), control: str, on: bool.optional() }),
 
+  /** `use` names a definition; `data` is what the definition draws; `items` are the list's items when it draws those. */
+  Custom: z.object({ use: str, ratio: z.enum(["3:1", "16:9", "1:1", "3:4"]), data: bound.optional(), items: bound.optional(), selection: bound.optional(), failed: bool.optional() }),
+
   // --- Input ---------------------------------------------------------------
   Search: z.object({ placeholder: str }),
   Chips: z.object({ items: bound, active: z.number().optional() }),
@@ -104,6 +113,14 @@ export const KIT = {
 } as const;
 
 for (const [name, schema] of Object.entries(KIT)) (KIT as any)[name] = schema.strict();
+
+/**
+ * The message that extends the catalog: the source of one custom component, to run in a sandbox (src/web/kit/sandbox.ts).
+ * `card` says when to use it, in the words a Choice would offer Jev.
+ */
+export const DEFINE_COMPONENT = z
+  .object({ surfaceId: z.string(), id: z.string(), name: z.string(), card: z.string(), source: z.string() })
+  .strict();
 
 export type KitName = keyof typeof KIT;
 export type KitComponent = { id: string; component: KitName } & Record<string, unknown>;

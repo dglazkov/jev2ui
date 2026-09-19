@@ -6,7 +6,7 @@
 
 import type { KitComponent } from "../../shared/kit.js";
 import type { Block, ScreenPlan } from "./plan.js";
-import { ARCHETYPES } from "./plan.js";
+import { ARCHETYPES, CUSTOM_SIZE } from "./plan.js";
 
 const at = (path: string) => ({ path });
 type C = KitComponent;
@@ -20,6 +20,20 @@ const BUILDERS: Record<Block, (plan: ScreenPlan) => C[]> = {
     { id: "filters", component: "Stack", gap: "sm", children: [...(plan.search ? ["filters_search"] : []), "filters_chips"] },
     ...(plan.search ? [{ id: "filters_search", component: "Search", placeholder: at("/filters/searchPlaceholder") } as C] : []),
     { id: "filters_chips", component: "Chips", items: at("/filters/chips") },
+  ],
+
+  // A slot, not a component: what fills it is baked while the rest of the screen is already up (bake.ts).
+  custom: (plan) => [
+    {
+      id: "custom",
+      component: "Custom",
+      use: at("/custom/use"),
+      ratio: CUSTOM_SIZE[plan.custom!.size].ratio,
+      data: at("/custom/data"),
+      selection: at("/custom/selection"),
+      failed: at("/custom/failed"),
+      ...(plan.custom!.linked ? { items: at("/list/items") } : {}),
+    },
   ],
 
   stats: (plan) => [
@@ -190,13 +204,13 @@ export function screen(plan: ScreenPlan, screenIcon: string | null): C[] {
 
 // --- What Gemini is asked to write ----------------------------------------------
 
-export type Part = "header" | "nav" | Exclude<Block, "hero">;
+export type Part = "header" | "nav" | Exclude<Block, "hero" | "custom">;
 
 const str = (description: string) => ({ type: "string", description });
 const obj = (properties: Record<string, unknown>, required = Object.keys(properties)) => ({ type: "object", properties, required, propertyOrdering: Object.keys(properties) });
 const list = (items: unknown, description: string, maxItems: number, minItems = 1) => ({ type: "array", items, description, maxItems, minItems });
 
-function itemSchema(plan: ScreenPlan) {
+export function itemSchema(plan: ScreenPlan) {
   const has = (part: string) => plan.list.parts.includes(part as any);
   return obj({
     title: str("The item's name."),

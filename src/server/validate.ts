@@ -1,6 +1,6 @@
 import { A2uiMessageSchema } from "@a2ui/web_core/v0_9";
 import { BASIC_COMPONENTS } from "@a2ui/web_core/v0_9/basic_catalog";
-import { KIT, KIT_CATALOG_ID, kitRefs } from "../shared/kit.js";
+import { DEFINE_COMPONENT, KIT, KIT_CATALOG_ID, kitRefs } from "../shared/kit.js";
 import type { A2uiMessage } from "../shared/events.js";
 
 type Schema = { safeParse(value: unknown): { success: true } | { success: false; error: { issues: Array<{ path: PropertyKey[]; message: string }> } } };
@@ -32,7 +32,20 @@ export function validateMessages(messages: A2uiMessage[]): string[] {
   const SCHEMAS = kit ? KIT_SCHEMAS : BASIC;
   const childRefs = kit ? kitRefs : basicRefs;
 
+  // Custom components: every slot that names a definition must get one before the run ends.
+  const definitions = new Set<string>();
+  const used = new Map<string, string>();
+
   messages.forEach((message, i) => {
+    // The kit's one addition to the envelope.
+    if (kit && "defineComponent" in message) {
+      const parsed = DEFINE_COMPONENT.safeParse(message.defineComponent);
+      if (parsed.success) definitions.add(parsed.data.id);
+      else for (const issue of parsed.error.issues.slice(0, 3)) errors.push(`message[${i}] defineComponent.${issue.path.join(".")}: ${issue.message}`);
+      return;
+    }
+    const custom = (message as any).updateDataModel;
+    if (kit && custom?.path === "/custom" && typeof custom.value?.use === "string") used.set("/custom", custom.value.use);
     const envelope = A2uiMessageSchema.safeParse(message);
     if (!envelope.success) {
       for (const issue of envelope.error.issues.slice(0, 3)) {
@@ -63,6 +76,7 @@ export function validateMessages(messages: A2uiMessage[]): string[] {
     }
   });
 
+  for (const [path, use] of used) if (!definitions.has(use)) errors.push(`${path}: uses undefined custom component "${use}"`);
   if (defined.size > 0 && !defined.has("root")) errors.push('no component with id "root"');
   for (const [id, c] of defined) {
     for (const ref of childRefs(c)) {

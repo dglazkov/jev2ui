@@ -50,7 +50,7 @@ interface Screen {
   running: boolean;
   builtWith?: string;
   /** What it was made from, so that it can be made again. */
-  request: { prompt: string; journey?: Journey };
+  request: { prompt: string; journey?: Journey; fresh?: boolean };
 }
 
 /** A button that backs out of a dialog goes back; it does not lead anywhere new. */
@@ -127,7 +127,10 @@ export class App extends LitElement {
 
   protected updated() {
     const byId = new Map([...this.screens.values()].map((screen) => [String(screen.id), screen]));
-    for (const surface of this.querySelectorAll<KitSurface>("kit-surface")) surface.sync(byId.get(surface.dataset.screen!)?.messages ?? []);
+    for (const surface of this.querySelectorAll<KitSurface>("kit-surface")) {
+      surface.theme = this.report?.theme;
+      surface.sync(byId.get(surface.dataset.screen!)?.messages ?? []);
+    }
   }
 
   // --- Design -----------------------------------------------------------------
@@ -206,7 +209,7 @@ export class App extends LitElement {
   }
 
   /** What a tap does: go back, show the screen this tap made before, or have a new one made. */
-  private follow(detail: { kind: string; label: string; data?: Record<string, unknown>; index?: number; variant?: string }) {
+  private follow(detail: { kind: string; label: string; data?: Record<string, unknown>; index?: number; variant?: string; component?: string }) {
     const here = this.current;
     if (!here) return;
     const kind = (detail.kind === "item" && detail.variant !== undefined ? "itemAction" : detail.kind) as Via["kind"];
@@ -216,7 +219,7 @@ export class App extends LitElement {
       this.stack = this.stack.slice(0, -1);
       return void this.tick++;
     }
-    const via: Via = { kind: backsOut ? "back" : kind, label: detail.label, ...(detail.data ? { data: detail.data } : {}), ...(detail.index !== undefined ? { index: detail.index } : {}) };
+    const via: Via = { kind: backsOut ? "back" : kind, label: detail.label, ...(detail.data ? { data: detail.data } : {}), ...(detail.index !== undefined ? { index: detail.index } : {}), ...(detail.component ? { component: detail.component } : {}) };
     const key = via.kind === "nav" ? `nav:${via.label}` : `${here.id}:${via.kind}:${via.label}`;
     let screen = this.screens.get(key);
     const made = !screen;
@@ -243,7 +246,8 @@ export class App extends LitElement {
     forget(old);
     // It may have been the screen that established the navigation bar; if so, it establishes it again.
     const request = old.request.journey && !old.request.journey.nav ? old.request : { ...old.request, ...(old.request.journey && this.nav ? { journey: { ...old.request.journey, nav: this.nav } } : {}) };
-    const screen = this.open(old.key, old.topLevel, request);
+    // Made again means made anew: a custom component is baked afresh, not taken from the app's shelf.
+    const screen = this.open(old.key, old.topLevel, { ...request, fresh: true });
     for (const key of aliases) this.screens.set(key, screen);
     this.stack = [...this.stack.slice(0, -1), screen];
     this.tick++;
@@ -308,6 +312,14 @@ export class App extends LitElement {
       if (!screen.messages.length) this.screens.delete(screen.key);
       this.tick++;
     }
+  }
+
+  /** A baked component that throws is the one way a mock can be wrong; say so where the rest of the run is reported. */
+  private broke(detail: { name?: string; message: string }) {
+    const screen = this.current;
+    if (!screen) return;
+    screen.log = [...screen.log, { kind: "note", at: 0, tone: "bad", text: `"${detail.name ?? "custom component"}" failed in the browser: ${detail.message}. Regenerate the page to bake it again.` }];
+    this.tick++;
   }
 
   private async copy(what: string, text: string) {
@@ -504,7 +516,7 @@ export class App extends LitElement {
             : nothing}
           ${stale ? html`<p class="stale">This design lays the screen out differently. <button class="link" @click=${() => this.generate()}>Mock it again</button></p>` : nothing}
           <div class="device ${this.device}" style="max-width:${DEVICES[this.device]}px">
-            <div class="screen" style=${styleMap(frame)} @kit-tap=${(e: CustomEvent) => this.follow(e.detail)}>
+            <div class="screen" style=${styleMap(frame)} @kit-tap=${(e: CustomEvent) => this.follow(e.detail)} @kit-custom-error=${(e: CustomEvent) => this.broke(e.detail)}>
               ${repeat(
                 layers,
                 (screen) => screen.id,

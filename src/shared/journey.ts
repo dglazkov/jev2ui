@@ -4,7 +4,10 @@
 
 /** What was tapped. `data` is the data-model object behind it: the list item, the settings row. */
 export interface Via {
-  kind: "item" | "itemAction" | "row" | "nav" | "appbar" | "action" | "submit" | "back";
+  /** `part` is a part of a custom component that has a page of its own: a day on a calendar, a room on a plan. */
+  kind: "item" | "itemAction" | "row" | "nav" | "appbar" | "action" | "submit" | "back" | "part";
+  /** For a `part`: the name of the component it is a part of. */
+  component?: string;
   label: string;
   data?: Record<string, unknown>;
   index?: number;

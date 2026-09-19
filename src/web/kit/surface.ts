@@ -8,6 +8,8 @@ import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { keyed } from "lit/directives/keyed.js";
 import "./picture.js";
+import { sandboxDocument, themeMessage, type Definition } from "./sandbox.js";
+import type { Theme } from "../../shared/design.js";
 
 type Component = { id: string; component: string } & Record<string, any>;
 /** Where relative bindings resolve, and which element of a template this is. */
@@ -43,7 +45,67 @@ const initials = (name: string) =>
 @customElement("kit-surface")
 export class KitSurface extends LitElement {
   private components = new Map<string, Component>();
+  /** The part of the catalog that arrived with the screen: custom components, by id. */
+  private definitions = new Map<string, Definition>();
   private data: any = {};
+  /** Per custom slot: what its frame should be showing, and what it was last told. */
+  private frames = new Map<string, { state: unknown; told?: string; ready?: boolean; error?: string }>();
+  private paint: Theme | undefined;
+
+  /** Frames cannot inherit the design's variables, so they are told. */
+  set theme(theme: Theme | undefined) {
+    if (theme === this.paint) return;
+    this.paint = theme;
+    for (const frame of this.querySelectorAll<HTMLIFrameElement>("iframe.k-custom-frame")) if (this.frames.get(frame.dataset.slot!)?.ready) frame.contentWindow?.postMessage(themeMessage(theme), "*");
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    window.addEventListener("message", this.heard);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    window.removeEventListener("message", this.heard);
+  }
+
+  /** What a custom component says: that it is up, that it broke, or what the person did in it. */
+  private heard = (event: MessageEvent) => {
+    const frame = [...this.querySelectorAll<HTMLIFrameElement>("iframe.k-custom-frame")].find((f) => f.contentWindow === event.source);
+    const slot = frame && this.frames.get(frame.dataset.slot!);
+    if (!frame || !slot) return;
+    const message = event.data ?? {};
+    const name = this.read("/custom/name");
+    switch (message.type) {
+      case "ready":
+        slot.ready = true;
+        slot.told = undefined;
+        frame.contentWindow?.postMessage(themeMessage(this.paint), "*");
+        return void this.requestUpdate();
+      case "error":
+        if (slot.error) return;
+        slot.error = String(message.message);
+        this.dispatchEvent(new CustomEvent("kit-custom-error", { detail: { name, message: slot.error }, bubbles: true }));
+        return void this.requestUpdate();
+      case "select":
+        // Kept beside the component's data, so the screen's buttons carry what was chosen to the next screen.
+        return this.write("/custom/selection", message.value);
+      case "open":
+        return this.tap("part", message.label, undefined, { data: message.data, component: name });
+      case "openItem":
+        return this.tap("item", message.item?.title, undefined, { data: message.item });
+    }
+  };
+
+  protected updated() {
+    for (const frame of this.querySelectorAll<HTMLIFrameElement>("iframe.k-custom-frame")) {
+      const slot = this.frames.get(frame.dataset.slot!);
+      const state = JSON.stringify(slot?.state ?? {});
+      if (!slot?.ready || slot.told === state) continue;
+      slot.told = state;
+      frame.contentWindow?.postMessage({ state: JSON.parse(state) }, "*");
+    }
+  }
 
   protected createRenderRoot() {
     return this;
@@ -58,6 +120,8 @@ export class KitSurface extends LitElement {
       this.source = messages;
       this.applied = 0;
       this.components = new Map();
+      this.definitions = new Map();
+      this.frames = new Map();
       this.data = {};
     }
     for (; this.applied < messages.length; this.applied++) this.apply(messages[this.applied]);
@@ -73,6 +137,8 @@ export class KitSurface extends LitElement {
     // A tap on one thing carries that thing; a button that acts on the whole screen carries what the screen showed.
     const whole = kind === "action" || kind === "submit";
     const data = scope?.base ? this.read(scope.base) : whole ? JSON.parse(JSON.stringify(this.data, (key, value) => (key === "imageUrl" || key === "nav" ? undefined : value))) : undefined;
+    // Of a custom component, the next screen needs to know what was chosen in it, not everything it drew.
+    if (whole && data?.custom) data.custom = { component: data.custom.name, chosen: data.custom.selection };
     this.dispatchEvent(new CustomEvent("kit-tap", { detail: { kind, label: String(label ?? ""), data, title: this.read("/header/title"), ...extra }, bubbles: true }));
   }
 
@@ -85,6 +151,7 @@ export class KitSurface extends LitElement {
 
   apply(message: Record<string, any>) {
     if (message.updateComponents) for (const c of message.updateComponents.components) this.components.set(c.id, c);
+    if (message.defineComponent) this.definitions.set(message.defineComponent.id, message.defineComponent);
     if (message.updateDataModel) this.write(message.updateDataModel.path ?? "/", message.updateDataModel.value);
     this.requestUpdate();
   }
@@ -351,6 +418,22 @@ export class KitSurface extends LitElement {
               ? nothing
               : html`${control === "value" && value ? html`<span class="k-text k-body k-tone-muted">${value}</span>` : nothing}${this.icon("chevron_right", "k-chevron")}`}
       </div>
+    </div>`;
+  }
+
+  // --- Custom ----------------------------------------------------------------
+
+  /** A box of known shape from the first paint. What goes in it is baked meanwhile, and runs in a frame of its own. */
+  drawCustom(c: Component, s: Scope) {
+    if (this.value(c.failed, s)) return nothing;
+    const definition = this.definitions.get(this.value(c.use, s));
+    const slot = this.frames.get(c.id) ?? { state: undefined };
+    this.frames.set(c.id, slot);
+    slot.state = { data: this.value(c.data, s), ...(c.items ? { items: this.value(c.items, s) ?? [] } : {}) };
+    const box = { "aspect-ratio": String(c.ratio).replace(":", " / ") };
+    if (slot.error) return html`<div class="k-custom k-custom-broken" style=${styleMap(box)}>${this.icon("heart_broken")}<span class="k-text k-caption k-tone-muted">${slot.error}</span></div>`;
+    return html`<div class="k-custom ${definition && slot.ready ? "" : "k-custom-baking"}" style=${styleMap(box)}>
+      ${definition ? html`<iframe class="k-custom-frame" data-slot=${c.id} sandbox="allow-scripts" title=${definition.name} .srcdoc=${sandboxDocument(definition)}></iframe>` : nothing}
     </div>`;
   }
 

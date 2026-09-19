@@ -68,7 +68,7 @@ function api(): Plugin {
         const { runJobs } = await load("/src/server/jobs.ts");
         const events =
           mode === "mock"
-            ? runMock(prompt, designSource(body), body.journey)
+            ? runMock(prompt, designSource(body), body.journey, Boolean(body.fresh))
             : mode === "jobs"
               ? runJobs(prompt)
               : mode === "hybrid"

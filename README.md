@@ -163,6 +163,41 @@ The schemas are shared: the server validates every message against them, and a s
 `npm run eval -- --only mock` over 13 prompts: 13 of 13 valid trees with a mixed design and with Broadsheet,
 first components at 159–289 ms, complete in 0.9–2.2 s.
 
+### Baking: what no kit will ever have
+
+A map, a pomodoro ring, the seating plan of one concert hall. Every app has something like it, the list never
+ends, and adding each one to the kit would make every request a change to this repo. So none of them is in
+the repo. The repo holds only the mechanism, and the kit is a catalog that grows while it is being used.
+
+- **Jev notices, and sets the contract.** One more block question: *is the heart of this screen something that
+  has to be drawn specially for it?* On 28 labelled prompts (`npm run probe:custom`) every screen the kit can
+  draw came back at 0.14 or less and every other at 0.57 or more. Jev cannot say what the thing is, and does not
+  have to, since the description already does. It settles what the thing is held to: what the person does with it
+  (watch, pick, adjust, read), the box it gets (strip, wide, square, tall), and whether it draws the very items
+  the screen also lists.
+- **The tree ships with a slot.** `Custom` is a box of known ratio bound to `/custom`, so the screen is still up
+  at ~200 ms and the slot shimmers, the way an Image holds its place before its pixels arrive.
+- **Gemini bakes.** A stronger model (`BAKER_MODEL`, default `gemini-3.8-flash`) writes a
+  `render(root, state, kit)` function, the JSON Schema of the data it draws, that data for this screen, and a
+  *card*: one sentence saying when a screen needs it. Code checks the source (it parses; colour comes only from
+  the `--k-*` variables; nothing reaches for the network) and asks again once, with the reasons, if it does
+  not pass. If that fails too the slot closes up and the rest of the screen stands.
+- **`defineComponent`** is the fork's one new message: `{id, name, card, source}`. The renderer runs the source
+  in a sandboxed frame (`src/web/kit/sandbox.ts`: scripts, but no origin and no network) and hands it the kit's
+  stylesheet and the design's variables. So a baked timer uses the kit's buttons and badges, is painted by the
+  same DESIGN.md, and **Remix repaints it while it is running**.
+- **It is part of the prototype.** `kit.select(value)` writes what the person chose next to the component's
+  data, so the screen's own buttons carry it along: pick Stalls, row 2, seat 8, press the button, and the next
+  screen is about that seat. `kit.open(label, data)` and `kit.openItem(item)` are taps like any other.
+- **The shelf.** A baked component joins its app's shelf. On the next screen that needs something custom, the
+  cards on the shelf are the options of a Choice, so Jev can say "the same map", and only the data is written,
+  by the small model, against the component's schema (under a second, against 10–25 s for a bake). The grammar
+  extends itself: Gemini writes the option, Jev reads it. Regenerate bakes afresh.
+
+Measured: a pomodoro timer's tree at 325 ms and its ring 11 s later; the Royal Albert Hall in 22 s; a coffee
+map whose pins are the list's items in 27 s; all valid, none needing the second attempt. Ordinary screens are
+untouched (no bake, ~2 s).
+
 ## Rendering strategy: the mock is painted by a DESIGN.md
 
 A DESIGN.md is a design system in one file: design tokens in YAML front matter, then prose that says what the
@@ -241,6 +276,8 @@ arguable (a luxury watch boutique got violet). Naming a colour in the prompt set
 - **~200 ms:** the design overrules the plan where they disagree; the whole tree and the theme are sent.
 - **Words** stream into the data model, one Gemini writer per block, each asked for exactly the slots the
   tree has.
+- **Baking**, if the plan has a custom block: Jev looks on the app's shelf, or Gemini bakes a component; the
+  slot fills when it is done.
 - **Refinement** follows each part as it completes: one small Jev request per group, list, set of numbers,
   navigation bar or form field.
 
@@ -385,9 +422,14 @@ rather than a benchmark.
 - Jev reads questions literally and answers them independently. Expect to tune question wording and
   thresholds; `src/server/plan.ts` and `src/server/design.ts` hold all of it.
 - Button and form events are only logged in the trace; nothing handles them.
-- The mock's grammar is eight archetypes and eleven blocks. There is no timeline, chart, map, calendar, table
-  or tab set yet, so an order-tracking screen comes out as facts and numbers. Each is a block to add: a kit
-  component, a builder, a content schema, and a question whose criteria say when to use it.
+- The mock's grammar is nine archetypes and twelve blocks, one of which is the custom slot. What the kit lacks
+  (a chart, a map, a calendar) is baked per app, so two apps get two different maps; there is no shelf shared
+  between apps yet, and none that belongs to a DESIGN.md. No archetype is *about* its custom part: a timer
+  comes out as a dashboard with a ring on top, and a tall component shares the screen with a list.
+- A baked component is checked, not valid by construction. The lint cannot tell whether it draws the right
+  thing, or draws at all. An error in the browser is reported in the trace, not sent back to the baker.
+- The shelf lives in the server's memory, keyed by the description the session started from.
+- A custom slot sits in the archetype's fixed place and there is at most one per screen.
 - Symbol questions are expensive: 175 options each, asked per row, which is why a settings screen costs
   around 19k Jev input tokens against 7k for most screens.
 - Fields and chips draw their state but do not change it, and a form's values do not travel to the next screen.
@@ -406,6 +448,8 @@ src/shared/kit.ts           the kit: component schemas of the A2UI fork, shared 
 src/server/mock/plan.ts     the grammar (archetypes, blocks, anatomy) and the questions that fill it
 src/server/mock/screen.ts   plan to component tree; and the content schema Gemini is asked to fill
 src/server/mock/refine.ts   per-instance decisions from the content, written into the data model
+src/server/mock/bake.ts     what the kit cannot draw: the baker's contract, the lint, the app's shelf
+src/web/kit/sandbox.ts      the frame a baked component runs in
 src/server/mock/link.ts     from a tap to the description of the screen it leads to
 src/shared/journey.ts       what the browser tells the server about how the person got here
 src/server/mock/icons.ts    the symbols Jev chooses among
@@ -426,5 +470,6 @@ src/server/run.ts       event stream, stats, end-of-run validation
 src/web/app.ts          the design tool; compare.ts is the side-by-side page (both use @a2ui/lit's v0.9 renderer)
 src/eval.ts             CLI comparison
 src/probe/jtbd.ts       can Jev see jobs? (docs/jtbd-probe.md)
+src/probe/custom.ts     can Jev tell when a screen needs something the kit cannot draw?
 src/probe/design.ts     how does Jev read a DESIGN.md, and what does it mix? (fixtures in src/probe/designs/)
 ```
