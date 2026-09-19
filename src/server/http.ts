@@ -1,6 +1,6 @@
 // The pipelines over HTTP: two JSON routes and one of Server-Sent Events.
-// Where sign-in is on (auth.ts), each wants to know who is asking, and a run
-// is taken from that person's allowance for the day.
+// Where sign-in is on (auth.ts), each wants to know who is asking and that the
+// list lets them make things, and a run is taken from their allowance for the day.
 //
 // Two servers mount this. In development it is the Vite dev server
 // (vite.config.ts), which loads the pipelines through Vite so that edits to
@@ -57,7 +57,7 @@ async function photo(load: Load, id: string, res: ServerResponse) {
   res.end(made.bytes);
 }
 
-async function generate(load: Load, url: URL, req: IncomingMessage, res: ServerResponse, person: unknown) {
+async function generate(load: Load, url: URL, req: IncomingMessage, res: ServerResponse, asking: Asking | undefined) {
   const body = req.method === "POST" ? await readJson(req).catch(() => ({})) : {};
   const prompt = String(body.prompt ?? url.searchParams.get("prompt") ?? "").trim();
   const mode = body.mode ?? url.searchParams.get("mode") ?? "mock";
@@ -66,14 +66,13 @@ async function generate(load: Load, url: URL, req: IncomingMessage, res: ServerR
     res.end("expected a prompt, and mode=mock|jobs|hybrid|baseline");
     return;
   }
-  const auth = await load("auth");
-  if (person && !auth.spend(person)) {
-    allowance(res, auth, person);
+  const spent = !asking || (await asking.auth.spend(asking.person, asking.grant));
+  await allowance(res, asking);
+  if (!spent) {
     res.statusCode = 429;
-    res.end(`Today's ${auth.DAILY_RUNS} runs are used up. There are more tomorrow (the day turns over at midnight UTC).`);
+    res.end(`Today's ${asking!.grant.runs} runs are used up. There are more tomorrow (the day turns over at midnight UTC).`);
     return;
   }
-  allowance(res, auth, person);
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
@@ -102,11 +101,18 @@ async function generate(load: Load, url: URL, req: IncomingMessage, res: ServerR
   res.end();
 }
 
-/** Every answer says what is left of the day's allowance, so the browser can show it. */
-function allowance(res: ServerResponse, auth: any, person: unknown) {
-  if (!person) return;
-  res.setHeader("X-Runs-Left", String(auth.left(person)));
-  res.setHeader("X-Runs-Daily", String(auth.DAILY_RUNS));
+/** Who is asking, and what the list grants them; `auth` is the module that said so (auth.ts). */
+interface Asking {
+  auth: any;
+  person: { uid: string; email?: string; name?: string };
+  grant: { role: string; runs: number | null };
+}
+
+/** Every answer says what is left of the day's allowance, so the browser can show it; "unlimited" where there is no limit. */
+async function allowance(res: ServerResponse, asking: Asking | undefined) {
+  if (!asking) return;
+  res.setHeader("X-Runs-Left", String((await asking.auth.left(asking.person, asking.grant)) ?? "unlimited"));
+  res.setHeader("X-Runs-Daily", String(asking.grant.runs ?? "unlimited"));
 }
 
 /** Answers a request under /api/ and resolves true, or resolves false: it was for someone else. */
@@ -115,23 +121,26 @@ export function api(load: Load) {
     const url = new URL(req.url ?? "", "http://localhost");
     // A photograph is asked for by an <img>, which cannot say who is asking. Its name is a hash, and serving it costs nothing.
     if (url.pathname.startsWith("/api/photo/")) return await photo(load, url.pathname.slice("/api/photo/".length), res), true;
-    if (!["/api/config", "/api/design", "/api/generate"].includes(url.pathname)) return false;
+    if (!["/api/config", "/api/me", "/api/design", "/api/generate"].includes(url.pathname)) return false;
     const auth = await load("auth");
-    if (url.pathname === "/api/config") {
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ firebase: auth.firebase }));
-      return true;
-    }
-    const person = auth.firebase ? await auth.whoIs(req.headers.authorization) : undefined;
-    if (auth.firebase && !person) {
-      res.statusCode = 401;
-      res.end("sign in first");
-      return true;
-    }
+    const json = (value: unknown) => (res.setHeader("Content-Type", "application/json"), res.end(JSON.stringify(value)));
+    if (url.pathname === "/api/config") return json({ firebase: auth.firebase }), true;
+
+    let asking: Asking | undefined;
+    if (auth.firebase) {
+      const person = await auth.whoIs(req.headers.authorization);
+      if (!person) return (res.statusCode = 401), res.end("sign in first"), true;
+      const grant = await auth.access(person);
+      // Signed in and on no line of the list is something to tell the person, not an error: /api/me says so.
+      if (url.pathname === "/api/me") return await allowance(res, grant && { auth, person, grant }), json({ email: person.email, role: grant?.role ?? null }), true;
+      if (!grant) return (res.statusCode = 403), res.end(`${person.email ?? "this account"} is not on the list of people who can make things here`), true;
+      asking = { auth, person, grant };
+    } else if (url.pathname === "/api/me") return json({ role: "maker" }), true;
+
     if (url.pathname === "/api/design") {
-      allowance(res, auth, person);
+      await allowance(res, asking);
       await design(load, req, res);
-    } else await generate(load, url, req, res, person);
+    } else await generate(load, url, req, res, asking);
     return true;
   };
 }

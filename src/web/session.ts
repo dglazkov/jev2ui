@@ -1,5 +1,6 @@
 // Who is using the tool. The server says whether anyone has to sign in (/api/config, server/auth.ts); where they
 // do, it is with Google, through Firebase, and every request carries the ID token that says who is asking.
+// Whether the person may make anything is the server's list to say (/api/me): signed in and not on it is `stranger`.
 // Both pages share this: the gate that stands in for the page until someone is in, and the badge once they are.
 
 import { html, nothing, type ReactiveControllerHost, type TemplateResult } from "lit";
@@ -10,11 +11,12 @@ type Auth = import("firebase/auth").Auth;
 
 class Session {
   /** `open` is a server that asks nobody to sign in. */
-  state: "loading" | "out" | "in" | "open" = "loading";
+  state: "loading" | "out" | "stranger" | "in" | "open" = "loading";
   name = "";
+  email = "";
   error = "";
   /** What is left of today's runs, once the server has said. */
-  runs: { left: number; daily: number } | undefined;
+  runs: { left: string; daily: string } | undefined;
 
   private auth: Auth | undefined;
   private hosts = new Set<ReactiveControllerHost>();
@@ -27,7 +29,7 @@ class Session {
     this.begun = true;
   }
 
-  private set(change: Partial<Pick<Session, "state" | "name" | "error" | "runs">>) {
+  private set(change: Partial<Pick<Session, "state" | "name" | "email" | "error" | "runs">>) {
     Object.assign(this, change);
     for (const host of this.hosts) host.requestUpdate();
   }
@@ -39,7 +41,14 @@ class Session {
       // Only a server with sign-in has the browser fetch Firebase at all.
       const [{ initializeApp }, { getAuth, onAuthStateChanged }] = await Promise.all([import("firebase/app"), import("firebase/auth")]);
       this.auth = getAuth(initializeApp(firebase));
-      onAuthStateChanged(this.auth, (user) => this.set(user ? { state: "in", name: user.displayName ?? user.email ?? "", error: "" } : { state: "out", name: "", runs: undefined }));
+      onAuthStateChanged(this.auth, (user) => {
+        if (!user) return this.set({ state: "out", name: "", email: "", runs: undefined });
+        this.set({ state: this.state === "in" ? "in" : "loading", name: user.displayName ?? user.email ?? "", email: user.email ?? "", error: "" });
+        void this.fetch("/api/me")
+          .then(async (response) => (response.ok ? response.json() : Promise.reject(new Error(await response.text()))))
+          .then(({ role }) => this.set({ state: role ? "in" : "stranger" }))
+          .catch((error) => this.set({ state: "out", error: (error as Error).message }));
+      });
     } catch (error) {
       this.set({ state: "out", error: (error as Error).message });
     }
@@ -66,7 +75,7 @@ class Session {
     const token = await this.auth?.currentUser?.getIdToken();
     const response = await fetch(path, { ...init, headers: { ...init.headers, ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
     const left = response.headers.get("X-Runs-Left");
-    if (left !== null) this.set({ runs: { left: Number(left), daily: Number(response.headers.get("X-Runs-Daily")) } });
+    if (left !== null) this.set({ runs: { left, daily: response.headers.get("X-Runs-Daily") ?? "" } });
     return response;
   }
 
@@ -76,10 +85,14 @@ class Session {
     return html`
       <main class="gate">
         <h1>jev2ui <small>describe a screen, get a mock, tap through it</small></h1>
-        ${this.state === "loading"
-          ? nothing
-          : html`<p>Anyone may come in. Signing in is how the models' time is shared out: everyone gets so many runs a day.</p>
-              <button @click=${() => this.signIn()}>Sign in with Google</button>`}
+        ${this.state === "out"
+          ? html`<p>Making things here spends the models' time, which is shared out by name: so many runs a day to each person on the list.</p>
+              <button @click=${() => this.signIn()}>Sign in with Google</button>`
+          : nothing}
+        ${this.state === "stranger"
+          ? html`<p>You are signed in as ${this.email}, which is not on the list of people who can make things here. Whoever sent you can have it added.</p>
+              <button @click=${() => this.signOut()}>Sign out</button>`
+          : nothing}
         ${this.error ? html`<p class="note bad">${this.error}</p>` : nothing}
       </main>
     `;
@@ -89,7 +102,9 @@ class Session {
   badge(): TemplateResult | typeof nothing {
     if (this.state !== "in") return nothing;
     return html`<span class="session">
-      ${this.runs ? html`<span class=${this.runs.left ? "" : "spent"} title="A screen made is one run. The day turns over at midnight UTC.">${this.runs.left} of ${this.runs.daily} runs left today</span>` : nothing}
+      ${this.runs && this.runs.daily !== "unlimited"
+        ? html`<span class=${this.runs.left === "0" ? "spent" : ""} title="A screen made is one run. The day turns over at midnight UTC.">${this.runs.left} of ${this.runs.daily} runs left today</span>`
+        : nothing}
       <span>${this.name}</span>
       <button class="link" @click=${() => this.signOut()}>sign out</button>
     </span>`;

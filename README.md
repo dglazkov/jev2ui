@@ -396,22 +396,40 @@ PROJECT=my-project ./deploy.sh      # the same, in a container (Dockerfile), on 
 
 The session is the browser's, the shelf of baked components included, so the process holds nothing that
 matters: designs already read, which are only a saving. It is kept to one instance to bound what a busy day
-can spend, and because the day's runs are counted there. Made photographs are kept in `.cache/photos`, or wherever `PHOTOS_DIR` says;
+can spend, not because a second would be wrong. Made photographs are kept in `.cache/photos`, or wherever `PHOTOS_DIR` says;
 on Cloud Run that is a mounted bucket, so they outlast the instance.
 
-### Signing in: a name to count against
+### Signing in: a name, a list, and a count
 
 Left alone, whoever has the URL spends the keys. With `FIREBASE_PROJECT` and `FIREBASE_API_KEY` set (the
-project's Firebase web app; Google enabled as a sign-in provider, the served domain authorized), both pages
-stand behind a Google sign-in. Nobody is turned away: the point of a name is that a day's runs can be counted
-against it. The browser asks `/api/config` whether to sign anyone in, fetches Firebase only if so, and sends
-the ID token with every request (`src/web/session.ts`); the server checks its signature against Google's keys
-and takes a run from that person's `DAILY_RUNS` (50 unless said) for each screen made, answering 429 when
-they are gone (`src/server/auth.ts`). What is left rides back in a header and shows beside the person's name.
-Photographs are served to anyone: an `<img>` cannot say who is asking, and their names are hashes.
+project's Firebase web app; Google enabled as a sign-in provider, the served domain authorized; a Firestore
+database the server's account can use), making things needs a name, and the name has to be on a list.
+The rule is that reading is open and spending is not: only the routes that reach a model ask who is asking.
 
-The count is the process's own. It forgets when the instance is replaced or idles away, so an allowance can
-be more generous than it says and is never short; and it is one more reason there is one instance.
+The browser asks `/api/config` whether to sign anyone in, fetches Firebase only if so, and sends the ID token
+with every request (`src/web/session.ts`). The server checks its signature against Google's keys, takes the
+address only if Google vouches for it, and looks it up (`src/server/auth.ts`) in the Firestore collection
+`access`: one document per grant, named by the pattern of addresses it is for.
+
+| document | fields | |
+|---|---|---|
+| `*@example.com` | `role: "maker"`, `runs: 50` | everyone there makes fifty screens a day |
+| `ann@example.com` | `role: "maker"`, `runs: null` | Ann, as many as she likes |
+| `bob@example.com` | `role: "none"` | Bob, though, not at all |
+| `me@my.org` | `role: "admin"` | may also edit the list (no page for that yet: the Firebase console is the editor) |
+
+`*` stands for anything (`*@example.com` does not cover `x@corp.example.com`; `*@*.example.com` does), and
+of the patterns an address fits, the one that says the most wins: a person's own line over their company's.
+A maker whose grant names no `runs` gets `DAILY_RUNS` (50 unless said); an admin, or `runs: null`, has no
+limit. The list is read again within a minute of an edit. Someone signed in and on no line of it is told so,
+and makes nothing (403).
+
+Limited or not is one role with a dial on it, and the dial is the count: each screen made adds one to today's
+figure in `people/<uid>`, in the same write that notes who they are and when they were last seen, and when
+the day's runs are gone the answer is 429. Firestore does the adding, so two requests at once cannot both
+read the old figure. What is left rides back in a header and shows beside the person's name. Browsers cannot
+reach the database (no rules are published for it); `src/server/store.ts` is the three REST calls used.
+Photographs are served to anyone: an `<img>` cannot say who is asking, and their names are hashes.
 
 ## Results so far
 
@@ -506,7 +524,8 @@ src/server/baseline.ts  Gemini writing A2UI directly
 src/server/validate.ts  schema and reference validation
 src/server/run.ts       event stream, stats, end-of-run validation
 src/server/http.ts      the routes: /api/design, /api/generate (Server-Sent Events), /api/photo, /api/config
-src/server/auth.ts      who is asking (a Firebase ID token), and what is left of their runs today
+src/server/auth.ts      who is asking (a Firebase ID token), what the access list grants them, what is left of their runs today
+src/server/store.ts     Firestore over REST: the access list and the day's counts
 src/web/session.ts      signing in with Google; the gate and the badge both pages show; fetch that says who is asking
 src/server/main.ts      the deployed server: the routes and the built front end (vite.config.ts mounts them in dev)
 src/web/app.ts          the design tool; compare.ts is the side-by-side page (both use @a2ui/lit's v0.9 renderer)

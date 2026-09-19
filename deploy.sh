@@ -5,13 +5,15 @@
 #   PROJECT=my-project FIREBASE_API_KEY=AIza... ./deploy.sh    # behind Google sign-in
 #
 # With FIREBASE_API_KEY (the web API key of the project's Firebase app, which is
-# not a secret; Google must be enabled as a sign-in provider, and the service's
-# domain authorized, in Firebase Authentication), everyone signs in and gets
-# DAILY_RUNS runs a day (src/server/auth.ts). It is said once: a later deploy
+# not a secret), making things takes a Google sign-in and a line on the access
+# list in Firestore (src/server/auth.ts). It is said once: a later deploy
 # without it leaves sign-in as it was. A service never given it has no login.
+# For that the project also needs: Google enabled as a sign-in provider and the
+# service's domain authorized, in Firebase Authentication; a Firestore database;
+# and roles/datastore.user for the service account.
 #
-# One instance at most: the day's runs are counted in the process, and it bounds
-# what a busy day can spend. The keys come from Secret Manager, and made
+# One instance at most, to bound what a busy day can spend: the process holds
+# nothing a second one would miss. The keys come from Secret Manager, and made
 # photographs are kept in a bucket mounted where PHOTOS_DIR says. The project
 # needs, once: secrets GEMINI_API_KEY and JEV_API_KEY, a bucket $PROJECT-photos,
 # and a service account jev2ui-run that can read the first and write the second.
