@@ -10,9 +10,48 @@ already separates structure (`updateComponents`, mostly closed-set choices) from
 
 > **Jev decides, Gemini writes, code assembles.**
 
-## Pipeline
+Three pipelines run side by side in the app:
 
-Structure never waits for text.
+- **Jobs** asks Jev only about the person (where they are in getting what they want, what done looks like,
+  stakes, worries, what they will choose on) and lets rules in code pick the screen pattern.
+- **Sections** asks Jev about the screen (which sections, which layouts).
+- **Baseline** has Gemini write A2UI directly.
+
+## Jobs pipeline
+
+The premise, tested in [docs/jtbd-probe.md](docs/jtbd-probe.md): Jev is good at reading a person's situation
+from a request and weak at design judgement, so ask it about the job and keep the design knowledge in code.
+
+1. **t = 0, in parallel.** Jev answers about 21 questions about the person in one request
+   (`src/server/job-profile.ts`). Gemini starts both possible openings, a header and a verdict; the loser is
+   cancelled.
+2. **Code picks a pattern** from the profile (`src/server/job-patterns.ts`), and says why in the trace:
+
+   | Job                                                  | Pattern                                                  |
+   | ---------------------------------------------------- | -------------------------------------------------------- |
+   | decided, everything stated ("Send $50 to Alex")      | confirm: what will happen, consequence, two ways out     |
+   | decided, details missing; or wants settings changed  | form, asking only for what is missing                    |
+   | checking on something, or about to say yes or no     | answer: verdict first, then evidence or records          |
+   | weighing a few, or wants one pick from a handful     | compare: cards side by side, attributes aligned          |
+   | looking around a large set                           | browse: a list to scan                                   |
+   | wants to understand one subject                      | article                                                  |
+   | mid-task                                             | guide: steps; terser and larger when urgent              |
+
+   Stage is the strongest signal but is overruled when other answers contradict it: "How do I make sourdough
+   starter?" reads as committing, but the person will be reading and done means a finished task, so it gets
+   a guide.
+3. **The rest of the profile shapes the pattern.** Irreversible stakes make the safe way out the emphasised
+   button; while deciding, neither is. A worry (cost, commitment, loss, doing it wrong, safety) adds one line
+   of reassurance written for that worry. Selection criteria choose which fields Gemini writes for each
+   option, and the strongest becomes the card's headline attribute ("Tonight 7:15 pm" for restaurants
+   *tonight*). Attention picks tiles or rows. When Jev is split between two jobs, the screen serves the
+   likelier and offers the other as a button.
+4. **Gemini writes each part**, briefed with the person's situation in words. Parts are written in parallel,
+   except that evidence waits for the verdict and is shown it, so the two cannot disagree.
+
+## Sections pipeline
+
+In both Jev pipelines structure never waits for text.
 
 1. **t = 0, in parallel.** Jev plans the surface from the prompt alone (one request, ~15 parallel
    questions): the screen's purpose, which sections it has (prose, media, facts, steps, collection, form,
@@ -59,21 +98,25 @@ run the eval with `GEMINI_RPM=15` to have it pace itself.
 
 ## Results so far
 
-One run of `npm run eval` (8 prompts, `gemini-3.5-flash-lite`, `jev-1.13.0`, a paid-tier Gemini key).
+One run of `npm run eval` (11 prompts, `gemini-3.5-flash-lite`, `jev-1.13.0`, a paid-tier Gemini key).
 "First text" is the moment the client has both a component tree and some text to show in it. Validity means
 every message passes the `@a2ui/web_core` v0.9 schemas, every component passes its catalog schema, and all
 child references resolve.
 
-|                          | Hybrid        | Baseline       |
-| ------------------------ | ------------- | -------------- |
-| First components sent    | 116–274 ms    | 2.7–7.1 s      |
-| First text               | 559–798 ms    | 2.7–7.1 s      |
-| Complete                 | 0.9–1.8 s     | 2.7–7.1 s      |
-| Gemini output tokens     | 99–329        | 939–2,861      |
-| Jev input tokens         | 2,200–5,500   | —              |
-| Valid A2UI               | 8 / 8         | 7 / 8          |
+|                          | Jobs          | Sections      | Baseline       |
+| ------------------------ | ------------- | ------------- | -------------- |
+| First components sent    | 115–298 ms    | 92–138 ms     | 2.8–6.7 s      |
+| First text               | 568–774 ms    | 547–726 ms    | 2.8–6.7 s      |
+| Complete                 | 1.1–1.7 s     | 0.8–1.7 s     | 2.8–6.7 s      |
+| Gemini output tokens     | 116–294       | 101–341       | 1,031–2,733    |
+| Jev input tokens         | 2,500–6,500   | 2,200–5,500   | —              |
+| Valid A2UI               | 11 / 11       | 11 / 11       | 10 / 11        |
 
-The hybrid's floor is Gemini's time to first token (about 0.5 s on this key, about 1 s on a free-tier key):
+The jobs profile is a slightly larger Jev request than the sections plan, which shows in first components.
+Whether job-driven screens are *better* screens is a judgement the table cannot make; open the app and
+compare.
+
+The floor for both Jev pipelines is Gemini's time to first token (about 0.5 s on this key, about 1 s on a free-tier key):
 the header is requested at t = 0, so first text lands one Gemini round trip after the prompt. Forms finish
 last, because fields arrive serially in one stream and each needs a Jev request (6 Jev requests for a
 five-field form).
@@ -90,7 +133,7 @@ rather than a benchmark.
 
 ## Known limits
 
-- The hybrid can only produce what its section grammar can express. The baseline is freer, and when it
+- The Jev pipelines can only produce what their patterns or sections can express. The baseline is freer, and when it
   is valid it is often richer.
 - Pictures are seeded placeholders from picsum.photos in both pipelines; they are unrelated to the subject.
 - Sections are written by separate requests that do not see each other, so they can disagree on invented
@@ -102,13 +145,19 @@ rather than a benchmark.
 ## Layout
 
 ```
+src/server/job-profile.ts   questions about the person, and the profile read from the answers
+src/server/job-patterns.ts  rules from job to pattern; each pattern's parts and component tree
+src/server/jobs.ts          the jobs pipeline
+src/server/content.ts   per-part Gemini streams into the data model (shared)
+src/server/form.ts      a form that grows field by field (shared)
 src/server/plan.ts      Jev questions from the prompt, section grammar, Gemini content schema
 src/server/design.ts    Jev questions from the content (per-field controls, primary action)
 src/server/emit.ts      deterministic A2UI component builders
-src/server/hybrid.ts    the hybrid pipeline
+src/server/hybrid.ts    the sections pipeline
 src/server/baseline.ts  Gemini writing A2UI directly
 src/server/validate.ts  schema and reference validation
 src/server/run.ts       event stream, stats, end-of-run validation
 src/web/                Lit app using @a2ui/lit's v0.9 renderer
 src/eval.ts             CLI comparison
+src/probe/jtbd.ts       can Jev see jobs? (docs/jtbd-probe.md)
 ```

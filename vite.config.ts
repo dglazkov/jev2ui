@@ -9,9 +9,9 @@ function api(): Plugin {
         const url = new URL(req.url ?? "", "http://localhost");
         const prompt = url.searchParams.get("prompt")?.trim();
         const mode = url.searchParams.get("mode");
-        if (!prompt || (mode !== "hybrid" && mode !== "baseline")) {
+        if (!prompt || (mode !== "jobs" && mode !== "hybrid" && mode !== "baseline")) {
           res.statusCode = 400;
-          res.end("expected ?mode=hybrid|baseline&prompt=...");
+          res.end("expected ?mode=jobs|hybrid|baseline&prompt=...");
           return;
         }
         res.writeHead(200, {
@@ -22,7 +22,8 @@ function api(): Plugin {
         // Loaded through Vite so edits to the pipelines apply without a restart.
         const { runHybrid } = await server.ssrLoadModule("/src/server/hybrid.ts");
         const { runBaseline } = await server.ssrLoadModule("/src/server/baseline.ts");
-        const events = mode === "hybrid" ? runHybrid(prompt) : runBaseline(prompt);
+        const { runJobs } = await server.ssrLoadModule("/src/server/jobs.ts");
+        const events = mode === "jobs" ? runJobs(prompt) : mode === "hybrid" ? runHybrid(prompt) : runBaseline(prompt);
         let open = true;
         req.on("close", () => (open = false));
         for await (const event of events) {

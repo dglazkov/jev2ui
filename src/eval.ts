@@ -1,18 +1,22 @@
-// Runs prompts through both pipelines and prints a comparison table.
-//   npm run eval                      all built-in prompts, both modes
+// Runs prompts through all pipelines and prints a comparison table.
+//   npm run eval                      all built-in prompts, all modes
 //   npm run eval -- "a prompt" -v     one prompt, with decisions and messages
 
+import { runJobs } from "./server/jobs.js";
 import { runHybrid } from "./server/hybrid.js";
 import { runBaseline } from "./server/baseline.js";
 import { GEMINI_MODEL, JEV_MODEL, geminiRequestTimes } from "./server/models.js";
 import type { PipelineEvent, RunStats } from "./shared/events.js";
 
 const PROMPTS = [
+  "Delete my account and all of its data",
+  "What happens to my data if I delete my account?",
+  "Am I going to be surprised by my electricity bill this month?",
+  "Send $50 to Alex",
+  "My car won't start, what do I do?",
   "Sign-up form for a weekend pottery workshop",
   "Find me three Italian restaurants near downtown Seattle for tonight",
   "How do I make sourdough starter from scratch?",
-  "Confirm deleting my account and all of its data",
-  "Show a summary of my electricity usage this month",
   "Tell me about the Golden Gate Bridge",
   "Settings for notification preferences in a chat app",
   "Pick a movie for family night",
@@ -58,7 +62,7 @@ async function consume(events: AsyncGenerator<PipelineEvent>): Promise<{ stats?:
 console.log(`Gemini: ${GEMINI_MODEL}   Jev: ${JEV_MODEL}\n`);
 const rows: Array<Record<string, unknown>> = [];
 for (const prompt of prompts) {
-  for (const [mode, run] of [["hybrid", runHybrid], ["baseline", runBaseline]] as const) {
+  for (const [mode, run] of [["jobs", runJobs], ["hybrid", runHybrid], ["baseline", runBaseline]] as const) {
     await pace();
     if (verbose) console.log(`\n=== ${mode}: ${prompt}`);
     const { stats, problems } = await consume(run(prompt));

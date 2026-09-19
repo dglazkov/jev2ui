@@ -29,7 +29,7 @@ export type PipelineEvent =
   | { type: "error"; at: number; message: string };
 
 export interface RunStats {
-  mode: "hybrid" | "baseline";
+  mode: "jobs" | "hybrid" | "baseline";
   totalMs: number;
   /** Time until the first updateComponents message left the server. */
   firstComponentsMs: number | null;

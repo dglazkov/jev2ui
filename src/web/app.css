@@ -70,8 +70,8 @@ h1 small {
 
 main {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
   align-items: start;
 }
 
@@ -199,7 +199,7 @@ jev2ui-run {
   color: #a3181f;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   main {
     grid-template-columns: 1fr;
   }

@@ -1,5 +1,7 @@
 import type { A2uiMessage, PipelineEvent, RunStats } from "../shared/events.js";
 import { validateMessages } from "./validate.js";
+import { askJev } from "./models.js";
+import type { Questions } from "@typesafe-ai/sdk";
 
 export const A2UI_VERSION = "v0.9";
 export const CATALOG_ID = "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json";
@@ -67,6 +69,14 @@ export class Run {
   private carriesText(body: Record<string, any>): boolean {
     if ("updateDataModel" in body) return hasText(body.updateDataModel.value);
     return this.stats.mode === "baseline" && "updateComponents" in body;
+  }
+
+  /** One Jev request, counted in this run's stats. */
+  async askJev(stage: string, state: unknown, questions: Questions) {
+    const result = await askJev(state, questions);
+    this.stats.jevCalls++;
+    this.stats.jevInputTokens += result.inputTokens;
+    return { ...result, stage };
   }
 
   trace(event: Omit<Extract<PipelineEvent, { type: "trace" }>, "type" | "at">) {

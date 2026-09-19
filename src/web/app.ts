@@ -7,13 +7,15 @@ import { renderMarkdown } from "@a2ui/markdown-it";
 import type { Decision, PipelineEvent, RunStats } from "../shared/events.js";
 
 const EXAMPLES = [
+  "Delete my account and all of its data",
+  "What happens to my data if I delete my account?",
+  "Am I going to be surprised by my electricity bill this month?",
+  "Send $50 to Alex",
+  "My car won't start, what do I do?",
   "Sign-up form for a weekend pottery workshop",
   "Find me three Italian restaurants near downtown Seattle for tonight",
   "How do I make sourdough starter from scratch?",
-  "Confirm deleting my account and all of its data",
-  "Show a summary of my electricity usage this month",
   "Tell me about the Golden Gate Bridge",
-  "Settings for notification preferences in a chat app",
 ];
 
 type Mode = RunStats["mode"];
@@ -189,7 +191,8 @@ export class App extends LitElement {
         ${EXAMPLES.map((example) => html`<button @click=${() => this.go(example)}>${example}</button>`)}
       </div>
       <main>
-        <jev2ui-run mode="hybrid" heading="Hybrid: Jev + Gemini content"></jev2ui-run>
+        <jev2ui-run mode="jobs" heading="Jobs: Jev profiles the person"></jev2ui-run>
+        <jev2ui-run mode="hybrid" heading="Sections: Jev picks the parts"></jev2ui-run>
         <jev2ui-run mode="baseline" heading="Baseline: Gemini writes A2UI"></jev2ui-run>
       </main>
     `;

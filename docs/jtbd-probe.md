@@ -76,6 +76,19 @@ A job profile is cheap, fast and discriminating enough to drive layout. A first 
 Selection criteria (`by_price`, `by_time`, ...) can choose which fields Gemini writes per item and which one
 becomes the card's badge, so Jev would shape the content schema and not only the layout.
 
+## What happened next
+
+The mapping was built as the jobs pipeline (`src/server/jobs.ts`). Two things learned while building it:
+
+- Stage alone misfires. "How do I make sourdough starter?" reads as committing (0.55–0.62), which made it a
+  form. Other answers in the same profile contradicted that (the person will be reading; done means a
+  finished task), so the rules now overrule stage when they do. One signal is a guess; agreement between
+  independent signals is evidence.
+- `configured` was worded "Something now behaves the way I want it to", which a car that won't start also
+  satisfies. It now says "A product's settings or preferences are now set the way I like them."
+
+Repeated runs of this probe differ by one or two prompts: close calls (0.49 against 0.51) flip.
+
 ## Caveats
 
 Forty prompts, one labeller, one model version, no context beyond the prompt. The labels and the questions

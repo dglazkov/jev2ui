@@ -8,108 +8,11 @@
 //   npm run probe:jtbd            summary tables
 //   npm run probe:jtbd -- -v      plus the full profile of every prompt
 
-import { choice, noul, score, type Questions } from "@typesafe-ai/sdk";
 import { askJev, JEV_MODEL } from "../server/models.js";
-
-const CONTEXT = "A person sent user_request to an assistant. Judge the person's situation, not the wording.";
-const ask = (question: string) => ({ context: CONTEXT, question });
-
-// Options are first-person job statements: matching a request to one is a single semantic hop.
-const CHOICES = {
-  stage: {
-    q: "Where is the person in getting what they want?",
-    options: {
-      // A reworded pair ("I don't know what the options are yet" / "a small number of options to weigh") was
-      // tried and was worse: "My car won't start, what do I do?" became exploring.
-      exploring: "I don't have a particular thing in mind yet. Show me what is out there.",
-      comparing: "I have a few candidates in mind and want to weigh them against each other.",
-      deciding: "I am about to say yes or no to one specific thing, and want to be sure first.",
-      committing: "I have decided. Let me give the details or the go-ahead and make it happen.",
-      doing: "I am in the middle of a hands-on task and need guidance while I do it.",
-      checking: "Something already happened or is under way. I want to see how it stands.",
-    },
-  },
-  done: {
-    q: "What is true for the person when this goes well?",
-    options: {
-      know: "I understand something I did not understand before.",
-      picked: "I have settled on one option out of several.",
-      handed_over: "I have given my details or my go-ahead, and the thing is now in motion.",
-      finished_task: "I have completed a hands-on task out in the real world.",
-      reassured: "I have stopped worrying about something.",
-      configured: "Something now behaves the way I want it to.",
-    },
-  },
-  // v1 asked "who holds the information that matters", which Jev read literally: my spending is *my* information.
-  flow: {
-    q: "Once the assistant responds, what will the person mostly be doing?",
-    options: {
-      system_to_person: "Reading or looking at what the assistant shows me.",
-      person_to_system: "Typing, picking or toggling things myself.",
-      both: "Reading first, then entering or confirming something.",
-    },
-  },
-  // v1 asked "how many things is the person dealing with": someone shopping for a laptop wants *one* laptop.
-  cardinality: {
-    q: "How many separate items would the assistant need to show the person?",
-    options: {
-      one: "A single item: one record, one answer, one thing.",
-      few: "Two to five comparable options, side by side.",
-      many: "A longer list to browse or narrow down.",
-      none: "No items: an explanation, a procedure or a control.",
-    },
-  },
-} as const;
-
-const SCORES = {
-  stakes: {
-    q: "How hard would it be for the person to undo what happens next?",
-    levels: [
-      "Nothing to undo. They are only looking.",
-      "Easily undone or changed later.",
-      "Costly to undo: money, time or a commitment to others is involved.",
-      "Cannot be undone.",
-    ],
-  },
-  attention: {
-    q: "How much attention does the person want to spend on the answer?",
-    levels: [
-      "A glance: one or two numbers or words.",
-      "A scan: skim a short list or a few facts.",
-      "A read: a few paragraphs.",
-      "A study: careful, extended attention.",
-    ],
-  },
-  urgency: {
-    q: "How soon does the person need this resolved?",
-    levels: ["No time pressure.", "Within a day or so.", "Right now."],
-  },
-} as const;
-
-const NOULS = {
-  habitual: "Is this something the person has probably done many times before?",
-  anx_cost: "Is the person likely worried about how much this will cost?",
-  anx_commitment: "Is the person likely worried about being locked into something?",
-  anx_loss: "Is the person likely worried about losing something they cannot get back?",
-  anx_mistake: "Is the person likely worried about doing it wrong?",
-  anx_safety: "Is the person likely worried about their safety, health or security?",
-  by_price: "If the person is choosing among options, will price matter to the choice?",
-  by_quality: "If the person is choosing among options, will ratings or quality matter to the choice?",
-  by_location: "If the person is choosing among options, will distance or location matter to the choice?",
-  by_time: "If the person is choosing among options, will date, time or availability matter to the choice?",
-  by_looks: "If the person is choosing among options, will appearance matter to the choice?",
-} as const;
+import { CHOICES, NOULS, SCORES, probeQuestions } from "../server/job-profile.js";
 
 type ChoiceKey = keyof typeof CHOICES;
 type Labels = { [K in ChoiceKey]: keyof (typeof CHOICES)[K]["options"] } & { highStakes: boolean };
-
-function questions(): Questions {
-  const out: Questions = {};
-  for (const [key, { q, options }] of Object.entries(CHOICES)) out[key] = choice(ask(q), options);
-  for (const [key, { q, levels }] of Object.entries(SCORES)) out[key] = score(ask(q), levels as unknown as [string, string, ...string[]]);
-  for (const [key, q] of Object.entries(NOULS)) out[key] = noul(ask(q));
-  return out;
-}
 
 // Minimal pairs: same topic, different job. Labels are one person's judgement, written before running.
 const L = (stage: Labels["stage"], done: Labels["done"], flow: Labels["flow"], cardinality: Labels["cardinality"], highStakes = false): Labels =>
@@ -208,7 +111,7 @@ async function inBatches<T, R>(items: T[], size: number, work: (item: T) => Prom
 
 const verbose = process.argv.includes("-v");
 const prompts = PAIRS.flatMap((pair) => [pair.a, pair.b]);
-const qs = questions();
+const qs = probeQuestions();
 let tokens = 0;
 const latencies: number[] = [];
 const profiles = await inBatches(prompts, 5, async ([prompt]) => {

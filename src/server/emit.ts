@@ -34,13 +34,13 @@ export interface FieldDesign {
   email: boolean;
 }
 
-const path = (p: string) => ({ path: p });
+export const path = (p: string) => ({ path: p });
 
 // Input values live outside /form, so streaming updates to /form never clobber them.
 const VALUES_PATH = "/values";
 export const fieldKey = (i: number) => `f${i}`;
 export const valuePath = (i: number) => `${VALUES_PATH}/${fieldKey(i)}`;
-const text = (id: string, p: string, variant?: string): Component => ({
+export const text = (id: string, p: string, variant?: string): Component => ({
   id,
   component: "Text",
   text: path(p),
@@ -53,18 +53,7 @@ const text = (id: string, p: string, variant?: string): Component => ({
  * one child at a time as content streams in.
  */
 const SKELETON_BUILDERS: Record<Section, (plan: Plan) => Component[]> = {
-  form: () => [
-    formContainer(0),
-    text("form_heading", "/form/heading", "h4"),
-    {
-      id: "form_submit",
-      component: "Button",
-      child: "form_submit_label",
-      variant: "primary",
-      action: { event: { name: "submitForm", context: { values: path(VALUES_PATH) } } },
-    },
-    text("form_submit_label", "/form/submitLabel"),
-  ],
+  form: () => formShell(),
 
   actions: () => [actionsContainer(0)],
 
@@ -181,6 +170,22 @@ function shell(plan: Plan, sectionIds: string[]): Component[] {
 /** Components that depend only on the plan. Sent before Gemini has produced anything. */
 export function skeleton(plan: Plan): Component[] {
   return [...shell(plan, plan.sections), ...plan.sections.flatMap((s) => SKELETON_BUILDERS[s](plan))];
+}
+
+/** An empty form: heading and submit button, waiting for fields to be attached. */
+export function formShell(): Component[] {
+  return [
+    formContainer(0),
+    text("form_heading", "/form/heading", "h4"),
+    {
+      id: "form_submit",
+      component: "Button",
+      child: "form_submit_label",
+      variant: "primary",
+      action: { event: { name: "submitForm", context: { values: path(VALUES_PATH) } } },
+    },
+    text("form_submit_label", "/form/submitLabel"),
+  ];
 }
 
 /** The form container with its first `count` fields attached. */
