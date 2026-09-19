@@ -471,16 +471,13 @@ export class App extends LitElement {
                 (d) => html`<button role="radio" aria-checked=${this.device === d} @click=${() => (this.device = d)}>${d}</button>`,
               )}
             </div>
+            <!-- Every pill is there from the start, empty until its figure arrives, so the shelf never re-wraps and pushes the mock down. -->
             <div class="stats">
-              ${here
-                ? html`<button class="again" ?disabled=${here.running} @click=${() => this.regenerate()} title="Make this page again" aria-label="Regenerate this page">↻</button>`
-                : nothing}
-              ${here?.firstPaintMs !== undefined ? html`<span class="pill">first UI ${here.firstPaintMs} ms</span>` : nothing}
-              ${s
-                ? html`<span class="pill">done ${s.totalMs} ms</span>
-                    <span class="pill">${s.jevCalls} Jev · ${s.geminiOutputTokens} Gemini tok</span>
-                    <span class="pill ${s.valid ? "good" : "bad"}">${s.valid ? "valid tree" : "invalid tree"}</span>`
-                : nothing}
+              <button class="again" ?disabled=${!here || here.running} @click=${() => this.regenerate()} title="Make this page again" aria-label="Regenerate this page">↻</button>
+              <span class="pill first ${here?.firstPaintMs === undefined ? "pending" : ""}">first UI ${here?.firstPaintMs ?? "–"} ms</span>
+              <span class="pill total ${s ? "" : "pending"}">done ${s?.totalMs ?? "–"} ms</span>
+              <span class="pill cost ${s ? "" : "pending"}">${s?.jevCalls ?? "–"} Jev · ${s?.geminiOutputTokens ?? "–"} Gemini tok</span>
+              <span class="pill verdict ${s ? (s.valid ? "good" : "bad") : "pending"}">${s && !s.valid ? "invalid tree" : "valid tree"}</span>
             </div>
             <div class="exports">
               <button ?disabled=${!painted} @click=${() => this.copy("a2ui", JSON.stringify(here!.messages, null, 2))}>

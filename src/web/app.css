@@ -279,11 +279,37 @@ h2 small {
 }
 
 .pill {
+  box-sizing: border-box;
   padding: 2px 8px;
   font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: center;
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 999px;
+}
+
+/* Room for the widest figure each pill will hold, so that a figure arriving moves nothing. */
+.pill.first {
+  min-width: 16ch;
+}
+
+.pill.total {
+  min-width: 17ch;
+}
+
+.pill.cost {
+  min-width: 25ch;
+}
+
+.pill.verdict {
+  min-width: 11ch;
+}
+
+.pill.pending {
+  color: var(--muted);
+  opacity: 0.55;
 }
 
 .pill.good {
