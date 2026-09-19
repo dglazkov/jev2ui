@@ -85,7 +85,15 @@ model every picture on a mock is of the thing beside it (`src/server/mock/pictur
 6. **A subject chosen before there were words is only a guess.** "Order #4821" does not say the order is
    headphones. When Jev's answer in the plan is unsure (p < 0.75), it is asked again about each item, with the
    item's words, before anything is looked up or shot.
-7. **How photographs look is the design's decision, and it is paint.** Natural, muted, black-and-white or
+7. **Drawn or photographed is the design's decision too.** A bedtime-story app should not show photographs,
+   and asked whether it should, Jev rightly said no, which used to leave it with no pictures at all. Now
+   `illustrated` is one of the looks a design can have ("drawn and not photographed: the product is for
+   children, or what it shows is imagined"), and Jev gives it to bedtime stories, phonics lessons and a fantasy
+   RPG at p = 1.00, and to no restaurant. An illustrated design passes over every photograph in the library and
+   has its pictures drawn, in one hand that a rule picks from the app's description (picture book, concept art
+   or editorial), so every screen of the app matches. Illustrations are shelved apart from photographs. Unlike
+   the treatments this is not paint: a remix never changes it, and a mock made in the other medium is stale.
+8. **How photographs look is the design's decision, and it is paint.** Natural, muted, black-and-white or
    duotone in the brand's colour: Jev chooses it when it mixes a design, reads it from a supplied DESIGN.md,
    and a remix can draw another. Pictures are always made in natural colour and treated in CSS, so changing
    the design fetches nothing.
@@ -203,7 +211,7 @@ becomes a complete design:
 | warmth of neutrals | Score | how far backgrounds and greys lean to cream or steel |
 | roundness, whitespace | Score | the radius scale; the spacing scale and body size |
 | dark interface? photographs? cards? | Noul | palette polarity; structure |
-| how photographs look | Choice | natural, muted, black-and-white or duotone: a CSS filter, and for a duotone two inks mixed from the accent |
+| how pictures look | Choice | natural, muted, black-and-white or duotone: a CSS filter, and for a duotone two inks mixed from the accent. Or illustrated: the pictures are drawn |
 | typefaces, depth | Choice | one of nine Google Fonts pairings; shadow, outline or tonal |
 
 "Plant care reminders for a gardening app" comes out green (p = 1.00), cream, humanist and softly rounded;

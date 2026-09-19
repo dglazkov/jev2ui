@@ -124,8 +124,8 @@ const BLOCK_QUESTIONS: Record<Block, { q: string; yes: string; no: string }> = {
     no: "Nothing unusual is going on; the screen is business as usual.",
   },
   hero: {
-    q: "Should a large photograph lead this screen?",
-    yes: "The subject is one thing a person can picture: a place, a dish, a recipe, a product, a property, an animal, a trip, an event, a class, a film, something being made.",
+    q: "Should a large picture lead this screen?",
+    yes: "The subject is one thing a person can picture: a place, a dish, a recipe, a product, a property, an animal, a trip, an event, a class, a film, a story, a character, something being made.",
     no: "The subject has no look: an order, an account, a transaction, a message, a setting, a set of figures. Or the screen is about many things rather than one.",
   },
   filters: {
@@ -180,7 +180,7 @@ const BLOCK_QUESTIONS: Record<Block, { q: string; yes: string; no: string }> = {
 /** Material 3 list item: the leading slot says what kind of thing each item is. */
 const LEADING = {
   avatar: "Each item is a person or an account.",
-  thumbnail: "Each item is something the app would have a photograph of: a product, a dish, a recipe, a property, a place, a trip, an animal, a film, an album, an article, an event, a class or a course.",
+  thumbnail: "Each item is something the app would have a picture of: a product, a dish, a recipe, a property, a place, a trip, an animal, a film, an album, a story, an article, an event, a class or a course.",
   icon: "Each item is a record with nothing to photograph, which a small symbol can stand for: a device, a file, a transaction, a reminder, a task, a category.",
   number: "The items are ranked or ordered and their position matters.",
   none: "Plain rows of text such as messages, notes or headlines.",
@@ -285,6 +285,8 @@ export interface ScreenPlan {
   pictures: { hero: PictureSubject; items: PictureSubject };
   /** Set by the design, not by the prompt. */
   imagery: boolean;
+  /** The design's pictures are drawn and not photographed. */
+  illustrated: boolean;
   icons: boolean;
   contained: boolean;
 }
@@ -312,8 +314,8 @@ export function planQuestions(): Questions {
       true: "Usage, spending, revenue, health or performance figures compared with yesterday, last week or a target.",
       false: "Fixed figures, such as counts or specifications, with nothing to compare against.",
     }),
-    hero_subject: choice(ask("If a large photograph leads this screen, what is it a photograph of?"), SUBJECT_OPTIONS),
-    item_subject: choice(ask("If each item on this screen has its own photograph, what are those photographs of?"), SUBJECT_OPTIONS),
+    hero_subject: choice(ask("If a large picture leads this screen, what is it a picture of?"), SUBJECT_OPTIONS),
+    item_subject: choice(ask("If each item on this screen has its own picture, what are those pictures of?"), SUBJECT_OPTIONS),
     screen_icon: choice(ask("Which symbol best stands for what this screen is about?"), ICON_OPTIONS),
     facts_total: noul(ask("If the screen shows label-and-value details, do they add up to a total on the last line?"), {
       true: "An order summary, a bill, a receipt or a cost breakdown.",
@@ -418,6 +420,7 @@ export function readPlan(answers: Record<string, any>, known: { topLevel?: boole
     symbol: readIcon(answers.screen_icon) ?? "image",
     pictures,
     imagery: true,
+    illustrated: false,
     icons: true,
     contained: true,
   };
@@ -428,9 +431,10 @@ export function readPlan(answers: Record<string, any>, known: { topLevel?: boole
 }
 
 /** What a design's prose rules out is taken out of the plan. Returns what changed, for the trace. */
-export function applyDesign(plan: ScreenPlan, look: { imagery: boolean; icons: boolean; contained: boolean }): { plan: ScreenPlan; overruled: string[] } {
+export function applyDesign(plan: ScreenPlan, look: { imagery: boolean; icons: boolean; contained: boolean; treatment?: string }): { plan: ScreenPlan; overruled: string[] } {
   const overruled: string[] = [];
-  const next: ScreenPlan = { ...plan, list: { ...plan.list }, ...look };
+  const { imagery, icons, contained } = look;
+  const next: ScreenPlan = { ...plan, list: { ...plan.list }, imagery, icons, contained, illustrated: look.treatment === "illustrated" };
   if (!look.imagery) {
     if (next.blocks.includes("hero")) overruled.push("no lead photograph");
     next.blocks = next.blocks.filter((b) => b !== "hero");

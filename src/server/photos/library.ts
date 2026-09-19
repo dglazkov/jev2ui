@@ -20,6 +20,8 @@ export interface Photo {
   alt: string;
   words: string[];
   subjects: string[];
+  /** An illustration and not a photograph. A design shows one or the other, never a mix. */
+  drawn?: boolean;
 }
 
 let stock: Photo[] | undefined;
@@ -50,8 +52,8 @@ const SHELF = 3;
  * caption shares a word with it. A rare word counts for more than a common one. Ties fall differently for different
  * text, so that eight items with nothing to tell them apart are not all offered the same five photographs.
  */
-export function shortlist(subject: string, text: string, count: number, without: ReadonlySet<string> = new Set()): Photo[] {
-  const photos = library();
+export function shortlist(subject: string, text: string, count: number, without: ReadonlySet<string> = new Set(), drawn = false): Photo[] {
+  const photos = library().filter((photo) => !!photo.drawn === drawn);
   const seen = new Map<string, number>();
   const wordsOf = new Map<Photo, Set<string>>();
   for (const photo of photos) {

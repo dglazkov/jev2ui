@@ -67,6 +67,7 @@ export const SUBJECTS = {
   transit: { criteria: "Getting there: planes, trains, boats, airports, stations, a journey or a ticket.", shot: "A travel photograph of the plane, train, boat or station." },
   book: { criteria: "Books and reading: a library, a bookshop, a reading list, study, stationery, writing.", shot: "A still life: the book or the stationery on a table or a shelf, in warm light." },
   music: { criteria: "Music: instruments, records, albums, a studio, a gig, a playlist.", shot: "A music photograph: the instrument, the record or the performer, in moody stage or studio light." },
+  story: { criteria: "Something told or imagined: a story, a fairy tale, a chapter, a character, a game world, a dream, a guided meditation.", shot: "One scene from it: the main character in their setting, in the middle of a moment, with room around them." },
   film: { criteria: "Something to watch: films, series, shows, videos, a cinema.", shot: "A cinematic still in widescreen: one dramatic, atmospheric frame from the story, with no titles." },
   art: { criteria: "Art and making: paintings, illustration, sculpture, galleries, crafts, pottery, design work.", shot: "The artwork or the craft piece, shown plainly, as in a gallery or on the maker's bench." },
   tools: { criteria: "Work with the hands: tools, DIY, repairs, construction, a workshop, gardening kit, machinery.", shot: "The tools or the job in a workshop or on site, in practical light." },

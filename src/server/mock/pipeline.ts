@@ -63,7 +63,7 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
   return run.drive(async () => {
     const streams = new ContentStreams(run, surfaceId);
     const decorations = new Decorations();
-    const pictures = new Pictures(run, prompt);
+    const pictures = new Pictures(run, prompt, journey?.app ?? prompt);
     let plan: ScreenPlan | undefined;
 
     /** Runs a refinement, then re-sends the part so the answers reach the screen. */
@@ -158,6 +158,7 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
     });
     const designed = applyDesign(read.plan, look);
     plan = designed.plan;
+    pictures.drawn = plan.illustrated;
     if (designed.overruled.length) run.trace({ stage: `${design.name} overrules the plan: ${designed.overruled.join(", ")}`, ms: 0 });
 
     run.send({ createSurface: { surfaceId, catalogId: KIT_CATALOG_ID } });

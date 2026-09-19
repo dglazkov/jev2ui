@@ -69,8 +69,11 @@ const readable = (on: string) => (contrast("#000000", on) >= contrast("#ffffff",
 export const ROLES = ["page", "card", "text", "muted", "accent", "border"] as const;
 export type Role = (typeof ROLES)[number];
 
-/** How photographs are shown. It is paint and not structure: the same picture serves every treatment, so changing it fetches nothing. */
-export const TREATMENTS = ["natural", "muted", "mono", "duotone"] as const;
+/**
+ * How pictures are shown. The four treatments of a photograph are paint: the same picture serves them all, so changing
+ * one fetches nothing. `illustrated` is another medium: the pictures are drawn, and a screen made with photographs is stale.
+ */
+export const TREATMENTS = ["natural", "muted", "mono", "duotone", "illustrated"] as const;
 export type Treatment = (typeof TREATMENTS)[number];
 
 export interface DesignRead {
@@ -119,6 +122,7 @@ const TREATMENT: Record<Treatment, string> = {
   muted: "Softened: desaturated, faded or toned down, so that they sit quietly on the page.",
   mono: "In black and white, greyscale or monochrome.",
   duotone: "Tinted, duotone, or washed in one of the brand's colours.",
+  illustrated: "The file asks for illustrations, drawings or artwork in place of photographs.",
 };
 
 function questions(colorNames: string[]): Questions {
@@ -131,10 +135,10 @@ function questions(colorNames: string[]): Questions {
   }
   out.elevation = choice(ask("How does this design system show that one element sits above another?"), ELEVATION);
   out.imagery = noul(ask("Does this design system allow photographs on a screen?"), {
-    true: "Photos or illustrations are welcome, encouraged, or not mentioned at all.",
-    false: "The file says not to use photographs or images.",
+    true: "Photographs or illustrations are welcome, encouraged, or not mentioned at all.",
+    false: "The file says not to use pictures of any kind.",
   });
-  out.treatment = choice(ask("How does this design system want photographs to look?"), TREATMENT);
+  out.treatment = choice(ask("How does this design system want pictures to look?"), TREATMENT);
   out.icons = noul(ask("Does this design system allow icons on a screen?"), {
     true: "Icons are welcome, encouraged, or not mentioned at all.",
     false: "The file says not to use icons or pictograms.",
@@ -260,7 +264,7 @@ export function resolveDesign(design: Design, answers: Record<string, any> | nul
   if (answers && imagery) {
     const [top, p] = ranked(answers.treatment)[0] as [Treatment, number];
     treatment = p >= 0.5 ? top : "natural";
-    decisions.push({ id: "treatment", question: "how photographs look", answer: treatment, p, ...(treatment !== top ? { note: `Jev leaned to "${top}", not firmly enough` } : {}) });
+    decisions.push({ id: "treatment", question: "how pictures look", answer: treatment, p, ...(treatment !== top ? { note: `Jev leaned to "${top}", not firmly enough` } : {}) });
   }
   return {
     colors: colors as DesignRead["colors"],
@@ -292,4 +296,4 @@ export function readDesign(design: Design): Promise<DesignRead> {
 }
 
 /** The decisions that change the component tree rather than its paint. */
-export const structureKey = (read: DesignRead) => `${read.imagery}|${read.icons}|${read.contained}`;
+export const structureKey = (read: DesignRead) => `${read.imagery}|${read.icons}|${read.contained}|${read.treatment === "illustrated"}`;

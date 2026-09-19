@@ -151,6 +151,10 @@ const PHOTO_LOOK: Record<Treatment, { criteria: string; prose: string }> = {
     criteria: "Washed in the brand's colour: the pictures are atmosphere and not merchandise. Music, events, sport, nightlife, technology, communities.",
     prose: "Show photographs as duotones, washed in the primary colour.",
   },
+  illustrated: {
+    criteria: "Drawn and not photographed: the product is for children, or what it shows is imagined and no camera could capture it. Stories, characters, fairy tales, games, fantasy, dreams, lessons for the young.",
+    prose: "Use illustrations, never photographs: warm and hand-drawn, as in a picture book.",
+  },
 };
 
 function questions(): Questions {
@@ -162,11 +166,11 @@ function questions(): Questions {
     }),
     type: choice(ask("Which typefaces suit this product?"), Object.fromEntries(Object.entries(TYPE).map(([k, v]) => [k, v.criteria]))),
     elevation: choice(ask("How should this product show that a card sits above the page?"), Object.fromEntries(Object.entries(ELEVATION).map(([k, v]) => [k, v.criteria]))),
-    photos: noul(ask("Would photographs belong on this product's screens?"), {
-      true: "Something in the product has a look: places, food, products, animals, activities, events, or people who are chosen, met or followed.",
-      false: "Nothing in the product has a look: it is figures, code, documents, system settings or infrastructure, and a photograph could only be decoration.",
+    photos: noul(ask("Would pictures, photographed or drawn, belong on this product's screens?"), {
+      true: "Something in the product has a look, or is imagined: places, food, products, animals, activities, events, people who are chosen or followed, stories, characters, games.",
+      false: "Nothing in the product has a look: it is figures, code, documents, system settings or infrastructure, and a picture could only be decoration.",
     }),
-    photo_look: choice(ask("If this product's screens show photographs, how should they look?"), Object.fromEntries(Object.entries(PHOTO_LOOK).map(([k, v]) => [k, v.criteria]))),
+    photo_look: choice(ask("If this product's screens show pictures, how should they look?"), Object.fromEntries(Object.entries(PHOTO_LOOK).map(([k, v]) => [k, v.criteria]))),
     cards: noul(ask("Should this product group content into cards?"), {
       true: "Yes: separate objects, each in its own container.",
       false: "No: content flows on the page like a document, separated by whitespace and rules.",
@@ -276,8 +280,17 @@ function build(brief: string, asked: Awaited<ReturnType<typeof askJev>>, seed: n
   const unit = dial([4, 6, 8, 10, 12], rate("air", "whitespace", (l) => `${dial([4, 6, 8, 10, 12], l).toFixed(0)}px unit`));
   const type = TYPE[pick("type", "typefaces")];
   const elevation = pick("elevation", "how depth is shown") as keyof typeof ELEVATION;
-  const photos = yes("photos", "photographs?");
-  const treatment: Treatment = photos ? (pick("photo_look", "how photographs look") as Treatment) : "natural";
+  const photos = yes("photos", "pictures?");
+  // Drawn or photographed is what the screens contain, and that is not remixed; among photographs, the treatment is paint and is.
+  let treatment: Treatment = "natural";
+  if (photos && (a.photo_look.choice === "illustrated" || !rng)) {
+    treatment = a.photo_look.choice;
+    decisions.push({ id: "photo_look", question: "how pictures look", answer: treatment, p: a.photo_look.probabilities[treatment] });
+  } else if (photos) {
+    const { illustrated, ...treatments } = a.photo_look.probabilities as Record<Treatment, number>;
+    treatment = draw(treatments, rng!) as Treatment;
+    decisions.push({ id: "photo_look", question: "how pictures look", answer: treatment, p: treatments[treatment as keyof typeof treatments], ...(treatment !== a.photo_look.choice ? { note: `drawn; Jev's first choice is ${a.photo_look.choice}` } : {}) });
+  }
   const cards = yes("cards", "content in cards?");
 
   // Neutrals carry a trace of cream or steel, in proportion to how far the warmth dial is from the middle.
@@ -402,7 +415,7 @@ ${level("round")}. The base radius is ${px(radius)}${pill ? "; buttons are full 
 
 ## Do's and Don'ts
 
-- ${photos ? `Do use photographs where the subject is something people want to see. ${PHOTO_LOOK[treatment].prose}` : "Don't use photographs; they would be decoration here."}
+- ${photos ? `Do use pictures where the subject is something people want to see. ${PHOTO_LOOK[treatment].prose}` : "Don't use photographs or illustrations; they would be decoration here."}
 - Do use icons to mark what a screen is about.
 `;
 

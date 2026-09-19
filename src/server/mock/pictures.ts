@@ -32,9 +32,14 @@ export interface Wanted {
 export class Pictures {
   private readonly used = new Set<string>();
 
+  /** Set once the design is known: its pictures are drawn, so photographs are passed over and whatever is made is an illustration. */
+  drawn = false;
+
   constructor(
     private readonly run: Run,
     private readonly screen: string,
+    /** The description the session began with; the same for every screen of the app. */
+    private readonly app: string,
   ) {}
 
   /** Calls `show` with a photograph from the library if one suits, and with a made one if none did. */
@@ -45,10 +50,10 @@ export class Pictures {
     if (!makesPhotos()) return;
     const start = performance.now();
     try {
-      const made = await makePhoto({ subject: wanted.subject, of: wanted.of, screen: this.screen, ratio: wanted.ratio });
+      const made = await makePhoto({ subject: wanted.subject, of: wanted.of, screen: this.screen, ratio: wanted.ratio, drawn: this.drawn, app: this.app });
       this.used.add(made.id);
       show(photoUrl(made, ...wanted.size));
-      this.run.trace({ stage: `Gemini: photograph "${wanted.of.slice(0, 40)}"`, ms: performance.now() - start, detail: `nothing in the library suited; shot as ${wanted.subject}` });
+      this.run.trace({ stage: `Gemini: ${this.drawn ? "illustrate" : "photograph"} "${wanted.of.slice(0, 40)}"`, ms: performance.now() - start, detail: `nothing in the library suited; ${this.drawn ? "drawn" : "shot"} as ${wanted.subject}` });
     } catch (error) {
       // A picture is never worth failing a mock for; the painted frame stays.
       this.run.trace({ stage: `No photograph of "${wanted.of.slice(0, 40)}"`, ms: performance.now() - start, detail: error instanceof Error ? error.message : String(error) });
@@ -68,7 +73,7 @@ export class Pictures {
   }
 
   private async choose({ subject, of }: Wanted): Promise<Photo | undefined> {
-    const offered = shortlist(subject, of, OFFERED, this.used);
+    const offered = shortlist(subject, of, OFFERED, this.used, this.drawn);
     if (!offered.length) return undefined;
     const options = { ...Object.fromEntries(offered.map((photo, i) => [`photo_${i}`, photo.alt])), none: "None of these photographs shows that, or anything a person would take for it." };
     const asked = await this.run.askJev(`Jev: a photograph for "${of.slice(0, 40)}"`, { screen: this.screen, pictured: of }, { photo: choice("An app shows a photograph of `pictured`. Which of these photographs could it be?", options) });
