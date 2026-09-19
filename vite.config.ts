@@ -7,6 +7,13 @@ async function readJson(req: IncomingMessage): Promise<any> {
   return JSON.parse(body || "{}");
 }
 
+/** A DESIGN.md if one was sent, else the brief (and the seed of a remix) for Jev to mix one from. */
+function designSource(body: any) {
+  if (typeof body.markdown === "string" && body.markdown.trim()) return { markdown: body.markdown as string };
+  const brief = String(body.brief ?? "").trim();
+  return brief ? { brief, seed: Number(body.seed) || 0 } : undefined;
+}
+
 /** Serves the pipelines as Server-Sent Events from the Vite dev server. */
 function api(): Plugin {
   return {
@@ -19,7 +26,7 @@ function api(): Plugin {
       server.middlewares.use("/api/design", async (req, res) => {
         try {
           const body = await readJson(req);
-          const source = typeof body.markdown === "string" && body.markdown.trim() ? { markdown: body.markdown } : { brief: String(body.brief ?? "").trim() };
+          const source = designSource(body) ?? { brief: "" };
           if ("brief" in source && !source.brief) throw new Error("expected {markdown} or {brief}");
           const { loadDesign } = await load("/src/server/design-source.ts");
           const { report, mixed } = await loadDesign(source).loaded;
@@ -52,7 +59,7 @@ function api(): Plugin {
         const { runJobs } = await load("/src/server/jobs.ts");
         const events =
           mode === "mock"
-            ? runMock(prompt, typeof body.markdown === "string" && body.markdown.trim() ? body.markdown : undefined, body.journey)
+            ? runMock(prompt, designSource(body), body.journey)
             : mode === "jobs"
               ? runJobs(prompt)
               : mode === "hybrid"

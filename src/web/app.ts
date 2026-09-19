@@ -21,14 +21,6 @@ const EXAMPLES = [
   "Bedtime story picker for a kids' reading app",
 ];
 
-// The bundled designs are ordinary DESIGN.md files; a developer's own goes in the same editor.
-const FILES = import.meta.glob("../../designs/*.md", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
-const PRESETS = Object.entries(FILES).map(([path, markdown]) => ({
-  id: path.split("/").pop()!.replace(/\.md$/, ""),
-  name: /^name:\s*(.+)$/m.exec(markdown)?.[1].trim() ?? path,
-  markdown,
-}));
-
 const AUTO = "auto";
 const CUSTOM = "custom";
 const STORED_DESIGN = "jev2ui.design.md";
@@ -57,6 +49,8 @@ interface Screen {
   firstPaintMs?: number;
   running: boolean;
   builtWith?: string;
+  /** What it was made from, so that it can be made again. */
+  request: { prompt: string; journey?: Journey };
 }
 
 /** A button that backs out of a dialog goes back; it does not lead anywhere new. */
@@ -105,6 +99,8 @@ export class App extends LitElement {
   @state() private report: DesignReport | undefined;
   @state() private designError = "";
   @state() private designBusy = false;
+  /** Which draw of Jev's mix is showing: 0 is its best guess, anything else a remix. */
+  @state() private seed = 0;
 
   @state() private copied = "";
   /** Bumped whenever a screen changes; screens are mutated in place as their messages stream in. */
@@ -136,16 +132,23 @@ export class App extends LitElement {
 
   // --- Design -----------------------------------------------------------------
 
+  /** The design is either Jev's mix for this app or the developer's own DESIGN.md. */
   private choose(choice: string) {
     this.choice = choice;
     this.designError = "";
     if (choice === AUTO) {
-      // Mixed from the prompt at generation time; if a mock is showing, mix for it now.
-      if (this.current) void this.loadDesign({ brief: this.app });
+      if (this.app || this.prompt.trim()) void this.loadDesign({ brief: this.app || this.prompt, seed: this.seed });
       return;
     }
-    this.markdown = choice === CUSTOM ? (localStorage.getItem(STORED_DESIGN) ?? this.markdown) : PRESETS.find((p) => p.id === choice)!.markdown;
-    void this.loadDesign({ markdown: this.markdown });
+    this.markdown = localStorage.getItem(STORED_DESIGN) ?? this.markdown;
+    if (this.markdown.trim()) void this.loadDesign({ markdown: this.markdown });
+  }
+
+  /** Another draw from what Jev thinks suits the brief. The screens stay; only their paint changes. */
+  private remix() {
+    this.choice = AUTO;
+    this.seed = 1 + Math.floor(Math.random() * 0xfffffff);
+    void this.loadDesign({ brief: this.app || this.prompt, seed: this.seed });
   }
 
   private edit(markdown: string) {
@@ -156,7 +159,7 @@ export class App extends LitElement {
     this.editTimer = setTimeout(() => void this.loadDesign({ markdown }), 700);
   }
 
-  private async loadDesign(source: { markdown: string } | { brief: string }) {
+  private async loadDesign(source: { markdown: string } | { brief: string; seed: number }) {
     const request = ++this.designRequest;
     this.designBusy = true;
     try {
@@ -185,17 +188,19 @@ export class App extends LitElement {
   private generate(prompt = this.prompt) {
     this.prompt = prompt;
     if (!prompt.trim()) return;
+    // A remix belongs to the app it was made for; a new app starts from Jev's best guess.
+    if (prompt !== this.app) this.seed = 0;
     this.app = prompt;
     this.nav = undefined;
     this.screens = new Map();
     this.nextId = 1;
-    const screen = this.open("start", true);
+    const screen = this.open("start", true, { prompt });
     this.stack = [screen];
-    void this.run(screen, { prompt });
+    void this.run(screen);
   }
 
-  private open(key: string, topLevel: boolean): Screen {
-    const screen: Screen = { id: this.nextId++, key, title: "", archetype: "", topLevel, dialog: false, messages: [], log: [], running: true };
+  private open(key: string, topLevel: boolean, request: Screen["request"]): Screen {
+    const screen: Screen = { id: this.nextId++, key, title: "", archetype: "", topLevel, dialog: false, messages: [], log: [], running: true, request };
     this.screens.set(key, screen);
     return screen;
   }
@@ -215,26 +220,45 @@ export class App extends LitElement {
     const key = via.kind === "nav" ? `nav:${via.label}` : `${here.id}:${via.kind}:${via.label}`;
     let screen = this.screens.get(key);
     const made = !screen;
-    screen ??= this.open(key, via.kind === "nav");
+    screen ??= this.open(key, via.kind === "nav", { prompt: this.app, journey: { app: this.app, from: { title: here.title, archetype: here.archetype }, via, ...(this.nav ? { nav: this.nav } : {}) } });
     // The navigation bar switches between main screens, and a way back from the first screen makes the one it came from. Everything else drills in.
     this.stack = via.kind === "nav" || via.kind === "back" ? [screen] : [...this.stack, screen];
     // The home made by going back from a settings page leads back to that page, not to a second one.
     if (made && via.kind === "back" && here.archetype === "settings") this.screens.set(`${screen.id}:appbar:settings`, here);
     this.tick++;
-    if (made) {
-      const journey: Journey = { app: this.app, from: { title: here.title, archetype: here.archetype }, via, ...(this.nav ? { nav: this.nav } : {}) };
-      // Whatever design the first screen was painted with, the rest of the app keeps: a mixed one is pinned.
-      void this.run(screen, { prompt: this.app, journey });
-    }
+    if (made) void this.run(screen);
   }
 
-  private async run(screen: Screen, request: { prompt: string; journey?: Journey }) {
+  /** Makes the current page again from the same request. Whatever was reached from the old one goes with it. */
+  private regenerate() {
+    const old = this.current;
+    if (!old) return;
+    const forget = (screen: Screen) => {
+      for (const [key, other] of [...this.screens]) {
+        if (other === screen) this.screens.delete(key);
+        else if (key.startsWith(`${screen.id}:`) && !this.stack.includes(other)) forget(other);
+      }
+    };
+    const aliases = [...this.screens].filter(([, screen]) => screen === old).map(([key]) => key);
+    forget(old);
+    // It may have been the screen that established the navigation bar; if so, it establishes it again.
+    const request = old.request.journey && !old.request.journey.nav ? old.request : { ...old.request, ...(old.request.journey && this.nav ? { journey: { ...old.request.journey, nav: this.nav } } : {}) };
+    const screen = this.open(old.key, old.topLevel, request);
+    for (const key of aliases) this.screens.set(key, screen);
+    this.stack = [...this.stack.slice(0, -1), screen];
+    this.tick++;
+    void this.run(screen);
+  }
+
+  private async run(screen: Screen) {
+    const { request } = screen;
     this.abort?.abort();
     const abort = (this.abort = new AbortController());
-    const markdown = this.choice === AUTO && !request.journey ? undefined : this.markdown;
+    // Every screen of an app is painted by the same design: the developer's file, or the same draw of Jev's mix.
+    const design = this.choice === CUSTOM && this.markdown.trim() ? { markdown: this.markdown } : { brief: this.app, seed: this.seed };
     const note = (tone: "bad" | "plain", text: string, at = 0) => void (screen.log = [...screen.log, { kind: "note", at, tone, text }]);
     try {
-      await streamEvents({ ...request, markdown }, abort.signal, (event) => {
+      await streamEvents({ ...request, ...design }, abort.signal, (event) => {
         switch (event.type) {
           case "design":
             this.designRequest++; // a reading in flight is older than this one
@@ -313,10 +337,13 @@ export class App extends LitElement {
         ]
       : [];
     const problems = this.report?.findings.filter((f) => f.severity !== "info") ?? [];
-    const options = [{ id: AUTO, name: "Auto" }, ...PRESETS, { id: CUSTOM, name: "Custom" }];
+    const options = [
+      { id: AUTO, name: "Jev's mix" },
+      { id: CUSTOM, name: "My DESIGN.md" },
+    ];
     return html`
       <section class="design">
-        <h2>Design <small>${this.designBusy ? "reading…" : (this.report?.name ?? "")}</small></h2>
+        <h2>Design <small>${this.designBusy ? "mixing…" : (this.report?.name ?? "")}</small></h2>
         <div class="segmented" role="radiogroup" aria-label="Design system">
           ${options.map(
             (o) => html`<button role="radio" aria-checked=${this.choice === o.id} @click=${() => this.choose(o.id)}>${o.name}</button>`,
@@ -324,8 +351,11 @@ export class App extends LitElement {
         </div>
         <p class="hint">
           ${this.choice === AUTO
-            ? "No DESIGN.md: Jev rates the brief on hue, vividness, warmth, roundness and whitespace, and the ratings become one."
-            : "A DESIGN.md: tokens paint the mock, and Jev reads the prose for what tokens cannot say."}
+            ? html`Jev rates the brief on hue, vividness, warmth, roundness and whitespace, and the ratings become a DESIGN.md.
+                <button class="remix" ?disabled=${!(this.app || this.prompt.trim())} @click=${() => this.remix()} title="Draw another design from the same ratings">
+                  ↻ Remix
+                </button>`
+            : "Paste your project's DESIGN.md below: tokens paint the mock, and Jev reads the prose for what tokens cannot say."}
         </p>
         ${swatches.length
           ? html`<div class="swatches">
@@ -442,6 +472,9 @@ export class App extends LitElement {
               )}
             </div>
             <div class="stats">
+              ${here
+                ? html`<button class="again" ?disabled=${here.running} @click=${() => this.regenerate()} title="Make this page again" aria-label="Regenerate this page">↻</button>`
+                : nothing}
               ${here?.firstPaintMs !== undefined ? html`<span class="pill">first UI ${here.firstPaintMs} ms</span>` : nothing}
               ${s
                 ? html`<span class="pill">done ${s.totalMs} ms</span>

@@ -2,7 +2,7 @@
 //   npm run eval                      all built-in prompts, all modes
 //   npm run eval -- "a prompt" -v     one prompt, with decisions and messages
 //   npm run eval -- --only mock       one pipeline: mock | jobs | hybrid | baseline
-//   npm run eval -- --design designs/broadsheet.md    the mock pipeline with that DESIGN.md (default: Jev mixes one)
+//   npm run eval -- --design src/probe/designs/broadsheet.md    the mock pipeline with that DESIGN.md (default: Jev mixes one)
 
 import { runJobs } from "./server/jobs.js";
 import { readFileSync } from "node:fs";
@@ -73,7 +73,7 @@ async function consume(events: AsyncGenerator<PipelineEvent>): Promise<{ stats?:
 console.log(`Gemini: ${GEMINI_MODEL}   Jev: ${JEV_MODEL}\n`);
 const rows: Array<Record<string, unknown>> = [];
 for (const prompt of prompts) {
-  const mock = (p: string) => runMock(p, designMarkdown);
+  const mock = (p: string) => runMock(p, designMarkdown ? { markdown: designMarkdown } : undefined);
   for (const [mode, run] of [["mock", mock], ["jobs", runJobs], ["hybrid", runHybrid], ["baseline", runBaseline]] as const) {
     if (only && only !== mode) continue;
     await pace();

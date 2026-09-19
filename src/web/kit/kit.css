@@ -22,7 +22,8 @@ kit-surface {
 .k-text {
   margin: 0;
   min-width: 0;
-  overflow-wrap: anywhere;
+  /* Break a word only when it cannot fit on a line of its own; `anywhere` also shrinks the column until it must. */
+  overflow-wrap: break-word;
 }
 
 .k-display {
@@ -421,7 +422,8 @@ kit-surface {
 
 .k-item-head {
   display: flex;
-  gap: var(--k-space-sm, 8px);
+  flex-wrap: wrap;
+  gap: 0 var(--k-space-sm, 8px);
   align-items: baseline;
   justify-content: space-between;
 }

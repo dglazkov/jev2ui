@@ -7,6 +7,11 @@
 // the circular mean of the winning cluster of probabilities. Corner radius,
 // spacing and type size are dials of the same kind.
 //
+// A remix is a draw from the same answers. Jev returns a distribution with every
+// answer, so instead of the expected score and the likeliest choice, a remix
+// samples them: every remix is a design Jev finds plausible for the brief, and
+// none costs another request.
+//
 // The result is written out as an ordinary DESIGN.md and takes the same path
 // as a hand-written one. The developer can keep it.
 
@@ -180,27 +185,49 @@ export interface MixedDesign {
   jevInputTokens: number;
 }
 
-const mixes = new Map<string, Promise<MixedDesign>>();
+const asked = new Map<string, ReturnType<typeof askJev>>();
 
-/** One Jev request per brief; the design panel and the mock pipeline share it. */
-export function mixDesign(brief: string): Promise<MixedDesign> {
-  let mixed = mixes.get(brief);
-  if (!mixed) {
-    mixed = mix(brief);
-    mixes.set(brief, mixed);
-    mixed.catch(() => mixes.delete(brief));
-    if (mixes.size > 50) mixes.delete(mixes.keys().next().value!);
+/** One Jev request per brief, however many times it is remixed; the design panel and the mock pipeline share it. */
+export async function mixDesign(brief: string, seed = 0): Promise<MixedDesign> {
+  let answers = asked.get(brief);
+  if (!answers) {
+    answers = askJev({ brief }, questions());
+    asked.set(brief, answers);
+    answers.catch(() => asked.delete(brief));
+    if (asked.size > 50) asked.delete(asked.keys().next().value!);
   }
-  return mixed;
+  return build(brief, await answers, seed);
 }
 
-async function mix(brief: string): Promise<MixedDesign> {
-  const asked = await askJev({ brief }, questions());
+/** Small seeded generator (mulberry32), so a remix can be named by its seed and made again. */
+function random(seed: number) {
+  let t = seed >>> 0;
+  return () => {
+    t = (t + 0x6d2b79f5) >>> 0;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** A draw from a distribution, flattened a little so that a confident Jev still leaves room to explore. */
+function draw(probabilities: Record<string, number>, rng: () => number, temperature = 1.7): string {
+  const weighted = Object.entries(probabilities).map(([key, p]) => [key, Math.max(p, 1e-4) ** (1 / temperature)] as const);
+  let at = rng() * weighted.reduce((sum, [, w]) => sum + w, 0);
+  for (const [key, w] of weighted) if ((at -= w) <= 0) return key;
+  return weighted.at(-1)![0];
+}
+
+function build(brief: string, asked: Awaited<ReturnType<typeof askJev>>, seed: number): MixedDesign {
+  const rng = seed ? random(seed) : null;
   const a = asked.answers;
   const decisions: Decision[] = [];
+  const levels = {} as Record<keyof typeof DIALS, number>;
   const rate = (key: keyof typeof DIALS, label: string, show: (level: number) => string): number => {
-    const level: number = a[key].score;
-    decisions.push({ id: key, question: label, answer: `${level.toFixed(2)} of 4 → ${show(level)}`, p: level / 4 });
+    // The expected score; or, for a remix, a level drawn from the distribution and nudged off the rubric's grid.
+    const level: number = rng ? Math.min(4, Math.max(0, Number(draw(a[key].probabilities, rng)) + (rng() - 0.5) * 0.9)) : a[key].score;
+    levels[key] = level;
+    decisions.push({ id: key, question: label, answer: `${level.toFixed(2)} of 4 → ${show(level)}`, p: level / 4, ...(rng ? { note: `drawn; Jev's expectation is ${a[key].score.toFixed(2)}` } : {}) });
     return level;
   };
   const yes = (key: string, label: string) => {
@@ -208,13 +235,18 @@ async function mix(brief: string): Promise<MixedDesign> {
     return a[key].noul >= 0.5;
   };
   const pick = (key: string, label: string) => {
-    decisions.push({ id: key, question: label, answer: a[key].choice, p: a[key].probabilities[a[key].choice] });
-    return a[key].choice as string;
+    const chosen = rng ? draw(a[key].probabilities, rng) : (a[key].choice as string);
+    decisions.push({ id: key, question: label, answer: chosen, p: a[key].probabilities[chosen], ...(rng && chosen !== a[key].choice ? { note: `drawn; Jev's first choice is ${a[key].choice}` } : {}) });
+    return chosen;
   };
 
-  const hue = readHue(a.hue);
-  decisions.push({ id: "hue", question: "accent hue", answer: `${hue.name} → ${hue.angle.toFixed(0)}°`, p: hue.p });
-  const dark = yes("dark", "dark interface?");
+  // Hue is where a remix shows most, so it is drawn flattest of all, then moved a little around the wheel.
+  const drawn = rng ? draw(a.hue.probabilities, rng, 2.6) : null;
+  const hue = drawn ? { name: drawn, angle: (HUES[drawn].angle + (rng!() - 0.5) * 24 + 360) % 360, p: a.hue.probabilities[drawn] as number } : readHue(a.hue);
+  decisions.push({ id: "hue", question: "accent hue", answer: `${hue.name} → ${hue.angle.toFixed(0)}°`, p: hue.p, ...(drawn && drawn !== a.hue.choice ? { note: `drawn; Jev's first choice is ${a.hue.choice}` } : {}) });
+  // Light or dark is a coin weighted by Jev's answer; what the screens contain is not remixed, only how they look.
+  const dark = rng ? rng() < a.dark.noul : a.dark.noul >= 0.5;
+  decisions.push({ id: "dark", question: "dark interface?", answer: dark ? "yes" : "no", p: a.dark.noul, ...(rng && dark !== a.dark.noul >= 0.5 ? { note: "drawn against the odds" } : {}) });
   const chroma = dial([0.04, 0.09, 0.15, 0.21, 0.3], rate("vivid", "accent vividness", (l) => `chroma ${dial([0.04, 0.09, 0.15, 0.21, 0.3], l).toFixed(3)}`));
   const lightStops = dark ? [0.6, 0.66, 0.73, 0.8, 0.87] : [0.36, 0.45, 0.55, 0.65, 0.76];
   const lightness = dial(lightStops, rate("light", "accent lightness", (l) => `L ${dial(lightStops, l).toFixed(2)}`));
@@ -258,12 +290,12 @@ async function mix(brief: string): Promise<MixedDesign> {
       };
 
   const px = (v: number) => `${Math.round(v)}px`;
-  const bodySize = dial([13, 14, 16, 16, 17], a.air.score);
+  const bodySize = dial([13, 14, 16, 16, 17], levels.air);
   const pill = radius > 17;
   const yaml = [
     "---",
     "version: alpha",
-    "name: Mixed by Jev",
+    `name: ${seed ? `Remixed by Jev (draw ${seed % 1000})` : "Mixed by Jev"}`,
     `description: ${JSON.stringify(brief.slice(0, 140))}`,
     "colors:",
     ...Object.entries(colors).map(([k, v]) => `  ${k}: "${v}"`),
@@ -310,7 +342,7 @@ async function mix(brief: string): Promise<MixedDesign> {
     "---",
   ];
 
-  const level = (key: keyof typeof DIALS) => DIALS[key].levels[Math.round(a[key].score)].replace(/\.$/, "");
+  const level = (key: keyof typeof DIALS) => DIALS[key].levels[Math.round(levels[key])].replace(/\.$/, "");
   const prose = `
 ## Overview
 

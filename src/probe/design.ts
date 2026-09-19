@@ -16,7 +16,7 @@ if (args[0] === "--mix") {
     if (args.includes("-v")) console.log(mixed.markdown);
   }
 } else {
-  const bundled = readdirSync("designs").map((f) => `designs/${f}`);
+  const bundled = readdirSync("src/probe/designs").map((f) => `src/probe/designs/${f}`);
   for (const file of [...bundled, ...args]) {
     const design = parseDesign(readFileSync(file, "utf8"));
     const read = await readDesign(design);

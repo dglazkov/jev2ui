@@ -17,6 +17,7 @@ export const ICONS = [
   "lightbulb", "power", "local_laundry_service", "checkroom", "brush", "sports_esports", "sports_soccer", "toys", "child_care", "family_restroom", "volunteer_activism",
   "dashboard", "grid_view", "list_alt", "inbox", "analytics", "electric_bolt", "solar_power", "ev_station", "heat_pump", "replay", "fast_forward", "fast_rewind", "skip_next", "repeat", "queue_music", "library_music",
   "library_books", "newspaper", "article", "confirmation_number", "local_offer", "percent", "support_agent", "rate_review", "thumb_up", "emoji_events", "flag", "task_alt", "checklist", "pending_actions",
+  "hiking", "backpack", "category", "apps", "explore_nearby", "travel_explore", "stadia_controller", "handyman", "local_mall", "styler",
   "description", "folder", "attach_file", "link", "history", "sync", "backup", "security", "fingerprint", "verified_user", "privacy_tip", "policy", "accessibility", "translate",
 ] as const;
 export const ICON_OPTIONS = Object.fromEntries([...ICONS.map((name) => [name, null]), ["none", "No symbol in the set relates to it."]]);

@@ -17,7 +17,7 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-Type a description ("Checkout for a sneaker store, with order summary"), pick a design, and the mock appears
+Type a description ("Checkout for a sneaker store, with order summary") and the mock appears
 in a phone, tablet or desktop frame in about a second and a half. Every decision behind it is listed in the
 trace, with its probability. Copy the messages, the theme as CSS variables, or the DESIGN.md.
 
@@ -78,7 +78,8 @@ in the same app, in the same second and a half.
 4. **The browser keeps the session** (`src/web/app.ts`): a graph of screens keyed by the link that made them,
    and a back stack. A tap followed before shows the screen it made then, so the prototype holds still while
    it is explored. A `confirm` screen is a dialog laid over the screen it came from, and its Cancel goes back.
-   Switches and checkboxes flip in place. The strip above the device lists every screen made so far.
+   Switches and checkboxes flip in place. The strip above the device lists every screen made so far, and ↻
+   makes the current page again from the same request, forgetting whatever was reached from the old one.
 
 A session can start anywhere, including on a sub-page such as settings, whose back arrow has nothing to go back
 to. That tap makes the app's home: a main screen, which has no back arrow of its own, so the chain ends by
@@ -125,7 +126,7 @@ part of the system that can use it.
 1. **Tokens are parsed by the format's own linter** (`@google/design.md`), which resolves references and
    reports problems (broken references, contrast failures). Findings show up next to the editor.
 2. **Jev reads the prose for what tokens cannot say** (`src/server/design-md.ts`). Which colour is the page and
-   which is the text? In one file `primary` is the accent; in the bundled Broadsheet it is "press ink, used for
+   which is the text? In one file `primary` is the accent; in the Broadsheet fixture it is "press ink, used for
    all headlines and body text", and only the prose says so. Each role is a Choice whose options are the file's
    own token names. Depth (shadows, outlines or tonal layers) has no token at all, so that is a Choice too.
    Code keeps the last word: a component token (`button-primary.backgroundColor`) or a conventional name
@@ -145,8 +146,9 @@ part of the system that can use it.
    paragraph. The same dog-walker screen is "Dog Walkers — Happy pups nearby ready for a stroll!" in Gumdrop
    and "Canine Conductors — A classified register of trusted walking companions" in Broadsheet.
 
-Three designs are bundled in `designs/` (Broadsheet, Gumdrop, Night Shift). Paste your project's own into the
-editor; it is kept in local storage.
+The design is either Jev's mix (next section) or your project's own DESIGN.md, pasted into the editor and kept
+in local storage. Three hand-written files in `src/probe/designs/` (Broadsheet, Gumdrop, Night Shift) are the
+fixtures the reader is tested against with `npm run probe:design`; the examples in this section come from them.
 
 ### No DESIGN.md? Jev mixes one, with Scores
 
@@ -170,6 +172,15 @@ becomes a complete design:
 out as an ordinary DESIGN.md, with prose, and takes the same path as a hand-written one. It shows up in the
 editor; edit it, or copy it into your project as a starting point.
 
+**Remix.** Jev returns a distribution with every answer, so a mix does not have to be the expected score and
+the likeliest choice. The Remix button draws instead: a rubric level from each Score's distribution, nudged off
+the grid; a hue, a typeface pairing and a way of showing depth from their Choice probabilities, flattened a
+little so that a confident Jev still leaves room to explore; light or dark as a coin weighted by Jev's answer.
+Every remix is a design Jev finds plausible for the brief (a gardening app stays mostly green, and now and then
+comes out dusty pink with a slab serif), none costs another request because the answers are already in hand,
+and the screens stay as they are: only what they look like is drawn again, never what they contain. A remix
+belongs to the app and is worn by every screen made after it.
+
 Hue is the weak dial. When the brief gives no cue Jev's top hue sits at p ≈ 0.3–0.5 and the pick is
 arguable (a luxury watch boutique got violet). Naming a colour in the prompt settles it.
 
@@ -185,7 +196,7 @@ arguable (a luxury watch boutique got violet). Naming a colour in the prompt set
 - **Refinement** follows each part as it completes: one small Jev request per group, list, set of numbers,
   navigation bar or form field.
 
-`npm run probe:design` prints how Jev reads each bundled design (and any path you pass, such as the examples
+`npm run probe:design` prints how Jev reads each fixture design (and any path you pass, such as the examples
 in the DESIGN.md repository); `npm run probe:design -- --mix "a brief"` prints a mix.
 
 ## The pipelines underneath
@@ -337,7 +348,6 @@ rather than a benchmark.
 ## Layout
 
 ```
-designs/                    bundled DESIGN.md files
 src/server/design-md.ts     parse a DESIGN.md; Jev reads its prose for colour roles, depth and constraints
 src/server/design-mix.ts    no DESIGN.md: Jev's Scores become OKLCH colours, radii and spacing, written out as one
 src/server/design-source.ts a supplied or mixed design, worked out once and reused
@@ -366,5 +376,5 @@ src/server/run.ts       event stream, stats, end-of-run validation
 src/web/app.ts          the design tool; compare.ts is the side-by-side page (both use @a2ui/lit's v0.9 renderer)
 src/eval.ts             CLI comparison
 src/probe/jtbd.ts       can Jev see jobs? (docs/jtbd-probe.md)
-src/probe/design.ts     how does Jev read a DESIGN.md, and what does it mix?
+src/probe/design.ts     how does Jev read a DESIGN.md, and what does it mix? (fixtures in src/probe/designs/)
 ```

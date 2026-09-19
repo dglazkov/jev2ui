@@ -13,7 +13,7 @@
 // valid by construction, and it is on screen before the first word is.
 
 import { ContentStreams, type PartHooks } from "../content.js";
-import { loadDesign } from "../design-source.js";
+import { loadDesign, type DesignSource } from "../design-source.js";
 import { parseDesign } from "../design-md.js";
 import { picture } from "../pictures.js";
 import { Run, SURFACE_ID } from "../run.js";
@@ -47,10 +47,11 @@ class Decorations {
 }
 
 /**
- * `markdown` is the developer's DESIGN.md; without one, Jev mixes a design from the description.
+ * `source` is the developer's DESIGN.md, or the brief and seed of a mix; without one, Jev mixes a design from the description.
  * With a `journey`, the screen is the one a tap leads to, in the same app as the screen it was tapped on.
  */
-export function runMock(described: string, markdown?: string, journey?: Journey): AsyncGenerator<PipelineEvent> {
+export function runMock(described: string, source?: DesignSource, journey?: Journey): AsyncGenerator<PipelineEvent> {
+  const markdown = source && "markdown" in source ? source.markdown : undefined;
   const run = new Run("mock");
   const surfaceId = SURFACE_ID;
   const to = journey && destination(journey);
@@ -129,7 +130,7 @@ export function runMock(described: string, markdown?: string, journey?: Journey)
     // t=0: the header is needed whatever the plan turns out to be.
     write("header");
     if (to) run.trace({ stage: `Link: ${to.screen}`, ms: 0, detail: `reached by ${to.reachedBy}` });
-    const designing = loadDesign(markdown ? { markdown } : { brief: journey?.app ?? prompt });
+    const designing = loadDesign(source ?? { brief: journey?.app ?? prompt });
     const state = to ? { first_screen: journey!.app, reached_by: to.reachedBy, screen: prompt } : { screen: prompt };
     const planned = await run.askJev("Jev: plan the screen", state, planQuestions());
     const read = readPlan(planned.answers, to ? { topLevel: to.topLevel, among: to.among } : {});
