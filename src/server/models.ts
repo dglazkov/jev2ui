@@ -1,0 +1,97 @@
+import "dotenv/config";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
+import { TypeSafeClient, type Questions } from "@typesafe-ai/sdk";
+import { parse as parsePartial } from "partial-json";
+import type { Decision } from "../shared/events.js";
+
+export const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash-lite";
+export const JEV_MODEL = process.env.JEV_MODEL ?? "jev-latest";
+
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} is not set (expected in .env)`);
+  return value;
+}
+
+let jev: TypeSafeClient | undefined;
+let gemini: GoogleGenAI | undefined;
+
+export interface JevResult {
+  answers: Record<string, any>;
+  ms: number;
+  inputTokens: number;
+}
+
+/** One Jev request: every question is evaluated independently, in parallel. */
+export async function askJev(state: unknown, questions: Questions): Promise<JevResult> {
+  jev ??= new TypeSafeClient({ apiKey: requireEnv("JEV_API_KEY") });
+  const start = performance.now();
+  const response = await jev.systemOne({ model: JEV_MODEL, state: state as any, questions });
+  return {
+    answers: response.answers as Record<string, any>,
+    ms: performance.now() - start,
+    inputTokens: response.usage?.input_tokens ?? 0,
+  };
+}
+
+/** Choice options ranked by probability, most likely first. */
+export function ranked(answer: any): Array<[string, number]> {
+  return Object.entries(answer.probabilities as Record<string, number>).sort((a, b) => b[1] - a[1]);
+}
+
+export function noulDecision(id: string, question: string, answer: any, threshold = 0.5): Decision {
+  return { id, question, answer: answer.noul >= threshold ? "yes" : "no", p: answer.noul };
+}
+
+export function choiceDecision(id: string, question: string, answer: any): Decision {
+  return { id, question, answer: answer.choice, p: answer.probabilities[answer.choice] };
+}
+
+export interface GeminiResult {
+  text: string;
+  ms: number;
+  inputTokens: number;
+  outputTokens: number;
+}
+
+/**
+ * Streams a JSON response from Gemini. `onPartial` receives the best-effort
+ * parse of everything received so far, so callers can forward content to the
+ * client before the response is complete.
+ */
+export async function streamGeminiJson(
+  request: { system: string; prompt: string; schema?: unknown },
+  onPartial?: (value: any) => void,
+): Promise<GeminiResult> {
+  gemini ??= new GoogleGenAI({ apiKey: requireEnv("GEMINI_API_KEY") });
+  const start = performance.now();
+  const stream = await gemini.models.generateContentStream({
+    model: GEMINI_MODEL,
+    contents: request.prompt,
+    config: {
+      systemInstruction: request.system,
+      responseMimeType: "application/json",
+      ...(request.schema ? { responseJsonSchema: request.schema } : {}),
+      thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
+      temperature: 0.4,
+    },
+  });
+  let text = "";
+  let inputTokens = 0;
+  let outputTokens = 0;
+  for await (const chunk of stream) {
+    text += chunk.text ?? "";
+    inputTokens = chunk.usageMetadata?.promptTokenCount ?? inputTokens;
+    outputTokens =
+      (chunk.usageMetadata?.candidatesTokenCount ?? 0) +
+        (chunk.usageMetadata?.thoughtsTokenCount ?? 0) || outputTokens;
+    if (onPartial && text.trim()) {
+      try {
+        onPartial(parsePartial(text));
+      } catch {
+        // Not enough of the document yet to parse; wait for more.
+      }
+    }
+  }
+  return { text, ms: performance.now() - start, inputTokens, outputTokens };
+}

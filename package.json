@@ -1,0 +1,42 @@
+{
+  "name": "jev2ui",
+  "version": "1.0.0",
+  "description": "Jev decides, Gemini writes, code assembles: A2UI from a text prompt",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc",
+    "eval": "tsx src/eval.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dglazkov/jev2ui.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/dglazkov/jev2ui/issues"
+  },
+  "homepage": "https://github.com/dglazkov/jev2ui#readme",
+  "dependencies": {
+    "@a2ui/lit": "^0.11.0",
+    "@a2ui/markdown-it": "^0.1.2",
+    "@a2ui/web_core": "^0.11.0",
+    "@google/genai": "^2.23.0",
+    "@lit/context": "^1.1.6",
+    "@typesafe-ai/sdk": "^0.6.0",
+    "dotenv": "^18.0.1",
+    "lit": "^3.3.3",
+    "partial-json": "^0.1.7",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0"
+  },
+  "private": true
+}
