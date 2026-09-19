@@ -11,7 +11,8 @@
     "probe:jtbd": "tsx src/probe/jtbd.ts",
     "probe:design": "tsx src/probe/design.ts",
     "photos:build": "tsx src/server/photos/build.ts",
-    "probe:custom": "tsx src/probe/custom.ts"
+    "probe:custom": "tsx src/probe/custom.ts",
+    "probe:change": "tsx src/probe/change.ts"
   },
   "repository": {
     "type": "git",

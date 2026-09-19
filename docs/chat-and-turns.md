@@ -46,10 +46,13 @@ message wants done to it.
 All of it is one Jev request. A paint-only turn calls no Gemini, and since paint is CSS variables it changes
 every screen of the app at once.
 
-**Not yet tested.** Whether Jev reads a change this well is an assumption. Before building on it, probe it
-the way `src/probe/jtbd.ts` probed jobs: minimal pairs of messages ("make it lighter" / "make it airier" /
-"make it bolder" / "rename it to Fern"), hand labels written first, and a look at whether unmentioned dials
-really stay at *as it is* and whether the step sizes order correctly.
+**Tested for paint** ([change-probe.md](change-probe.md)): a message that is not about the look moves no dial
+(mean 0.01 of a step) and opens no gate; a named dial moves the right way; "a touch", plainly and "much" come
+out in order once the rubric has seven levels; "make it lighter" shows all three of its readings in one answer.
+Two things learned there change this note: the dials and gates are asked on **every** turn, whatever kind it
+is (Jev calls "no cards" structure, and the cards gate opens all the same), and *torn* needs no question of its
+own, since it is several things moving for a message that names none. Not tested yet: blocks, words, moods
+carried through a re-asked Choice, and messages that lean on earlier turns ("a bit more").
 
 ## What kind of turn is this?
 
@@ -171,8 +174,8 @@ What follows:
 
 ## Order of building
 
-0. **Probe**: can Jev read a change? (`src/probe/change.ts`, results written up beside this note.) Everything
-   below leans on it.
+0. **Probe**: can Jev read a change? Done for paint: `src/probe/change.ts`, [change-probe.md](change-probe.md).
+   The same probe wants repeating for blocks and words before steps 2 and 3.
 1. **The chat column, the transcript as the session, and paint.** Routing with three outcomes (new app, paint,
    ask); paint deltas through relative Scores; receipts; undo. The smallest thing that shows the bet: a
    message becomes decisions about change, the result holds still, and it lands in a few hundred milliseconds

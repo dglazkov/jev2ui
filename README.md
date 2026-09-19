@@ -565,5 +565,6 @@ src/eval.ts             CLI comparison
 src/probe/jtbd.ts       can Jev see jobs? (docs/jtbd-probe.md)
 src/probe/custom.ts     can Jev tell when a screen needs something the kit cannot draw?
 src/probe/design.ts     how does Jev read a DESIGN.md, and what does it mix? (fixtures in src/probe/designs/)
+src/probe/change.ts     can Jev read a change? "make it lighter" as decisions about what moves (docs/change-probe.md)
 docs/chat-and-turns.md  design note, not built: a chat where every request is a creation or an edit
 ```
