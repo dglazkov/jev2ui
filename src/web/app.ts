@@ -218,6 +218,8 @@ export class App extends LitElement {
     screen ??= this.open(key, via.kind === "nav");
     // The navigation bar switches between main screens, and a way back from the first screen makes the one it came from. Everything else drills in.
     this.stack = via.kind === "nav" || via.kind === "back" ? [screen] : [...this.stack, screen];
+    // The home made by going back from a settings page leads back to that page, not to a second one.
+    if (made && via.kind === "back" && here.archetype === "settings") this.screens.set(`${screen.id}:appbar:settings`, here);
     this.tick++;
     if (made) {
       const journey: Journey = { app: this.app, from: { title: here.title, archetype: here.archetype }, via, ...(this.nav ? { nav: this.nav } : {}) };
@@ -254,7 +256,7 @@ export class App extends LitElement {
             if (data?.path === "/nav" && Array.isArray(data.value?.items) && !request.journey?.nav) {
               this.nav = { items: data.value.items };
               const active = data.value.items[data.value.active ?? 0]?.label;
-              if (active && screen.key === "start") this.screens.set(`nav:${active}`, screen);
+              if (active) this.screens.set(`nav:${active}`, screen);
             }
             break;
           }

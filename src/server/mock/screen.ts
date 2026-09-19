@@ -293,11 +293,14 @@ export interface Setting {
 
 export function partPrompt(description: string, part: Part, plan: ScreenPlan | null, setting: Setting, agreeWith?: unknown): string {
   const { voice } = setting;
-  const journey = setting.app ? `The app: ${setting.app}\nThe person got to this screen by ${setting.reachedBy}.\n` : "";
+  const journey = setting.app ? `The first screen designed for this app was: ${setting.app}\nThe person got to the screen you are writing for by ${setting.reachedBy}.\n` : "";
   const about = setting.about ? `What the previous screen already showed about this, which this screen must agree with and build on:\n${JSON.stringify(setting.about)}\n` : "";
   const parts = plan ? `The screen is a ${plan.archetype} screen with these parts: header, ${plan.blocks.join(", ")}.\n` : "";
   // The Overview of a DESIGN.md describes the brand; the words should sound like it.
-  const brand = voice ? `The brand's voice. Take the tone from it and nothing else; what the product is and sells is in the description above, not here:\n${voice}\n` : "";
+  // Voice goes first, as background, and the subject goes last, next to the instruction. The other way round, a small
+  // model writes about the brand's metaphor (gummies, signal boxes) instead of about the app.
+  const brand = voice ? `Background, the brand's voice. Take the tone from it and nothing else. Its metaphors are not the subject:\n${voice}\n\n` : "";
   const given = agreeWith ? `Already on the screen, which your figures must agree with:\n${JSON.stringify(agreeWith)}\n` : "";
-  return `${journey}Screen description: ${description}\n${about}${parts}${brand}${given}Write the "${part}" part.`;
+  const subject = `Every name, figure and label must be about what this app is actually for${setting.app ? ` ("${setting.app}")` : ""}, as its real users would see it.`;
+  return `${brand}${journey}${parts}${about}${given}Screen description: ${description}\n${subject}\nWrite the "${part}" part.`;
 }

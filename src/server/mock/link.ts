@@ -11,6 +11,8 @@ export interface Destination {
   reachedBy: string;
   /** Material: a navigation bar on top-level destinations only, a way back everywhere else. */
   topLevel: boolean;
+  /** The kinds of screen this can be, when how the person got here rules the others out. */
+  among?: string[];
   /** What is already known about the thing this screen is about; the writers must agree with it. */
   about?: Record<string, unknown>;
 }
@@ -26,7 +28,7 @@ const APP_BAR: Record<string, string> = {
   more_vert: "More options for this screen",
 };
 
-export function destination({ from, via }: Journey): Destination {
+export function destination({ app, from, via }: Journey): Destination {
   const here = `the "${from.title}" screen`;
   const title = String(via.data?.title ?? via.data?.label ?? via.label);
   switch (via.kind) {
@@ -45,11 +47,20 @@ export function destination({ from, via }: Journey): Destination {
       return { screen, reachedBy: `tapping the row "${title}" on ${here}`, topLevel: false, about: via.data };
     }
     case "nav":
-      return { screen: `${via.label}: one of the app's main screens`, reachedBy: `tapping "${via.label}" in the app's main navigation`, topLevel: true };
+      return { screen: `${via.label}: one of the main screens of the app that "${app}" belongs to`, reachedBy: `tapping "${via.label}" in the app's main navigation`, topLevel: true };
     case "appbar":
       return { screen: APP_BAR[via.label] ?? `${via.label} for ${here}`, reachedBy: `tapping the ${via.label} action in the top bar of ${here}`, topLevel: false };
     case "back":
-      return { screen: `The screen that ${here} is reached from`, reachedBy: `going back from ${here}`, topLevel: false };
+      // Only asked for when there is nothing to go back to: the session began on a sub-page. The way back from there
+      // is the app's home, and a main screen has no back arrow of its own, so the chain ends here by construction.
+      return {
+        // A description with no subject gets filled with whatever is lying around, such as the brand's metaphor. Name the app.
+        screen: `Home: the main screen that the app opens on. The app is the one this belongs to: "${app}". Home shows what that app is for; ${here} is reached from it`,
+        reachedBy: `going back from ${here} to where the app starts`,
+        topLevel: true,
+        // An app opens on something to look through or something to glance at, never on its own settings or a form.
+        among: ["feed", "dashboard"],
+      };
     default:
       return {
         screen: `The outcome of "${via.label}": what the person sees once it has been done`,

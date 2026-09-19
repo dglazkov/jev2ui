@@ -51,7 +51,7 @@ because Jev reads a situation far better than it judges a design
 takes effect at once, and the HIG says a disclosure indicator marks a row that opens another page; so the
 question is "what kind of row is this?", and on a podcast settings screen Jev answers `Skip forward` → value,
 `Auto-download` → switch, `Log out` → danger, each at p ≈ 1.00. Other rules live in code, where they cannot be
-got wrong: a navigation bar only on top-level screens and a back arrow on the rest (Material); one primary
+got wrong: a feed always has its list and a settings page its groups, whatever Jev says; a navigation bar only on top-level screens and a back arrow on the rest (Material); one primary
 action per screen, red if it destroys something; no second set of buttons competing with a form's submit;
 picture layouts only for things with a look; rows in a group all lead with a symbol or none do; a bill's totals
 are written after its line items and shown them, so that it adds up.
@@ -79,6 +79,12 @@ in the same app, in the same second and a half.
    and a back stack. A tap followed before shows the screen it made then, so the prototype holds still while
    it is explored. A `confirm` screen is a dialog laid over the screen it came from, and its Cancel goes back.
    Switches and checkboxes flip in place. The strip above the device lists every screen made so far.
+
+A session can start anywhere, including on a sub-page such as settings, whose back arrow has nothing to go back
+to. That tap makes the app's home: a main screen, which has no back arrow of its own, so the chain ends by
+construction, and whose kind is limited to a feed or a dashboard however strongly Jev is still thinking about
+settings (its ranking is walked to the first kind allowed). Without both rules, going back made settings pages
+forever.
 
 Two archetypes exist mostly for this: `result` (the outcome of something just done) and the picker that a
 settings screen turns into when it was reached from a value row, whose options are check rows with the

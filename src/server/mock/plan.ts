@@ -25,7 +25,7 @@ import type { Decision } from "../../shared/events.js";
 import { ICON_OPTIONS, readIcon } from "./icons.js";
 
 const CONTEXT =
-  "A developer describes one screen of an app in `screen`. A designer is working out what that screen is made of. If present, `app` says what app it belongs to and `reached_by` says how the person got to this screen.";
+  "A developer describes one screen of an app in `screen`. A designer is working out what that screen is made of. If present, `first_screen` describes the first screen that was designed for the same app, which tells you what app this is, and `reached_by` says how the person got to the screen being designed now.";
 const ask = (question: string) => ({ context: CONTEXT, question });
 
 export const BLOCKS = ["banner", "hero", "filters", "stats", "list", "groups", "facts", "prose", "steps", "form", "actions"] as const;
@@ -35,6 +35,8 @@ interface Archetype {
   criteria: string;
   /** The blocks this kind of screen may have, in the order they appear. Anything else is not in the grammar. */
   order: Block[];
+  /** What makes it this kind of screen: a feed without a list is not a feed. Present whatever Jev says. */
+  requires?: Block[];
   /** Kept at even odds; the rest need Jev to be confident. */
   expects: Block[];
   /** A screen of this kind with a single block looks unfinished; the likeliest remaining blocks are added up to this many. */
@@ -50,12 +52,14 @@ export const ARCHETYPES: Record<string, Archetype> = {
   feed: {
     criteria: "A collection to look through: search results, a catalogue, a feed, an inbox, a directory, a list of records.",
     order: ["filters", "banner", "list"],
+    requires: ["list"],
     expects: ["list"],
   },
   dashboard: {
     atLeast: 2,
     criteria: "Numbers and status at a glance: usage, health, progress, balances, today's summary.",
     order: ["banner", "stats", "facts", "list"],
+    requires: ["stats"],
     expects: ["stats"],
   },
   detail: {
@@ -69,17 +73,20 @@ export const ARCHETYPES: Record<string, Archetype> = {
     atLeast: 2,
     criteria: "Instructions followed in order: a how-to, a method, troubleshooting, an onboarding checklist.",
     order: ["hero", "prose", "facts", "steps", "actions"],
+    requires: ["steps"],
     expects: ["steps"],
     stickyActions: true,
   },
   settings: {
     criteria: "Preferences, account options or configuration, arranged as groups of rows.",
     order: ["banner", "groups", "actions"],
+    requires: ["groups"],
     expects: ["groups"],
   },
   form: {
     criteria: "Data entry: sign-up, booking, creating or editing a record, a survey, a contact form.",
     order: ["prose", "form"],
+    requires: ["form"],
     expects: ["form"],
   },
   checkout: {
@@ -308,7 +315,7 @@ export function planQuestions(): Questions {
   return q;
 }
 
-export function readPlan(answers: Record<string, any>, known: { topLevel?: boolean } = {}): { plan: ScreenPlan; screenIcon: string | null; decisions: Decision[] } {
+export function readPlan(answers: Record<string, any>, known: { topLevel?: boolean; among?: string[] } = {}): { plan: ScreenPlan; screenIcon: string | null; decisions: Decision[] } {
   const decisions: Decision[] = [];
   const pick = <T extends string>(id: string, label: string): T => {
     decisions.push({ id, question: label, answer: answers[id].choice, p: answers[id].probabilities[answers[id].choice] });
@@ -319,17 +326,28 @@ export function readPlan(answers: Record<string, any>, known: { topLevel?: boole
     return answers[id].noul >= threshold;
   };
 
-  const archetype = pick<string>("archetype", "kind of screen");
+  // Constraint-aware argmax: Jev's ranking, walked to the first kind of screen this one is allowed to be.
+  const ranking = Object.entries(answers.archetype.probabilities as Record<string, number>).sort((a, b) => b[1] - a[1]);
+  const [archetype, p] = ranking.find(([name]) => !known.among || known.among.includes(name))!;
+  decisions.push({
+    id: "archetype",
+    question: "kind of screen",
+    answer: archetype,
+    p,
+    ...(archetype !== ranking[0][0] ? { note: `Jev read "${ranking[0][0]}", but the way the person got here rules it out` } : {}),
+  });
   const shape = ARCHETYPES[archetype];
   let blocks = shape.order.filter((block) => {
     const p: number = answers[`has_${block}`].noul;
     const expected = shape.expects.includes(block);
-    const keep = p >= (expected ? EXPECTED_THRESHOLD : EXTRA_THRESHOLD);
+    const required = !!shape.requires?.includes(block);
+    const keep = required || p >= (expected ? EXPECTED_THRESHOLD : EXTRA_THRESHOLD);
     decisions.push({
       id: `has_${block}`,
       question: `${block}?`,
       answer: keep ? "yes" : "no",
       p,
+      ...(required && p < EXPECTED_THRESHOLD ? { note: `a ${archetype} screen always has one` } : {}),
       ...(!keep && p >= 0.5 ? { note: `an extra on a ${archetype} screen; needs ${EXTRA_THRESHOLD}` } : {}),
     });
     return keep;

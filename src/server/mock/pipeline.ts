@@ -130,9 +130,9 @@ export function runMock(described: string, markdown?: string, journey?: Journey)
     write("header");
     if (to) run.trace({ stage: `Link: ${to.screen}`, ms: 0, detail: `reached by ${to.reachedBy}` });
     const designing = loadDesign(markdown ? { markdown } : { brief: journey?.app ?? prompt });
-    const state = to ? { app: journey!.app, reached_by: to.reachedBy, screen: prompt } : { screen: prompt };
+    const state = to ? { first_screen: journey!.app, reached_by: to.reachedBy, screen: prompt } : { screen: prompt };
     const planned = await run.askJev("Jev: plan the screen", state, planQuestions());
-    const read = readPlan(planned.answers, to ? { topLevel: to.topLevel } : {});
+    const read = readPlan(planned.answers, to ? { topLevel: to.topLevel, among: to.among } : {});
     run.trace({ stage: planned.stage, ms: planned.ms, decisions: read.decisions, tokens: { input: planned.inputTokens, output: 0 } });
 
     const { design, read: look, report, mixed } = await designing.loaded;
