@@ -32,8 +32,8 @@ answer that sat near 0.5 may flip, and the screen being adjusted becomes another
 **The bet: ask Jev about the change, not about the state.** For everything Jev already decides, ask what the
 message wants done to it.
 
-- **Dials** (chroma, lightness, warmth, corner radius, spacing): a Score with five levels, *much less · less ·
-  as it is · more · much more*. The expected value is a signed step, so "a touch lighter" and "way lighter"
+- **Dials** (chroma, lightness, warmth, corner radius, spacing): a Score with seven levels, *much less ·
+  clearly less · a touch less · as it is · a touch more · clearly more · much more*. The expected value is a signed step, so "a touch lighter" and "way lighter"
   differ in size. A dial the message does not mention comes back *as it is*, so nothing drifts. This is the
   Score as a dial again, now a relative one.
 - **Choices** (typeface, elevation, hue, dark, list layout, leading, trailing, …): a Noul per question, "does
