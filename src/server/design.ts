@@ -1,9 +1,9 @@
-// Stage 3 of the hybrid pipeline: decisions that need the generated content.
-// Again one Jev request; per-field questions fan out in parallel.
+// Decisions that need generated content. Each is its own small Jev request,
+// fired the moment its input exists, so no field waits for the rest of the form.
 
 import { choice, noul, type Questions } from "@typesafe-ai/sdk";
 import { ranked } from "./models.js";
-import { WIDGETS, widgetFits, type FieldContent, type FieldDesign, type FinalDesign, type Widget } from "./emit.js";
+import { WIDGETS, widgetFits, type FieldContent, type FieldDesign, type Widget } from "./emit.js";
 import type { Decision } from "../shared/events.js";
 
 const WIDGET_CRITERIA: Record<Widget, string> = {
@@ -22,68 +22,67 @@ const WIDGET_CRITERIA: Record<Widget, string> = {
 
 const NO_PRIMARY = "none";
 
-export function designQuestions(fields: FieldContent[], actions: Array<{ label: string }>): Questions {
-  const questions: Questions = {};
-  fields.forEach((field, i) => {
-    const about = { form_field: `form_fields[${i}]`, label: field.label };
-    questions[`f${i}_widget`] = choice(
-      { ...about, question: "Which input control suits this form field best?" },
-      WIDGET_CRITERIA,
-    );
-    questions[`f${i}_required`] = noul({
-      ...about,
-      question: "Must the user fill in this field for the form to make sense?",
-    });
-    questions[`f${i}_email`] = noul({ ...about, question: "Does this field hold an email address?" });
-  });
-  if (actions.length > 1) {
-    questions.primary_action = choice(
-      { question: "Which of the actions is the main thing the user came to this screen to do?" },
+/** State is `{ user_request, form_field }`. */
+export function fieldQuestions(): Questions {
+  return {
+    widget: choice("Which input control suits form_field best?", WIDGET_CRITERIA),
+    required: noul("Must the user fill in form_field for the form to make sense?"),
+    email: noul("Does form_field hold an email address?"),
+  };
+}
+
+export function readField(answers: Record<string, any>, field: FieldContent): { design: FieldDesign; decisions: Decision[] } {
+  // Constraint-aware argmax: walk Jev's ranking until a widget the content can back.
+  const ranking = ranked(answers.widget);
+  const [picked, p] = ranking.find(([w]) => widgetFits(w as Widget, field)) ?? ["shortText", 0];
+  const widget = (WIDGETS as readonly string[]).includes(picked) ? (picked as Widget) : "shortText";
+  const [top] = ranking[0];
+  const required = answers.required.noul >= 0.6;
+  const email = answers.email.noul >= 0.7 && widget === "shortText";
+
+  const decisions: Decision[] = [
+    {
+      id: "widget",
+      question: "input control",
+      answer: widget,
+      p,
+      ...(widget !== top ? { note: `top pick "${top}" is not backed by the content` } : {}),
+    },
+  ];
+  if (required) decisions.push({ id: "required", question: "required?", answer: "yes", p: answers.required.noul });
+  if (email) decisions.push({ id: "email", question: "email check?", answer: "yes", p: answers.email.noul });
+  return { design: { widget, required, email }, decisions };
+}
+
+/** State is `{ user_request, actions }`. */
+export function primaryActionQuestions(actions: Array<{ label: string }>): Questions {
+  return {
+    primary: choice(
+      "Which of the actions is the main thing the user came to this screen to do?",
       Object.fromEntries([
         ...actions.map((a, i) => [`action_${i}`, `The button labelled "${a.label}".`]),
         [NO_PRIMARY, "No action stands out; they are all equally secondary."],
       ]),
-    );
-  }
-  return questions;
+    ),
+  };
 }
 
-export function readDesign(
+/** Index of the primary action, or -1. */
+export function readPrimaryAction(
   answers: Record<string, any>,
-  fields: FieldContent[],
   actions: Array<{ label: string }>,
-): { design: FinalDesign; decisions: Decision[] } {
-  const decisions: Decision[] = [];
-
-  const fieldDesigns: FieldDesign[] = fields.map((field, i) => {
-    // Constraint-aware argmax: walk Jev's ranking until a widget the content can back.
-    const ranking = ranked(answers[`f${i}_widget`]);
-    const [widget, p] = ranking.find(([w]) => widgetFits(w as Widget, field)) ?? ["shortText", 0];
-    const [top] = ranking[0];
-    decisions.push({
-      id: `f${i}_widget`,
-      question: `control for "${field.label}"`,
-      answer: widget,
-      p,
-      ...(widget !== top ? { note: `top pick "${top}" is not backed by the content` } : {}),
-    });
-    const required = answers[`f${i}_required`].noul >= 0.6;
-    const email = answers[`f${i}_email`].noul >= 0.7 && widget === "shortText";
-    if (required) decisions.push({ id: `f${i}_required`, question: `"${field.label}" required?`, answer: "yes", p: answers[`f${i}_required`].noul });
-    if (email) decisions.push({ id: `f${i}_email`, question: `"${field.label}" is an email?`, answer: "yes", p: answers[`f${i}_email`].noul });
-    return { widget: (WIDGETS as readonly string[]).includes(widget) ? (widget as Widget) : "shortText", required, email };
-  });
-
-  let primaryAction = actions.length === 1 ? 0 : -1;
-  if (answers.primary_action) {
-    const picked: string = answers.primary_action.choice;
-    primaryAction = picked === NO_PRIMARY ? -1 : Number(picked.replace("action_", ""));
-    decisions.push({
-      id: "primary_action",
-      question: "primary button",
-      answer: primaryAction >= 0 ? actions[primaryAction].label : "none",
-      p: answers.primary_action.probabilities[picked],
-    });
-  }
-  return { design: { fields: fieldDesigns, primaryAction }, decisions };
+): { primary: number; decisions: Decision[] } {
+  const picked: string = answers.primary.choice;
+  const primary = picked === NO_PRIMARY ? -1 : Number(picked.replace("action_", ""));
+  return {
+    primary,
+    decisions: [
+      {
+        id: "primary",
+        question: "primary button",
+        answer: primary >= 0 ? actions[primary].label : "none",
+        p: answers.primary.probabilities[picked],
+      },
+    ],
+  };
 }

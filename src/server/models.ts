@@ -47,9 +47,14 @@ export function choiceDecision(id: string, question: string, answer: any): Decis
   return { id, question, answer: answer.choice, p: answer.probabilities[answer.choice] };
 }
 
+/** Start times of recent Gemini requests, so callers can pace themselves under a requests-per-minute quota. */
+export const geminiRequestTimes: number[] = [];
+
 export interface GeminiResult {
   text: string;
   ms: number;
+  /** Time to the first streamed chunk: the floor on how early any text can show up. */
+  firstChunkMs: number;
   inputTokens: number;
   outputTokens: number;
 }
@@ -60,11 +65,12 @@ export interface GeminiResult {
  * client before the response is complete.
  */
 export async function streamGeminiJson(
-  request: { system: string; prompt: string; schema?: unknown },
+  request: { system: string; prompt: string; schema?: unknown; signal?: AbortSignal },
   onPartial?: (value: any) => void,
 ): Promise<GeminiResult> {
   gemini ??= new GoogleGenAI({ apiKey: requireEnv("GEMINI_API_KEY") });
   const start = performance.now();
+  geminiRequestTimes.push(Date.now());
   const stream = await gemini.models.generateContentStream({
     model: GEMINI_MODEL,
     contents: request.prompt,
@@ -74,12 +80,15 @@ export async function streamGeminiJson(
       ...(request.schema ? { responseJsonSchema: request.schema } : {}),
       thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
       temperature: 0.4,
+      ...(request.signal ? { abortSignal: request.signal } : {}),
     },
   });
   let text = "";
+  let firstChunkMs = 0;
   let inputTokens = 0;
   let outputTokens = 0;
   for await (const chunk of stream) {
+    firstChunkMs ||= performance.now() - start;
     text += chunk.text ?? "";
     inputTokens = chunk.usageMetadata?.promptTokenCount ?? inputTokens;
     outputTokens =
@@ -93,5 +102,5 @@ export async function streamGeminiJson(
       }
     }
   }
-  return { text, ms: performance.now() - start, inputTokens, outputTokens };
+  return { text, ms: performance.now() - start, firstChunkMs, inputTokens, outputTokens };
 }

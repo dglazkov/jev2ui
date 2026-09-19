@@ -221,14 +221,20 @@ const SECTION_SCHEMAS: Record<Section, unknown> = {
   actions: list(obj({ label: str("Button label.") }), "Action buttons, most important first. Never a form submit button.", 3),
 };
 
-export function contentSchema(sections: Section[]) {
-  return obj({
-    header: obj({ title: str("Screen title."), subtitle: str("One short supporting line.") }),
-    ...Object.fromEntries(sections.map((s) => [s, SECTION_SCHEMAS[s]])),
-  });
+const HEADER_SCHEMA = obj({ title: str("Screen title."), subtitle: str("One short supporting line.") });
+
+/** Each part of the screen is written by its own request, so the schema covers just that part. */
+export function partSchema(part: "header" | Section) {
+  return obj({ [part]: part === "header" ? HEADER_SCHEMA : SECTION_SCHEMAS[part] });
 }
 
-export const CONTENT_SYSTEM_PROMPT = `You write the content for one UI screen that responds to the user's request.
+export const CONTENT_SYSTEM_PROMPT = `You write the content for one part of a UI screen that responds to the user's request.
 A separate system decides layout and widgets; you only supply the words and data, as JSON matching the schema.
+Other parts of the same screen are written separately, so stay strictly within your part and do not repeat the title.
 Be specific and realistic: invent plausible concrete details rather than placeholders. Keep every string short.
 Do not describe the UI, do not mention buttons or layout in text, and do not use HTML.`;
+
+export function partPrompt(request: string, part: "header" | Section, sections: Section[] | null): string {
+  const layout = sections ? `The screen has these parts: header, ${sections.join(", ")}.\n` : "";
+  return `User request: ${request}\n${layout}Write the "${part}" part.`;
+}

@@ -33,6 +33,8 @@ export interface RunStats {
   totalMs: number;
   /** Time until the first updateComponents message left the server. */
   firstComponentsMs: number | null;
+  /** Time until the client had both a component tree and some text to show in it. */
+  firstContentMs: number | null;
   valid: boolean;
   jevCalls: number;
   jevInputTokens: number;

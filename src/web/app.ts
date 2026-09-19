@@ -18,7 +18,7 @@ const EXAMPLES = [
 
 type Mode = RunStats["mode"];
 type LogEntry =
-  | { kind: "stage"; at: number; stage: string; ms: number; decisions: Decision[]; tokens?: { input: number; output: number } }
+  | { kind: "stage"; at: number; stage: string; ms: number; detail?: string; decisions: Decision[]; tokens?: { input: number; output: number } }
   | { kind: "note"; at: number; tone: "bad" | "plain"; text: string };
 
 /** One pipeline run: its own message processor, surface, and trace. */
@@ -101,7 +101,8 @@ export class RunPanel extends LitElement {
           ${this.running ? html`<span class="pill live">running</span>` : nothing}
           ${this.firstPaintMs !== undefined ? html`<span class="pill">first UI ${this.firstPaintMs} ms</span>` : nothing}
           ${s
-            ? html`<span class="pill">done ${s.totalMs} ms</span>
+            ? html`${s.firstContentMs !== null ? html`<span class="pill">first text ${s.firstContentMs} ms</span>` : nothing}
+                <span class="pill">done ${s.totalMs} ms</span>
                 <span class="pill">${s.geminiOutputTokens} Gemini out tok</span>
                 ${s.jevCalls ? html`<span class="pill">${s.jevCalls} Jev calls · ${s.jevInputTokens} tok</span>` : nothing}
                 <span class="pill ${s.valid ? "good" : "bad"}">${s.valid ? "valid A2UI" : "invalid A2UI"}</span>`
@@ -123,7 +124,7 @@ export class RunPanel extends LitElement {
                   <h3>
                     ${entry.stage}
                     <small>
-                      ${entry.ms} ms${entry.tokens ? ` · ${entry.tokens.input} in / ${entry.tokens.output} out tok` : ""}
+                      at ${entry.at} ms · took ${entry.ms} ms${entry.detail ? ` · ${entry.detail}` : ""}${entry.tokens ? ` · ${entry.tokens.input} in / ${entry.tokens.output} out tok` : ""}
                     </small>
                   </h3>
                   ${entry.decisions.length

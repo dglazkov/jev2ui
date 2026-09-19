@@ -5,6 +5,13 @@ export const A2UI_VERSION = "v0.9";
 export const CATALOG_ID = "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json";
 export const SURFACE_ID = "main";
 
+/** True if any string value (not key) in the JSON value is readable text rather than empty or a URL. */
+function hasText(value: unknown): boolean {
+  if (typeof value === "string") return value.trim().length > 0 && !/^https?:/.test(value);
+  if (value && typeof value === "object") return Object.values(value).some(hasText);
+  return false;
+}
+
 /**
  * Bookkeeping shared by both pipelines: timestamps events, collects the A2UI
  * messages for end-of-run validation, and bridges callback-style producers
@@ -15,6 +22,7 @@ export class Run {
   private readonly queue: PipelineEvent[] = [];
   private wake: (() => void) | undefined;
   private closed = false;
+  private textSent = false;
   private readonly messages: A2uiMessage[] = [];
   readonly stats: RunStats;
 
@@ -23,6 +31,7 @@ export class Run {
       mode,
       totalMs: 0,
       firstComponentsMs: null,
+      firstContentMs: null,
       valid: true,
       jevCalls: 0,
       jevInputTokens: 0,
@@ -45,8 +54,19 @@ export class Run {
     if ("updateComponents" in body && this.stats.firstComponentsMs === null) {
       this.stats.firstComponentsMs = this.at;
     }
+    // Text is only visible once there is also a component tree to show it in.
+    this.textSent ||= this.carriesText(body);
+    if (this.stats.firstContentMs === null && this.textSent && this.stats.firstComponentsMs !== null) {
+      this.stats.firstContentMs = this.at;
+    }
     this.messages.push(message);
     this.push({ type: "a2ui", message, at: this.at });
+  }
+
+  /** The hybrid keeps all text in the data model; the baseline may also inline it in components. */
+  private carriesText(body: Record<string, any>): boolean {
+    if ("updateDataModel" in body) return hasText(body.updateDataModel.value);
+    return this.stats.mode === "baseline" && "updateComponents" in body;
   }
 
   trace(event: Omit<Extract<PipelineEvent, { type: "trace" }>, "type" | "at">) {

@@ -35,6 +35,11 @@ export interface FieldDesign {
 }
 
 const path = (p: string) => ({ path: p });
+
+// Input values live outside /form, so streaming updates to /form never clobber them.
+const VALUES_PATH = "/values";
+export const fieldKey = (i: number) => `f${i}`;
+export const valuePath = (i: number) => `${VALUES_PATH}/${fieldKey(i)}`;
 const text = (id: string, p: string, variant?: string): Component => ({
   id,
   component: "Text",
@@ -42,8 +47,27 @@ const text = (id: string, p: string, variant?: string): Component => ({
   ...(variant ? { variant } : {}),
 });
 
-/** Sections whose components bind to data by template, so they can ship before any content exists. */
-const SKELETON_BUILDERS: Partial<Record<Section, (plan: Plan) => Component[]>> = {
+/**
+ * Every section can ship before any content exists: display sections bind to
+ * data by template, and the form and actions start as empty shells that grow
+ * one child at a time as content streams in.
+ */
+const SKELETON_BUILDERS: Record<Section, (plan: Plan) => Component[]> = {
+  form: () => [
+    formContainer(0),
+    text("form_heading", "/form/heading", "h4"),
+    {
+      id: "form_submit",
+      component: "Button",
+      child: "form_submit_label",
+      variant: "primary",
+      action: { event: { name: "submitForm", context: { values: path(VALUES_PATH) } } },
+    },
+    text("form_submit_label", "/form/submitLabel"),
+  ],
+
+  actions: () => [actionsContainer(0)],
+
   media: () => [
     { id: "media", component: "Column", children: ["media_image", "media_caption"] },
     {
@@ -135,8 +159,6 @@ const SKELETON_BUILDERS: Partial<Record<Section, (plan: Plan) => Component[]>> =
   },
 };
 
-const DATA_DEPENDENT: Section[] = ["form", "actions"];
-
 function shell(plan: Plan, sectionIds: string[]): Component[] {
   const header: Component[] = [
     {
@@ -158,14 +180,35 @@ function shell(plan: Plan, sectionIds: string[]): Component[] {
 
 /** Components that depend only on the plan. Sent before Gemini has produced anything. */
 export function skeleton(plan: Plan): Component[] {
-  const early = plan.sections.filter((s) => !DATA_DEPENDENT.includes(s));
-  return [...shell(plan, early), ...early.flatMap((s) => SKELETON_BUILDERS[s]!(plan))];
+  return [...shell(plan, plan.sections), ...plan.sections.flatMap((s) => SKELETON_BUILDERS[s](plan))];
 }
 
-const fieldKey = (i: number) => `f${i}`;
-const valuePath = (i: number) => `/form/values/${fieldKey(i)}`;
+/** The form container with its first `count` fields attached. */
+export function formContainer(count: number): Component {
+  const fields = Array.from({ length: count }, (_, i) => `field_${i}`);
+  return { id: "form", component: "Column", children: ["form_heading", ...fields, "form_submit"] };
+}
 
-function fieldComponent(i: number, field: FieldContent, design: FieldDesign): Component {
+/** The actions row with its first `count` buttons attached. */
+export function actionsContainer(count: number): Component {
+  const buttons = Array.from({ length: count }, (_, i) => `action_${i}`);
+  return { id: "actions", component: "Row", children: buttons, justify: "end" };
+}
+
+export function actionComponents(i: number, label: string, primary: boolean): Component[] {
+  return [
+    {
+      id: `action_${i}`,
+      component: "Button",
+      child: `action_${i}_label`,
+      variant: primary ? "primary" : "default",
+      action: { event: { name: "action", context: { label } } },
+    },
+    text(`action_${i}_label`, `/actions/${i}/label`),
+  ];
+}
+
+export function fieldComponent(i: number, field: FieldContent, design: FieldDesign): Component {
   const id = `field_${i}`;
   const label = path(`/form/fields/${i}/label`);
   const value = path(valuePath(i));
@@ -236,76 +279,4 @@ export function widgetFits(widget: Widget, field: FieldContent): boolean {
   if (widget === "singleChoice" || widget === "multiChoice") return (field.options?.length ?? 0) >= 2;
   if (widget === "slider") return typeof field.min === "number" && typeof field.max === "number" && field.min < field.max;
   return true;
-}
-
-export interface FinalDesign {
-  fields: FieldDesign[];
-  /** Index into content.actions of the primary button, or -1. */
-  primaryAction: number;
-}
-
-/**
- * The data-dependent remainder: form and actions, plus a re-issued container
- * so the new sections are attached to the tree.
- */
-export function completion(plan: Plan, content: any, design: FinalDesign): Component[] {
-  const components: Component[] = [];
-  const hasForm = plan.sections.includes("form") && content.form?.fields?.length > 0;
-  const hasActions = plan.sections.includes("actions") && content.actions?.length > 0;
-  if (!hasForm && !hasActions) return components;
-
-  if (hasForm) {
-    const fields: FieldContent[] = content.form.fields;
-    components.push(
-      {
-        id: "form",
-        component: "Column",
-        children: ["form_heading", ...fields.map((_, i) => `field_${i}`), "form_submit"],
-      },
-      text("form_heading", "/form/heading", "h4"),
-      ...fields.map((f, i) => fieldComponent(i, f, design.fields[i])),
-      {
-        id: "form_submit",
-        component: "Button",
-        child: "form_submit_label",
-        variant: "primary",
-        action: {
-          event: {
-            name: "submitForm",
-            context: Object.fromEntries(fields.map((_, i) => [fieldKey(i), path(valuePath(i))])),
-          },
-        },
-      },
-      text("form_submit_label", "/form/submitLabel"),
-    );
-  }
-
-  if (hasActions) {
-    const actions: Array<{ label: string }> = content.actions;
-    components.push({
-      id: "actions",
-      component: "Row",
-      children: actions.map((_, i) => `action_${i}`),
-      justify: "end",
-    });
-    actions.forEach((action, i) => {
-      components.push(
-        {
-          id: `action_${i}`,
-          component: "Button",
-          child: `action_${i}_label`,
-          // A form's submit button is already the primary call to action.
-          variant: !hasForm && i === design.primaryAction ? "primary" : "default",
-          action: { event: { name: "action", context: { label: action.label } } },
-        },
-        text(`action_${i}_label`, `/actions/${i}/label`),
-      );
-    });
-  }
-
-  const sectionIds = plan.sections.filter(
-    (s) => !DATA_DEPENDENT.includes(s) || (s === "form" ? hasForm : hasActions),
-  );
-  const container = shell(plan, sectionIds)[plan.card ? 1 : 0];
-  return [container, ...components];
 }
