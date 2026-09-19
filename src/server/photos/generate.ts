@@ -18,7 +18,8 @@ import { tokens, type Photo } from "./library.js";
 export const IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL ?? "gemini-3.1-flash-lite-image";
 /** MAKE_PHOTOS=0 keeps to the library: no image requests, and a picture nothing suits stays a painted frame. */
 export const makesPhotos = () => process.env.MAKE_PHOTOS !== "0";
-const DIR = join(process.cwd(), ".cache", "photos");
+/** PHOTOS_DIR says where made photographs are kept when the working directory does not last: deployed, a mounted bucket. */
+const DIR = process.env.PHOTOS_DIR ?? join(process.cwd(), ".cache", "photos");
 const AT_ONCE = 4;
 
 let made: Photo[] | undefined;

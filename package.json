@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "start": "tsx src/server/main.ts",
     "typecheck": "tsc",
     "eval": "tsx src/eval.ts",
     "probe:jtbd": "tsx src/probe/jtbd.ts",
@@ -35,11 +36,11 @@
     "dotenv": "^18.0.1",
     "lit": "^3.3.3",
     "partial-json": "^0.1.7",
+    "tsx": "^4.23.13",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",
-    "tsx": "^4.23.13",
     "typescript": "^7.0.2",
     "vite": "^8.3.0"
   },
