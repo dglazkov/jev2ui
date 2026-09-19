@@ -115,12 +115,30 @@ export const KIT = {
 for (const [name, schema] of Object.entries(KIT)) (KIT as any)[name] = schema.strict();
 
 /**
- * The message that extends the catalog: the source of one custom component, to run in a sandbox (src/web/kit/sandbox.ts).
- * `card` says when to use it, in the words a Choice would offer Jev.
+ * A baked component, whole: its source to run in a sandbox (src/web/kit/sandbox.ts), and what it takes to use it
+ * again on another screen (src/server/mock/bake.ts). `card` says when, in the words a Choice would offer Jev;
+ * `dataSchema` is what a writer fills; `contract` is what Jev asked for when it was baked.
+ *
+ * Its `id` is a hash of what it is (the source and the schema), so it means the same component wherever it turns
+ * up: on another screen, in another session, in a saved app that somebody else opens. Nothing hands ids out.
  */
-export const DEFINE_COMPONENT = z
-  .object({ surfaceId: z.string(), id: z.string(), name: z.string(), card: z.string(), source: z.string() })
+export const BAKED = z
+  .object({
+    id: z.string().regex(/^[a-f0-9]{16}$/),
+    name: z.string().max(80),
+    card: z.string().max(400),
+    source: z.string().max(60_000),
+    dataSchema: z.record(z.unknown()),
+    contract: z.object({ use: z.enum(["watch", "pick", "adjust", "read"]), size: z.enum(["strip", "wide", "square", "tall"]), linked: z.boolean() }).strict(),
+  })
   .strict();
+export type Baked = z.infer<typeof BAKED>;
+
+/**
+ * The message that extends the catalog. It carries the whole component and not only what the renderer runs, so the
+ * messages of a screen are everything there is to know about it: the app's shelf is the components its screens define.
+ */
+export const DEFINE_COMPONENT = BAKED.extend({ surfaceId: z.string() }).strict();
 
 export type KitName = keyof typeof KIT;
 export type KitComponent = { id: string; component: KitName } & Record<string, unknown>;

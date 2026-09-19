@@ -193,6 +193,15 @@ the repo. The repo holds only the mechanism, and the kit is a catalog that grows
   cards on the shelf are the options of a Choice, so Jev can say "the same map", and only the data is written,
   by the small model, against the component's schema (under a second, against 10–25 s for a bake). The grammar
   extends itself: Gemini writes the option, Jev reads it. Regenerate bakes afresh.
+- **Whose shelf.** The browser's, like the rest of the session. `defineComponent` carries a component whole
+  (source, card, data schema, contract), so the messages of a screen say everything about it, and the shelf is
+  simply the components an app's screens define. The browser sends them with each tap and the server keeps
+  nothing: a shelf outlasts a restart, and no two people share one. A component's id is a hash of its source
+  and schema, so it names the same thing in any session, and cannot be claimed for other code. What comes back
+  from a browser is checked as a fresh bake is (the hash, the lint), and whatever fails is dropped: the
+  screen bakes its own. This is the shape a saved app wants. Its screens' messages, its design and the way
+  between them are one JSON document with nothing left behind on a server; opened by somebody else, it
+  brings its components along, they are checked on the way in like any other, and they run in the same frame.
 
 Measured: a pomodoro timer's tree at 325 ms and its ring 11 s later; the Royal Albert Hall in 22 s; a coffee
 map whose pins are the list's items in 27 s; all valid, none needing the second attempt. Ordinary screens are
@@ -385,8 +394,9 @@ npm run build && npm start          # http://localhost:8080, or wherever PORT sa
 PROJECT=my-project ./deploy.sh      # the same, in a container (Dockerfile), on Cloud Run
 ```
 
-It runs as one instance, because what a session learns lives in the process: the shelf of baked components,
-the designs already read. Made photographs are kept in `.cache/photos`, or wherever `PHOTOS_DIR` says;
+The session is the browser's, the shelf of baked components included, so the process holds nothing that
+matters: designs already read, which are only a saving. It is kept to one instance to bound what a busy day
+can spend, not because a second would be wrong. Made photographs are kept in `.cache/photos`, or wherever `PHOTOS_DIR` says;
 on Cloud Run that is a mounted bucket, so they outlast the instance. There is no login and no rate limit:
 whoever has the URL spends the keys.
 
@@ -443,7 +453,7 @@ rather than a benchmark.
   comes out as a dashboard with a ring on top, and a tall component shares the screen with a list.
 - A baked component is checked, not valid by construction. The lint cannot tell whether it draws the right
   thing, or draws at all. An error in the browser is reported in the trace, not sent back to the baker.
-- The shelf lives in the server's memory, keyed by the description the session started from.
+- The shelf lives in the browser's memory and goes when the page does: nothing saves an app yet.
 - A custom slot sits in the archetype's fixed place and there is at most one per screen.
 - Symbol questions are expensive: 175 options each, asked per row, which is why a settings screen costs
   around 19k Jev input tokens against 7k for most screens.

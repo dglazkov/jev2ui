@@ -3,8 +3,8 @@
 #
 #   PROJECT=my-project ./deploy.sh
 #
-# One instance at most: the shelf of baked components and the designs already
-# read live in the process. The keys come from Secret Manager, and made
+# One instance at most, to bound what it can spend: there is no login, and the
+# process holds nothing a second one would miss. The keys come from Secret Manager, and made
 # photographs are kept in a bucket mounted where PHOTOS_DIR says. The project
 # needs, once: secrets GEMINI_API_KEY and JEV_API_KEY, a bucket $PROJECT-photos,
 # and a service account jev2ui-run that can read the first and write the second.

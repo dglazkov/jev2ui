@@ -18,26 +18,39 @@
 // something custom, the cards on the shelf are the options of a Choice, so Jev
 // can say "the same map" and only the data is written, by the small model.
 // That is what keeps one app's map the same map on every screen.
+//
+// The shelf is the browser's, like the rest of the session (shared/journey.ts):
+// `defineComponent` carries a component whole, the browser sends back the ones
+// its screens define, and nothing is kept here. So a shelf outlasts this
+// process, no two people share one, and an app that is saved and opened by
+// somebody else brings its components with it. What comes back has been out of
+// our hands, so it is checked like a fresh bake (`shelfFrom`), and a component
+// is named by a hash of what it is: an id cannot be claimed, only earned.
 
+import { createHash } from "node:crypto";
 import { choice } from "@typesafe-ai/sdk";
+import { BAKED, type Baked } from "../../shared/kit.js";
 import { BAKER_MODEL, bakeGeminiJson, streamGeminiJson } from "../models.js";
 import type { Run } from "../run.js";
 import { CUSTOM_SIZE, type CustomContract, type ScreenPlan } from "./plan.js";
 import { itemSchema, type Setting } from "./screen.js";
 
-export interface Baked {
-  id: string;
-  name: string;
-  /** When to use it, as a fact about the screen: the wording of a Choice option. */
-  card: string;
-  source: string;
-  dataSchema: unknown;
-  contract: CustomContract;
-}
+/** More than an app has use for; a shelf is sent with every tap. */
+const LARGEST_SHELF = 12;
 
-/** The shelf, per app. It lives as long as the server does: a session's worth. */
-const shelves = new Map<string, Baked[]>();
-let nextId = 1;
+/** What a component is, as its name: the same source and schema are the same component, whoever baked it and wherever it has been. */
+const idOf = (source: string, dataSchema: unknown) => createHash("sha256").update(source).update("\0").update(JSON.stringify(dataSchema)).digest("hex").slice(0, 16);
+
+/** The components a browser sent that are what they say they are and would pass as fresh bakes. The rest are dropped, in silence: the screen bakes its own. */
+export function shelfFrom(sent: unknown): Baked[] {
+  if (!Array.isArray(sent)) return [];
+  const shelf = new Map<string, Baked>();
+  for (const one of sent.slice(-LARGEST_SHELF)) {
+    const parsed = BAKED.safeParse(one);
+    if (parsed.success && parsed.data.id === idOf(parsed.data.source, parsed.data.dataSchema) && !lint(parsed.data.source).length) shelf.set(parsed.data.id, parsed.data);
+  }
+  return [...shelf.values()];
+}
 
 const USES: Record<CustomContract["use"], string> = {
   watch: "It shows something that changes on its own, and the person keeps an eye on it. Make it run: it moves, counts or updates by itself once started.",
@@ -172,6 +185,7 @@ async function bakeNew(run: Run, screen: string, plan: ScreenPlan, setting: Sett
           problems.push(`\`${key}\` is not JSON text`);
         }
       }
+      if (!problems.length && (typeof reply.dataSchema !== "object" || reply.dataSchema === null || Array.isArray(reply.dataSchema))) problems.push("`dataSchema` is not a JSON Schema object");
     } catch {
       problems = ["the reply was not the JSON asked for"];
     }
@@ -182,7 +196,7 @@ async function bakeNew(run: Run, screen: string, plan: ScreenPlan, setting: Sett
       tokens: { input: generated.inputTokens, output: generated.outputTokens },
     });
     if (!problems.length) {
-      const baked: Baked = { id: `c${nextId++}`, name: String(reply.name), card: String(reply.card), source: String(reply.source), dataSchema: reply.dataSchema, contract: plan.custom! };
+      const baked: Baked = { id: idOf(String(reply.source), reply.dataSchema), name: String(reply.name).slice(0, 80), card: String(reply.card).slice(0, 400), source: String(reply.source), dataSchema: reply.dataSchema, contract: plan.custom! };
       return { baked, data: reply.data };
     }
     feedback = `\n\nYour previous attempt was rejected because ${problems.join("; and ")}. Write it again, whole, without that.`;
@@ -218,11 +232,12 @@ async function fromShelf(run: Run, screen: string, plan: ScreenPlan, shelf: Bake
   if (!candidates.length) return undefined;
   const question = choice(
     { context: "A developer describes one screen of an app in `screen`. The screen needs something drawn specially for it.", question: "Which of these is the thing this screen needs?" },
-    { ...Object.fromEntries(candidates.map((b) => [b.id, `${b.name}. ${b.card}`])), none: "None of these: this screen needs something else." },
+    // Named by their place on the shelf: an id is a hash, and a hash is noise to whoever reads the options.
+    { ...Object.fromEntries(candidates.map((b, i) => [`c${i + 1}`, `${b.name}. ${b.card}`])), none: "None of these: this screen needs something else." },
   );
   const asked = await run.askJev("Jev: look on the shelf", { screen }, { component: question });
   const answer = asked.answers.component;
-  const found = candidates.find((b) => b.id === answer.choice);
+  const found = candidates.find((_, i) => `c${i + 1}` === answer.choice);
   run.trace({
     stage: asked.stage,
     ms: asked.ms,
@@ -233,14 +248,14 @@ async function fromShelf(run: Run, screen: string, plan: ScreenPlan, shelf: Bake
 }
 
 /**
- * Fills the custom slot of a screen whose tree has already been sent. `fresh` bakes a new component even if the
- * shelf has one that fits: the developer asked for this screen to be made again.
+ * Fills the custom slot of a screen whose tree has already been sent. `shelf` is what the app has baked so far, as
+ * the browser tells it. `fresh` bakes a new component even if the shelf has one that fits: the developer asked for
+ * this screen to be made again.
  */
-export async function bakeCustom(run: Run, surfaceId: string, screen: string, plan: ScreenPlan, setting: Setting, fresh = false): Promise<void> {
-  const app = setting.app ?? screen;
-  const shelf = shelves.get(app) ?? [];
+export async function bakeCustom(run: Run, surfaceId: string, screen: string, plan: ScreenPlan, setting: Setting, shelf: Baked[], fresh = false): Promise<void> {
   const send = (baked: Baked, data: unknown) => {
-    run.send({ defineComponent: { surfaceId, id: baked.id, name: baked.name, card: baked.card, source: baked.source } });
+    // Whole, even when it came off the shelf: a screen's messages say everything about it, and the browser's shelf is read from them.
+    run.send({ defineComponent: { surfaceId, ...baked } });
     run.send({ updateDataModel: { surfaceId, path: "/custom", value: { use: baked.id, name: baked.name, data } } });
   };
 
@@ -256,6 +271,5 @@ export async function bakeCustom(run: Run, surfaceId: string, screen: string, pl
     run.send({ updateDataModel: { surfaceId, path: "/custom", value: { failed: true } } });
     return;
   }
-  shelves.set(app, [...shelf, made.baked]);
   send(made.baked, made.data);
 }

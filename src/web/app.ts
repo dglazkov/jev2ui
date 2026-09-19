@@ -8,6 +8,7 @@ import type { KitSurface } from "./kit/surface.js";
 import type { A2uiMessage, Decision, PipelineEvent, RunStats } from "../shared/events.js";
 import type { DesignReport, Theme } from "../shared/design.js";
 import type { Journey, Via } from "../shared/journey.js";
+import type { Baked } from "../shared/kit.js";
 
 const EXAMPLES = [
   "Settings screen for a podcast app",
@@ -254,8 +255,25 @@ export class App extends LitElement {
     void this.run(screen);
   }
 
+  /**
+   * What has been baked for this app: the components its screens define. Read from the screens and kept nowhere else,
+   * so a screen that is forgotten takes its component with it, and whatever holds the screens holds the shelf.
+   */
+  private get shelf(): Baked[] {
+    const shelf = new Map<string, Baked>();
+    for (const screen of this.screens.values())
+      for (const message of screen.messages as Array<Record<string, any>>) {
+        if (!message.defineComponent) continue;
+        const { surfaceId, ...baked } = message.defineComponent;
+        shelf.set(baked.id, baked);
+      }
+    return [...shelf.values()];
+  }
+
   private async run(screen: Screen) {
-    const { request } = screen;
+    // A screen made anew has no use for the shelf; any other is told what the app has baked, as of now.
+    const shelf = screen.request.journey && !screen.request.fresh ? this.shelf : [];
+    const request = shelf.length ? { ...screen.request, journey: { ...screen.request.journey!, shelf } } : screen.request;
     this.abort?.abort();
     const abort = (this.abort = new AbortController());
     // Every screen of an app is painted by the same design: the developer's file, or the same draw of Jev's mix.

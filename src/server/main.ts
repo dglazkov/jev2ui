@@ -1,7 +1,7 @@
 // The deployed server: the routes of http.ts, and the built front end
-// (`npm run build`) beside them. One process, because what a session learns
-// lives in it: the shelf of baked components (mock/bake.ts), the designs
-// already read (design-source.ts).
+// (`npm run build`) beside them. The session is the browser's
+// (shared/journey.ts), so nothing here has to last: the designs already read
+// (design-source.ts) are a saving, and made photographs are files.
 
 import { createServer } from "node:http";
 import { createReadStream, existsSync, statSync } from "node:fs";

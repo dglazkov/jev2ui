@@ -25,7 +25,7 @@ import { Run, SURFACE_ID } from "../run.js";
 import { KIT_CATALOG_ID } from "../../shared/kit.js";
 import type { PipelineEvent } from "../../shared/events.js";
 import type { Journey } from "../../shared/journey.js";
-import { bakeCustom } from "./bake.js";
+import { bakeCustom, shelfFrom } from "./bake.js";
 import { destination } from "./link.js";
 import { applyDesign, planQuestions, readPlan, type ScreenPlan } from "./plan.js";
 import { Pictures, itemWords } from "./pictures.js";
@@ -189,7 +189,7 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
       run.send({ updateDataModel: { surfaceId, path: "/nav", value: { items: nav.items, active: Math.max(0, active) } } });
     }
     // Baking takes seconds, not milliseconds. It starts now and the slot shimmers, like a picture that has not loaded.
-    if (plan.custom) streams.spawn(bakeCustom(run, surfaceId, prompt, plan, { ...setting, voice: setting.voice || (mixed ? parseDesign(mixed).voice : "") }, fresh));
+    if (plan.custom) streams.spawn(bakeCustom(run, surfaceId, prompt, plan, { ...setting, voice: setting.voice || (mixed ? parseDesign(mixed).voice : "") }, shelfFrom(journey?.shelf), fresh));
     const parts: Part[] = ["header", ...(plan.topLevel && !nav ? (["nav"] as Part[]) : []), ...plan.blocks.filter((b): b is Exclude<typeof b, "hero" | "custom"> => b !== "hero" && b !== "custom")];
     streams.open(new Set<string>(parts));
     // Writers cannot see each other, so a bill would not add up. Totals wait for the line items and are shown them.

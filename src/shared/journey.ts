@@ -2,6 +2,8 @@
 // (the app, the screens made so far, the way back); the server is told only
 // what it needs to make the next screen belong to the same app.
 
+import type { Baked } from "./kit.js";
+
 /** What was tapped. `data` is the data-model object behind it: the list item, the settings row. */
 export interface Via {
   /** `part` is a part of a custom component that has a page of its own: a day on a calendar, a room on a plan. */
@@ -20,4 +22,6 @@ export interface Journey {
   via: Via;
   /** The app's main destinations, once some screen has established them. Reused, never rewritten. */
   nav?: { items: Array<{ label: string; icon?: string }> };
+  /** The components baked for the app so far: what its screens define. The server keeps none of them (mock/bake.ts). */
+  shelf?: Baked[];
 }
