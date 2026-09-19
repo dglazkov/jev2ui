@@ -46,7 +46,8 @@ function api(): Plugin {
           "Cache-Control": "no-cache",
           Connection: "keep-alive",
         });
-        const { runHybrid, runMock } = await load("/src/server/hybrid.ts");
+        const { runHybrid } = await load("/src/server/hybrid.ts");
+        const { runMock } = await load("/src/server/mock/pipeline.ts");
         const { runBaseline } = await load("/src/server/baseline.ts");
         const { runJobs } = await load("/src/server/jobs.ts");
         const events =

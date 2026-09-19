@@ -1,10 +1,9 @@
 import { LitElement, html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
-import { ContextProvider } from "@lit/context";
-import { MessageProcessor, type SurfaceModel } from "@a2ui/web_core/v0_9";
-import { basicCatalog, Context } from "@a2ui/lit/v0_9";
-import { renderMarkdown } from "@a2ui/markdown-it";
+import "./kit/surface.js";
+import "./kit/kit.css";
+import type { KitSurface } from "./kit/surface.js";
 import type { A2uiMessage, Decision, PipelineEvent, RunStats } from "../shared/events.js";
 import type { DesignReport, Theme } from "../shared/design.js";
 
@@ -80,7 +79,7 @@ export class App extends LitElement {
   @state() private designError = "";
   @state() private designBusy = false;
 
-  @state() private surface: SurfaceModel<any> | undefined;
+  @state() private painted = false;
   @state() private log: LogEntry[] = [];
   @state() private stats: RunStats | undefined;
   @state() private firstPaintMs: number | undefined;
@@ -99,10 +98,8 @@ export class App extends LitElement {
     return this;
   }
 
-  constructor() {
-    super();
-    // Text components pull their markdown renderer from context.
-    new ContextProvider(this, { context: Context.markdown, initialValue: renderMarkdown });
+  private get kit() {
+    return this.querySelector<KitSurface>("kit-surface")!;
   }
 
   // --- Design -----------------------------------------------------------------
@@ -112,7 +109,7 @@ export class App extends LitElement {
     this.designError = "";
     if (choice === AUTO) {
       // Mixed from the prompt at generation time; if a mock is showing, mix for it now.
-      if (this.surface) void this.loadDesign({ brief: this.prompt });
+      if (this.painted) void this.loadDesign({ brief: this.prompt });
       return;
     }
     this.markdown = choice === CUSTOM ? (localStorage.getItem(STORED_DESIGN) ?? this.markdown) : PRESETS.find((p) => p.id === choice)!.markdown;
@@ -157,17 +154,13 @@ export class App extends LitElement {
     if (!prompt.trim()) return;
     this.abort?.abort();
     const abort = (this.abort = new AbortController());
-    this.surface = undefined;
+    this.painted = false;
+    this.kit.reset();
     this.log = [];
     this.stats = undefined;
     this.firstPaintMs = undefined;
     this.messages = [];
     this.running = true;
-
-    const processor = new MessageProcessor([basicCatalog], (action) => {
-      this.note("plain", `action "${action.name}" ${JSON.stringify(action.context)}`);
-    });
-    processor.onSurfaceCreated((surface) => (this.surface = surface));
 
     try {
       await streamEvents({ prompt, markdown: this.choice === AUTO ? undefined : this.markdown }, abort.signal, (event) => {
@@ -179,11 +172,10 @@ export class App extends LitElement {
             break;
           case "a2ui":
             this.messages.push(event.message);
-            try {
-              processor.processMessages([event.message as any]);
-              if ("updateComponents" in event.message) this.firstPaintMs ??= event.at;
-            } catch (error) {
-              this.note("bad", `renderer rejected a message: ${(error as Error).message}`, event.at);
+            this.kit.apply(event.message);
+            if ("updateComponents" in event.message) {
+              this.firstPaintMs ??= event.at;
+              this.painted = true;
             }
             break;
           case "trace":
@@ -229,12 +221,12 @@ export class App extends LitElement {
     const vars = this.report?.theme.vars;
     const swatches: Array<[string, string]> = vars
       ? [
-          ["page", vars["--a2ui-color-background"]],
-          ["card", vars["--a2ui-color-surface"]],
-          ["text", vars["--a2ui-color-on-background"]],
-          ["muted", vars["--a2ui-text-caption-color"]],
-          ["accent", vars["--a2ui-color-primary"]],
-          ["border", vars["--a2ui-color-border"]],
+          ["page", vars["--k-page"]],
+          ["card", vars["--k-card"]],
+          ["text", vars["--k-text"]],
+          ["muted", vars["--k-muted"]],
+          ["accent", vars["--k-accent"]],
+          ["border", vars["--k-border"]],
         ]
       : [];
     const problems = this.report?.findings.filter((f) => f.severity !== "info") ?? [];
@@ -320,9 +312,9 @@ export class App extends LitElement {
     const s = this.stats;
     const theme = this.report?.theme;
     const frame = theme
-      ? { ...theme.vars, "font-family": theme.fontFamily, "color-scheme": theme.colorScheme, background: theme.vars["--a2ui-color-background"], color: theme.vars["--a2ui-color-on-background"] }
+      ? { ...theme.vars, "color-scheme": theme.colorScheme, background: theme.vars["--k-page"] }
       : {};
-    const stale = this.surface && !this.running && this.report && this.builtWith !== undefined && this.report.structure !== this.builtWith;
+    const stale = this.painted && !this.running && this.report && this.builtWith !== undefined && this.report.structure !== this.builtWith;
     return html`
       <header class="top">
         <h1>jev2ui <small>describe a screen, get a mock</small></h1>
@@ -368,12 +360,12 @@ export class App extends LitElement {
               ${s
                 ? html`<span class="pill">done ${s.totalMs} ms</span>
                     <span class="pill">${s.jevCalls} Jev · ${s.geminiOutputTokens} Gemini tok</span>
-                    <span class="pill ${s.valid ? "good" : "bad"}">${s.valid ? "valid A2UI" : "invalid A2UI"}</span>`
+                    <span class="pill ${s.valid ? "good" : "bad"}">${s.valid ? "valid tree" : "invalid tree"}</span>`
                 : nothing}
             </div>
             <div class="exports">
-              <button ?disabled=${!this.surface} @click=${() => this.copy("a2ui", JSON.stringify(this.messages, null, 2))}>
-                ${this.copied === "a2ui" ? "Copied" : "Copy A2UI"}
+              <button ?disabled=${!this.painted} @click=${() => this.copy("a2ui", JSON.stringify(this.messages, null, 2))}>
+                ${this.copied === "a2ui" ? "Copied" : "Copy messages"}
               </button>
               <button ?disabled=${!theme} @click=${() => this.copy("css", this.themeCss())}>${this.copied === "css" ? "Copied" : "Copy theme CSS"}</button>
             </div>
@@ -381,9 +373,11 @@ export class App extends LitElement {
           ${stale ? html`<p class="stale">This design lays the screen out differently. <button class="link" @click=${() => this.generate()}>Mock it again</button></p>` : nothing}
           <div class="device ${this.device}" style="max-width:${DEVICES[this.device]}px">
             <div class="screen" style=${styleMap(frame)}>
-              ${this.surface
-                ? html`<a2ui-surface .surface=${this.surface}></a2ui-surface>`
-                : html`<p class="empty">${this.running ? "Waiting for the first components…" : "Describe a screen and it appears here."}</p>`}
+              <kit-surface
+                @kit-action=${(e: CustomEvent) => this.note("plain", `pressed "${e.detail.label}" (${e.detail.name})`)}
+                ?hidden=${!this.painted}
+              ></kit-surface>
+              ${this.painted ? nothing : html`<p class="empty">${this.running ? "Planning the screen…" : "Describe a screen and it appears here."}</p>`}
             </div>
           </div>
         </section>

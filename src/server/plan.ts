@@ -237,9 +237,7 @@ Other parts of the same screen are written separately, so stay strictly within y
 Be specific and realistic: invent plausible concrete details rather than placeholders. Keep every string short.
 Do not describe the UI, do not mention buttons or layout in text, and do not use HTML.`;
 
-export function partPrompt(request: string, part: "header" | Section, sections: Section[] | null, voice = ""): string {
+export function partPrompt(request: string, part: "header" | Section, sections: Section[] | null): string {
   const layout = sections ? `The screen has these parts: header, ${sections.join(", ")}.\n` : "";
-  // The Overview of a DESIGN.md describes the brand; the words should sound like it.
-  const brand = voice ? `The product's brand, for tone of voice only:\n${voice}\n` : "";
-  return `User request: ${request}\n${layout}${brand}Write the "${part}" part.`;
+  return `User request: ${request}\n${layout}Write the "${part}" part.`;
 }

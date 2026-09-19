@@ -1,9 +1,12 @@
-// From a DESIGN.md to paint. The A2UI renderer keeps its components in shadow
-// roots and exposes `--a2ui-*` custom properties, so a theme is a set of those.
-// Tokens give the values; the reading (design-md.ts) says which token goes where.
+// From a DESIGN.md to paint: the `--k-*` variables the kit's stylesheet reads
+// (src/web/kit/kit.css). Tokens give the values; the reading (design-md.ts)
+// says which colour goes where. The kit's text roles are the DESIGN.md
+// typography scale, so a typography token carries over whole: family, size,
+// weight, line height and letter spacing.
 
 import type { DesignSystemState, ResolvedDimension, ResolvedTypography } from "@google/design.md/linter";
-import { luminance, mix, type Design, type DesignRead } from "./design-md.js";
+import { contrast, luminance, mix, type Design, type DesignRead } from "./design-md.js";
+import { TEXT_ROLES } from "../shared/kit.js";
 import type { Theme } from "../shared/design.js";
 
 const ROOT_PX = 16;
@@ -27,14 +30,27 @@ const color = (value: unknown): string | undefined =>
   value && typeof value === "object" && (value as any).type === "color" && ((value as any).a ?? 1) === 1 ? (value as any).hex : undefined;
 
 const GENERIC = /^(serif|sans-serif|monospace|system-ui|cursive|fantasy|ui-[a-z-]+|inherit)$/i;
+// The name goes into a style attribute; keep it to what a font name can contain.
+const familyName = (family: string | undefined) => family?.split(",")[0].replace(/[^\w .-]/g, "").trim();
 function fontStack(family: string | undefined): string | undefined {
-  // The name goes into a style attribute; keep it to what a font name can contain.
-  const name = family?.split(",")[0].replace(/[^\w .-]/g, "").trim();
+  const name = familyName(family);
   if (!name) return undefined;
   if (GENERIC.test(name)) return name;
   const fallback = /mono|code/i.test(name) ? "ui-monospace, monospace" : /serif|playfair|garamond|georgia|times|slab/i.test(name) && !/sans/i.test(name) ? "Georgia, serif" : "system-ui, sans-serif";
   return `"${name}", ${fallback}`;
 }
+
+type Role = (typeof TEXT_ROLES)[number];
+
+/** Which typography token plays each of the kit's text roles, by the names design systems actually use. */
+const ROLE_TOKENS: Record<Role, { names: string[]; pattern?: RegExp }> = {
+  display: { names: ["display", "headline-display", "display-lg", "headline-xl", "headline-lg", "h1"], pattern: /display|^h1$/i },
+  headline: { names: ["headline-md", "headline-lg", "headline", "h2", "h1", "title-lg"], pattern: /headline|heading|^h\d$/i },
+  title: { names: ["title-md", "title-lg", "title", "title-sm", "headline-sm", "h3", "h4"], pattern: /title|subhead/i },
+  body: { names: ["body-md", "body", "body-lg", "body-sm"], pattern: /body|paragraph|text/i },
+  label: { names: ["label-md", "label", "label-lg", "label-sm", "label-caps"], pattern: /label|button|overline/i },
+  caption: { names: ["body-sm", "caption", "label-sm"], pattern: /caption|small|meta/i },
+};
 
 export function buildTheme(design: Design, read: DesignRead): Theme {
   const { system } = design;
@@ -43,99 +59,112 @@ export function buildTheme(design: Design, read: DesignRead): Theme {
   const vars: Record<string, string> = {};
 
   // --- Colour ---------------------------------------------------------------
-  const secondaryButton = component(system, /^button-secondary$/);
+  const hex = (name: string) => system.colors.get(name)?.hex;
+  const secondary = component(system, /^button-secondary$/);
   const input = component(system, /^(input|text-?field)/);
-  const buttonBackground = color(secondaryButton?.get("backgroundColor")) ?? c.card;
+  const accentSoft = mix(c.accent, c.page, dark ? 0.2 : 0.13);
+  // Status colours must read on the page; a token that does not is nudged toward the text colour.
+  const legible = (tone: string) => (contrast(tone, c.page) >= 3 ? tone : mix(tone, c.text, 0.6));
   Object.assign(vars, {
-    "--a2ui-color-background": c.page,
-    "--a2ui-color-on-background": c.text,
-    "--a2ui-text-color-text": c.text,
-    "--a2ui-color-surface": c.card,
-    "--a2ui-color-on-surface": c.text,
-    "--a2ui-text-caption-color": c.muted,
-    "--a2ui-color-primary": c.accent,
-    "--a2ui-color-on-primary": c.onAccent,
-    "--a2ui-color-primary-hover": color(component(system, /^button-primary-hover$/)?.get("backgroundColor")) ?? mix(c.accent, c.text, 0.88),
-    "--a2ui-button-background": buttonBackground,
-    "--a2ui-color-on-secondary": color(secondaryButton?.get("textColor")) ?? c.text,
-    "--a2ui-color-secondary": buttonBackground,
-    "--a2ui-color-secondary-hover": color(component(system, /^button-secondary-hover$/)?.get("backgroundColor")) ?? mix(buttonBackground, c.text, 0.92),
-    "--a2ui-color-border": c.border,
-    "--a2ui-border": `1px solid ${c.border}`,
-    "--a2ui-color-input": color(input?.get("backgroundColor")) ?? c.card,
-    "--a2ui-color-on-input": color(input?.get("textColor")) ?? c.text,
-    "--a2ui-text-a-color": c.accent,
-    "--a2ui-slider-thumb-color": c.accent,
-    "--a2ui-slider-track-color": c.border,
+    "--k-page": c.page,
+    "--k-card": c.card,
+    "--k-text": c.text,
+    "--k-muted": c.muted,
+    "--k-accent": c.accent,
+    "--k-on-accent": c.onAccent,
+    // Accent as text must be legible too; an accent that is not (a pale button colour) falls back to the text colour.
+    "--k-accent-soft": accentSoft,
+    "--k-border": c.border,
+    "--k-danger": legible(hex("error") ?? (dark ? "#ff6b6b" : "#c62828")),
+    "--k-success": legible(hex("success") ?? (dark ? "#4cd08a" : "#1a7f4e")),
+    "--k-warning": legible(hex("warning") ?? (dark ? "#f2b84b" : "#a15c00")),
+    "--k-star": dark ? "#f2b84b" : "#e6a100",
+    "--k-input": color(input?.get("backgroundColor")) ?? c.card,
+    "--k-input-text": color(input?.get("textColor")) ?? c.text,
   });
-
-  // --- Depth ----------------------------------------------------------------
-  // The prose describes depth; there is no token for it.
-  const shadow = dark ? "0 8px 28px rgb(0 0 0 / 0.5)" : `0 1px 2px ${mix(c.accent, "#000000", 0.3)}14, 0 8px 28px ${mix(c.accent, "#000000", 0.3)}1f`;
-  vars["--a2ui-card-box-shadow"] = read.elevation === "shadow" ? shadow : "none";
-  vars["--a2ui-card-border"] = read.elevation === "outline" ? `1px solid ${c.border}` : "none";
-  if (read.elevation !== "outline" && !secondaryButton) vars["--a2ui-button-border"] = `1px solid ${c.border}`;
-
-  // --- Shape ----------------------------------------------------------------
-  const radius = toPx(find(system.rounded, ["md", "DEFAULT", "sm"], /./));
-  if (radius !== undefined) {
-    const card = component(system, /^(card|panel)/);
-    const button = component(system, /^button-primary$/);
-    const chip = component(system, /^(chip|badge|tag)/);
-    const small = toPx(find(system.rounded, ["sm"])) ?? radius;
-    const large = toPx(find(system.rounded, ["lg", "xl"])) ?? radius;
-    Object.assign(vars, {
-      "--a2ui-border-radius": px(radius),
-      "--a2ui-card-border-radius": px(dimension(card?.get("rounded")) ?? large),
-      "--a2ui-button-border-radius": px(dimension(button?.get("rounded")) ?? radius),
-      "--a2ui-textfield-border-radius": px(dimension(input?.get("rounded")) ?? small),
-      "--a2ui-choicepicker-chip-border-radius": px(dimension(chip?.get("rounded")) ?? toPx(system.rounded.get("full")) ?? radius),
-      "--a2ui-image-border-radius": px(radius),
-    });
+  if (contrast(c.accent, c.page) < 3) {
+    // The accent still fills buttons; where it would be text or an icon, the text colour stands in.
+    vars["--k-accent-soft"] = mix(c.text, c.page, 0.1);
+    vars["--k-accent-ink"] = c.text;
+  }
+  const secondaryBg = color(secondary?.get("backgroundColor"));
+  if (secondaryBg) {
+    vars["--k-button"] = secondaryBg;
+    vars["--k-button-text"] = color(secondary?.get("textColor")) ?? c.text;
+    if (contrast(secondaryBg, c.page) < 1.15) vars["--k-button-border"] = `1px solid ${c.border}`;
   }
 
-  // --- Space ----------------------------------------------------------------
-  // The renderer's everyday gap is its "m"; in a DESIGN.md scale that is usually `sm`.
-  const gap = toPx(find(system.spacing, ["sm", "base", "unit"])) ?? 8;
-  const roomy = toPx(find(system.spacing, ["md", "gutter"])) ?? gap * 2;
+  // --- Depth: the prose describes it; there is no token for it ---------------
+  const tint = mix(c.accent, "#000000", 0.3);
+  vars["--k-card-shadow"] = read.elevation !== "shadow" ? "none" : dark ? "0 8px 28px rgb(0 0 0 / 0.5)" : `0 1px 2px ${tint}14, 0 8px 28px ${tint}1f`;
+  vars["--k-card-border"] = read.elevation === "outline" ? `1px solid ${c.border}` : "0";
+
+  // --- Shape ----------------------------------------------------------------
+  const radius = toPx(find(system.rounded, ["md", "DEFAULT", "sm"], /./)) ?? 8;
+  const card = component(system, /^(card|panel)/);
+  const button = component(system, /^button-primary$/);
+  const chip = component(system, /^(chip|badge|tag)/);
   Object.assign(vars, {
-    "--a2ui-spacing-xs": px((toPx(system.spacing.get("xs")) ?? gap / 2) / 2),
-    "--a2ui-spacing-s": px(toPx(system.spacing.get("xs")) ?? gap / 2),
-    "--a2ui-spacing-m": px(gap),
-    "--a2ui-spacing-l": px(roomy),
-    "--a2ui-spacing-xl": px(toPx(find(system.spacing, ["lg", "xl"])) ?? roomy * 2),
-    "--a2ui-list-gap": px(roomy),
-    "--a2ui-card-padding": px(dimension(component(system, /^(card|panel)/)?.get("padding")) ?? roomy),
-    "--a2ui-card-margin": "0",
-    "--a2ui-button-margin": "0",
+    "--k-radius-sm": px(toPx(system.rounded.get("sm")) ?? radius / 2),
+    "--k-radius-md": px(radius),
+    "--k-radius-card": px(dimension(card?.get("rounded")) ?? toPx(find(system.rounded, ["lg", "xl"])) ?? radius),
+    "--k-radius-button": px(dimension(button?.get("rounded")) ?? radius),
+    "--k-radius-input": px(dimension(input?.get("rounded")) ?? radius),
+    "--k-radius-chip": px(dimension(chip?.get("rounded")) ?? toPx(system.rounded.get("full")) ?? radius),
   });
-  const buttonPadding = dimension(component(system, /^button-primary$/)?.get("padding"));
-  if (buttonPadding !== undefined) vars["--a2ui-button-padding"] = `${px(buttonPadding * 0.75)} ${px(buttonPadding * 1.5)}`;
-  const inputPadding = dimension(input?.get("padding"));
-  if (inputPadding !== undefined) vars["--a2ui-textfield-padding"] = px(inputPadding);
 
-  // --- Type -----------------------------------------------------------------
-  const body = find(system.typography, ["body-md", "body", "body-lg", "body-sm"], /body|paragraph|text/i);
-  const title = find(system.typography, ["headline-md", "headline-lg", "title-lg", "h2", "h1"], /headline|display|title|^h\d/i);
-  const label = find(system.typography, ["label-md", "label", "label-lg", "label-sm"], /label|caption/i);
-  const bodyPx = toPx(body?.fontSize) ?? 16;
-  vars["--a2ui-font-size"] = px(bodyPx);
-  // The screen title is an h2: two steps up the renderer's modular scale.
-  const titlePx = toPx(title?.fontSize);
-  if (titlePx) vars["--a2ui-font-scale"] = String(Math.min(1.6, Math.max(1.08, Math.sqrt(titlePx / bodyPx))).toFixed(3));
-  const lineHeight = (t: ResolvedTypography | undefined) =>
-    t?.lineHeight ? (t.lineHeight.unit ? (toPx(t.lineHeight)! / (toPx(t.fontSize) ?? bodyPx)).toFixed(2) : String(t.lineHeight.value)) : undefined;
-  if (lineHeight(body)) vars["--a2ui-line-height-body"] = lineHeight(body)!;
-  if (lineHeight(title)) vars["--a2ui-line-height-headings"] = lineHeight(title)!;
-  if (fontStack(title?.fontFamily)) vars["--a2ui-font-family-title"] = fontStack(title?.fontFamily)!;
-  if (label?.fontSize) vars["--a2ui-label-font-size"] = px(toPx(label.fontSize)!);
-  vars["--a2ui-label-font-weight"] = String(label?.fontWeight ?? 600);
-  vars["--a2ui-button-font-weight"] = String(label?.fontWeight ?? 600);
+  // --- Space ----------------------------------------------------------------
+  const sm = toPx(find(system.spacing, ["sm", "base", "unit"])) ?? 8;
+  const md = toPx(find(system.spacing, ["md", "gutter"])) ?? sm * 2;
+  const lg = toPx(system.spacing.get("lg")) ?? md * 1.75;
+  Object.assign(vars, {
+    "--k-space-xs": px(toPx(system.spacing.get("xs")) ?? sm / 2),
+    "--k-space-sm": px(sm),
+    "--k-space-md": px(md),
+    "--k-space-lg": px(Math.min(lg, 40)),
+    "--k-space-xl": px(Math.min(toPx(system.spacing.get("xl")) ?? lg * 1.5, 64)),
+    "--k-margin": px(Math.min(Math.max(toPx(system.spacing.get("margin")) ?? md, 14), 28)),
+    "--k-card-pad": px(Math.min(dimension(card?.get("padding")) ?? md, 28)),
+  });
+  const buttonPad = dimension(button?.get("padding"));
+  if (buttonPad !== undefined) vars["--k-button-pad"] = `${px(Math.min(buttonPad, 18) * 0.75)} ${px(Math.min(buttonPad, 18) * 1.5)}`;
+  const inputPad = dimension(input?.get("padding"));
+  if (inputPad !== undefined) vars["--k-input-pad"] = `${px(Math.min(inputPad, 16))} ${px(Math.min(inputPad, 16) * 1.3)}`;
 
-  const families = [body, title, label].map((t) => t?.fontFamily?.split(",")[0].replace(/[^\w .-]/g, "").trim());
+  // --- Type: each role is a typography token, whole -------------------------
+  const tokens = Object.fromEntries(TEXT_ROLES.map((role) => [role, find(system.typography, ROLE_TOKENS[role].names, ROLE_TOKENS[role].pattern)])) as Record<Role, ResolvedTypography | undefined>;
+  const bodyPx = toPx(tokens.body?.fontSize) ?? 16;
+  const headlinePx = toPx(tokens.headline?.fontSize) ?? bodyPx * 1.5;
+  // A phone screen cannot carry a 48px headline; roles are capped at what a mock can show.
+  const caps: Record<Role, number> = { display: 40, headline: 30, title: 20, body: 18, label: 14, caption: 14 };
+  const defaults: Record<Role, { size: number; weight: number; line: number; like: Role }> = {
+    display: { size: headlinePx * 1.3, weight: 700, line: 1.1, like: "headline" },
+    headline: { size: headlinePx, weight: 700, line: 1.2, like: "body" },
+    // A design with no title level gets one in the headline's face, a notch above body.
+    title: { size: bodyPx * 1.06, weight: 600, line: 1.3, like: "headline" },
+    body: { size: bodyPx, weight: 400, line: 1.5, like: "body" },
+    label: { size: bodyPx * 0.78, weight: 600, line: 1.3, like: "body" },
+    caption: { size: bodyPx * 0.84, weight: 400, line: 1.4, like: "body" },
+  };
+  for (const role of TEXT_ROLES) {
+    const token = tokens[role];
+    const fallback = defaults[role];
+    const size = Math.min(toPx(token?.fontSize) ?? fallback.size, caps[role]);
+    const line = token?.lineHeight ? (token.lineHeight.unit ? toPx(token.lineHeight)! / (toPx(token.fontSize) ?? size) : token.lineHeight.value) : fallback.line;
+    vars[`--k-${role}-font`] = fontStack(token?.fontFamily ?? tokens[fallback.like]?.fontFamily ?? tokens.body?.fontFamily) ?? "inherit";
+    vars[`--k-${role}-size`] = px(size);
+    vars[`--k-${role}-weight`] = String(token?.fontWeight ?? (role === "title" ? Math.min(tokens.headline?.fontWeight ?? 600, 700) : fallback.weight));
+    vars[`--k-${role}-line`] = String(Math.round(line * 100) / 100);
+    if (token?.letterSpacing) vars[`--k-${role}-track`] = `${token.letterSpacing.value}${token.letterSpacing.unit}`;
+  }
+  // Wide tracking on a small label is how a DESIGN.md spells "small caps"; the prose usually says so outright.
+  const track = tokens.label?.letterSpacing;
+  if (track && track.unit === "em" && track.value >= 0.06) vars["--k-label-case"] = "uppercase";
+
+  const families = TEXT_ROLES.map((role) => familyName(tokens[role]?.fontFamily));
   return {
     vars,
-    fontFamily: fontStack(body?.fontFamily) ?? "system-ui, sans-serif",
+    fontFamily: fontStack(tokens.body?.fontFamily) ?? "system-ui, sans-serif",
     fonts: [...new Set(families.filter((f): f is string => !!f && !GENERIC.test(f)))],
     colorScheme: dark ? "dark" : "light",
   };

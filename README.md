@@ -3,8 +3,9 @@
 A design tool for developers: describe the screen you want, get a mock of it, painted by your
 [DESIGN.md](https://github.com/google-labs-code/design.md).
 
-Under it is an experiment: render [A2UI](https://github.com/a2ui-project/a2ui) from a text prompt using
-[TypeSafe's Jev](https://docs.typesafe.ai/) for the decisions and a small Gemini model for the words.
+Under it is an experiment: build a screen from a text prompt using [TypeSafe's Jev](https://docs.typesafe.ai/)
+for the decisions and a small Gemini model for the words. It began by emitting
+[A2UI](https://github.com/a2ui-project/a2ui); the mocks now use a humble fork of it with a richer catalog.
 Jev is a decision model. It cannot generate text or JSON; it answers yes/no (Noul), pick-one (Choice)
 and rating (Score) questions with calibrated probabilities, many at once, in roughly 100–300 ms.
 
@@ -17,7 +18,67 @@ npm run dev        # http://localhost:5173
 
 Type a description ("Checkout for a sneaker store, with order summary"), pick a design, and the mock appears
 in a phone, tablet or desktop frame in about a second and a half. Every decision behind it is listed in the
-trace, with its probability. Copy the A2UI messages, the theme as CSS variables, or the DESIGN.md.
+trace, with its probability. Copy the messages, the theme as CSS variables, or the DESIGN.md.
+
+## How a mock is built: Jev fills a tree
+
+Jev cannot draw a tree, but it can choose, and a tree is a nest of choices (`src/server/mock/plan.ts`):
+
+```
+archetype         which canonical layout this is: feed, dashboard, detail, guide, settings, form, checkout, confirm.
+                  Fixes which blocks are allowed and the order they come in.
+  blocks          which of the allowed blocks are present: banner, hero, filters, stats, list, groups, facts,
+                  prose, steps, form, actions; plus an app bar, and a navigation bar on the app's main screens
+    anatomy       each block's slots. A list item: what leads it (avatar, thumbnail, symbol, number), which
+                  metadata it carries (price, rating, status, time, progress), what trails it (chevron, button,
+                  switch, checkbox), and whether the list is rows, cards, a grid or a reel
+      instances   per row, badge and number, once the words exist: does this setting get a switch, a value or a
+                  way in? Which symbol? Is "Degraded" bad news? Is +0.3 kW?
+```
+
+The first three levels depend only on the prompt, so they are one Jev request of 28 questions, and the
+whole tree is on screen at around 200 ms, shimmering where words will go. Order is never asked: it belongs to the
+archetype, which is where best practice lives. The fourth level is asked as each group, list or field completes
+in Gemini's stream (`refine.ts`). Those answers are written into the *data model* beside the words they are
+about (`/groups/1/rows/2/control = "switch"`) and the tree binds to them, so a template stays a template however
+much its instances differ.
+
+**Where the design knowledge comes from.** The options Jev chooses among carry criteria, and the criteria are
+the "when to use" guidance of the systems the components come from, rephrased as facts about the content,
+because Jev reads a situation far better than it judges a design
+([docs/jtbd-probe.md](docs/jtbd-probe.md)). Material says a switch is for one setting that is on or off and
+takes effect at once, and the HIG says a disclosure indicator marks a row that opens another page; so the
+question is "what kind of row is this?", and on a podcast settings screen Jev answers `Skip forward` → value,
+`Auto-download` → switch, `Log out` → danger, each at p ≈ 1.00. Other rules live in code, where they cannot be
+got wrong: a navigation bar only on top-level screens and a back arrow on the rest (Material); one primary
+action per screen, red if it destroys something; no second set of buttons competing with a form's submit;
+picture layouts only for things with a look; rows in a group all lead with a symbol or none do; a bill's totals
+are written after its line items and shown them, so that it adds up.
+
+### The kit: a humble fork of A2UI
+
+`src/shared/kit.ts` keeps what makes A2UI good for this: a flat list of components addressed by id, structure
+(`updateComponents`) separate from content (`updateDataModel`), any value bindable to a data path, and
+templates stamped per array element (here they nest: rows inside groups). The envelope is unchanged. What
+changes is the vocabulary. A2UI's basic catalog stops at atoms (Text, Row, Card) and 59 icons, and no amount
+of choosing makes a rich screen out of those. The kit has molecules, with anatomy other people already worked out:
+
+| Kit | From |
+| --- | --- |
+| Stack, Cluster, Grid, Reel | Every Layout's primitives; the grid is intrinsic, so tiles reflow from phone to desktop |
+| ListItem: leading / overline, headline, supporting / meta, trailing, below | Material 3 lists |
+| AppBar, NavBar, StickyBar | Material 3 top app bar, navigation bar, bottom bar |
+| Group, SettingRow | iOS inset grouped lists |
+| Stat: label, value, delta | the KPI card (Tremor, shadcn/ui blocks) |
+| Banner, Badge: tone | Polaris |
+| Text roles: display, headline, title, body, label, caption | the DESIGN.md typography scale itself |
+| Icon | any of 175 Material Symbols |
+
+The schemas are shared: the server validates every message against them, and a small light-DOM renderer
+(`src/web/kit/`) draws them. Owning the renderer is also what lets a DESIGN.md carry over whole (below).
+
+`npm run eval -- --only mock` over 13 prompts: 13 of 13 valid trees with a mixed design and with Broadsheet,
+first components at 159–289 ms, complete in 0.9–2.2 s.
 
 ## Rendering strategy: the mock is painted by a DESIGN.md
 
@@ -35,13 +96,16 @@ part of the system that can use it.
    Code keeps the last word: a component token (`button-primary.backgroundColor`) or a conventional name
    (`on-surface`) settles a role without asking, and a pick that fails a contrast check is thrown out in favour
    of the next in Jev's ranking. One request, about 200 ms, once per file.
-3. **Code maps tokens to paint** (`src/server/theme.ts`). The A2UI renderer keeps components in shadow roots
-   and exposes `--a2ui-*` custom properties, so a theme is about 45 of those plus the fonts to load. The theme
-   is applied in the browser, so switching or editing the design re-skins the mock without regenerating it.
+3. **Code maps tokens to paint** (`src/server/theme.ts`): about 57 `--k-*` variables plus the fonts to load.
+   The kit's text roles are the DESIGN.md typography scale, so a typography token carries over whole: family,
+   size, weight, line height and letter spacing (wide tracking on a small label becomes small caps, as the
+   prose of such designs invariably asks). The theme is applied in the browser, so switching or editing the
+   design re-skins the mock without regenerating it.
 4. **The design changes structure, not only paint.** A specific reference brings its constraints for free: a
    newspaper has no pictograms and no cards, an instrument panel has no photographs. Jev answers three
-   yes/no questions about the file, and the answers overrule the screen plan: the header icon goes, list
-   items become rows parted by rules, the hero picture is dropped. The trace says when this happens.
+   yes/no questions about the file, and the answers overrule the screen plan: symbols go, cards become rows
+   parted by rules and stat tiles become ruled columns, the lead photograph is dropped and pictured lists fall
+   back to rows. The trace says when this happens.
 5. **The Overview gives the writers a voice.** Gemini never sees tokens or A2UI, but it is shown the brand
    paragraph. The same dog-walker screen is "Dog Walkers — Happy pups nearby ready for a stroll!" in Gumdrop
    and "Canine Conductors — A classified register of trusted walking companions" in Broadsheet.
@@ -76,23 +140,24 @@ arguable (a luxury watch boutique got violet). Naming a colour in the prompt set
 
 ### The mock pipeline
 
-It is the sections pipeline below (`src/server/hybrid.ts`, `runMock`) with a design alongside:
+`src/server/mock/pipeline.ts`:
 
-- **t = 0, in parallel:** Jev plans the screen; Jev reads the DESIGN.md (or mixes one); Gemini starts the
-  header, already in the brand's voice, because parsing the Overview needs no model.
-- **~200 ms:** the design overrules the plan where they disagree; the skeleton and the theme are sent.
-- Then content streams in as before. Two things differ for a mock. Fields carry no validation, so an untouched
-  form is not covered in errors. And buttons wait for the form's submit label (it arrives early in the form's
-  stream) so that the actions writer's habit of repeating it can be dropped in code.
+- **t = 0, in parallel:** Jev plans the tree; Jev reads the DESIGN.md (or mixes one); Gemini starts the header,
+  already in the brand's voice, because parsing the Overview needs no model.
+- **~200 ms:** the design overrules the plan where they disagree; the whole tree and the theme are sent.
+- **Words** stream into the data model, one Gemini writer per block, each asked for exactly the slots the
+  tree has.
+- **Refinement** follows each part as it completes: one small Jev request per group, list, set of numbers,
+  navigation bar or form field.
 
-`npm run eval -- --only mock` over 13 prompts: 13 of 13 valid A2UI with a mixed design and with Broadsheet,
-first components at 123–278 ms, complete in 1.0–2.0 s. `npm run probe:design` prints how Jev reads each
-bundled design (and any path you pass, such as the examples in the DESIGN.md repository);
-`npm run probe:design -- --mix "a brief"` prints a mix.
+`npm run probe:design` prints how Jev reads each bundled design (and any path you pass, such as the examples
+in the DESIGN.md repository); `npm run probe:design -- --mix "a brief"` prints a mix.
 
 ## The pipelines underneath
 
-The earlier experiment is still here, at [/compare.html](http://localhost:5173/compare.html).
+The earlier experiment is still here, at [/compare.html](http://localhost:5173/compare.html): three pipelines
+that emit real A2UI for `@a2ui/lit`'s renderer, side by side. The sections pipeline is the mock pipeline's
+ancestor, and the comparison shows what the basic catalog can and cannot express.
 Three pipelines run side by side in the app:
 
 - **Jobs** asks Jev only about the person (where they are in getting what they want, what done looks like,
@@ -224,9 +289,13 @@ rather than a benchmark.
 - Jev reads questions literally and answers them independently. Expect to tune question wording and
   thresholds; `src/server/plan.ts` and `src/server/design.ts` hold all of it.
 - Button and form events are only logged in the trace; nothing handles them.
-- A theme can only say what the renderer's variables can carry: no letter-spacing or uppercase labels, one
-  heading face, one gap for every column. Hover and pressed variants are mostly ignored.
-- The mock's structure does not know the device. Fact tiles are two to a row everywhere so that they fit a phone.
+- The mock's grammar is eight archetypes and eleven blocks. There is no timeline, chart, map, calendar, table
+  or tab set yet, so an order-tracking screen comes out as facts and numbers. Each is a block to add: a kit
+  component, a builder, a content schema, and a question whose criteria say when to use it.
+- Symbol questions are expensive: 175 options each, asked per row, which is why a settings screen costs
+  around 19k Jev input tokens against 7k for most screens.
+- Mocks are static. Switches, fields and chips draw their state but do not change it.
+- Hover and pressed variants in a DESIGN.md are mostly ignored.
 
 ## Layout
 
@@ -235,7 +304,14 @@ designs/                    bundled DESIGN.md files
 src/server/design-md.ts     parse a DESIGN.md; Jev reads its prose for colour roles, depth and constraints
 src/server/design-mix.ts    no DESIGN.md: Jev's Scores become OKLCH colours, radii and spacing, written out as one
 src/server/design-source.ts a supplied or mixed design, worked out once and reused
-src/server/theme.ts         tokens and the reading, as --a2ui-* variables
+src/server/theme.ts         tokens and the reading, as the kit's --k-* variables
+src/shared/kit.ts           the kit: component schemas of the A2UI fork, shared by server and renderer
+src/server/mock/plan.ts     the grammar (archetypes, blocks, anatomy) and the questions that fill it
+src/server/mock/screen.ts   plan to component tree; and the content schema Gemini is asked to fill
+src/server/mock/refine.ts   per-instance decisions from the content, written into the data model
+src/server/mock/icons.ts    the symbols Jev chooses among
+src/server/mock/pipeline.ts the mock pipeline
+src/web/kit/                the kit's renderer and stylesheet
 src/server/job-profile.ts   questions about the person, and the profile read from the answers
 src/server/job-patterns.ts  rules from job to pattern; each pattern's parts and component tree
 src/server/jobs.ts          the jobs pipeline
@@ -244,7 +320,7 @@ src/server/form.ts      a form that grows field by field (shared)
 src/server/plan.ts      Jev questions from the prompt, section grammar, Gemini content schema
 src/server/design.ts    Jev questions from the content (per-field controls, primary action)
 src/server/emit.ts      deterministic A2UI component builders
-src/server/hybrid.ts    the sections pipeline, and the mock pipeline built on it
+src/server/hybrid.ts    the sections pipeline
 src/server/baseline.ts  Gemini writing A2UI directly
 src/server/validate.ts  schema and reference validation
 src/server/run.ts       event stream, stats, end-of-run validation

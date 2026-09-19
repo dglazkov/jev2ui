@@ -26,6 +26,7 @@ export class ContentStreams {
   /** Content that arrives before the surface exists is held until it does. */
   private readonly held: Array<{ part: string; handle: () => void }> = [];
   private readonly writers = new Map<string, AbortController>();
+  private readonly refreshers = new Map<string, () => void>();
 
   constructor(
     private readonly run: Run,
@@ -49,7 +50,10 @@ export class ContentStreams {
     const controller = new AbortController();
     this.writers.set(part, controller);
     let last = "";
+    let latest: { document: any; complete: boolean } | undefined;
+    this.refreshers.set(part, () => latest && forward(latest.document, latest.complete));
     const forward = (document: any, complete: boolean) => {
+      latest = { document, complete };
       const value = document?.[part];
       if (value === undefined || value === null) return;
       const handle = () => {
@@ -90,6 +94,11 @@ export class ContentStreams {
       })().finally(() => finished(undefined)),
     );
     return result;
+  }
+
+  /** Sends a part again through its hooks. For when what `decorate` adds has changed but the words have not. */
+  refresh(part: string) {
+    this.refreshers.get(part)?.();
   }
 
   /**

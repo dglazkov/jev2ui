@@ -1,11 +1,14 @@
 import { A2uiMessageSchema } from "@a2ui/web_core/v0_9";
 import { BASIC_COMPONENTS } from "@a2ui/web_core/v0_9/basic_catalog";
+import { KIT, KIT_CATALOG_ID, kitRefs } from "../shared/kit.js";
 import type { A2uiMessage } from "../shared/events.js";
 
-const SCHEMAS = new Map(BASIC_COMPONENTS.map((c) => [c.name, c.schema]));
+type Schema = { safeParse(value: unknown): { success: true } | { success: false; error: { issues: Array<{ path: PropertyKey[]; message: string }> } } };
+const BASIC = new Map<string, Schema>(BASIC_COMPONENTS.map((c) => [c.name, c.schema as Schema]));
+const KIT_SCHEMAS = new Map<string, Schema>(Object.entries(KIT));
 
 /** Keys that hold references to other components, per component type. */
-function childRefs(c: Record<string, any>): string[] {
+function basicRefs(c: Record<string, any>): string[] {
   const refs: string[] = [];
   if (typeof c.child === "string") refs.push(c.child);
   if (Array.isArray(c.children)) refs.push(...c.children);
@@ -24,6 +27,10 @@ function childRefs(c: Record<string, any>): string[] {
 export function validateMessages(messages: A2uiMessage[]): string[] {
   const errors: string[] = [];
   const defined = new Map<string, Record<string, any>>();
+  // The surface says which catalog it speaks: A2UI's basic one, or the kit (the envelope is the same).
+  const kit = messages.some((m) => (m as any).createSurface?.catalogId === KIT_CATALOG_ID);
+  const SCHEMAS = kit ? KIT_SCHEMAS : BASIC;
+  const childRefs = kit ? kitRefs : basicRefs;
 
   messages.forEach((message, i) => {
     const envelope = A2uiMessageSchema.safeParse(message);

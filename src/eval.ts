@@ -6,7 +6,8 @@
 
 import { runJobs } from "./server/jobs.js";
 import { readFileSync } from "node:fs";
-import { runHybrid, runMock } from "./server/hybrid.js";
+import { runHybrid } from "./server/hybrid.js";
+import { runMock } from "./server/mock/pipeline.js";
 import { runBaseline } from "./server/baseline.js";
 import { GEMINI_MODEL, JEV_MODEL, geminiRequestTimes } from "./server/models.js";
 import type { PipelineEvent, RunStats } from "./shared/events.js";

@@ -304,29 +304,30 @@ h2 small {
   border-radius: 44px;
 }
 
+/* The kit's Screen fills this box and scrolls inside it, so an app bar and a navigation bar stay put. */
 .screen {
+  position: relative;
   box-sizing: border-box;
-  min-height: 420px;
-  padding: 24px 20px 32px;
-  overflow-x: hidden;
-  transition:
-    background 0.25s,
-    color 0.25s;
+  height: 640px;
+  overflow: hidden;
+  transition: background 0.25s;
 }
 
 .device.phone .screen {
+  height: 780px;
+}
+
+/* Room for a status bar, inside the app bar so that a dialog's scrim still reaches the top. */
+.device.phone .k-appbar {
+  padding-top: 28px;
+}
+
+.device.desktop .screen {
   height: 760px;
-  padding-top: 44px;
-  overflow-y: auto;
 }
 
-.device.desktop .screen,
-.device.tablet .screen {
-  padding: 32px 40px 48px;
-}
-
-.screen img {
-  max-width: 100%;
+kit-surface[hidden] {
+  display: none;
 }
 
 .empty {
