@@ -35,6 +35,11 @@ export class Pictures {
   /** Set once the design is known: its pictures are drawn, so photographs are passed over and whatever is made is an illustration. */
   drawn = false;
 
+  /** What the design's pictures are called, in the trace and in what Jev is asked. Jev reads questions literally: offered "photographs" of a fairy tale, it has reason to say none. */
+  private get medium() {
+    return this.drawn ? "illustration" : "photograph";
+  }
+
   constructor(
     private readonly run: Run,
     private readonly screen: string,
@@ -56,17 +61,17 @@ export class Pictures {
       this.run.trace({ stage: `Gemini: ${this.drawn ? "illustrate" : "photograph"} "${wanted.of.slice(0, 40)}"`, ms: performance.now() - start, detail: `nothing in the library suited; ${this.drawn ? "drawn" : "shot"} as ${wanted.subject}` });
     } catch (error) {
       // A picture is never worth failing a mock for; the painted frame stays.
-      this.run.trace({ stage: `No photograph of "${wanted.of.slice(0, 40)}"`, ms: performance.now() - start, detail: error instanceof Error ? error.message : String(error) });
+      this.run.trace({ stage: `No ${this.medium} of "${wanted.of.slice(0, 40)}"`, ms: performance.now() - start, detail: error instanceof Error ? error.message : String(error) });
     }
   }
 
   private async subject({ subject, of, p }: Wanted): Promise<SubjectName> {
-    const asked = await this.run.askJev(`Jev: what "${of.slice(0, 40)}" is`, { screen: this.screen, pictured: of }, { subject: choice("An app shows a photograph of `pictured`. What is it a photograph of?", SUBJECT_OPTIONS) });
+    const asked = await this.run.askJev(`Jev: what "${of.slice(0, 40)}" is`, { screen: this.screen, pictured: of }, { subject: choice(`An app shows ${this.drawn ? "an illustration" : "a photograph"} of \`pictured\`. What is it a picture of?`, SUBJECT_OPTIONS) });
     const read = asked.answers.subject.choice as SubjectName;
     this.run.trace({
       stage: asked.stage,
       ms: asked.ms,
-      decisions: [{ id: "subject", question: "the photograph is of…", answer: read, p: asked.answers.subject.probabilities[read], ...(read !== subject ? { note: `the plan guessed "${subject}" at ${p!.toFixed(2)}, before there were words` } : {}) }],
+      decisions: [{ id: "subject", question: `the ${this.medium} is of…`, answer: read, p: asked.answers.subject.probabilities[read], ...(read !== subject ? { note: `the plan guessed "${subject}" at ${p!.toFixed(2)}, before there were words` } : {}) }],
       tokens: { input: asked.inputTokens, output: 0 },
     });
     return read;
@@ -75,8 +80,8 @@ export class Pictures {
   private async choose({ subject, of }: Wanted): Promise<Photo | undefined> {
     const offered = shortlist(subject, of, OFFERED, this.used, this.drawn);
     if (!offered.length) return undefined;
-    const options = { ...Object.fromEntries(offered.map((photo, i) => [`photo_${i}`, photo.alt])), none: "None of these photographs shows that, or anything a person would take for it." };
-    const asked = await this.run.askJev(`Jev: a photograph for "${of.slice(0, 40)}"`, { screen: this.screen, pictured: of }, { photo: choice("An app shows a photograph of `pictured`. Which of these photographs could it be?", options) });
+    const options = { ...Object.fromEntries(offered.map((photo, i) => [`photo_${i}`, photo.alt])), none: `None of these ${this.medium}s shows that, or anything a person would take for it.` };
+    const asked = await this.run.askJev(`Jev: ${this.drawn ? "an illustration" : "a photograph"} for "${of.slice(0, 40)}"`, { screen: this.screen, pictured: of }, { photo: choice(`An app shows ${this.drawn ? "an illustration" : "a photograph"} of \`pictured\`. Which of these ${this.medium}s could it be?`, options) });
     // Jev's ranking, walked to the first photograph nobody else on the screen took while it was thinking.
     const [pick, p] = ranked(asked.answers.photo).find(([name]) => name === "none" || !this.used.has(offered[Number(name.split("_")[1])].id))!;
     const photo = pick === "none" ? undefined : offered[Number(pick.split("_")[1])];
