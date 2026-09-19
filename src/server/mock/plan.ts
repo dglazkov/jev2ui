@@ -23,6 +23,8 @@
 import { choice, noul, type Questions } from "@typesafe-ai/sdk";
 import type { Decision } from "../../shared/events.js";
 import { ICON_OPTIONS, readIcon } from "./icons.js";
+import { SUBJECT_OPTIONS } from "./pictures.js";
+import type { SubjectName } from "../photos/subjects.js";
 
 const CONTEXT =
   "A developer describes one screen of an app in `screen`. A designer is working out what that screen is made of. If present, `first_screen` describes the first screen that was designed for the same app, which tells you what app this is, and `reached_by` says how the person got to the screen being designed now.";
@@ -272,6 +274,8 @@ export interface ScreenPlan {
   factsTotal: boolean;
   /** The symbol of what the screen is about. It holds the place of every picture until the picture has loaded. */
   symbol: string;
+  /** What photographs on this screen are of: which shelf of the library to look on, and how to shoot one if it has to be made. */
+  pictures: { hero: SubjectName; items: SubjectName };
   /** Set by the design, not by the prompt. */
   imagery: boolean;
   icons: boolean;
@@ -301,6 +305,8 @@ export function planQuestions(): Questions {
       true: "Usage, spending, revenue, health or performance figures compared with yesterday, last week or a target.",
       false: "Fixed figures, such as counts or specifications, with nothing to compare against.",
     }),
+    hero_subject: choice(ask("If a large photograph leads this screen, what is it a photograph of?"), SUBJECT_OPTIONS),
+    item_subject: choice(ask("If each item on this screen has its own photograph, what are those photographs of?"), SUBJECT_OPTIONS),
     screen_icon: choice(ask("Which symbol best stands for what this screen is about?"), ICON_OPTIONS),
     facts_total: noul(ask("If the screen shows label-and-value details, do they add up to a total on the last line?"), {
       true: "An order summary, a bill, a receipt or a cost breakdown.",
@@ -387,6 +393,10 @@ export function readPlan(answers: Record<string, any>, known: { topLevel?: boole
     list.trailing = pick<Trailing>("item_trailing", "with one item, the person…");
     list.parts = (Object.keys(ITEM_PARTS) as ItemPart[]).filter((part) => yes(`item_${part}`, `items have ${part}?`));
   }
+  const pictures = {
+    hero: has("hero") ? pick<SubjectName>("hero_subject", "the lead photograph is of…") : (answers.hero_subject.choice as SubjectName),
+    items: list.leading === "thumbnail" ? pick<SubjectName>("item_subject", "item photographs are of…") : (answers.item_subject.choice as SubjectName),
+  };
   const plan: ScreenPlan = {
     archetype,
     blocks,
@@ -398,6 +408,7 @@ export function readPlan(answers: Record<string, any>, known: { topLevel?: boole
     statDeltas: has("stats") && yes("stat_deltas", "numbers tracked over time?"),
     factsTotal: has("facts") && yes("facts_total", "details sum to a total?"),
     symbol: readIcon(answers.screen_icon) ?? "image",
+    pictures,
     imagery: true,
     icons: true,
     contained: true,

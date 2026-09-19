@@ -8,6 +8,8 @@
 //   words  stream into the data model; text that has not arrived shimmers
 //   refine as each group, list or form field completes, Jev reads it and its
 //          answers (control, symbol, tone, primary) join the data beside it
+//   photos as each pictured item completes, Jev picks its photograph from the
+//          library; if none suits, the image model makes one (pictures.ts)
 //
 // Gemini never sees a component and Jev never writes a word, so the tree is
 // valid by construction, and it is on screen before the first word is.
@@ -15,13 +17,14 @@
 import { ContentStreams, type PartHooks } from "../content.js";
 import { loadDesign, type DesignSource } from "../design-source.js";
 import { parseDesign } from "../design-md.js";
-import { picture } from "../pictures.js";
+import { resized } from "../photos/library.js";
 import { Run, SURFACE_ID } from "../run.js";
 import { KIT_CATALOG_ID } from "../../shared/kit.js";
 import type { PipelineEvent } from "../../shared/events.js";
 import type { Journey } from "../../shared/journey.js";
 import { destination } from "./link.js";
 import { applyDesign, planQuestions, readPlan, type ScreenPlan } from "./plan.js";
+import { Pictures, itemWords } from "./pictures.js";
 import { SYSTEM_PROMPT, partPrompt, partSchema, screen, type Part } from "./screen.js";
 import { refineActions, refineBanner, refineField, refineGroup, refineItems, refineNav, refineStats, type Decoration } from "./refine.js";
 
@@ -60,6 +63,7 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
   return run.drive(async () => {
     const streams = new ContentStreams(run, surfaceId);
     const decorations = new Decorations();
+    const pictures = new Pictures(run, prompt);
     let plan: ScreenPlan | undefined;
 
     /** Runs a refinement, then re-sends the part so the answers reach the screen. */
@@ -89,6 +93,17 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
     };
 
     const fields = asTheyComplete((field, i) => refine("form", refineField(run, prompt, i, field)));
+    // A photograph joins its item like any other of Jev's answers, and joins it again if a better one had to be made.
+    const photographs = asTheyComplete((item, i) => {
+      if (plan!.list.leading !== "thumbnail" || !item?.title) return;
+      const big = plan!.list.layout !== "rows";
+      const shown = (url: string) => (decorations.add("list", [{ at: ["items", i], values: { imageUrl: url } }]), streams.refresh("list"));
+      streams.spawn(pictures.find({ subject: plan!.pictures.items, of: itemWords(item), ratio: "4:3", size: big ? [640, 480] : [160, 160] }, shown));
+    });
+    const tones = once((list) => {
+      const want = { tones: plan!.list.parts.includes("status") || plan!.list.parts.includes("progress"), icons: plan!.list.leading === "icon" && plan!.list.layout === "rows" };
+      refine("list", refineItems(run, prompt, list.items ?? [], want));
+    });
     const hooks: Partial<Record<Part, PartHooks>> = {
       banner: { onValue: once((banner) => refine("banner", refineBanner(run, prompt, banner))) },
       stats: { onValue: once((stats) => plan!.statDeltas && refine("stats", refineStats(run, prompt, stats))) },
@@ -96,20 +111,7 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
       nav: { onValue: once((nav) => plan!.icons && refine("nav", refineNav(run, prompt, nav.items ?? []))) },
       actions: { onValue: once((actions) => actions.length && refine("actions", refineActions(run, prompt, actions))) },
       form: { onValue: (form, complete) => fields(form?.fields, complete) },
-      list: {
-        onValue: once((list) => {
-          const want = { tones: plan!.list.parts.includes("status") || plan!.list.parts.includes("progress"), icons: plan!.list.leading === "icon" && plan!.list.layout === "rows" };
-          refine("list", refineItems(run, prompt, list.items ?? [], want));
-        }),
-        decorate: (value, complete) => {
-          const pictured = plan!.list.leading === "thumbnail";
-          if (!pictured || !Array.isArray(value?.items)) return value;
-          const items: any[] = value.items;
-          // While streaming, the last title may still be growing; a picture seeded from it would flicker.
-          const size = plan!.list.layout === "rows" ? [160, 160] : [640, 400];
-          return { ...value, items: items.map((item, i) => (item?.title && (complete || i < items.length - 1) ? { ...item, imageUrl: picture(item.title, size[0], size[1]) } : item)) };
-        },
-      },
+      list: { onValue: (list, complete) => (photographs(list?.items, complete), tones(list, complete)) },
       facts: {
         // The last line of a bill is its total; the tree binds `strong` and code says which row it is.
         decorate: (value, complete) => (plan!.factsTotal && complete && Array.isArray(value) ? value.map((row, i) => (i === value.length - 1 ? { ...row, strong: true } : row)) : value),
@@ -117,7 +119,9 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
     };
 
     // Parsing is local and instant, so even the header, requested before Jev has answered, is written in the brand's voice.
-    const setting = { voice: markdown ? parseDesign(markdown).voice : "", ...(to ? { app: journey!.app, reachedBy: to.reachedBy, about: to.about } : {}) };
+    // The photograph of a tapped item goes with the person to the page it opens; the writers have no use for it.
+    const { imageUrl: carried, ...about } = (to?.about ?? {}) as Record<string, unknown>;
+    const setting = { voice: markdown ? parseDesign(markdown).voice : "", ...(to ? { app: journey!.app, reachedBy: to.reachedBy, ...(to.about ? { about } : {}) } : {}) };
     const write = (part: Part, agreeWith?: unknown) => {
       const own = hooks[part];
       return streams.write(
@@ -128,7 +132,7 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
     };
 
     // t=0: the header is needed whatever the plan turns out to be.
-    write("header");
+    const header = write("header");
     if (to) run.trace({ stage: `Link: ${to.screen}`, ms: 0, detail: `reached by ${to.reachedBy}` });
     const designing = loadDesign(source ?? { brief: journey?.app ?? prompt });
     const state = to ? { first_screen: journey!.app, reached_by: to.reachedBy, screen: prompt } : { screen: prompt };
@@ -155,8 +159,12 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
 
     run.send({ createSurface: { surfaceId, catalogId: KIT_CATALOG_ID } });
     run.send({ updateComponents: { surfaceId, components: screen(plan, read.screenIcon) } });
-    // The lead picture is seeded from the description, so it needs no words at all.
-    if (plan.blocks.includes("hero")) run.send({ updateDataModel: { surfaceId, path: "/hero", value: { imageUrl: picture(prompt, 960, 540) } } });
+    // The lead picture is of what the header names. The description will not do: it lists what is on the screen, and a picture of that is a picture of a phone.
+    if (plan.blocks.includes("hero")) {
+      const shown = (url: string) => run.send({ updateDataModel: { surfaceId, path: "/hero", value: { imageUrl: url } } });
+      if (typeof carried === "string") shown(resized(carried, 960, 540));
+      else streams.spawn((async () => pictures.find({ subject: plan.pictures.hero, of: itemWords(await header) || prompt, ratio: "16:9", size: [960, 540] }, shown))());
+    }
 
     // The app's navigation is established once; every main screen after that shows the same one.
     const nav = journey?.nav;

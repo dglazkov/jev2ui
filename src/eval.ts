@@ -70,6 +70,8 @@ async function consume(events: AsyncGenerator<PipelineEvent>): Promise<{ stats?:
   return { stats, problems };
 }
 
+// The eval measures structure and timing. Photographs cost money and change neither, so none are made unless asked for.
+process.env.MAKE_PHOTOS ??= "0";
 console.log(`Gemini: ${GEMINI_MODEL}   Jev: ${JEV_MODEL}\n`);
 const rows: Array<Record<string, unknown>> = [];
 for (const prompt of prompts) {

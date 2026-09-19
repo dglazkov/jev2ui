@@ -37,7 +37,7 @@ archetype         which canonical layout this is: feed, dashboard, detail, guide
                   way in? Which symbol? Is "Degraded" bad news? Is +0.3 kW?
 ```
 
-The first three levels depend only on the prompt, so they are one Jev request of 28 questions, and the
+The first three levels depend only on the prompt, so they are one Jev request of 30 questions, and the
 whole tree is on screen at around 200 ms, shimmering where words will go. Order is never asked: it belongs to the
 archetype, which is where best practice lives. The fourth level is asked as each group, list or field completes
 in Gemini's stream (`refine.ts`). Those answers are written into the *data model* beside the words they are
@@ -55,6 +55,37 @@ got wrong: a feed always has its list and a settings page its groups, whatever J
 action per screen, red if it destroys something; no second set of buttons competing with a form's submit;
 picture layouts only for things with a look; rows in a group all lead with a symbol or none do; a bill's totals
 are written after its line items and shown them, so that it adds up.
+
+### Pictures: Jev chooses, and when nothing suits, one is made
+
+Jev cannot describe a photograph, and Gemini's text model cannot produce one, but between them and an image
+model every picture on a mock is of the thing beside it (`src/server/mock/pictures.ts`, `src/server/photos/`).
+
+1. **The frame is painted before it is filled.** Until a photograph has loaded, its frame is a wash of the
+   accent with the symbol Jev chose for the screen, so a slow or missing picture still looks designed
+   (`src/web/kit/picture.ts`). Each source fades in over the last, so a better one can arrive later.
+2. **Jev says what the photographs are of**, as part of the plan: one Choice for the lead photograph and one
+   for the items, among some forty subjects (`subjects.ts`): dish, venue, stay, dog, portrait, gadget. A subject
+   is a shelf of the library, and it is also art direction: food is shot from above on a table, a product alone
+   on a plain backdrop, a person head and shoulders.
+3. **Jev picks the photograph.** As each item's words arrive, code shortlists five library photographs by
+   plain word matching against their captions, and Jev chooses among the captions. One option is always
+   "none of these", because a wrong photograph is worse than a painted frame. No photograph is used twice on
+   a screen: Jev's ranking is walked to the first one still free.
+4. **When Jev says none, the image model makes one** (`gemini-3.1-flash-lite-image`, about three seconds).
+   Nobody writes the prompt: it is Gemini's words for the thing (an item's title, or the header for a lead
+   photograph), the subject's art direction, and the developer's description for the setting only, since a
+   model shown a description of a screen draws a phone. What is made is kept in `.cache/photos` with those words as its caption and
+   joins the library, so the next pizzeria finds a margherita on the shelf and asks for nothing.
+5. **How photographs look is the design's decision, and it is paint.** Natural, muted, black-and-white or
+   duotone in the brand's colour: Jev chooses it when it mixes a design, reads it from a supplied DESIGN.md,
+   and a remix can draw another. Pictures are always made in natural colour and treated in CSS, so changing
+   the design fetches nothing.
+
+The library's stock comes from the [Unsplash Lite dataset](https://unsplash.com/data) (`npm run photos:build`),
+and only for the shelves that dataset is good at: landscapes, cities, animals, flowers, some 600 photographs.
+It has next to no food, shops or gadgets, so those shelves start empty and fill with use. `MAKE_PHOTOS=0`
+keeps to the library.
 
 ### Tapping through: the prototype designs itself as you go
 
@@ -74,7 +105,7 @@ in the same app, in the same second and a half.
    included. The navigation bar is established once and reused, symbols and all. Writers are shown what the
    previous screen said about the thing that was tapped and must agree with it, so the walker who was
    "Chelsea, $25.00, 4.8 (98)" in the list still is on his page, and the receipt totals what the checkout did.
-   Pictures are seeded by title, so a thumbnail and its lead photograph match for free.
+   The photograph of a tapped item goes with the person, and leads the page it opens.
 4. **The browser keeps the session** (`src/web/app.ts`): a graph of screens keyed by the link that made them,
    and a back stack. A tap followed before shows the screen it made then, so the prototype holds still while
    it is explored. A `confirm` screen is a dialog laid over the screen it came from, and its Cancel goes back.
@@ -154,7 +185,7 @@ fixtures the reader is tested against with `npm run probe:design`; the examples 
 
 Jev cannot write `#6C3BF5`. But a colour in OKLCH is three numbers, and Jev can rate. A Score is an expected
 value over an ordered rubric, so it lands *between* the levels: "how vivid should the accent be?" answered
-2.55 of 4 is a chroma of 0.183. In `src/server/design-mix.ts`, one request of 11 questions about the brief
+2.55 of 4 is a chroma of 0.183. In `src/server/design-mix.ts`, one request of 12 questions about the brief
 becomes a complete design:
 
 | Question | Primitive | Becomes |
@@ -164,6 +195,7 @@ becomes a complete design:
 | warmth of neutrals | Score | how far backgrounds and greys lean to cream or steel |
 | roundness, whitespace | Score | the radius scale; the spacing scale and body size |
 | dark interface? photographs? cards? | Noul | palette polarity; structure |
+| how photographs look | Choice | natural, muted, black-and-white or duotone: a CSS filter, and for a duotone two inks mixed from the accent |
 | typefaces, depth | Choice | one of nine Google Fonts pairings; shadow, outline or tonal |
 
 "Plant care reminders for a gardening app" comes out green (p = 1.00), cream, humanist and softly rounded;
@@ -329,7 +361,9 @@ rather than a benchmark.
 
 - The Jev pipelines can only produce what their patterns or sections can express. The baseline is freer, and when it
   is valid it is often richer.
-- Pictures are seeded placeholders from picsum.photos in both pipelines; they are unrelated to the subject.
+- A photograph is chosen from captions, never from pixels: Jev does not see the pictures, and a caption can be
+  wrong. The A2UI comparison pipelines (`jobs`, `hybrid`) still use seeded placeholders from picsum.photos.
+- Made photographs are served by the dev server from `.cache/photos`, so a mock's pictures do not outlive it.
 - Sections are written by separate requests that do not see each other, so they can disagree on invented
   details. Each is told which parts the screen has and to stay within its own.
 - Jev reads questions literally and answers them independently. Expect to tune question wording and

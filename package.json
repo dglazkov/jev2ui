@@ -8,7 +8,8 @@
     "typecheck": "tsc",
     "eval": "tsx src/eval.ts",
     "probe:jtbd": "tsx src/probe/jtbd.ts",
-    "probe:design": "tsx src/probe/design.ts"
+    "probe:design": "tsx src/probe/design.ts",
+    "photos:build": "tsx src/server/photos/build.ts"
   },
   "repository": {
     "type": "git",

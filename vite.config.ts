@@ -38,6 +38,15 @@ function api(): Plugin {
         }
       });
 
+      // Photographs the image model made, kept in .cache/photos.
+      server.middlewares.use("/api/photo/", async (req, res) => {
+        const { readMade } = await load("/src/server/photos/generate.ts");
+        const made = readMade((req.url ?? "").replace(/^\//, "").split("?")[0]);
+        if (!made) return void ((res.statusCode = 404), res.end());
+        res.writeHead(200, { "Content-Type": made.mime, "Cache-Control": "public, max-age=31536000, immutable" });
+        res.end(made.bytes);
+      });
+
       server.middlewares.use("/api/generate", async (req, res) => {
         const url = new URL(req.url ?? "", "http://localhost");
         const body = req.method === "POST" ? await readJson(req).catch(() => ({})) : {};
