@@ -270,6 +270,8 @@ export interface ScreenPlan {
   search: boolean;
   statDeltas: boolean;
   factsTotal: boolean;
+  /** The symbol of what the screen is about. It holds the place of every picture until the picture has loaded. */
+  symbol: string;
   /** Set by the design, not by the prompt. */
   imagery: boolean;
   icons: boolean;
@@ -395,6 +397,7 @@ export function readPlan(answers: Record<string, any>, known: { topLevel?: boole
     search: has("filters") && yes("search", "search field?"),
     statDeltas: has("stats") && yes("stat_deltas", "numbers tracked over time?"),
     factsTotal: has("facts") && yes("facts_total", "details sum to a total?"),
+    symbol: readIcon(answers.screen_icon) ?? "image",
     imagery: true,
     icons: true,
     contained: true,

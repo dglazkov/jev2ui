@@ -493,10 +493,63 @@ kit-surface {
   object-fit: cover;
 }
 
+/*
+ * A picture frame is painted before it is filled: a wash of the accent with a symbol of the subject, so a slow or
+ * missing photograph still looks designed. How photographs are treated is the design's decision (theme.ts): a filter,
+ * and for a duotone a light ground the picture multiplies into and a dark wash that lifts its blacks.
+ */
 .k-image {
+  position: relative;
+  display: block;
   overflow: hidden;
-  background: color-mix(in srgb, var(--k-text) 8%, var(--k-page));
+  isolation: isolate;
+  container-type: size;
+  background: linear-gradient(135deg, var(--k-accent-soft, #e8eefc), color-mix(in srgb, var(--k-accent, #1177ee) 30%, var(--k-page, #fff)));
   border-radius: var(--k-radius-md, 10px);
+}
+
+.k-image[data-state="pictured"] {
+  background: var(--k-image-ground, var(--k-card, #fff));
+}
+
+.k-image[data-state="waiting"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--k-page, #fff) 45%, transparent) 50%, transparent 70%) 0 0 / 250% 100%;
+  animation: k-shimmer 1.8s linear infinite;
+}
+
+.k-picture-stand {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(20px, 30cqmin, 64px);
+  color: var(--k-ink);
+  opacity: 0.4;
+}
+
+.k-image img {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  filter: var(--k-image-filter, none);
+  mix-blend-mode: var(--k-image-blend, normal);
+  transition: opacity 0.45s ease;
+}
+
+.k-image img.k-in {
+  opacity: 1;
+}
+
+.k-image[data-state="pictured"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--k-image-wash, transparent);
+  mix-blend-mode: var(--k-image-wash-blend, normal);
 }
 
 /* Inside a card a picture runs to the card's edges, and the card's corners clip it. */

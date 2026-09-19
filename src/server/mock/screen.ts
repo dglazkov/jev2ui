@@ -14,7 +14,7 @@ type C = KitComponent;
 const BUILDERS: Record<Block, (plan: ScreenPlan) => C[]> = {
   banner: () => [{ id: "banner", component: "Banner", title: at("/banner/title"), text: at("/banner/text"), tone: at("/banner/tone") }],
 
-  hero: () => [{ id: "hero", component: "Image", url: at("/hero/imageUrl"), ratio: "16:9" }],
+  hero: (plan) => [{ id: "hero", component: "Image", url: at("/hero/imageUrl"), icon: plan.symbol, ratio: "16:9" }],
 
   filters: (plan) => [
     { id: "filters", component: "Stack", gap: "sm", children: [...(plan.search ? ["filters_search"] : []), "filters_chips"] },
@@ -46,7 +46,7 @@ const BUILDERS: Record<Block, (plan: ScreenPlan) => C[]> = {
       out.push(
         { id: "item_card", component: "Card", pad: "none", child: "item_card_body" },
         { id: "item_card_body", component: "Stack", gap: "none", children: ["item_picture", "item_card_text"] },
-        { id: "item_picture", component: "Image", url: at("imageUrl"), alt: at("title"), ratio: layout === "grid" ? "1:1" : layout === "reel" ? "4:3" : "16:9", bleed: true },
+        { id: "item_picture", component: "Image", url: at("imageUrl"), alt: at("title"), icon: plan.symbol, ratio: layout === "grid" ? "1:1" : layout === "reel" ? "4:3" : "16:9", bleed: true },
         { id: "item_card_text", component: "Stack", gap: "none", pad: "sm", children: ["item"] },
       );
     }
@@ -75,7 +75,7 @@ const BUILDERS: Record<Block, (plan: ScreenPlan) => C[]> = {
 
     if (!pictured) {
       if (leading === "avatar") out.push({ id: "item_leading", component: "Avatar", name: at("title"), size: 44 });
-      if (leading === "thumbnail") out.push({ id: "item_leading", component: "Image", url: at("imageUrl"), alt: at("title"), ratio: "1:1", width: 64 });
+      if (leading === "thumbnail") out.push({ id: "item_leading", component: "Image", url: at("imageUrl"), alt: at("title"), icon: plan.symbol, ratio: "1:1", width: 64 });
       if (leading === "icon") out.push({ id: "item_leading", component: "Icon", name: at("icon"), boxed: true });
       if (leading === "number") out.push({ id: "item_leading", component: "Numeral" });
     }

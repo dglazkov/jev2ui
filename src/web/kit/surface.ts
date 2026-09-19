@@ -6,6 +6,8 @@ import { LitElement, html, nothing, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { keyed } from "lit/directives/keyed.js";
+import "./picture.js";
 
 type Component = { id: string; component: string } & Record<string, any>;
 /** Where relative bindings resolve, and which element of a template this is. */
@@ -127,7 +129,8 @@ export class KitSurface extends LitElement {
   }
 
   render() {
-    return this.node("root", { base: "", index: 0 });
+    // A new screen gets new elements: a picture remembers what it has loaded, and must not carry it over.
+    return keyed(this.source, this.node("root", { base: "", index: 0 }));
   }
 
   // --- Helpers ---------------------------------------------------------------
@@ -242,9 +245,7 @@ export class KitSurface extends LitElement {
   drawImage(c: Component, s: Scope) {
     const url = this.value(c.url, s);
     const style = { "aspect-ratio": (c.ratio ?? "16:9").replace(":", " / "), ...(c.width ? { width: `${c.width}px`, flex: "none" } : {}) };
-    return html`<div class="k-image ${c.bleed ? "k-bleed" : ""}" style=${styleMap(style)}>
-      ${url ? html`<img src=${url} alt=${this.value(c.alt, s) ?? ""} loading="lazy" />` : nothing}
-    </div>`;
+    return html`<kit-picture class="k-image ${c.bleed ? "k-bleed" : ""}" style=${styleMap(style)} .src=${url} .alt=${this.value(c.alt, s) ?? ""} .icon=${this.value(c.icon, s) ?? "image"}></kit-picture>`;
   }
 
   drawAvatar(c: Component, s: Scope) {

@@ -99,6 +99,21 @@ export function buildTheme(design: Design, read: DesignRead): Theme {
   vars["--k-card-shadow"] = read.elevation !== "shadow" ? "none" : dark ? "0 8px 28px rgb(0 0 0 / 0.5)" : `0 1px 2px ${tint}14, 0 8px 28px ${tint}1f`;
   vars["--k-card-border"] = read.elevation === "outline" ? `1px solid ${c.border}` : "0";
 
+  // --- Photographs: a treatment is a filter, and for a duotone the two inks as well ------
+  if (read.treatment === "muted") vars["--k-image-filter"] = "saturate(0.55) contrast(0.92) brightness(1.04)";
+  if (read.treatment === "mono") vars["--k-image-filter"] = "grayscale(1) contrast(1.08)";
+  if (read.treatment === "duotone") {
+    Object.assign(vars, {
+      "--k-image-filter": "grayscale(1) contrast(1.15) brightness(1.08)",
+      // The picture multiplies into the light ink, and the dark ink lifts whatever came out darker than it.
+      "--k-image-blend": "multiply",
+      // On a dark page a pale ground would glare, so there the accent itself is the light ink and the page tints the dark one.
+      "--k-image-ground": mix(c.accent, "#ffffff", dark ? 0.85 : 0.2),
+      "--k-image-wash": dark ? mix(c.accent, c.page, 0.14) : mix(c.accent, "#05050f", 0.42),
+      "--k-image-wash-blend": "lighten",
+    });
+  }
+
   // --- Shape ----------------------------------------------------------------
   const radius = toPx(find(system.rounded, ["md", "DEFAULT", "sm"], /./)) ?? 8;
   const card = component(system, /^(card|panel)/);

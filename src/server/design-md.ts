@@ -69,9 +69,14 @@ const readable = (on: string) => (contrast("#000000", on) >= contrast("#ffffff",
 export const ROLES = ["page", "card", "text", "muted", "accent", "border"] as const;
 export type Role = (typeof ROLES)[number];
 
+/** How photographs are shown. It is paint and not structure: the same picture serves every treatment, so changing it fetches nothing. */
+export const TREATMENTS = ["natural", "muted", "mono", "duotone"] as const;
+export type Treatment = (typeof TREATMENTS)[number];
+
 export interface DesignRead {
   colors: Record<Role | "onAccent", string>;
   elevation: "shadow" | "outline" | "tonal";
+  treatment: Treatment;
   /** Structure follows the design too: a newspaper has no pictograms, an instrument panel has no photos. */
   imagery: boolean;
   icons: boolean;
@@ -109,6 +114,13 @@ const ELEVATION = {
   tonal: "There are no shadows and no borders. Layers differ only by background color.",
 };
 
+const TREATMENT: Record<Treatment, string> = {
+  natural: "In their natural colours, or the file does not say.",
+  muted: "Softened: desaturated, faded or toned down, so that they sit quietly on the page.",
+  mono: "In black and white, greyscale or monochrome.",
+  duotone: "Tinted, duotone, or washed in one of the brand's colours.",
+};
+
 function questions(colorNames: string[]): Questions {
   const out: Questions = {};
   for (const role of ROLES) {
@@ -122,6 +134,7 @@ function questions(colorNames: string[]): Questions {
     true: "Photos or illustrations are welcome, encouraged, or not mentioned at all.",
     false: "The file says not to use photographs or images.",
   });
+  out.treatment = choice(ask("How does this design system want photographs to look?"), TREATMENT);
   out.icons = noul(ask("Does this design system allow icons on a screen?"), {
     true: "Icons are welcome, encouraged, or not mentioned at all.",
     false: "The file says not to use icons or pictograms.",
@@ -241,10 +254,19 @@ export function resolveDesign(design: Design, answers: Record<string, any> | nul
     elevation = answers.elevation.choice;
     decisions.push({ id: "elevation", question: "how depth is shown", answer: elevation, p: answers.elevation.probabilities[elevation] });
   }
+  const imagery = yes("imagery", "photographs allowed?", true);
+  // Natural colour is what a file that says nothing means, so any other treatment has to be read with confidence.
+  let treatment: Treatment = "natural";
+  if (answers && imagery) {
+    const [top, p] = ranked(answers.treatment)[0] as [Treatment, number];
+    treatment = p >= 0.5 ? top : "natural";
+    decisions.push({ id: "treatment", question: "how photographs look", answer: treatment, p, ...(treatment !== top ? { note: `Jev leaned to "${top}", not firmly enough` } : {}) });
+  }
   return {
     colors: colors as DesignRead["colors"],
     elevation,
-    imagery: yes("imagery", "photographs allowed?", true),
+    treatment,
+    imagery,
     icons: yes("icons", "icons allowed?", true),
     contained: yes("contained", "content grouped in cards?", true),
     decisions,

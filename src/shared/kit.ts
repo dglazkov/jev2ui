@@ -62,7 +62,8 @@ export const KIT = {
   // --- Content -------------------------------------------------------------
   Text: z.object({ text: str, role: z.enum(TEXT_ROLES).optional(), tone: z.enum(["default", "muted", "accent", "danger"]).optional(), markdown: z.boolean().optional(), weight }),
   Icon: z.object({ name: str, tone: z.enum(["default", "muted", "accent"]).optional(), size: z.number().optional(), boxed: z.boolean().optional() }),
-  Image: z.object({ url: str, alt: str.optional(), ratio: z.enum(["21:9", "16:9", "4:3", "1:1", "3:4"]).optional(), width: z.number().optional(), bleed: z.boolean().optional() }),
+  /** `icon` stands in, on a ground painted from the palette, until the picture has loaded. */
+  Image: z.object({ url: str, alt: str.optional(), icon: str.optional(), ratio: z.enum(["21:9", "16:9", "4:3", "1:1", "3:4"]).optional(), width: z.number().optional(), bleed: z.boolean().optional() }),
   Avatar: z.object({ name: str, url: str.optional(), size: z.number().optional() }),
   Numeral: z.object({}),
   Badge: z.object({ text: str, tone: str.optional() }),

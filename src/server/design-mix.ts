@@ -17,7 +17,7 @@
 
 import { choice, noul, score, type Questions } from "@typesafe-ai/sdk";
 import { askJev, ranked } from "./models.js";
-import { contrast } from "./design-md.js";
+import { contrast, type Treatment } from "./design-md.js";
 import type { Decision } from "../shared/events.js";
 
 // --- OKLCH -------------------------------------------------------------------
@@ -133,6 +133,26 @@ const ELEVATION = {
   tonal: { criteria: "Flat, with layers told apart only by background color: quiet, minimal.", prose: "There are no shadows and no borders. Layers differ only by background colour." },
 };
 
+/** Asked about the product and not about photography: what the pictures are for decides how far a brand may bend them. */
+const PHOTO_LOOK: Record<Treatment, { criteria: string; prose: string }> = {
+  natural: {
+    criteria: "True colour: the pictures are what people choose by. Food, places to stay, products, homes, animals, anything bought by its look.",
+    prose: "Show photographs in their natural colours; people choose by them.",
+  },
+  muted: {
+    criteria: "Softened and a little faded: a calm, minimal or premium product whose pictures should sit quietly. Wellness, journaling, interiors, reading, finance.",
+    prose: "Show photographs softened: desaturated a little, so that they sit quietly on the page.",
+  },
+  mono: {
+    criteria: "Black and white: news, literature, archives, heritage, serious editorial.",
+    prose: "Show photographs in black and white.",
+  },
+  duotone: {
+    criteria: "Washed in the brand's colour: the pictures are atmosphere and not merchandise. Music, events, sport, nightlife, technology, communities.",
+    prose: "Show photographs as duotones, washed in the primary colour.",
+  },
+};
+
 function questions(): Questions {
   const out: Questions = {
     hue: choice(ask("Which hue suits this product's accent color?"), Object.fromEntries(Object.entries(HUES).map(([k, v]) => [k, v.criteria]))),
@@ -146,6 +166,7 @@ function questions(): Questions {
       true: "The product is about things people want to see: places, food, people, products, animals.",
       false: "The product is about data, text, settings or tasks; photos would be decoration.",
     }),
+    photo_look: choice(ask("If this product's screens show photographs, how should they look?"), Object.fromEntries(Object.entries(PHOTO_LOOK).map(([k, v]) => [k, v.criteria]))),
     cards: noul(ask("Should this product group content into cards?"), {
       true: "Yes: separate objects, each in its own container.",
       false: "No: content flows on the page like a document, separated by whitespace and rules.",
@@ -179,7 +200,7 @@ const dial = (stops: number[], level: number) => {
 export interface MixedDesign {
   markdown: string;
   /** What the prose of the mixed file says, known without reading it back. */
-  known: { elevation: "shadow" | "outline" | "tonal"; imagery: boolean; icons: boolean; contained: boolean };
+  known: { elevation: "shadow" | "outline" | "tonal"; treatment: Treatment; imagery: boolean; icons: boolean; contained: boolean };
   decisions: Decision[];
   ms: number;
   jevInputTokens: number;
@@ -256,6 +277,7 @@ function build(brief: string, asked: Awaited<ReturnType<typeof askJev>>, seed: n
   const type = TYPE[pick("type", "typefaces")];
   const elevation = pick("elevation", "how depth is shown") as keyof typeof ELEVATION;
   const photos = yes("photos", "photographs?");
+  const treatment: Treatment = photos ? (pick("photo_look", "how photographs look") as Treatment) : "natural";
   const cards = yes("cards", "content in cards?");
 
   // Neutrals carry a trace of cream or steel, in proportion to how far the warmth dial is from the middle.
@@ -380,10 +402,10 @@ ${level("round")}. The base radius is ${px(radius)}${pill ? "; buttons are full 
 
 ## Do's and Don'ts
 
-- ${photos ? "Do use photographs where the subject is something people want to see." : "Don't use photographs; they would be decoration here."}
+- ${photos ? `Do use photographs where the subject is something people want to see. ${PHOTO_LOOK[treatment].prose}` : "Don't use photographs; they would be decoration here."}
 - Do use icons to mark what a screen is about.
 `;
 
-  const known = { elevation, imagery: photos, icons: true, contained: cards };
+  const known = { elevation, treatment, imagery: photos, icons: true, contained: cards };
   return { markdown: yaml.join("\n") + "\n" + prose, known, decisions, ms: Math.round(asked.ms), jevInputTokens: asked.inputTokens };
 }
