@@ -1,47 +1,94 @@
+/* The tool's own chrome. The mock inside .screen is painted by the DESIGN.md, not by this file. */
+
 :root {
   color-scheme: light;
   --ink: #1d2433;
   --muted: #667085;
   --line: #e2e6ee;
-  --accent: #1177ee;
+  --accent: #1d2433;
+  --canvas: #eceef3;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
   color: var(--ink);
-  background: #f5f6f9;
+  background: #fff;
 }
 
 body {
   margin: 0;
-  padding: 24px 32px 64px;
 }
 
-h1 {
-  margin: 0 0 16px;
-  font-size: 22px;
+button,
+textarea {
+  font: inherit;
+  color: inherit;
 }
 
-h1 small {
+.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.top h1 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.top h1 small {
   margin-left: 8px;
   font-size: 13px;
   font-weight: 400;
   color: var(--muted);
 }
 
-.prompt {
-  display: flex;
-  gap: 8px;
+.top a {
+  font-size: 12px;
+  color: var(--muted);
 }
 
-.prompt input {
-  flex: 1;
+.workbench {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr) 360px;
+  min-height: calc(100vh - 46px);
+}
+
+.controls,
+.trace {
+  padding: 16px 20px 48px;
+}
+
+h2 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+h2 small {
+  margin-left: 6px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* --- Prompt ------------------------------------------------------------- */
+
+.prompt textarea {
+  box-sizing: border-box;
+  width: 100%;
   padding: 10px 12px;
-  font: inherit;
+  resize: vertical;
   border: 1px solid var(--line);
   border-radius: 8px;
 }
 
 .prompt button {
-  padding: 10px 18px;
-  font: inherit;
+  width: 100%;
+  margin-top: 6px;
+  padding: 9px 18px;
   font-weight: 600;
   color: #fff;
   background: var(--accent);
@@ -53,14 +100,14 @@ h1 small {
 .examples {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 10px 0 20px;
+  gap: 5px;
+  margin: 10px 0 24px;
 }
 
 .examples button {
-  padding: 4px 10px;
-  font: inherit;
+  padding: 3px 9px;
   font-size: 12px;
+  text-align: left;
   color: var(--muted);
   background: #fff;
   border: 1px solid var(--line);
@@ -68,28 +115,132 @@ h1 small {
   cursor: pointer;
 }
 
-main {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
-  align-items: start;
+.examples button:hover {
+  color: var(--ink);
+  border-color: var(--muted);
 }
 
-jev2ui-run {
-  display: block;
-  min-width: 0;
+/* --- Design --------------------------------------------------------------- */
+
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 2px;
+  background: var(--canvas);
+  border-radius: 8px;
 }
 
-.run-header h2 {
-  margin: 0 0 6px;
-  font-size: 15px;
+.segmented button {
+  flex: 1;
+  padding: 5px 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  text-transform: capitalize;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.segmented button[aria-checked="true"] {
+  font-weight: 600;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+}
+
+.hint {
+  margin: 8px 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.swatches span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.swatches i {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgb(0 0 0 / 0.12);
+  border-radius: 50%;
+}
+
+.editor summary {
+  margin: 12px 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.editor textarea {
+  box-sizing: border-box;
+  width: 100%;
+  height: 360px;
+  padding: 10px;
+  font:
+    11.5px/1.5 ui-monospace,
+    "SF Mono",
+    Menlo,
+    monospace;
+  white-space: pre;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.link {
+  padding: 0;
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  text-decoration: underline;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+/* --- Stage ---------------------------------------------------------------- */
+
+.stage {
+  padding: 12px 24px 48px;
+  background-color: var(--canvas);
+  background-image: radial-gradient(rgb(0 0 0 / 0.07) 1px, transparent 1px);
+  background-size: 16px 16px;
+  border-inline: 1px solid var(--line);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.toolbar .segmented {
+  background: rgb(0 0 0 / 0.06);
 }
 
 .stats {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  min-height: 24px;
 }
 
 .pill {
@@ -98,12 +249,6 @@ jev2ui-run {
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 999px;
-}
-
-.pill.live {
-  color: #fff;
-  background: var(--accent);
-  border-color: var(--accent);
 }
 
 .pill.good {
@@ -118,75 +263,124 @@ jev2ui-run {
   background: #fdecee;
 }
 
-.surface {
-  margin: 12px 0;
-  padding: 16px;
-  min-height: 160px;
-  overflow-x: auto;
+.exports {
+  display: flex;
+  gap: 6px;
+}
+
+.exports button {
+  padding: 4px 10px;
+  font-size: 12px;
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
-.surface img {
-  max-width: 100%;
+.exports button:disabled {
+  color: var(--muted);
+  cursor: default;
+  opacity: 0.6;
 }
 
-.empty {
-  margin: 56px 0;
+.stale {
+  margin: 0 auto 12px;
+  font-size: 12px;
   text-align: center;
   color: var(--muted);
 }
 
-.trace summary {
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
+.device {
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.1),
+    0 24px 60px rgb(20 30 60 / 0.18);
 }
 
-.stage h3 {
-  margin: 12px 0 4px;
-  font-size: 13px;
+.device.phone {
+  border: 10px solid #15171c;
+  border-radius: 44px;
 }
 
-.stage h3 small {
-  margin-left: 6px;
+.screen {
+  box-sizing: border-box;
+  min-height: 420px;
+  padding: 24px 20px 32px;
+  overflow-x: hidden;
+  transition:
+    background 0.25s,
+    color 0.25s;
+}
+
+.device.phone .screen {
+  height: 760px;
+  padding-top: 44px;
+  overflow-y: auto;
+}
+
+.device.desktop .screen,
+.device.tablet .screen {
+  padding: 32px 40px 48px;
+}
+
+.screen img {
+  max-width: 100%;
+}
+
+.empty {
+  margin: 120px 0;
+  font-family: system-ui, sans-serif;
+  text-align: center;
+  opacity: 0.55;
+}
+
+/* --- Trace ---------------------------------------------------------------- */
+
+.stage-entry h3 {
+  margin: 14px 0 4px;
+  font-size: 12.5px;
+}
+
+.stage-entry h3 small {
+  display: block;
   font-weight: 400;
   color: var(--muted);
 }
 
 .trace table {
   width: 100%;
-  border-collapse: collapse;
   font-size: 12px;
+  border-collapse: collapse;
 }
 
 .trace td {
-  padding: 2px 6px 2px 0;
+  padding: 3px 6px 3px 0;
+  vertical-align: top;
   border-bottom: 1px solid var(--line);
+}
+
+.trace td em {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
 }
 
 .trace .answer {
   font-weight: 600;
-  white-space: nowrap;
 }
 
 .trace .bar {
-  width: 80px;
+  width: 48px;
+  padding-top: 8px;
 }
 
 .trace .bar span {
   display: block;
-  height: 6px;
-  background: var(--accent);
+  height: 5px;
+  background: var(--muted);
   border-radius: 3px;
-}
-
-.trace .p {
-  width: 32px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
 }
 
 .note {
@@ -199,8 +393,23 @@ jev2ui-run {
   color: #a3181f;
 }
 
-@media (max-width: 1100px) {
-  main {
-    grid-template-columns: 1fr;
+.note.warn {
+  color: #8a5a00;
+}
+
+@media (max-width: 1200px) {
+  .workbench {
+    grid-template-columns: 320px minmax(0, 1fr);
+  }
+
+  .trace {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 760px) {
+  .workbench {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

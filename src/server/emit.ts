@@ -55,7 +55,7 @@ export const text = (id: string, p: string, variant?: string): Component => ({
 const SKELETON_BUILDERS: Record<Section, (plan: Plan) => Component[]> = {
   form: () => formShell(),
 
-  actions: () => [actionsContainer(0)],
+  actions: () => [actionsContainer([])],
 
   media: () => [
     { id: "media", component: "Column", children: ["media_image", "media_caption"] },
@@ -74,13 +74,7 @@ const SKELETON_BUILDERS: Record<Section, (plan: Plan) => Component[]> = {
 
   facts: (plan) =>
     plan.factsLayout === "tiles"
-      ? [
-          { id: "facts", component: "Row", children: { path: "/facts", componentId: "fact" }, justify: "spaceEvenly" },
-          { id: "fact", component: "Card", child: "fact_body", weight: 1 },
-          { id: "fact_body", component: "Column", children: ["fact_value", "fact_label"], align: "center" },
-          text("fact_value", "value", "h3"),
-          text("fact_label", "label", "caption"),
-        ]
+      ? [factTilesContainer(0)]
       : [
           { id: "facts", component: "Column", children: { path: "/facts", componentId: "fact" } },
           { id: "fact", component: "Row", children: ["fact_label", "fact_value"], justify: "spaceBetween" },
@@ -91,38 +85,42 @@ const SKELETON_BUILDERS: Record<Section, (plan: Plan) => Component[]> = {
   steps: () => [
     { id: "steps", component: "List", children: { path: "/steps", componentId: "step" }, listStyle: "ordered" },
     { id: "step", component: "Column", children: ["step_title", "step_detail"] },
-    text("step_title", "title", "h5"),
+    text("step_title", "title", "h4"),
     text("step_detail", "detail"),
   ],
 
   collection: (plan) => {
-    const horizontal = plan.collectionDirection === "horizontal";
-    const itemChildren = [
-      ...(plan.collectionImages ? ["item_image"] : []),
-      "item_text",
-      ...(plan.collectionItemAction ? ["item_button"] : []),
-    ];
+    // A carousel is sized by its pictures; without them its cards collapse, so the list runs down the page.
+    const horizontal = plan.collectionDirection === "horizontal" && plan.collectionImages;
+    // Picture and text share a row; the button sits under them, so the text keeps its width on a phone.
+    const mainChildren = [...(plan.collectionImages ? ["item_image"] : []), "item_text"];
+    const bodyChildren = ["item_main", ...(plan.collectionItemAction ? ["item_button_row"] : [])];
     const components: Component[] = [
       { id: "collection", component: "Column", children: ["collection_heading", "collection_list"] },
-      text("collection_heading", "/collection/heading", "h4"),
-      {
-        id: "collection_list",
-        component: "List",
-        children: { path: "/collection/items", componentId: "item" },
-        direction: plan.collectionDirection,
-        listStyle: "none",
-      },
-      { id: "item", component: "Card", child: "item_body" },
+      text("collection_heading", "/collection/heading", "h3"),
+      // A vertical list is a Column: the List component indents its items to make room for numbers.
       horizontal
-        ? { id: "item_body", component: "Column", children: itemChildren }
-        : { id: "item_body", component: "Row", children: itemChildren, align: "center" },
+        ? { id: "collection_list", component: "List", children: { path: "/collection/items", componentId: "item" }, direction: "horizontal", listStyle: "none" }
+        : { id: "collection_list", component: "Column", children: { path: "/collection/items", componentId: "item" } },
+      // A design that keeps content out of cards gets rows parted by a rule, like a printed list.
+      ...(plan.contained
+        ? [{ id: "item", component: "Card", child: "item_body" }]
+        : [
+            { id: "item", component: "Column", children: ["item_body", "item_rule"] },
+            { id: "item_rule", component: "Divider" },
+          ]),
+      { id: "item_body", component: "Column", children: bodyChildren },
+      horizontal
+        ? { id: "item_main", component: "Column", children: mainChildren }
+        : { id: "item_main", component: "Row", children: mainChildren, align: "start" },
       { id: "item_text", component: "Column", children: ["item_head", "item_subtitle", "item_description"], weight: 1 },
-      { id: "item_head", component: "Row", children: ["item_title", "item_badge"], justify: "spaceBetween" },
-      text("item_title", "title", "h5"),
+      { id: "item_head", component: "Row", children: ["item_title", "item_badge"], justify: "spaceBetween", align: "center" },
+      text("item_title", "title", "h4"),
       text("item_badge", "badge", "caption"),
       text("item_subtitle", "subtitle", "caption"),
       text("item_description", "description"),
     ];
+    if (plan.collectionItemAction) components.push({ id: "item_button_row", component: "Row", children: ["item_button"], justify: "end" });
     if (plan.collectionImages) {
       components.push({
         id: "item_image",
@@ -162,7 +160,7 @@ function shell(plan: Plan, sectionIds: string[]): Component[] {
   ];
   if (plan.icon) header.push({ id: "header_icon", component: "Icon", name: plan.icon });
   const main = { component: "Column", children: ["header", ...sectionIds] };
-  return plan.card
+  return plan.card && plan.contained
     ? [{ id: "root", component: "Card", child: "main" }, { id: "main", ...main }, ...header]
     : [{ id: "root", ...main }, ...header];
 }
@@ -194,10 +192,35 @@ export function formContainer(count: number): Component {
   return { id: "form", component: "Column", children: ["form_heading", ...fields, "form_submit"] };
 }
 
-/** The actions row with its first `count` buttons attached. */
-export function actionsContainer(count: number): Component {
-  const buttons = Array.from({ length: count }, (_, i) => `action_${i}`);
-  return { id: "actions", component: "Row", children: buttons, justify: "end" };
+/**
+ * Tiles are laid out two to a row, so they fit a phone. A template cannot do
+ * that, so tiles attach one by one as facts arrive, the way form fields do.
+ */
+const TILES_PER_ROW = 2;
+
+/** The tiles container, and its rows, with the first `count` tiles attached. */
+export function factTilesContainer(count: number): Component {
+  const rows = Array.from({ length: Math.ceil(count / TILES_PER_ROW) }, (_, r) => `facts_row_${r}`);
+  return { id: "facts", component: "Column", children: rows };
+}
+
+export function factTileComponents(i: number, count: number, contained: boolean): Component[] {
+  const row = Math.floor(i / TILES_PER_ROW);
+  const inRow = Array.from({ length: Math.min(TILES_PER_ROW, count - row * TILES_PER_ROW) }, (_, k) => `fact_${row * TILES_PER_ROW + k}`);
+  const body = { component: "Column", children: [`fact_${i}_value`, `fact_${i}_label`], align: contained ? "center" : "start" };
+  return [
+    { id: `facts_row_${row}`, component: "Row", children: inRow },
+    ...(contained
+      ? [{ id: `fact_${i}`, component: "Card", child: `fact_${i}_body`, weight: 1 }, { id: `fact_${i}_body`, ...body }]
+      : [{ id: `fact_${i}`, ...body, weight: 1 }]),
+    text(`fact_${i}_value`, `/facts/${i}/value`, "h3"),
+    text(`fact_${i}_label`, `/facts/${i}/label`, "caption"),
+  ];
+}
+
+/** The actions row holding the buttons for these indices into /actions. */
+export function actionsContainer(attached: number[]): Component {
+  return { id: "actions", component: "Row", children: attached.map((i) => `action_${i}`), justify: "end" };
 }
 
 export function actionComponents(i: number, label: string, primary: boolean): Component[] {

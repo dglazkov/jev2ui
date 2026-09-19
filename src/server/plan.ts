@@ -80,6 +80,8 @@ export interface Plan {
   collectionDirection: "vertical" | "horizontal";
   collectionImages: boolean;
   collectionItemAction: boolean;
+  /** False when the design system keeps content out of cards. */
+  contained: boolean;
 }
 
 export function planQuestions(): Questions {
@@ -162,6 +164,7 @@ export function readPlan(answers: Record<string, any>): { plan: Plan; decisions:
       : "vertical",
     collectionImages: has("collection") && yes("collection_images", "pictures on items?"),
     collectionItemAction: has("collection") && yes("collection_item_action", "button on items?"),
+    contained: true,
   };
   return { plan, decisions };
 }
@@ -234,7 +237,9 @@ Other parts of the same screen are written separately, so stay strictly within y
 Be specific and realistic: invent plausible concrete details rather than placeholders. Keep every string short.
 Do not describe the UI, do not mention buttons or layout in text, and do not use HTML.`;
 
-export function partPrompt(request: string, part: "header" | Section, sections: Section[] | null): string {
+export function partPrompt(request: string, part: "header" | Section, sections: Section[] | null, voice = ""): string {
   const layout = sections ? `The screen has these parts: header, ${sections.join(", ")}.\n` : "";
-  return `User request: ${request}\n${layout}Write the "${part}" part.`;
+  // The Overview of a DESIGN.md describes the brand; the words should sound like it.
+  const brand = voice ? `The product's brand, for tone of voice only:\n${voice}\n` : "";
+  return `User request: ${request}\n${layout}${brand}Write the "${part}" part.`;
 }

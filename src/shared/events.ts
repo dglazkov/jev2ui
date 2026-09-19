@@ -1,5 +1,7 @@
 // Events streamed from the server pipelines to the browser (and the eval CLI).
 
+import type { DesignReport } from "./design.js";
+
 export type A2uiMessage = Record<string, unknown> & { version: string };
 
 /** One Jev answer, flattened for display. */
@@ -14,6 +16,8 @@ export interface Decision {
 }
 
 export type PipelineEvent =
+  /** The design the mock is painted with. `markdown` is set when Jev mixed it, so the browser can show the file. */
+  | { type: "design"; at: number; report: DesignReport; markdown?: string }
   | { type: "a2ui"; message: A2uiMessage; at: number }
   | {
       type: "trace";
@@ -29,7 +33,7 @@ export type PipelineEvent =
   | { type: "error"; at: number; message: string };
 
 export interface RunStats {
-  mode: "jobs" | "hybrid" | "baseline";
+  mode: "mock" | "jobs" | "hybrid" | "baseline";
   totalMs: number;
   /** Time until the first updateComponents message left the server. */
   firstComponentsMs: number | null;

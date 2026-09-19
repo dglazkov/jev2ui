@@ -7,8 +7,11 @@ import { fieldComponent, formContainer, initialFieldValue, valuePath, type Field
 import type { ContentStreams } from "./content.js";
 import type { Run } from "./run.js";
 
-/** Returns the `onValue` hook for the part that holds `{ fields: [...] }`. */
-export function growForm(run: Run, streams: ContentStreams, surfaceId: string, prompt: string) {
+/**
+ * Returns the `onValue` hook for the part that holds `{ fields: [...] }`.
+ * A mock is looked at, not filled in: with `checks` off, no field starts out flagged as invalid.
+ */
+export function growForm(run: Run, streams: ContentStreams, surfaceId: string, prompt: string, checks = true) {
   const fields: FieldContent[] = [];
   const designs: FieldDesign[] = [];
   let started = 0;
@@ -29,7 +32,7 @@ export function growForm(run: Run, streams: ContentStreams, surfaceId: string, p
   const design = async (i: number) => {
     const asked = await run.askJev(`Jev: design field "${fields[i].label}"`, { user_request: prompt, form_field: fields[i] }, fieldQuestions());
     const read = readField(asked.answers, fields[i]);
-    designs[i] = read.design;
+    designs[i] = checks ? read.design : { ...read.design, required: false, email: false };
     run.trace({ stage: asked.stage, ms: asked.ms, decisions: read.decisions, tokens: { input: asked.inputTokens, output: 0 } });
     attachReady();
   };

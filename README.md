@@ -1,15 +1,98 @@
 # jev2ui
 
-An experiment: render [A2UI](https://github.com/a2ui-project/a2ui) from a text prompt using
-[TypeSafe's Jev](https://docs.typesafe.ai/) for the design decisions and a small Gemini model for the words.
+A design tool for developers: describe the screen you want, get a mock of it, painted by your
+[DESIGN.md](https://github.com/google-labs-code/design.md).
 
+Under it is an experiment: render [A2UI](https://github.com/a2ui-project/a2ui) from a text prompt using
+[TypeSafe's Jev](https://docs.typesafe.ai/) for the decisions and a small Gemini model for the words.
 Jev is a decision model. It cannot generate text or JSON; it answers yes/no (Noul), pick-one (Choice)
-and rating (Score) questions with calibrated probabilities, many at once, in roughly 100–300 ms. A2UI
-already separates structure (`updateComponents`, mostly closed-set choices) from content
-(`updateDataModel`). So the work is split the same way:
+and rating (Score) questions with calibrated probabilities, many at once, in roughly 100–300 ms.
 
-> **Jev decides, Gemini writes, code assembles.**
+> **Jev decides, Gemini writes, code assembles, a DESIGN.md paints.**
 
+```sh
+npm install
+npm run dev        # http://localhost:5173
+```
+
+Type a description ("Checkout for a sneaker store, with order summary"), pick a design, and the mock appears
+in a phone, tablet or desktop frame in about a second and a half. Every decision behind it is listed in the
+trace, with its probability. Copy the A2UI messages, the theme as CSS variables, or the DESIGN.md.
+
+## Rendering strategy: the mock is painted by a DESIGN.md
+
+A DESIGN.md is a design system in one file: design tokens in YAML front matter, then prose that says what the
+tokens are for. Its [philosophy](https://github.com/google-labs-code/design.md/blob/main/PHILOSOPHY.md) is that
+the prose matters more than the values. The mock pipeline takes both halves seriously, and gives each to the
+part of the system that can use it.
+
+1. **Tokens are parsed by the format's own linter** (`@google/design.md`), which resolves references and
+   reports problems (broken references, contrast failures). Findings show up next to the editor.
+2. **Jev reads the prose for what tokens cannot say** (`src/server/design-md.ts`). Which colour is the page and
+   which is the text? In one file `primary` is the accent; in the bundled Broadsheet it is "press ink, used for
+   all headlines and body text", and only the prose says so. Each role is a Choice whose options are the file's
+   own token names. Depth (shadows, outlines or tonal layers) has no token at all, so that is a Choice too.
+   Code keeps the last word: a component token (`button-primary.backgroundColor`) or a conventional name
+   (`on-surface`) settles a role without asking, and a pick that fails a contrast check is thrown out in favour
+   of the next in Jev's ranking. One request, about 200 ms, once per file.
+3. **Code maps tokens to paint** (`src/server/theme.ts`). The A2UI renderer keeps components in shadow roots
+   and exposes `--a2ui-*` custom properties, so a theme is about 45 of those plus the fonts to load. The theme
+   is applied in the browser, so switching or editing the design re-skins the mock without regenerating it.
+4. **The design changes structure, not only paint.** A specific reference brings its constraints for free: a
+   newspaper has no pictograms and no cards, an instrument panel has no photographs. Jev answers three
+   yes/no questions about the file, and the answers overrule the screen plan: the header icon goes, list
+   items become rows parted by rules, the hero picture is dropped. The trace says when this happens.
+5. **The Overview gives the writers a voice.** Gemini never sees tokens or A2UI, but it is shown the brand
+   paragraph. The same dog-walker screen is "Dog Walkers — Happy pups nearby ready for a stroll!" in Gumdrop
+   and "Canine Conductors — A classified register of trusted walking companions" in Broadsheet.
+
+Three designs are bundled in `designs/` (Broadsheet, Gumdrop, Night Shift). Paste your project's own into the
+editor; it is kept in local storage.
+
+### No DESIGN.md? Jev mixes one, with Scores
+
+Jev cannot write `#6C3BF5`. But a colour in OKLCH is three numbers, and Jev can rate. A Score is an expected
+value over an ordered rubric, so it lands *between* the levels: "how vivid should the accent be?" answered
+2.55 of 4 is a chroma of 0.183. In `src/server/design-mix.ts`, one request of 11 questions about the brief
+becomes a complete design:
+
+| Question | Primitive | Becomes |
+| --- | --- | --- |
+| accent hue | Choice of 12 named hues | hue angle: the circular mean of the winner and its neighbours, weighted by probability (a rubric has two ends and a hue circle has none, so this one is not a Score) |
+| accent vividness, accent lightness | Score | OKLCH chroma and lightness, reduced into the sRGB gamut |
+| warmth of neutrals | Score | how far backgrounds and greys lean to cream or steel |
+| roundness, whitespace | Score | the radius scale; the spacing scale and body size |
+| dark interface? photographs? cards? | Noul | palette polarity; structure |
+| typefaces, depth | Choice | one of nine Google Fonts pairings; shadow, outline or tonal |
+
+"Plant care reminders for a gardening app" comes out green (p = 1.00), cream, humanist and softly rounded;
+"Kubernetes cluster health for on-call engineers" comes out dark, steel, square, packed and monospaced;
+"Bedtime story picker for a kids' reading app" comes out dark, pastel violet and round. The result is written
+out as an ordinary DESIGN.md, with prose, and takes the same path as a hand-written one. It shows up in the
+editor; edit it, or copy it into your project as a starting point.
+
+Hue is the weak dial. When the brief gives no cue Jev's top hue sits at p ≈ 0.3–0.5 and the pick is
+arguable (a luxury watch boutique got violet). Naming a colour in the prompt settles it.
+
+### The mock pipeline
+
+It is the sections pipeline below (`src/server/hybrid.ts`, `runMock`) with a design alongside:
+
+- **t = 0, in parallel:** Jev plans the screen; Jev reads the DESIGN.md (or mixes one); Gemini starts the
+  header, already in the brand's voice, because parsing the Overview needs no model.
+- **~200 ms:** the design overrules the plan where they disagree; the skeleton and the theme are sent.
+- Then content streams in as before. Two things differ for a mock. Fields carry no validation, so an untouched
+  form is not covered in errors. And buttons wait for the form's submit label (it arrives early in the form's
+  stream) so that the actions writer's habit of repeating it can be dropped in code.
+
+`npm run eval -- --only mock` over 13 prompts: 13 of 13 valid A2UI with a mixed design and with Broadsheet,
+first components at 123–278 ms, complete in 1.0–2.0 s. `npm run probe:design` prints how Jev reads each
+bundled design (and any path you pass, such as the examples in the DESIGN.md repository);
+`npm run probe:design -- --mix "a brief"` prints a mix.
+
+## The pipelines underneath
+
+The earlier experiment is still here, at [/compare.html](http://localhost:5173/compare.html).
 Three pipelines run side by side in the app:
 
 - **Jobs** asks Jev only about the person (where they are in getting what they want, what done looks like,
@@ -87,8 +170,8 @@ Requires Node 20+ and a `.env` with `GEMINI_API_KEY` and `JEV_API_KEY`.
 
 ```sh
 npm install
-npm run dev        # http://localhost:5173 — both pipelines side by side, with Jev's decision trace
-npm run eval       # comparison table over the built-in prompts
+npm run dev        # http://localhost:5173 is the design tool; /compare.html has the pipelines side by side
+npm run eval       # comparison table over the built-in prompts, all four pipelines
 npm run eval -- "Book a haircut" -v   # one prompt, printing decisions and messages
 ```
 
@@ -141,10 +224,18 @@ rather than a benchmark.
 - Jev reads questions literally and answers them independently. Expect to tune question wording and
   thresholds; `src/server/plan.ts` and `src/server/design.ts` hold all of it.
 - Button and form events are only logged in the trace; nothing handles them.
+- A theme can only say what the renderer's variables can carry: no letter-spacing or uppercase labels, one
+  heading face, one gap for every column. Hover and pressed variants are mostly ignored.
+- The mock's structure does not know the device. Fact tiles are two to a row everywhere so that they fit a phone.
 
 ## Layout
 
 ```
+designs/                    bundled DESIGN.md files
+src/server/design-md.ts     parse a DESIGN.md; Jev reads its prose for colour roles, depth and constraints
+src/server/design-mix.ts    no DESIGN.md: Jev's Scores become OKLCH colours, radii and spacing, written out as one
+src/server/design-source.ts a supplied or mixed design, worked out once and reused
+src/server/theme.ts         tokens and the reading, as --a2ui-* variables
 src/server/job-profile.ts   questions about the person, and the profile read from the answers
 src/server/job-patterns.ts  rules from job to pattern; each pattern's parts and component tree
 src/server/jobs.ts          the jobs pipeline
@@ -153,11 +244,12 @@ src/server/form.ts      a form that grows field by field (shared)
 src/server/plan.ts      Jev questions from the prompt, section grammar, Gemini content schema
 src/server/design.ts    Jev questions from the content (per-field controls, primary action)
 src/server/emit.ts      deterministic A2UI component builders
-src/server/hybrid.ts    the sections pipeline
+src/server/hybrid.ts    the sections pipeline, and the mock pipeline built on it
 src/server/baseline.ts  Gemini writing A2UI directly
 src/server/validate.ts  schema and reference validation
 src/server/run.ts       event stream, stats, end-of-run validation
-src/web/                Lit app using @a2ui/lit's v0.9 renderer
+src/web/app.ts          the design tool; compare.ts is the side-by-side page (both use @a2ui/lit's v0.9 renderer)
 src/eval.ts             CLI comparison
 src/probe/jtbd.ts       can Jev see jobs? (docs/jtbd-probe.md)
+src/probe/design.ts     how does Jev read a DESIGN.md, and what does it mix?
 ```

@@ -1,13 +1,14 @@
 {
   "name": "jev2ui",
   "version": "1.0.0",
-  "description": "Jev decides, Gemini writes, code assembles: A2UI from a text prompt",
+  "description": "Describe a screen, get a mock: Jev decides, Gemini writes, a DESIGN.md paints",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc",
     "eval": "tsx src/eval.ts",
-    "probe:jtbd": "tsx src/probe/jtbd.ts"
+    "probe:jtbd": "tsx src/probe/jtbd.ts",
+    "probe:design": "tsx src/probe/design.ts"
   },
   "repository": {
     "type": "git",
@@ -25,6 +26,7 @@
     "@a2ui/lit": "^0.11.0",
     "@a2ui/markdown-it": "^0.1.2",
     "@a2ui/web_core": "^0.11.0",
+    "@google/design.md": "^0.4.0",
     "@google/genai": "^2.23.0",
     "@lit/context": "^1.1.6",
     "@typesafe-ai/sdk": "^0.6.0",

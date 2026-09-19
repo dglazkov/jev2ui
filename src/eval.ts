@@ -1,9 +1,12 @@
 // Runs prompts through all pipelines and prints a comparison table.
 //   npm run eval                      all built-in prompts, all modes
 //   npm run eval -- "a prompt" -v     one prompt, with decisions and messages
+//   npm run eval -- --only mock       one pipeline: mock | jobs | hybrid | baseline
+//   npm run eval -- --design designs/broadsheet.md    the mock pipeline with that DESIGN.md (default: Jev mixes one)
 
 import { runJobs } from "./server/jobs.js";
-import { runHybrid } from "./server/hybrid.js";
+import { readFileSync } from "node:fs";
+import { runHybrid, runMock } from "./server/hybrid.js";
 import { runBaseline } from "./server/baseline.js";
 import { GEMINI_MODEL, JEV_MODEL, geminiRequestTimes } from "./server/models.js";
 import type { PipelineEvent, RunStats } from "./shared/events.js";
@@ -20,9 +23,15 @@ const PROMPTS = [
   "Tell me about the Golden Gate Bridge",
   "Settings for notification preferences in a chat app",
   "Pick a movie for family night",
+  "Checkout screen for a sneaker store with order summary",
+  "Home energy dashboard showing today's usage",
 ];
 
 const args = process.argv.slice(2);
+const designFlag = args.indexOf("--design");
+const designMarkdown = designFlag >= 0 ? readFileSync(args.splice(designFlag, 2)[1], "utf8") : undefined;
+const onlyFlag = args.indexOf("--only");
+const only = onlyFlag >= 0 ? args.splice(onlyFlag, 2)[1] : undefined;
 const verbose = args.includes("-v");
 const custom = args.filter((a) => !a.startsWith("-"));
 const prompts = custom.length ? custom : PROMPTS;
@@ -54,6 +63,7 @@ async function consume(events: AsyncGenerator<PipelineEvent>): Promise<{ stats?:
         console.log(`      ${d.question.padEnd(34)} ${d.answer.padEnd(14)} p=${d.p.toFixed(2)}${d.note ? `  (${d.note})` : ""}`);
       }
     }
+    if (event.type === "design") console.log(`  [${event.at}ms] design "${event.report.name}": ${Object.keys(event.report.theme.vars).length} theme variables, fonts ${event.report.theme.fonts.join(", ")}`);
     if (event.type === "a2ui") console.log(`  [${event.at}ms] ${JSON.stringify(event.message).slice(0, 400)}`);
   }
   return { stats, problems };
@@ -62,7 +72,9 @@ async function consume(events: AsyncGenerator<PipelineEvent>): Promise<{ stats?:
 console.log(`Gemini: ${GEMINI_MODEL}   Jev: ${JEV_MODEL}\n`);
 const rows: Array<Record<string, unknown>> = [];
 for (const prompt of prompts) {
-  for (const [mode, run] of [["jobs", runJobs], ["hybrid", runHybrid], ["baseline", runBaseline]] as const) {
+  const mock = (p: string) => runMock(p, designMarkdown);
+  for (const [mode, run] of [["mock", mock], ["jobs", runJobs], ["hybrid", runHybrid], ["baseline", runBaseline]] as const) {
+    if (only && only !== mode) continue;
     await pace();
     if (verbose) console.log(`\n=== ${mode}: ${prompt}`);
     const { stats, problems } = await consume(run(prompt));

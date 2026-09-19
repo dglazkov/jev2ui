@@ -2,6 +2,7 @@ import type { A2uiMessage, PipelineEvent, RunStats } from "../shared/events.js";
 import { validateMessages } from "./validate.js";
 import { askJev } from "./models.js";
 import type { Questions } from "@typesafe-ai/sdk";
+import type { DesignReport } from "../shared/design.js";
 
 export const A2UI_VERSION = "v0.9";
 export const CATALOG_ID = "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json";
@@ -77,6 +78,10 @@ export class Run {
     this.stats.jevCalls++;
     this.stats.jevInputTokens += result.inputTokens;
     return { ...result, stage };
+  }
+
+  design(report: DesignReport, markdown?: string) {
+    this.push({ type: "design", at: this.at, report, ...(markdown ? { markdown } : {}) });
   }
 
   trace(event: Omit<Extract<PipelineEvent, { type: "trace" }>, "type" | "at">) {
