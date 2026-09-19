@@ -1,0 +1,9 @@
+# What `gcloud run deploy --source .` leaves behind. The keys above all: deployed, they come from Secret Manager.
+.env
+.git
+.gitignore
+.claude
+.cache
+node_modules
+dist
+docs

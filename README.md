@@ -375,6 +375,21 @@ npm run eval -- "Book a haircut" -v   # one prompt, printing decisions and messa
 in `.env`. A hybrid run makes one Gemini request per section, so on a free-tier key (15 requests/minute)
 run the eval with `GEMINI_RPM=15` to have it pace itself.
 
+### As a server
+
+`npm run dev` serves the pipelines from the Vite dev server. Deployed, they have a server of their own,
+which serves the built front end beside them:
+
+```sh
+npm run build && npm start          # http://localhost:8080, or wherever PORT says
+PROJECT=my-project ./deploy.sh      # the same, in a container (Dockerfile), on Cloud Run
+```
+
+It runs as one instance, because what a session learns lives in the process: the shelf of baked components,
+the designs already read. Made photographs are kept in `.cache/photos`, or wherever `PHOTOS_DIR` says;
+on Cloud Run that is a mounted bucket, so they outlast the instance. There is no login and no rate limit:
+whoever has the URL spends the keys.
+
 ## Results so far
 
 One run of `npm run eval` (11 prompts, `gemini-3.5-flash-lite`, `jev-1.13.0`, a paid-tier Gemini key).
@@ -467,6 +482,8 @@ src/server/hybrid.ts    the sections pipeline
 src/server/baseline.ts  Gemini writing A2UI directly
 src/server/validate.ts  schema and reference validation
 src/server/run.ts       event stream, stats, end-of-run validation
+src/server/http.ts      the routes: /api/design, /api/generate (Server-Sent Events), /api/photo
+src/server/main.ts      the deployed server: the routes and the built front end (vite.config.ts mounts them in dev)
 src/web/app.ts          the design tool; compare.ts is the side-by-side page (both use @a2ui/lit's v0.9 renderer)
 src/eval.ts             CLI comparison
 src/probe/jtbd.ts       can Jev see jobs? (docs/jtbd-probe.md)
