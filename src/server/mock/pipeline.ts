@@ -95,10 +95,13 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
     const fields = asTheyComplete((field, i) => refine("form", refineField(run, prompt, i, field)));
     // A photograph joins its item like any other of Jev's answers, and joins it again if a better one had to be made.
     const photographs = asTheyComplete((item, i) => {
-      if (plan!.list.leading !== "thumbnail" || !item?.title) return;
+      // People are pictured too: an avatar is a portrait, unless the design has no photographs.
+      const people = plan!.list.leading === "avatar" && plan!.imagery;
+      if ((plan!.list.leading !== "thumbnail" && !people) || !item?.title) return;
       const big = plan!.list.layout !== "rows";
       const shown = (url: string) => (decorations.add("list", [{ at: ["items", i], values: { imageUrl: url } }]), streams.refresh("list"));
-      streams.spawn(pictures.find({ subject: plan!.pictures.items, of: itemWords(item), ratio: "4:3", size: big ? [640, 480] : [160, 160] }, shown));
+      const size: [number, number] = people || !big ? [160, 160] : [640, 480];
+      streams.spawn(pictures.find(people ? { subject: "portrait", of: itemWords(item), ratio: "1:1", size } : { ...plan!.pictures.items, of: itemWords(item), ratio: "4:3", size }, shown));
     });
     const tones = once((list) => {
       const want = { tones: plan!.list.parts.includes("status") || plan!.list.parts.includes("progress"), icons: plan!.list.leading === "icon" && plan!.list.layout === "rows" };
@@ -163,7 +166,14 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
     if (plan.blocks.includes("hero")) {
       const shown = (url: string) => run.send({ updateDataModel: { surfaceId, path: "/hero", value: { imageUrl: url } } });
       if (typeof carried === "string") shown(resized(carried, 960, 540));
-      else streams.spawn((async () => pictures.find({ subject: plan.pictures.hero, of: itemWords(await header) || prompt, ratio: "16:9", size: [960, 540] }, shown))());
+      else streams.spawn((async () => pictures.find({ ...plan.pictures.hero, of: itemWords(await header) || prompt, ratio: "16:9", size: [960, 540] }, shown))());
+    }
+
+    // A profile opens with the person's portrait: the one from the list they were tapped in, if that is how the person got here.
+    if (plan.person && plan.imagery) {
+      const shown = (url: string) => run.send({ updateDataModel: { surfaceId, path: "/person", value: { imageUrl: url } } });
+      if (typeof carried === "string") shown(resized(carried, 320, 320));
+      else streams.spawn((async () => pictures.find({ subject: "portrait", of: itemWords(await header) || prompt, ratio: "1:1", size: [320, 320] }, shown))());
     }
 
     // The app's navigation is established once; every main screen after that shows the same one.

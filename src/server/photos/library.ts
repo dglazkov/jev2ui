@@ -10,6 +10,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { madePhotos } from "./generate.js";
+import { SUBJECTS, type Subject } from "./subjects.js";
 
 export interface Photo {
   id: string;
@@ -61,7 +62,7 @@ export function shortlist(subject: string, text: string, count: number, without:
   const wanted = tokens(text);
   const tiebreak = (photo: Photo) => createHash("md5").update(`${text}|${photo.id}`).digest().readUInt32BE(0) / 2 ** 32;
   return photos
-    .filter((photo) => !without.has(photo.id))
+    .filter((photo) => !without.has(photo.id) && (!(SUBJECTS as Record<string, Subject>)[subject]?.own || photo.subjects.includes(subject)))
     .map((photo) => {
       const shared = wanted.filter((word) => wordsOf.get(photo)!.has(word));
       const score = shared.reduce((sum, word) => sum + Math.log(photos.length / seen.get(word)!), 0) + (photo.subjects.includes(subject) ? SHELF : 0);

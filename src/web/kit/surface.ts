@@ -251,7 +251,7 @@ export class KitSurface extends LitElement {
   drawAvatar(c: Component, s: Scope) {
     const name = this.value(c.name, s);
     const url = this.value(c.url, s);
-    return html`<span class="k-avatar" style="--k-size:${c.size ?? 40}px">${url ? html`<img src=${url} alt="" />` : initials(String(name ?? ""))}</span>`;
+    return html`<span class="k-avatar" style="--k-size:${c.size ?? 40}px">${initials(String(name ?? ""))}${url ? html`<img src=${url} alt="" @load=${(e: Event) => (e.target as HTMLElement).classList.add("k-in")} />` : nothing}</span>`;
   }
 
   drawNumeral(_c: Component, s: Scope) {

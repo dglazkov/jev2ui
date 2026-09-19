@@ -68,7 +68,8 @@ export const ARCHETYPES: Record<string, Archetype> = {
     atLeast: 2,
     criteria: "One thing in depth: a product, a place, an article, a profile, an event, an order, a recipe's overview.",
     order: ["hero", "stats", "prose", "facts", "steps", "list", "actions"],
-    expects: ["prose", "facts"],
+    // A page about one thing shows the thing. Jev hovers just under certainty for hikes, recipes and rooms, so the picture is expected and not an extra.
+    expects: ["hero", "prose", "facts"],
     stickyActions: true,
   },
   guide: {
@@ -76,7 +77,7 @@ export const ARCHETYPES: Record<string, Archetype> = {
     criteria: "Instructions followed in order: a how-to, a method, troubleshooting, an onboarding checklist.",
     order: ["hero", "prose", "facts", "steps", "actions"],
     requires: ["steps"],
-    expects: ["steps"],
+    expects: ["hero", "steps"],
     stickyActions: true,
   },
   settings: {
@@ -124,8 +125,8 @@ const BLOCK_QUESTIONS: Record<Block, { q: string; yes: string; no: string }> = {
   },
   hero: {
     q: "Should a large photograph lead this screen?",
-    yes: "The subject is one physical thing with a look: a place, a dish, a product, a property, an animal.",
-    no: "The screen is about data, text, tasks or settings, or about many things rather than one.",
+    yes: "The subject is one thing a person can picture: a place, a dish, a recipe, a product, a property, an animal, a trip, an event, a class, a film, something being made.",
+    no: "The subject has no look: an order, an account, a transaction, a message, a setting, a set of figures. Or the screen is about many things rather than one.",
   },
   filters: {
     q: "Will the person need to search or narrow down what is shown?",
@@ -179,8 +180,8 @@ const BLOCK_QUESTIONS: Record<Block, { q: string; yes: string; no: string }> = {
 /** Material 3 list item: the leading slot says what kind of thing each item is. */
 const LEADING = {
   avatar: "Each item is a person or an account.",
-  thumbnail: "Each item is a physical thing or a place that people recognise by its look: a product, a dish, a property, a film, an album.",
-  icon: "Each item is an abstract record or a category that a small symbol can stand for: a device, a file, a transaction, an appointment, a task.",
+  thumbnail: "Each item is something the app would have a photograph of: a product, a dish, a recipe, a property, a place, a trip, an animal, a film, an album, an article, an event, a class or a course.",
+  icon: "Each item is a record with nothing to photograph, which a small symbol can stand for: a device, a file, a transaction, a reminder, a task, a category.",
   number: "The items are ranked or ordered and their position matters.",
   none: "Plain rows of text such as messages, notes or headlines.",
 } as const;
@@ -260,6 +261,12 @@ export interface ListAnatomy {
   parts: ItemPart[];
 }
 
+/** Jev's reading of what is pictured, made from the description alone. `p` says how far to trust it once there are words to read instead. */
+export interface PictureSubject {
+  subject: SubjectName;
+  p: number;
+}
+
 export interface ScreenPlan {
   archetype: string;
   blocks: Block[];
@@ -275,7 +282,7 @@ export interface ScreenPlan {
   /** The symbol of what the screen is about. It holds the place of every picture until the picture has loaded. */
   symbol: string;
   /** What photographs on this screen are of: which shelf of the library to look on, and how to shoot one if it has to be made. */
-  pictures: { hero: SubjectName; items: SubjectName };
+  pictures: { hero: PictureSubject; items: PictureSubject };
   /** Set by the design, not by the prompt. */
   imagery: boolean;
   icons: boolean;
@@ -393,10 +400,11 @@ export function readPlan(answers: Record<string, any>, known: { topLevel?: boole
     list.trailing = pick<Trailing>("item_trailing", "with one item, the person…");
     list.parts = (Object.keys(ITEM_PARTS) as ItemPart[]).filter((part) => yes(`item_${part}`, `items have ${part}?`));
   }
-  const pictures = {
-    hero: has("hero") ? pick<SubjectName>("hero_subject", "the lead photograph is of…") : (answers.hero_subject.choice as SubjectName),
-    items: list.leading === "thumbnail" ? pick<SubjectName>("item_subject", "item photographs are of…") : (answers.item_subject.choice as SubjectName),
+  const pictured = (id: string, label: string, shown: boolean): PictureSubject => {
+    const subject = shown ? pick<SubjectName>(id, label) : (answers[id].choice as SubjectName);
+    return { subject, p: answers[id].probabilities[subject] };
   };
+  const pictures = { hero: pictured("hero_subject", "the lead photograph is of…", has("hero")), items: pictured("item_subject", "item photographs are of…", list.leading === "thumbnail") };
   const plan: ScreenPlan = {
     archetype,
     blocks,

@@ -485,6 +485,23 @@ kit-surface {
   border-radius: 50%;
 }
 
+.k-avatar {
+  position: relative;
+}
+
+/* The portrait fades in over the initials, and takes the design's treatment like any photograph. */
+.k-avatar img {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  filter: var(--k-image-filter, none);
+  transition: opacity 0.45s ease;
+}
+
+.k-avatar img.k-in {
+  opacity: 1;
+}
+
 .k-avatar img,
 .k-image img {
   display: block;

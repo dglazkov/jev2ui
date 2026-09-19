@@ -74,7 +74,8 @@ const BUILDERS: Record<Block, (plan: ScreenPlan) => C[]> = {
     if (has("progress")) out.push({ id: "item_progress", component: "Progress", value: at("progress"), tone: at("tone") });
 
     if (!pictured) {
-      if (leading === "avatar") out.push({ id: "item_leading", component: "Avatar", name: at("title"), size: 44 });
+      // Initials until the person's photograph arrives, and for good if the design has no photographs.
+      if (leading === "avatar") out.push({ id: "item_leading", component: "Avatar", name: at("title"), url: at("imageUrl"), size: 44 });
       if (leading === "thumbnail") out.push({ id: "item_leading", component: "Image", url: at("imageUrl"), alt: at("title"), icon: plan.symbol, ratio: "1:1", width: 64 });
       if (leading === "icon") out.push({ id: "item_leading", component: "Icon", name: at("icon"), boxed: true });
       if (leading === "number") out.push({ id: "item_leading", component: "Numeral" });
@@ -167,7 +168,7 @@ export function screen(plan: ScreenPlan, screenIcon: string | null): C[] {
     ...(plan.person
       ? ([
           { id: "person", component: "Stack", gap: "xs", align: "center", children: ["person_avatar", "person_name", "person_line"] },
-          { id: "person_avatar", component: "Avatar", name: at("/header/title"), size: 88 },
+          { id: "person_avatar", component: "Avatar", name: at("/header/title"), url: at("/person/imageUrl"), size: 88 },
           { id: "person_name", component: "Text", role: "headline", text: at("/header/title") },
           { id: "person_line", component: "Text", tone: "muted", text: at("/header/subtitle") },
         ] as C[])

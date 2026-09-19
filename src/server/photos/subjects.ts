@@ -15,6 +15,8 @@ export interface Subject {
   keywords?: string[];
   /** A photograph carrying one of these is kept off the shelf, however well it matches. */
   not?: string[];
+  /** Only photographs shelved here will do. A dog walker's portrait is not a photograph of a dog, whatever words they share. */
+  own?: boolean;
 }
 
 const SCENE = "A wide landscape photograph in natural light, with depth and a clear horizon or focal point.";
@@ -52,7 +54,7 @@ export const SUBJECTS = {
   flower: { criteria: "Flowers: bouquets, florists, blossom, a flower guide.", shot: "A close photograph of the flowers, in soft light.", keywords: ["rose", "tulip", "daisy", "sunflower", "flower bouquet", "flower arrangement", "orchid", "lily", "peony", "dahlia", "cherry blossom", "lavender", "poppy", "flower"], not: [...CREATURES, "insect", "bee"] },
   plant: { criteria: "Plants and leaves: houseplants, gardening, succulents, herbs, a plant-care guide.", shot: "A photograph of the plant in its pot or its bed, in soft daylight.", keywords: ["potted plant", "houseplant", "succulent", "cactus", "fern", "aloe", "ivy", "moss", "leaf"], not: [...CREATURES, "insect", "flower", "blossom", "forest", "tree"] },
   // --- People --------------------------------------------------------------------
-  portrait: { criteria: "One person, as a person: a professional, a host, a teacher, a match, an author, a contact with a photograph.", shot: "A portrait photograph: head and shoulders, a friendly expression, a softly blurred background." },
+  portrait: { criteria: "One person, as a person: a professional, a host, a teacher, a match, an author, a contact with a photograph.", shot: "A close portrait photograph of one person, as on a profile: the face fills most of the frame, a friendly expression, a softly blurred background.", own: true },
   gathering: { criteria: "People together: an event, a party, a festival, a concert crowd, a team, a community, a wedding.", shot: "An event photograph: the crowd or the group in the moment, with the atmosphere of the place." },
   fitness: { criteria: "Exercise and sport: running, yoga, the gym, cycling, swimming, team sports, a class or a workout.", shot: "A sports photograph: someone mid-movement, in the gym, the studio or outdoors." },
   adventure: { criteria: "Doing things outdoors: hiking, camping, surfing, skiing, climbing, kayaking, a guided trip.", shot: "An outdoor-adventure photograph: a small figure doing it in a big landscape." },

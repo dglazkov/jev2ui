@@ -77,7 +77,15 @@ model every picture on a mock is of the thing beside it (`src/server/mock/pictur
    photograph), the subject's art direction, and the developer's description for the setting only, since a
    model shown a description of a screen draws a phone. What is made is kept in `.cache/photos` with those words as its caption and
    joins the library, so the next pizzeria finds a margherita on the shelf and asks for nothing.
-5. **How photographs look is the design's decision, and it is paint.** Natural, muted, black-and-white or
+5. **The plan leans toward pictures.** A page about one thing expects a lead photograph; an item gets a
+   thumbnail whenever the app would have a photograph of it (a class, an event, an article, not only a
+   product); and people are pictured too: an avatar is a portrait, in the list and again on the profile the
+   tap opens, with initials until it arrives. Portraits come only from the portrait shelf: a dog walker's
+   photograph is not a photograph of a dog, whatever words they share.
+6. **A subject chosen before there were words is only a guess.** "Order #4821" does not say the order is
+   headphones. When Jev's answer in the plan is unsure (p < 0.75), it is asked again about each item, with the
+   item's words, before anything is looked up or shot.
+7. **How photographs look is the design's decision, and it is paint.** Natural, muted, black-and-white or
    duotone in the brand's colour: Jev chooses it when it mixes a design, reads it from a supplied DESIGN.md,
    and a remix can draw another. Pictures are always made in natural colour and treated in CSS, so changing
    the design fetches nothing.

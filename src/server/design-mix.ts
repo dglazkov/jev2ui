@@ -163,8 +163,8 @@ function questions(): Questions {
     type: choice(ask("Which typefaces suit this product?"), Object.fromEntries(Object.entries(TYPE).map(([k, v]) => [k, v.criteria]))),
     elevation: choice(ask("How should this product show that a card sits above the page?"), Object.fromEntries(Object.entries(ELEVATION).map(([k, v]) => [k, v.criteria]))),
     photos: noul(ask("Would photographs belong on this product's screens?"), {
-      true: "The product is about things people want to see: places, food, people, products, animals.",
-      false: "The product is about data, text, settings or tasks; photos would be decoration.",
+      true: "Something in the product has a look: places, food, products, animals, activities, events, or people who are chosen, met or followed.",
+      false: "Nothing in the product has a look: it is figures, code, documents, system settings or infrastructure, and a photograph could only be decoration.",
     }),
     photo_look: choice(ask("If this product's screens show photographs, how should they look?"), Object.fromEntries(Object.entries(PHOTO_LOOK).map(([k, v]) => [k, v.criteria]))),
     cards: noul(ask("Should this product group content into cards?"), {

@@ -15,8 +15,13 @@ const OFFERED = 5;
 
 export const SUBJECT_OPTIONS = Object.fromEntries(Object.entries(SUBJECTS).map(([name, subject]) => [name, subject.criteria]));
 
+/** Below this, the plan's reading of the subject was a guess, and the words are read instead. */
+const SURE = 0.75;
+
 export interface Wanted {
   subject: SubjectName;
+  /** How sure the subject is. It was chosen from the description of the screen, before there were words: "Order #4821" does not say the order is headphones. */
+  p?: number;
   /** The words on the screen for the thing pictured: an item's title and secondary line, or the screen's description. */
   of: string;
   ratio: Brief["ratio"];
@@ -34,6 +39,7 @@ export class Pictures {
 
   /** Calls `show` with a photograph from the library if one suits, and with a made one if none did. */
   async find(wanted: Wanted, show: (url: string) => void): Promise<void> {
+    if ((wanted.p ?? 1) < SURE) wanted = { ...wanted, subject: await this.subject(wanted) };
     const found = await this.choose(wanted);
     if (found) return show(photoUrl(found, ...wanted.size));
     if (!makesPhotos()) return;
@@ -47,6 +53,18 @@ export class Pictures {
       // A picture is never worth failing a mock for; the painted frame stays.
       this.run.trace({ stage: `No photograph of "${wanted.of.slice(0, 40)}"`, ms: performance.now() - start, detail: error instanceof Error ? error.message : String(error) });
     }
+  }
+
+  private async subject({ subject, of, p }: Wanted): Promise<SubjectName> {
+    const asked = await this.run.askJev(`Jev: what "${of.slice(0, 40)}" is`, { screen: this.screen, pictured: of }, { subject: choice("An app shows a photograph of `pictured`. What is it a photograph of?", SUBJECT_OPTIONS) });
+    const read = asked.answers.subject.choice as SubjectName;
+    this.run.trace({
+      stage: asked.stage,
+      ms: asked.ms,
+      decisions: [{ id: "subject", question: "the photograph is of…", answer: read, p: asked.answers.subject.probabilities[read], ...(read !== subject ? { note: `the plan guessed "${subject}" at ${p!.toFixed(2)}, before there were words` } : {}) }],
+      tokens: { input: asked.inputTokens, output: 0 },
+    });
+    return read;
   }
 
   private async choose({ subject, of }: Wanted): Promise<Photo | undefined> {
