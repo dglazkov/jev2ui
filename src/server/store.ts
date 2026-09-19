@@ -1,5 +1,5 @@
-// Firestore, as much of it as is used: documents read, listed, and written in one commit, over REST. The
-// client library would bring gRPC with it for the sake of three calls. Whoever the process runs as is who asks:
+// Firestore, as much of it as is used: documents read, listed, written, removed and counted in, over REST. The
+// client library would bring gRPC with it for the sake of five calls. Whoever the process runs as is who asks:
 // the service account on Cloud Run, `gcloud auth application-default login` on a laptop. Browsers cannot reach
 // the database at all (no rules are published for it), so what may be read or written is decided here.
 
@@ -62,6 +62,15 @@ export async function read(path: string): Promise<Doc | undefined> {
 export async function list(collection: string): Promise<Doc[]> {
   const found = await call("GET", `/${collection}?pageSize=300`);
   return (found?.documents ?? []).map(doc);
+}
+
+/** Makes the document at a path, or replaces all of it. */
+export async function write(path: string, data: Record<string, Plain>): Promise<void> {
+  await call("PATCH", `/${path}`, { fields: Object.fromEntries(Object.entries(data).map(([key, value]) => [key, wrap(value)])) });
+}
+
+export async function remove(path: string): Promise<void> {
+  await call("DELETE", `/${path}`);
 }
 
 /**

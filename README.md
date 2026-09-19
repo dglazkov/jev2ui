@@ -416,12 +416,15 @@ address only if Google vouches for it, and looks it up (`src/server/auth.ts`) in
 | `*@example.com` | `role: "maker"`, `runs: 50` | everyone there makes fifty screens a day |
 | `ann@example.com` | `role: "maker"`, `runs: null` | Ann, as many as she likes |
 | `bob@example.com` | `role: "none"` | Bob, though, not at all |
-| `me@my.org` | `role: "admin"` | may also edit the list (no page for that yet: the Firebase console is the editor) |
+| `me@my.org` | `role: "admin"` | may also edit the list |
 
 `*` stands for anything (`*@example.com` does not cover `x@corp.example.com`; `*@*.example.com` does), and
 of the patterns an address fits, the one that says the most wins: a person's own line over their company's.
 A maker whose grant names no `runs` gets `DAILY_RUNS` (50 unless said); an admin, or `runs: null`, has no
-limit. The list is read again within a minute of an edit. Someone signed in and on no line of it is told so,
+limit. Admins edit the list at `/access.html` (`src/web/access.ts`, over `/api/access`), which also shows who
+has made things and how many today; the one line an admin cannot change is the one that makes them an admin,
+and the first admin is written into Firestore by hand. The list is read again within a minute of an edit made
+elsewhere, and at once after one made here. Someone signed in and on no line of it is told so,
 and makes nothing (403).
 
 Limited or not is one role with a dial on it, and the dial is the count: each screen made adds one to today's
@@ -523,9 +526,10 @@ src/server/hybrid.ts    the sections pipeline
 src/server/baseline.ts  Gemini writing A2UI directly
 src/server/validate.ts  schema and reference validation
 src/server/run.ts       event stream, stats, end-of-run validation
-src/server/http.ts      the routes: /api/design, /api/generate (Server-Sent Events), /api/photo, /api/config
+src/server/http.ts      the routes: /api/design, /api/generate (Server-Sent Events), /api/photo, /api/config, /api/me, /api/access
 src/server/auth.ts      who is asking (a Firebase ID token), what the access list grants them, what is left of their runs today
 src/server/store.ts     Firestore over REST: the access list and the day's counts
+src/web/access.ts       the access list, for admins (access.html)
 src/web/session.ts      signing in with Google; the gate and the badge both pages show; fetch that says who is asking
 src/server/main.ts      the deployed server: the routes and the built front end (vite.config.ts mounts them in dev)
 src/web/app.ts          the design tool; compare.ts is the side-by-side page (both use @a2ui/lit's v0.9 renderer)

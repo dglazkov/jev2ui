@@ -19,5 +19,5 @@ function api(): Plugin {
 export default defineConfig({
   plugins: [api()],
   server: { port: 5173 },
-  build: { rollupOptions: { input: ["index.html", "compare.html"] } },
+  build: { rollupOptions: { input: ["index.html", "compare.html", "access.html"] } },
 });

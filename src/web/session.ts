@@ -14,6 +14,8 @@ class Session {
   state: "loading" | "out" | "stranger" | "in" | "open" = "loading";
   name = "";
   email = "";
+  /** What the list makes of the person: an admin may edit it (access.ts). */
+  role = "";
   error = "";
   /** What is left of today's runs, once the server has said. */
   runs: { left: string; daily: string } | undefined;
@@ -29,7 +31,7 @@ class Session {
     this.begun = true;
   }
 
-  private set(change: Partial<Pick<Session, "state" | "name" | "email" | "error" | "runs">>) {
+  private set(change: Partial<Pick<Session, "state" | "name" | "email" | "role" | "error" | "runs">>) {
     Object.assign(this, change);
     for (const host of this.hosts) host.requestUpdate();
   }
@@ -46,7 +48,7 @@ class Session {
         this.set({ state: this.state === "in" ? "in" : "loading", name: user.displayName ?? user.email ?? "", email: user.email ?? "", error: "" });
         void this.fetch("/api/me")
           .then(async (response) => (response.ok ? response.json() : Promise.reject(new Error(await response.text()))))
-          .then(({ role }) => this.set({ state: role ? "in" : "stranger" }))
+          .then(({ role }) => this.set({ state: role ? "in" : "stranger", role: role ?? "" }))
           .catch((error) => this.set({ state: "out", error: (error as Error).message }));
       });
     } catch (error) {
@@ -106,6 +108,7 @@ class Session {
         ? html`<span class=${this.runs.left === "0" ? "spent" : ""} title="A screen made is one run. The day turns over at midnight UTC.">${this.runs.left} of ${this.runs.daily} runs left today</span>`
         : nothing}
       <span>${this.name}</span>
+      ${this.role === "admin" && location.pathname !== "/access.html" ? html`<a href="/access.html">access</a>` : nothing}
       <button class="link" @click=${() => this.signOut()}>sign out</button>
     </span>`;
   }

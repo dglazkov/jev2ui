@@ -61,3 +61,7 @@
   border: 0;
   cursor: pointer;
 }
+
+.session a {
+  color: inherit;
+}

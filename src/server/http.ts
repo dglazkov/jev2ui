@@ -1,4 +1,4 @@
-// The pipelines over HTTP: two JSON routes and one of Server-Sent Events.
+// The pipelines over HTTP: two JSON routes and one of Server-Sent Events; and who may use them.
 // Where sign-in is on (auth.ts), each wants to know who is asking and that the
 // list lets them make things, and a run is taken from their allowance for the day.
 //
@@ -101,11 +101,27 @@ async function generate(load: Load, url: URL, req: IncomingMessage, res: ServerR
   res.end();
 }
 
+// The access list, for admins: GET reads it (and who has made what today), PUT writes a line, DELETE ?pattern= removes one.
+async function accessList(url: URL, req: IncomingMessage, res: ServerResponse, asking: Asking) {
+  const { auth, person, grant } = asking;
+  const refuse = (status: number, why: string) => void ((res.statusCode = status), res.end(why));
+  if (grant.role !== "admin") return refuse(403, "the list is an admin's to edit");
+  if (req.method === "PUT" || req.method === "DELETE") {
+    const line = req.method === "PUT" ? await readJson(req).catch(() => ({})) : { pattern: url.searchParams.get("pattern") ?? "" };
+    // Nobody saws off the branch they sit on: the line that makes this person an admin stays, and stays an admin's.
+    if (String(line.pattern).trim().toLowerCase() === grant.pattern && line.role !== "admin") return refuse(400, "that line is what makes you an admin; another admin can change it");
+    const wrong = req.method === "PUT" ? await auth.grant(person, line) : await auth.revoke(line.pattern);
+    if (wrong) return refuse(400, wrong);
+  } else if (req.method !== "GET") return refuse(405, "GET, PUT or DELETE");
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(await auth.everything()));
+}
+
 /** Who is asking, and what the list grants them; `auth` is the module that said so (auth.ts). */
 interface Asking {
   auth: any;
   person: { uid: string; email?: string; name?: string };
-  grant: { role: string; runs: number | null };
+  grant: { pattern: string; role: string; runs: number | null };
 }
 
 /** Every answer says what is left of the day's allowance, so the browser can show it; "unlimited" where there is no limit. */
@@ -121,7 +137,7 @@ export function api(load: Load) {
     const url = new URL(req.url ?? "", "http://localhost");
     // A photograph is asked for by an <img>, which cannot say who is asking. Its name is a hash, and serving it costs nothing.
     if (url.pathname.startsWith("/api/photo/")) return await photo(load, url.pathname.slice("/api/photo/".length), res), true;
-    if (!["/api/config", "/api/me", "/api/design", "/api/generate"].includes(url.pathname)) return false;
+    if (!["/api/config", "/api/me", "/api/access", "/api/design", "/api/generate"].includes(url.pathname)) return false;
     const auth = await load("auth");
     const json = (value: unknown) => (res.setHeader("Content-Type", "application/json"), res.end(JSON.stringify(value)));
     if (url.pathname === "/api/config") return json({ firebase: auth.firebase }), true;
@@ -137,7 +153,11 @@ export function api(load: Load) {
       asking = { auth, person, grant };
     } else if (url.pathname === "/api/me") return json({ role: "maker" }), true;
 
-    if (url.pathname === "/api/design") {
+    if (url.pathname === "/api/access") {
+      // With no sign-in there is no list.
+      if (!asking) return (res.statusCode = 404), res.end("there is no list: nobody has to sign in here"), true;
+      await accessList(url, req, res, asking);
+    } else if (url.pathname === "/api/design") {
       await allowance(res, asking);
       await design(load, req, res);
     } else await generate(load, url, req, res, asking);

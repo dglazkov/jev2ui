@@ -19,7 +19,7 @@
 
 import "dotenv/config";
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import { count, list, read } from "./store.js";
+import { count, list, read, remove, write } from "./store.js";
 
 const PROJECT = process.env.FIREBASE_PROJECT;
 const API_KEY = process.env.FIREBASE_API_KEY;
@@ -103,6 +103,36 @@ export async function access(person: Person): Promise<Grant | undefined> {
   const fitting = (await lines()).filter((grant) => fits(grant.pattern, person.email!));
   const best = fitting.sort((a, b) => says(b.pattern) - says(a.pattern))[0];
   return best && best.role !== "none" ? best : undefined;
+}
+
+// --- Editing the list (admins; http.ts asks that they are) ---------------------
+
+/** The list as it is written, lines that grant nothing included, and everyone who has made anything. */
+export async function everything() {
+  const date = today();
+  const [grants, people] = await Promise.all([list("access"), list("people")]);
+  return {
+    grants: grants.map(({ id, data }) => ({ pattern: id, role: data.role ?? null, ...("runs" in data ? { runs: data.runs } : {}), note: data.note ?? "" })),
+    people: people.map(({ data }) => ({ email: data.email, name: data.name, lastSeen: data.lastSeen, today: (data.days as Record<string, number> | undefined)?.[date] ?? 0 })),
+    dailyRuns: DAILY_RUNS,
+  };
+}
+
+/** Writes a line of the list, or says what is wrong with it. `runs` left out is the role's usual; null is no limit. */
+export async function grant(by: Person, line: { pattern?: unknown; role?: unknown; runs?: unknown; note?: unknown }): Promise<string | undefined> {
+  const pattern = String(line.pattern ?? "").trim().toLowerCase();
+  if (!/^(\*|[^\s/@]+@[^\s/@]+)$/.test(pattern) || pattern.length > 200) return "a pattern is an address, with * for anything: *@example.com";
+  if (line.role !== "maker" && line.role !== "admin" && line.role !== "none") return "a role is maker, admin or none";
+  if (line.runs !== undefined && line.runs !== null && !(Number.isInteger(line.runs) && (line.runs as number) >= 0)) return "runs is a whole number, or null for no limit";
+  const data = { role: line.role, ...(line.runs !== undefined && line.role !== "none" ? { runs: line.runs as number | null } : {}), note: String(line.note ?? "").slice(0, 200), by: by.email ?? by.uid, at: new Date().toISOString() };
+  await write(`access/${encodeURIComponent(pattern)}`, data);
+  kept = undefined;
+  return undefined;
+}
+
+export async function revoke(pattern: string): Promise<void> {
+  await remove(`access/${encodeURIComponent(pattern.trim().toLowerCase())}`);
+  kept = undefined;
 }
 
 // --- The count --------------------------------------------------------------
