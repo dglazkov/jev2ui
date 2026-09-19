@@ -49,7 +49,7 @@ export class KitSurface extends LitElement {
   private definitions = new Map<string, Definition>();
   private data: any = {};
   /** Per custom slot: what its frame should be showing, and what it was last told. */
-  private frames = new Map<string, { state: unknown; told?: string; ready?: boolean; error?: string }>();
+  private frames = new Map<string, { state: unknown; told?: string; ready?: boolean; error?: string; height?: number; grown?: number }>();
   private paint: Theme | undefined;
 
   /** Frames cannot inherit the design's variables, so they are told. */
@@ -87,6 +87,14 @@ export class KitSurface extends LitElement {
         slot.error = String(message.message);
         this.dispatchEvent(new CustomEvent("kit-custom-error", { detail: { name, message: slot.error }, bubbles: true }));
         return void this.requestUpdate();
+      case "overflow": {
+        // Grows only, a few times at most, and never past a screenful: content sized in percent would chase the box for ever.
+        const height = Math.min(Math.ceil(Number(message.height)), 900);
+        if (!(height > (slot.height ?? 0)) || (slot.grown ?? 0) >= 4) return;
+        slot.height = height;
+        slot.grown = (slot.grown ?? 0) + 1;
+        return void this.requestUpdate();
+      }
       case "select":
         // Kept beside the component's data, so the screen's buttons carry what was chosen to the next screen.
         return this.write("/custom/selection", message.value);
@@ -430,7 +438,7 @@ export class KitSurface extends LitElement {
     const slot = this.frames.get(c.id) ?? { state: undefined };
     this.frames.set(c.id, slot);
     slot.state = { data: this.value(c.data, s), ...(c.items ? { items: this.value(c.items, s) ?? [] } : {}) };
-    const box = { "aspect-ratio": String(c.ratio).replace(":", " / ") };
+    const box = slot.height ? { height: `${slot.height}px`, "max-height": "none" } : { "aspect-ratio": String(c.ratio).replace(":", " / ") };
     if (slot.error) return html`<div class="k-custom k-custom-broken" style=${styleMap(box)}>${this.icon("heart_broken")}<span class="k-text k-caption k-tone-muted">${slot.error}</span></div>`;
     return html`<div class="k-custom ${definition && slot.ready ? "" : "k-custom-baking"}" style=${styleMap(box)}>
       ${definition ? html`<iframe class="k-custom-frame" data-slot=${c.id} sandbox="allow-scripts" title=${definition.name} .srcdoc=${sandboxDocument(definition)}></iframe>` : nothing}

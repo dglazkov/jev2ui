@@ -8,6 +8,7 @@
 //                     so a remix repaints a running timer without restarting it
 //         { state }   { data, items }: what the component draws
 //   out   ready, drawn, error, select, open, openItem
+//         overflow    what it drew is taller than its box; the slot grows to fit
 
 import kitCss from "./kit.css?inline";
 import type { Theme } from "../../shared/design.js";
@@ -35,6 +36,11 @@ function host() {
   let state: unknown;
   let queued = false;
   let drawn = false;
+  // The box is a reservation, not a promise the baker always keeps: a ring as wide as the box leaves no room for
+  // the buttons under it. Clipping them would break the mock, so the frame says how tall its content came out.
+  const measure = () => {
+    if (root.scrollHeight > root.clientHeight + 1) post({ type: "overflow", height: root.scrollHeight });
+  };
   const draw = () => {
     queued = false;
     if (state === undefined) return;
@@ -43,6 +49,9 @@ function host() {
       if (typeof render !== "function") throw new Error("the source defines no render function");
       render(root, state, kit);
       if (!drawn) post({ type: "drawn", empty: !root.childElementCount });
+      // Once laid out, and again when fonts and symbols have loaded and changed the heights.
+      requestAnimationFrame(measure);
+      if (!drawn) for (const ms of [400, 1500]) setTimeout(measure, ms);
       drawn = true;
     } catch (error) {
       fail(error);
