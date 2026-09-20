@@ -213,7 +213,15 @@ export class App extends LitElement {
     this.movedOn();
     const turn: Turn = { id: this.nextTurn++, source, said, outcome: "pending", lines: [], decisions: [], before: this.asItStands() };
     this.turns = [...this.turns, turn];
+    // The turns are not reactive state, and a chip leaves the box as it was: without this, nothing shows until the server first answers.
+    this.tick++;
     return turn;
+  }
+
+  /** Nothing can be said yet: a message is being read, or the screen it would be about has not got as far as being drawn. */
+  private get busy() {
+    const here = this.current;
+    return this.reading || Boolean(here?.running && here.firstPaintMs === undefined);
   }
 
   /** Takes back the last turn, whatever it was. */
@@ -233,7 +241,7 @@ export class App extends LitElement {
   /** What the person typed, or chose from what the tool offered. The first makes an app; the rest are about the one there is. */
   private async say(message = this.draft) {
     message = message.trim();
-    if (!message || this.reading || !session.makes) return;
+    if (!message || this.busy || !session.makes) return;
     this.draft = "";
     const here = this.current;
     const asked = this.turns.at(-1);
@@ -303,7 +311,8 @@ export class App extends LitElement {
     // The person should see what they changed, and it may not be the screen they were on: the way back stops there.
     this.stack = this.stack.includes(old) ? this.stack.slice(0, this.stack.indexOf(old) + 1) : [old];
     // To the letter, where the screen's plan is known and Jev could tell what was meant; with the message in mind, otherwise.
-    const exact = asked && !asked.blunt && old.plan ? asked : undefined;
+    // Nor while it is still being written: the words that would be kept are not all there yet.
+    const exact = asked && !asked.blunt && old.plan && !old.running ? asked : undefined;
     const blocks = exact ? [...old.plan!.blocks.filter((block) => !exact.remove.includes(block)), ...exact.add] : undefined;
     const kept: Record<string, unknown> = {};
     if (exact)
@@ -744,7 +753,7 @@ export class App extends LitElement {
     if (turn.text) reply.push(html`<p class=${turn.outcome === "failed" ? "note bad" : "spoken"}>${turn.text}</p>`);
     if (turn.options?.length)
       reply.push(html`<div class="options">
-        ${turn.options.map((option: Option) => html`<button ?disabled=${this.reading || !session.makes} title=${option.instruction} @click=${() => this.say(option.instruction)}>${option.label}</button>`)}
+        ${turn.options.map((option: Option) => html`<button ?disabled=${this.busy || !session.makes} title=${option.instruction} @click=${() => this.say(option.instruction)}>${option.label}</button>`)}
       </div>`);
     if (turn.outcome === "pending" && !screen) reply.push(html`<p class="hint working">Reading what you meant…</p>`);
     const count = turn.decisions.length + (screen?.log.reduce((sum, entry) => sum + (entry.kind === "stage" ? entry.decisions.length : 0), 0) ?? 0);
@@ -871,7 +880,7 @@ export class App extends LitElement {
                 void this.say();
               }}
             >
-              <div class="chips">${chips.map((chip) => html`<button type="button" ?disabled=${this.reading} @click=${() => this.say(chip)}>${chip}</button>`)}</div>
+              <div class="chips">${chips.map((chip) => html`<button type="button" ?disabled=${this.busy} @click=${() => this.say(chip)}>${chip}</button>`)}</div>
               ${this.current?.title ? html`<p class="about" title="What you say is about the screen that is showing, unless you name another.">about <b>${this.current.title}</b>${this.made.length > 1 ? ", unless you name another screen" : ""}</p>` : nothing}
               <div class="box">
                 <textarea
@@ -887,7 +896,7 @@ export class App extends LitElement {
                     }
                   }}
                 ></textarea>
-                <button type="submit" ?disabled=${this.reading || !this.draft.trim()} aria-label="Send">↑</button>
+                <button type="submit" ?disabled=${this.busy || !this.draft.trim()} aria-label="Send">↑</button>
               </div>
             </form>`
           : this.renderVisitor()}
