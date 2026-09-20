@@ -4,10 +4,12 @@
 // This is also the gate: what stands in for the tool until someone is in.
 
 import { html, nothing, type ReactiveControllerHost, type TemplateResult } from "lit";
-import type { PipelineEvent } from "../shared/events.js";
+import type { Endpoint, PipelineEvent } from "../shared/events.js";
 import { face, icon, mark } from "./chrome.js";
 
 type Auth = import("firebase/auth").Auth;
+
+const STORED_ENDPOINT = "jev2ui.endpoint";
 
 class Session {
   /** `open` is a server that asks nobody to sign in. */
@@ -21,6 +23,10 @@ class Session {
   error = "";
   /** What is left of today's runs, once the server has said. */
   runs: { left: string; daily: string } | undefined;
+  /** The endpoints the server has a key for (server/models.ts): with one, there is nothing to choose. */
+  endpoints: Endpoint[] = ["jev"];
+  /** Which of them this browser asks to answer System One; jev until the person says otherwise. */
+  private wanted: Endpoint = localStorage.getItem(STORED_ENDPOINT) === "gev" ? "gev" : "jev";
 
   private auth: Auth | undefined;
   private hosts = new Set<ReactiveControllerHost>();
@@ -33,14 +39,15 @@ class Session {
     this.begun = true;
   }
 
-  private set(change: Partial<Pick<Session, "state" | "name" | "email" | "picture" | "role" | "error" | "runs">>) {
+  private set(change: Partial<Pick<Session, "state" | "name" | "email" | "picture" | "role" | "error" | "runs" | "endpoints">>) {
     Object.assign(this, change);
     for (const host of this.hosts) host.requestUpdate();
   }
 
   private async begin() {
     try {
-      const { firebase } = await (await fetch("/api/config")).json();
+      const { firebase, endpoints } = await (await fetch("/api/config")).json();
+      if (Array.isArray(endpoints) && endpoints.length) this.set({ endpoints });
       // A server on a developer's machine has no sign-in, and so none of what a signed-in person sees. `?as=admin` (or maker,
       // stranger, out) stands in for one there, and only there: the server is asked nothing differently for it.
       const as = import.meta.env.DEV && !firebase ? new URLSearchParams(location.search).get("as") : null;
@@ -60,6 +67,17 @@ class Session {
     } catch (error) {
       this.set({ state: "out", error: (error as Error).message });
     }
+  }
+
+  /** The endpoint every request names. One the server has no key for is not asked for: it could only fail. */
+  get endpoint(): Endpoint {
+    return this.endpoints.includes(this.wanted) ? this.wanted : "jev";
+  }
+
+  set endpoint(endpoint: Endpoint) {
+    this.wanted = endpoint;
+    localStorage.setItem(STORED_ENDPOINT, endpoint);
+    this.set({});
   }
 
   /** Whether the person may have things made: on the list, or on a server with no list. */
@@ -83,10 +101,10 @@ class Session {
     if (this.auth) await (await import("firebase/auth")).signOut(this.auth);
   }
 
-  /** `fetch`, saying who is asking; and noting what the answer says is left of today's runs. */
+  /** `fetch`, saying who is asking and which endpoint is to answer; and noting what the answer says is left of today's runs. */
   async fetch(path: string, init: RequestInit = {}): Promise<Response> {
     const token = await this.auth?.currentUser?.getIdToken();
-    const response = await fetch(path, { ...init, headers: { ...init.headers, ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+    const response = await fetch(path, { ...init, headers: { ...init.headers, "X-System-One": this.endpoint, ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
     const left = response.headers.get("X-Runs-Left");
     if (left !== null) this.set({ runs: { left, daily: response.headers.get("X-Runs-Daily") ?? "" } });
     return response;

@@ -4,6 +4,9 @@ import type { DesignReport } from "./design.js";
 
 export type A2uiMessage = Record<string, unknown> & { version: string };
 
+/** Which service answers System One: jev is TypeSafe's, gev is ours, and they speak the same wire format (server/models.ts). */
+export type Endpoint = "jev" | "gev";
+
 /** One Jev answer, flattened for display. */
 export interface Decision {
   id: string;
@@ -26,6 +29,9 @@ export type PipelineEvent =
       stage: string;
       at: number;
       ms: number;
+      /** Set on what System One answered: which endpoint did, and, where it says (gev does), how much of `ms` its model took. */
+      endpoint?: Endpoint;
+      modelMs?: number;
       decisions?: Decision[];
       tokens?: { input: number; output: number };
       detail?: string;
@@ -42,6 +48,8 @@ export interface RunStats {
   /** Time until the client had both a component tree and some text to show in it. */
   firstContentMs: number | null;
   valid: boolean;
+  /** Which endpoint the Jev calls went to. */
+  endpoint?: Endpoint;
   jevCalls: number;
   jevInputTokens: number;
   geminiInputTokens: number;

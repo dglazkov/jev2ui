@@ -13,7 +13,7 @@ import { createHash } from "node:crypto";
 import { lint } from "@google/design.md/linter";
 import type { DesignSystemState, ResolvedColor } from "@google/design.md/linter";
 import { choice, noul, type Questions } from "@typesafe-ai/sdk";
-import { askJev, ranked } from "./models.js";
+import { askJev, endpoint, ranked } from "./models.js";
 import type { Decision } from "../shared/events.js";
 import type { DesignFinding } from "../shared/design.js";
 
@@ -281,15 +281,16 @@ export function resolveDesign(design: Design, answers: Record<string, any> | nul
 const readings = new Map<string, Promise<DesignRead>>();
 
 export function readDesign(design: Design): Promise<DesignRead> {
-  let reading = readings.get(design.id);
+  const key = `${endpoint()}:${design.id}`;
+  let reading = readings.get(key);
   if (!reading) {
     reading = (async () => {
       const names = [...design.system.colors.keys()];
       const asked = await askJev({ design_system: design.markdown }, questions(names));
       return { ...resolveDesign(design, asked.answers), ms: Math.round(asked.ms), jevInputTokens: asked.inputTokens };
     })();
-    readings.set(design.id, reading);
-    reading.catch(() => readings.delete(design.id));
+    readings.set(key, reading);
+    reading.catch(() => readings.delete(key));
     if (readings.size > 50) readings.delete(readings.keys().next().value!);
   }
   return reading;

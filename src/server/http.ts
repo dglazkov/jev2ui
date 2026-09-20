@@ -2,6 +2,9 @@
 // Where sign-in is on (auth.ts), each wants to know who is asking and that the
 // list lets them make things, and a run is taken from their allowance for the day.
 //
+// Which endpoint answers System One (jev or gev, models.ts) is the person's to say, in a header on every request:
+// everything the request sets going is answered by that one.
+//
 // Two servers mount this. In development it is the Vite dev server
 // (vite.config.ts), which loads the pipelines through Vite so that edits to
 // them apply without a restart; deployed, it is main.ts, which imports them.
@@ -215,7 +218,8 @@ export function api(load: Load) {
     const auth = await load("auth");
     if (saved) return await savedApps(load, saved[1] ?? "", req, res, auth), true;
     const json = (value: unknown) => (res.setHeader("Content-Type", "application/json"), res.end(JSON.stringify(value)));
-    if (url.pathname === "/api/config") return json({ firebase: auth.firebase }), true;
+    const models = await load("models");
+    if (url.pathname === "/api/config") return json({ firebase: auth.firebase, endpoints: models.endpoints() }), true;
 
     let asking: Asking | undefined;
     if (auth.firebase) {
@@ -232,13 +236,17 @@ export function api(load: Load) {
       // With no sign-in there is no list.
       if (!asking) return (res.statusCode = 404), res.end("there is no list: nobody has to sign in here"), true;
       await accessList(url, req, res, asking);
-    } else if (url.pathname === "/api/design") {
-      await allowance(res, asking);
-      await design(load, req, res);
-    } else if (url.pathname === "/api/turn") {
-      await allowance(res, asking);
-      await turn(load, req, res);
-    } else await generate(load, url, req, res, asking);
+      return true;
+    }
+    await models.answeredBy(models.endpointNamed(req.headers["x-system-one"]), async () => {
+      if (url.pathname === "/api/design") {
+        await allowance(res, asking);
+        await design(load, req, res);
+      } else if (url.pathname === "/api/turn") {
+        await allowance(res, asking);
+        await turn(load, req, res);
+      } else await generate(load, url, req, res, asking);
+    });
     return true;
   };
 }

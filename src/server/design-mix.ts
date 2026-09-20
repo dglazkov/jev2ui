@@ -16,7 +16,7 @@
 // as a hand-written one. The developer can keep it.
 
 import { choice, noul, score, type Questions } from "@typesafe-ai/sdk";
-import { askJev, ranked } from "./models.js";
+import { askJev, endpoint, ranked } from "./models.js";
 import { contrast, type Treatment } from "./design-md.js";
 import type { Decision } from "../shared/events.js";
 import type { PaintChange, Pins } from "../shared/turn.js";
@@ -224,13 +224,14 @@ export interface MixedDesign {
 
 const asked = new Map<string, ReturnType<typeof askJev>>();
 
-/** One Jev request per brief, however many times it is remixed; the design panel and the mock pipeline share it. */
+/** One Jev request per brief and endpoint, however many times it is remixed; the design panel and the mock pipeline share it. */
 export async function mixDesign(brief: string, seed = 0, change: PaintChange = {}): Promise<MixedDesign> {
-  let answers = asked.get(brief);
+  const key = `${endpoint()}:${brief}`;
+  let answers = asked.get(key);
   if (!answers) {
     answers = askJev({ brief }, questions(defaultAsk));
-    asked.set(brief, answers);
-    answers.catch(() => asked.delete(brief));
+    asked.set(key, answers);
+    answers.catch(() => asked.delete(key));
     if (asked.size > 50) asked.delete(asked.keys().next().value!);
   }
   return build(brief, await answers, seed, change);

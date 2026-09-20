@@ -4,6 +4,7 @@
 
 import { parseDesign, readDesign, resolveDesign, structureKey, type Design, type DesignRead } from "./design-md.js";
 import { mixDesign } from "./design-mix.js";
+import { endpoint } from "./models.js";
 import type { PaintChange } from "../shared/turn.js";
 import { buildTheme } from "./theme.js";
 import type { DesignReport } from "../shared/design.js";
@@ -44,13 +45,15 @@ async function load(source: DesignSource): Promise<LoadedDesign> {
     structure: structureKey(read),
     ms: read.ms,
     jevInputTokens: read.jevInputTokens,
+    endpoint: endpoint(),
   };
   return { design, read, report, ...(mixed ? { mixed } : {}) };
 }
 
 /** `fresh` is false when this design has been worked out before and costs nothing now. */
 export function loadDesign(source: DesignSource): { loaded: Promise<LoadedDesign>; fresh: boolean } {
-  const key = "markdown" in source ? `md:${source.markdown}` : `brief:${source.seed ?? 0}:${JSON.stringify(source.change ?? {})}:${source.brief}`;
+  // A design is one endpoint's reading of it: the other's is another design.
+  const key = `${endpoint()}:` + ("markdown" in source ? `md:${source.markdown}` : `brief:${source.seed ?? 0}:${JSON.stringify(source.change ?? {})}:${source.brief}`);
   let promise = loaded.get(key);
   const fresh = !promise;
   if (!promise) {

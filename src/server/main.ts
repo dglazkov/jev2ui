@@ -48,6 +48,7 @@ const MODULES: Record<string, () => Promise<unknown>> = {
   hybrid: () => import("./hybrid.js"),
   jobs: () => import("./jobs.js"),
   "mock/pipeline": () => import("./mock/pipeline.js"),
+  models: () => import("./models.js"),
   "photos/generate": () => import("./photos/generate.js"),
 };
 const routes = api((module) => MODULES[module]?.() ?? Promise.reject(new Error(`main.ts does not know the module "${module}"`)));

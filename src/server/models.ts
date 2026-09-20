@@ -1,8 +1,9 @@
 import "dotenv/config";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { TypeSafeClient, type Questions } from "@typesafe-ai/sdk";
 import { parse as parsePartial } from "partial-json";
-import type { Decision } from "../shared/events.js";
+import type { Decision, Endpoint } from "../shared/events.js";
 
 export const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash-lite";
 export const JEV_MODEL = process.env.JEV_MODEL ?? "jev-latest";
@@ -15,24 +16,57 @@ function requireEnv(name: string): string {
   return value;
 }
 
-let jev: TypeSafeClient | undefined;
+// System One is answered by one of two services that speak the same wire format: jev, TypeSafe's own, and gev
+// (github.com/dglazkov/gev), ours. The person says which (a setting in the browser, a header on every request), and
+// whatever a request sets going is answered by that one alone: a screen is not half of each. Nothing falls back:
+// an endpoint that does not answer says so.
+const ENDPOINTS: Record<Endpoint, { key: string; baseURL?: string }> = {
+  jev: { key: "JEV_API_KEY" },
+  gev: { key: "GEV_API_KEY", baseURL: process.env.GEV_BASE_URL ?? "https://gev-huio5ftumq-uc.a.run.app" },
+};
+
+const clients: Partial<Record<Endpoint, TypeSafeClient>> = {};
+const asking = new AsyncLocalStorage<Endpoint>();
 let gemini: GoogleGenAI | undefined;
+
+/** The endpoints that have a key here, and so can be chosen. */
+export const endpoints = () => (Object.keys(ENDPOINTS) as Endpoint[]).filter((endpoint) => process.env[ENDPOINTS[endpoint].key]);
+
+/** What a browser said it wants, as an endpoint: jev unless it plainly said gev. */
+export const endpointNamed = (said: unknown): Endpoint => (said === "gev" ? "gev" : "jev");
+
+/** Everything `work` sets going asks `endpoint`, however deep and however late. */
+export const answeredBy = <T>(endpoint: Endpoint, work: () => T): T => asking.run(endpoint, work);
+
+/** The endpoint that answers whatever is being worked on now. What is kept of its answers is kept under its name. */
+export const endpoint = (): Endpoint => asking.getStore() ?? "jev";
 
 export interface JevResult {
   answers: Record<string, any>;
   ms: number;
   inputTokens: number;
+  /** Which endpoint answered. */
+  endpoint: Endpoint;
+  /** The part of `ms` that gev spent waiting on its model, which only gev says. */
+  modelMs?: number;
 }
 
 /** One Jev request: every question is evaluated independently, in parallel. */
-export async function askJev(state: unknown, questions: Questions): Promise<JevResult> {
-  jev ??= new TypeSafeClient({ apiKey: requireEnv("JEV_API_KEY") });
+export async function askJev(state: unknown, questions: Questions, by: Endpoint = endpoint()): Promise<JevResult> {
+  const { key, baseURL } = ENDPOINTS[by];
+  const client = (clients[by] ??= new TypeSafeClient({ apiKey: requireEnv(key), ...(baseURL ? { baseURL } : {}) }));
   const start = performance.now();
-  const response = await jev.systemOne({ model: JEV_MODEL, state: state as any, questions });
+  const response = await client.systemOne({ model: JEV_MODEL, state: state as any, questions }).catch((error: unknown) => {
+    // What a proxy in the way has to say can be a page of HTML; its first line is enough.
+    throw new Error(`${by} did not answer: ${(error instanceof Error ? error.message : String(error)).split("\n")[0]!.slice(0, 200)}`);
+  });
+  const modelMs = (response as { gev?: { model_ms?: number } }).gev?.model_ms;
   return {
     answers: response.answers as Record<string, any>,
     ms: performance.now() - start,
     inputTokens: response.usage?.input_tokens ?? 0,
+    endpoint: by,
+    ...(typeof modelMs === "number" ? { modelMs: Math.round(modelMs) } : {}),
   };
 }
 

@@ -15,16 +15,19 @@
 # One instance at most, to bound what a busy day can spend: the process holds
 # nothing a second one would miss. The keys come from Secret Manager, and made
 # photographs are kept in a bucket mounted where PHOTOS_DIR says. The project
-# needs, once: secrets GEMINI_API_KEY and JEV_API_KEY, a bucket $PROJECT-photos,
+# needs, once: secrets GEMINI_API_KEY and JEV_API_KEY (and GEV_API_KEY, if gev
+# is to be something a person can choose: src/server/models.ts), a bucket $PROJECT-photos,
 # and a service account jev2ui-run that can read the first and write the second.
 set -e
 : "${PROJECT:?say which project: PROJECT=... ./deploy.sh}"
 REGION=${REGION:-us-central1}
+# gev is offered where there is a key for it, and nowhere else.
+gcloud secrets describe GEV_API_KEY --project "$PROJECT" >/dev/null 2>&1 && GEV=,GEV_API_KEY=GEV_API_KEY:latest
 
 gcloud run deploy jev2ui --project "$PROJECT" --region "$REGION" --source . \
   --service-account "jev2ui-run@$PROJECT.iam.gserviceaccount.com" \
-  --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest,JEV_API_KEY=JEV_API_KEY:latest \
-  --update-env-vars "PHOTOS_DIR=/data/photos${FIREBASE_API_KEY:+,FIREBASE_PROJECT=$PROJECT,FIREBASE_API_KEY=$FIREBASE_API_KEY}${DAILY_RUNS:+,DAILY_RUNS=$DAILY_RUNS}" \
+  --set-secrets "GEMINI_API_KEY=GEMINI_API_KEY:latest,JEV_API_KEY=JEV_API_KEY:latest$GEV" \
+  --update-env-vars "PHOTOS_DIR=/data/photos${GEV_BASE_URL:+,GEV_BASE_URL=$GEV_BASE_URL}${FIREBASE_API_KEY:+,FIREBASE_PROJECT=$PROJECT,FIREBASE_API_KEY=$FIREBASE_API_KEY}${DAILY_RUNS:+,DAILY_RUNS=$DAILY_RUNS}" \
   --execution-environment gen2 \
   --add-volume "name=photos,type=cloud-storage,bucket=$PROJECT-photos,mount-options=uid=1000;gid=1000" \
   --add-volume-mount volume=photos,mount-path=/data/photos \

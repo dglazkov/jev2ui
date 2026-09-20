@@ -17,7 +17,7 @@
 // found when this was probed is in docs/change-probe.md; the wording below is what that probe arrived at.
 
 import { choice, noul, score, type Questions } from "@typesafe-ai/sdk";
-import { askJev, ranked } from "./models.js";
+import { askJev, endpoint, ranked } from "./models.js";
 import { mixDesign, mixQuestions } from "./design-mix.js";
 import { loadDesign } from "./design-source.js";
 import { talk } from "./talk.js";
@@ -275,7 +275,7 @@ export async function readTurn(request: TurnRequest): Promise<TurnResponse> {
   if (read.kind === "new_screen" && target !== showing) read.kind = "structure";
   const of = target === showing ? ofShowing : await readScreen(target, message);
   const decisions = [...read.decisions, ...(read.kind === "new_app" || read.kind === "question" ? [] : of.decisions)];
-  const done = (rest: Pick<TurnResponse, "act"> & Partial<TurnResponse>): TurnResponse => ({ kind: read.kind, decisions, ms: Math.round(performance.now() - start), ...rest });
+  const done = (rest: Pick<TurnResponse, "act"> & Partial<TurnResponse>): TurnResponse => ({ kind: read.kind, decisions, ms: Math.round(performance.now() - start), endpoint: endpoint(), ...rest });
 
   // The look is listened to whatever else the message asks for.
   let design: TurnResponse["design"];

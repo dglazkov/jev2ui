@@ -43,6 +43,7 @@ export const SAVED_TURN = z.object({
   options: z.array(z.object({ label: z.string().max(200), instruction: z.string().max(2000) })).max(6).optional(),
   decisions: z.array(z.record(z.unknown())).max(80),
   ms: z.number().optional(),
+  endpoint: z.enum(["jev", "gev"]).optional(),
 });
 
 export const SAVED_APP = z.object({

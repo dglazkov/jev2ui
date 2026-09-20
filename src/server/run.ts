@@ -1,6 +1,6 @@
 import type { A2uiMessage, PipelineEvent, RunStats } from "../shared/events.js";
 import { validateMessages } from "./validate.js";
-import { askJev } from "./models.js";
+import { askJev, endpoint } from "./models.js";
 import type { Questions } from "@typesafe-ai/sdk";
 import type { DesignReport } from "../shared/design.js";
 
@@ -27,6 +27,10 @@ export class Run {
   private closed = false;
   private textSent = false;
   private readonly messages: A2uiMessage[] = [];
+  /** Who answers this run's Jev calls, all of them: whoever was answering when it began (models.ts). */
+  private readonly endpoint = endpoint();
+  /** What each Jev call said of its own timing, by its stage, for the trace that tells of it. */
+  private readonly modelMs = new Map<string, number | undefined>();
   readonly stats: RunStats;
 
   constructor(mode: RunStats["mode"]) {
@@ -36,6 +40,7 @@ export class Run {
       firstComponentsMs: null,
       firstContentMs: null,
       valid: true,
+      endpoint: this.endpoint,
       jevCalls: 0,
       jevInputTokens: 0,
       geminiInputTokens: 0,
@@ -74,7 +79,8 @@ export class Run {
 
   /** One Jev request, counted in this run's stats. */
   async askJev(stage: string, state: unknown, questions: Questions) {
-    const result = await askJev(state, questions);
+    const result = await askJev(state, questions, this.endpoint);
+    this.modelMs.set(stage, result.modelMs);
     this.stats.jevCalls++;
     this.stats.jevInputTokens += result.inputTokens;
     return { ...result, stage };
@@ -90,7 +96,9 @@ export class Run {
   }
 
   trace(event: Omit<Extract<PipelineEvent, { type: "trace" }>, "type" | "at">) {
-    this.push({ type: "trace", at: this.at, ...event, ms: Math.round(event.ms) });
+    const modelMs = this.modelMs.get(event.stage);
+    const asked = this.modelMs.has(event.stage) ? { endpoint: this.endpoint, ...(modelMs !== undefined ? { modelMs } : {}) } : {};
+    this.push({ type: "trace", at: this.at, ...asked, ...event, ms: Math.round(event.ms) });
   }
 
   /** Runs the pipeline body and guarantees a terminal event. */

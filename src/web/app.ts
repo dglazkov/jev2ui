@@ -15,7 +15,7 @@ import "./kit/surface.js";
 import "./settings.js";
 import "./kit/kit.css";
 import type { KitSurface } from "./kit/surface.js";
-import type { A2uiMessage, Decision, RunStats } from "../shared/events.js";
+import type { A2uiMessage, Decision, Endpoint, RunStats } from "../shared/events.js";
 import type { DesignReport, Theme } from "../shared/design.js";
 import type { Journey, Via } from "../shared/journey.js";
 import type { Baked } from "../shared/kit.js";
@@ -81,7 +81,7 @@ const STORED_DESIGN = "jev2ui.design.md";
 const DEVICE_HEIGHTS: Record<Device, number> = { phone: 780, tablet: 1024, desktop: 760 };
 
 type LogEntry =
-  | { kind: "stage"; at: number; stage: string; ms: number; detail?: string; decisions: Decision[]; tokens?: { input: number; output: number } }
+  | { kind: "stage"; at: number; stage: string; ms: number; endpoint?: Endpoint; modelMs?: number; detail?: string; decisions: Decision[]; tokens?: { input: number; output: number } }
   | { kind: "note"; at: number; tone: "bad" | "plain"; text: string };
 
 /**
@@ -235,7 +235,7 @@ export class App extends LitElement {
   private readAddress = () => {
     const [view, section] = location.hash.slice(1).split("/");
     this.view = view === "design" || view === "library" || view === "settings" || view === "stage" ? view : "chat";
-    if (section === "account" || section === "appearance" || section === "access") this.section = section;
+    if (section === "account" || section === "appearance" || section === "models" || section === "access") this.section = section;
     this.menu = "";
   };
 
@@ -387,6 +387,7 @@ export class App extends LitElement {
       if (!this.turns.includes(turn)) return;
       turn.decisions = answer.decisions;
       turn.ms = answer.ms;
+      turn.endpoint = answer.endpoint;
       if (answer.design) {
         this.change = answer.design.change;
         this.designRequest++;
@@ -887,7 +888,7 @@ export class App extends LitElement {
         : html`<section class="stage-entry">
             <h3>
               ${entry.stage}
-              <small>at ${entry.at} ms${entry.ms ? ` · took ${entry.ms} ms` : ""}${entry.detail ? ` · ${entry.detail}` : ""}${entry.tokens?.input ? ` · ${entry.tokens.input} in tok` : ""}</small>
+              <small>at ${entry.at} ms${entry.ms ? ` · ${entry.endpoint ? `${entry.endpoint} took` : "took"} ${entry.ms} ms${entry.modelMs ? `, its model ${entry.modelMs}` : ""}` : ""}${entry.detail ? ` · ${entry.detail}` : ""}${entry.tokens?.input ? ` · ${entry.tokens.input} in tok` : ""}</small>
             </h3>
             ${entry.decisions.length ? this.renderDecisions(entry.decisions) : nothing}
           </section>`,
@@ -928,7 +929,7 @@ export class App extends LitElement {
         <footer>
           ${count
             ? html`<details class="why">
-                <summary>${icon("arrow_right", "s")}${count} ${count === 1 ? "decision" : "decisions"}${turn.ms ? ` · read in ${turn.ms} ms` : ""}</summary>
+                <summary>${icon("arrow_right", "s")}${count} ${count === 1 ? "decision" : "decisions"}${turn.ms ? ` · read${turn.endpoint ? ` by ${turn.endpoint}` : ""} in ${turn.ms} ms` : ""}</summary>
                 ${turn.decisions.length ? this.renderDecisions(turn.decisions) : nothing} ${screen ? this.renderLog(screen) : nothing}
               </details>`
             : html`<span></span>`}
@@ -1226,7 +1227,7 @@ export class App extends LitElement {
               <dl>
                 <dt>First UI</dt><dd>${here.firstPaintMs !== undefined ? `${here.firstPaintMs.toLocaleString()} ms` : "–"}</dd>
                 <dt>Done</dt><dd>${s ? `${s.totalMs.toLocaleString()} ms` : here.running ? "making…" : "–"}</dd>
-                <dt>Jev calls</dt><dd>${s?.jevCalls ?? "–"}</dd>
+                <dt>${s?.endpoint === "gev" ? "gev" : "Jev"} calls</dt><dd>${s?.jevCalls ?? "–"}</dd>
                 <dt>Gemini tokens</dt><dd>${s?.geminiOutputTokens?.toLocaleString() ?? "–"}</dd>
                 <dt>Tree</dt><dd class=${s ? (s.valid ? "good" : "bad") : ""}>${s ? html`${icon(s.valid ? "check_circle" : "error", "xs fill")}${s.valid ? "valid" : "invalid"}` : "–"}</dd>
               </dl>

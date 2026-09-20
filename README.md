@@ -484,6 +484,23 @@ matters: designs already read, which are only a saving. It is kept to one instan
 can spend, not because a second would be wrong. Made photographs are kept in `.cache/photos`, or wherever `PHOTOS_DIR` says;
 on Cloud Run that is a mounted bucket, so they outlast the instance.
 
+### jev or gev: who answers System One
+
+Two services answer the questions: **jev**, TypeSafe's own (`api.typesafe.ai`), and **gev**
+([dglazkov/gev](https://github.com/dglazkov/gev)), a service of ours that speaks the same wire format, so nothing
+about the questions changes. Where the server has a `GEV_API_KEY` (`/api/config` says which endpoints it has keys
+for), Settings has a Models pane with the choice; the browser remembers it and names it in a header,
+`X-System-One`, on every request (`src/web/session.ts`). The server holds the choice for as long as the request
+lasts (an `AsyncLocalStorage` in `src/server/models.ts`, so no call site can forget it), and a run keeps the one
+it began with: a screen is never half of each. What is kept of answers, the designs read and mixed, is kept
+under the endpoint's name. Every trace of a Jev call says who answered and how long it took, and for gev how
+much of that was its model; a turn says who read it.
+
+Nothing falls back. If gev does not answer (after a redeploy of it there are some ten minutes of hangs and
+429s), the run fails and says `gev did not answer`. The two agree on about four decisions in five, and gev's
+yes and no are surer of themselves, so thresholds such as `noul >= 0.5` behave more like hard decisions there.
+`GEV_BASE_URL` points it elsewhere. `deploy.sh` hands the service the key if the project has the secret.
+
 ### Signing in: a name, a list, and a count
 
 Left alone, whoever has the URL spends the keys. With `FIREBASE_PROJECT` and `FIREBASE_API_KEY` set (the
@@ -664,8 +681,8 @@ src/server/auth.ts      who is asking (a Firebase ID token), what the access lis
 src/server/store.ts     Firestore over REST: the access list, the day's counts, saved apps
 src/shared/saved.ts     an app, saved: the whole session as a document, its turns included
 src/server/apps.ts      saved apps in Firestore: whose they are, who may open them
-src/web/settings.ts     settings: the account, light or dark, and the access list, for admins
-src/web/session.ts      signing in with Google; the gate that stands in for the tool; fetch that says who is asking
+src/web/settings.ts     settings: the account, light or dark, jev or gev, and the access list, for admins
+src/web/session.ts      signing in with Google; the gate that stands in for the tool; fetch that says who is asking, and which endpoint is to answer
 src/web/chrome.ts       what the tool's own chrome is made of: a symbol, the mark, a face, light or dark (chrome.css)
 src/server/main.ts      the deployed server: the routes and the built front end (vite.config.ts mounts them in dev)
 src/web/app.ts          the design tool: the bar, the rail, the conversation, the stage, the library; compare.ts is the old side-by-side page

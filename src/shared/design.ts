@@ -1,7 +1,7 @@
 // What the server tells the browser about a DESIGN.md: how to paint the mock,
 // what the linter found, and how Jev read the prose.
 
-import type { Decision } from "./events.js";
+import type { Decision, Endpoint } from "./events.js";
 
 export interface Theme {
   /** CSS custom properties understood by the A2UI renderer (`--a2ui-*`). */
@@ -29,4 +29,6 @@ export interface DesignReport {
   structure: string;
   ms: number;
   jevInputTokens: number;
+  /** Which endpoint did the reading, or the mixing. */
+  endpoint: Endpoint;
 }

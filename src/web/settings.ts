@@ -1,4 +1,4 @@
-// Settings: who is signed in and what they have left today, how the tool looks, and, for admins, the access list:
+// Settings: who is signed in and what they have left today, how the tool looks, which endpoint decides, and, for admins, the access list:
 // who may make things here, and how many a day (server/auth.ts), with who has below it.
 
 import { LitElement, html, nothing } from "lit";
@@ -20,7 +20,7 @@ interface Listing {
   dailyRuns: number;
 }
 
-export type Section = "account" | "appearance" | "access";
+export type Section = "account" | "appearance" | "models" | "access";
 export const DEVICES = { phone: 390, tablet: 768, desktop: 1180 } as const;
 export type Device = keyof typeof DEVICES;
 export const DEVICE_ICONS: Record<Device, string> = { phone: "smartphone", tablet: "tablet_mac", desktop: "desktop_windows" };
@@ -71,7 +71,7 @@ export class Settings extends LitElement {
   }
 
   private get sections(): Section[] {
-    return [...(session.state === "in" ? (["account"] as const) : []), "appearance", ...(session.role === "admin" ? (["access"] as const) : [])];
+    return [...(session.state === "in" ? (["account"] as const) : []), "appearance", ...(session.makes && session.endpoints.length > 1 ? (["models"] as const) : []), ...(session.role === "admin" ? (["access"] as const) : [])];
   }
 
   protected updated() {
@@ -190,6 +190,29 @@ export class Settings extends LitElement {
     `;
   }
 
+  // --- Models ---------------------------------------------------------------------
+
+  private renderModels() {
+    const endpoints = [
+      ["jev", "cloud", "jev", "TypeSafe's own, at api.typesafe.ai."],
+      ["gev", "dns", "gev", "Ours: the same questions, another model answering. Its yes and no are surer of themselves."],
+    ] as const;
+    return html`
+      <h3>Models</h3>
+      <p class="lede">
+        Every decision here is a question put to System One, and two services answer it. They agree on about four decisions in five: choose one, make a screen
+        again, and see what changes. Each timing says who answered.
+      </p>
+      <div class="card setting">
+        <div><b>System One</b><small>${endpoints.find(([id]) => id === session.endpoint)![3]} This browser remembers.</small></div>
+        <div class="segmented wide" role="radiogroup" aria-label="System One endpoint">
+          ${endpoints.map(([id, symbol, name]) => html`<button role="radio" aria-checked=${session.endpoint === id} @click=${() => (session.endpoint = id)}>${icon(symbol, "s")}${name}</button>`)}
+        </div>
+      </div>
+      <p class="hint">What is already made stays as it is. A design mixed by one is mixed again by the other, the first time it makes a screen.</p>
+    `;
+  }
+
   // --- Access ---------------------------------------------------------------------
 
   private renderGrant(grant: Grant) {
@@ -305,7 +328,7 @@ export class Settings extends LitElement {
   render() {
     const sections = this.sections;
     const section = sections.includes(this.section) ? this.section : sections[0]!;
-    const names: Record<Section, [string, string]> = { account: ["account_circle", "Account"], appearance: ["contrast", "Appearance"], access: ["shield_person", "Access"] };
+    const names: Record<Section, [string, string]> = { account: ["account_circle", "Account"], appearance: ["contrast", "Appearance"], models: ["neurology", "Models"], access: ["shield_person", "Access"] };
     return html`
       <nav class="snav" aria-label="Settings">
         <h2>Settings</h2>
@@ -314,7 +337,7 @@ export class Settings extends LitElement {
             html`<button class="mi" aria-current=${one === section} @click=${() => this.go(one)}>${icon(names[one][0])}${names[one][1]}${one === "access" ? html`<span class="tag">admin</span>` : nothing}</button>`,
         )}
       </nav>
-      <div class="pane">${section === "account" ? this.renderAccount() : section === "access" ? this.renderAccess() : this.renderAppearance()}</div>
+      <div class="pane">${section === "account" ? this.renderAccount() : section === "access" ? this.renderAccess() : section === "models" ? this.renderModels() : this.renderAppearance()}</div>
     `;
   }
 }

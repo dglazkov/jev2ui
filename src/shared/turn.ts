@@ -4,7 +4,7 @@
 // The server is asked what a typed message means (POST /api/turn, server/change.ts) and keeps nothing. It answers
 // with what to do, and where the look is what changed, with the design as it now is.
 
-import type { Decision } from "./events.js";
+import type { Decision, Endpoint } from "./events.js";
 import type { DesignReport } from "./design.js";
 
 export type DialName = "vivid" | "light" | "warmth" | "round" | "air";
@@ -122,4 +122,6 @@ export type TurnResponse = {
   text?: string;
   options?: Option[];
   ms: number;
+  /** Which endpoint read the message (shared/events.ts). */
+  endpoint: Endpoint;
 };

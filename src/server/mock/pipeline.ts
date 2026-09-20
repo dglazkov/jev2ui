@@ -166,6 +166,7 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
     run.trace({
       stage: mixed ? "Jev: mix a DESIGN.md" : `Jev: read ${design.name}`,
       ms: designing.fresh ? look.ms : 0,
+      endpoint: report.endpoint,
       detail: designing.fresh ? "alongside the plan" : "read before; reused",
       decisions: look.decisions,
       tokens: { input: designing.fresh ? look.jevInputTokens : 0, output: 0 },
