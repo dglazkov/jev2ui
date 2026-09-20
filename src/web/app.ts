@@ -195,7 +195,7 @@ export class App extends LitElement {
   private app = "";
   @state() private architecture?: Architecture;
   @state() private architectureError = "";
-  @state() private mapOpen = true;
+  @state() private mapOpen = false;
   @state() private mapSelected = "first";
   private nav: Journey["nav"];
   private screens = new Map<string, Screen>();
@@ -362,7 +362,7 @@ export class App extends LitElement {
   /** Nothing can be said yet: a message is being read, or the screen it would be about has not got as far as being drawn. */
   private get busy() {
     const here = this.current;
-    return this.reading || Boolean(this.resolving) || Boolean(here?.destination ? this.making.size || this.architecture?.status === "reviewing" : here?.running && here.firstPaintMs === undefined);
+    return this.reading || Boolean(this.resolving) || Boolean(here?.destination ? this.making.size || (this.architecture?.status === "reviewing" && !this.architecture.catalog) : here?.running && here.firstPaintMs === undefined);
   }
 
   /** Takes back the last turn, whatever it was. */
@@ -512,7 +512,7 @@ export class App extends LitElement {
     this.architecture = undefined;
     this.architectureError = "";
     this.mapSelected = "first";
-    this.mapOpen = true;
+    this.mapOpen = false;
     this.seed = 0;
     this.change = {};
     this.nav = undefined;
@@ -639,7 +639,7 @@ export class App extends LitElement {
   private async followDestination(detail: { kind: string; label: string; data?: Record<string, unknown>; source?: string; group?: string; component?: string }) {
     const here = this.current, map = this.architecture;
     if (!here?.destination || !map || this.reading || this.resolving) return;
-    if (map.status === "reviewing") return this.tell("The app map is still being reviewed.");
+    if (map.status === "reviewing" && !map.catalog) return this.tell("The app map is still being reviewed.");
     const kind = detail.kind as Via["kind"];
     if (kind === "appbar" && IN_PLACE.has(detail.label)) return;
     if (kind === "back" && this.stack.length > 1) {
@@ -738,7 +738,7 @@ export class App extends LitElement {
   private visitDestination(destination: string, via?: Via, turn?: Turn) {
     const architecture = this.architecture, here = this.current;
     const node = architecture?.map.nodes.find((n) => n.id === destination);
-    if (!architecture || !node || !here || architecture.status === "reviewing" || (!turn && (this.reading || Boolean(this.resolving)))) return;
+    if (!architecture || !node || !here || (architecture.status === "reviewing" && !architecture.catalog) || (!turn && (this.reading || Boolean(this.resolving)))) return;
     const existing = boundScreens(this.made).get(destination);
     // A resolved route names the canonical screen. Generated labels and legacy subject hints
     // are presentation data, not a second identity check on an already-bound destination.

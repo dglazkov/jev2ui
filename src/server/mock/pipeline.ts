@@ -1,4 +1,3 @@
-import { withCatalog } from "../../shared/catalog.js";
 // The mock pipeline: describe a screen, get a mock.
 //
 //   t=0    Jev plans the tree (archetype, blocks, anatomy: one request)   }
@@ -18,8 +17,9 @@ import { withCatalog } from "../../shared/catalog.js";
 // valid by construction, and it is on screen before the first word is. The one
 // exception is what fills a custom slot, which is checked instead (bake.ts).
 
-import { architectureNav, type ArchitectureRequest, type Architecture } from "../../shared/architecture.js";
-import { createArchitecture, plannedSeed, type AskArchitecture } from "../ia/live.js";
+import { architectureNav, type ArchitectureRequest } from "../../shared/architecture.js";
+import type { AskArchitecture } from "../ia/live.js";
+import { initialNavigationQuestions, initialArchitecture } from "../ia/bootstrap.js";
 import { bindControls } from "../ia/controls.js";
 import { ContentStreams, type PartHooks } from "../content.js";
 import { loadDesign, type DesignSource } from "../design-source.js";
@@ -105,8 +105,6 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
       run.trace({ stage, ms: result.ms, tokens: { input: result.inputTokens, output: 0 } });
       return result;
     };
-    let firstMap: Promise<Architecture | undefined> = Promise.resolve(architecture);
-    let reviewed: Promise<Architecture | undefined> = firstMap;
 
     /** Runs a refinement, then re-sends the part so the answers reach the screen. */
     const refine = (part: Part, work: Promise<Decoration[]>) =>
@@ -184,23 +182,18 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
     const designing = loadDesign(source ?? { brief: journey?.app ?? prompt });
     const screenTask = catalogTask ? [catalogTask, ...notes].join("\n\n") : prompt;
     const state = to ? { first_screen: journey!.app, reached_by: to.reachedBy, screen: screenTask } : { screen: screenTask };
-    const planned = await run.askJev("Jev: plan the screen", state, planQuestions());
+    const startingApp = architectureRequest && "create" in architectureRequest;
+    const navigationQuestions = startingApp ? initialNavigationQuestions() : {};
+    const planned = await run.askJev("Jev: plan the screen", state, { ...planQuestions(), ...navigationQuestions });
     const was = typeof edit?.plan.archetype === "string" ? [edit.plan.archetype] : undefined;
-    const read = readPlan(planned.answers, { ...(catalogEntry && to ? { topLevel: to.topLevel, among: to.among } : target ? (destinationId === "first" ? {} : { topLevel: destinationId === "home" }) : to ? { topLevel: to.topLevel, among: to.among } : {}), ...(settled ? { blocks: settled, ...(was ? { among: was } : {}) } : {}) });
+    const read = readPlan(planned.answers, { ...(existing?.state.navigation?.includes(destinationId) && (destinationId !== "first" || existing.state.map.home === "first") ? { topLevel: true } : catalogEntry && to ? { topLevel: to.topLevel, among: to.among } : target ? (destinationId === "first" ? {} : { topLevel: destinationId === "home" }) : to ? { topLevel: to.topLevel, among: to.among } : {}), ...(settled ? { blocks: settled, ...(was ? { among: was } : {}) } : {}) });
+    for (const id of Object.keys(navigationQuestions)) read.decisions.push({ id, question: id === "nav_home" ? "initial home destination" : `initial navigation: ${id.slice(4)}`, answer: planned.answers[id].choice, p: planned.answers[id].probabilities[planned.answers[id].choice] });
     run.trace({ stage: planned.stage, ms: planned.ms, decisions: read.decisions, tokens: { input: planned.inputTokens, output: 0 } });
 
-    if (architectureRequest && "create" in architectureRequest) {
-      let draft!: (value: Architecture | undefined) => void;
-      firstMap = new Promise((resolve) => { draft = resolve; });
-      reviewed = createArchitecture(plannedSeed(described, read.plan), askArchitecture, (value) => {
-        architecture = withCatalog(value);
-        draft(architecture);
-        run.architecture({ type: "architecture", architecture });
-      }).then(withCatalog).catch((error) => {
-        draft(undefined);
-        run.architecture({ type: "architecture-error", message: `The app map could not be planned: ${error.message}` });
-        return undefined;
-      });
+    if (startingApp) {
+      architecture = initialArchitecture(described, read.plan, planned.answers);
+      if (architecture.map.home === "first") read.plan.topLevel = true;
+      run.architecture({ type: "architecture", architecture });
     }
 
     const { design, read: look, report, mixed } = await designing.loaded;
@@ -248,10 +241,10 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
       const active = nav.items.findIndex((item) => item.label === journey!.via.label);
       run.send({ updateDataModel: { surfaceId, path: "/nav", value: { items: nav.items, active: Math.max(0, active) } } });
     }
-    // Open the skeleton and header before waiting for the app decisions. No extra content writers.
+    // Navigation is already available from the screen plan. No extra model round trip.
     const parts: Part[] = ["header", ...(plan.topLevel && !nav && !architectureRequest ? (["nav"] as Part[]) : []), ...plan.blocks.filter((b): b is Exclude<typeof b, "hero" | "custom"> => b !== "hero" && b !== "custom")];
     streams.open(new Set<string>(parts));
-    const draft = await firstMap;
+    const draft = architecture;
     if (draft) {
       const node = draft.map.nodes.find((n) => n.id === destinationId)!;
       if (!draft.catalog) setting.architecture = `Closed app contract: ${JSON.stringify({ responsibility: node.purpose, actions: node.actions, destinations: draft.map.nodes.map(({ id, label, purpose }) => ({ id, label, purpose })) })}\nUse only these navigation responsibilities. Local controls may work in place; do not invent other destinations.\n`;
@@ -269,16 +262,11 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
       const written = write(part);
       if (billed && part === "list") streams.spawn(written.then((list) => void (list && write("facts", list.items))));
     }
-    // The reviewed map releases code-owned navigation immediately. Generated controls
-    // need their words and control refinements, but never wait for pictures or baking.
-    streams.spawn(reviewed.then((state) => {
-      if (state && plan!.topLevel) run.send({ updateDataModel: { surfaceId, path: "/nav", value: architectureNav(state, destinationId) } });
-    }));
-    if (architectureRequest) streams.spawn((async () => {
+    // Only older closed-map requests require rendered-control binding.
+    if (architecture && !architecture.catalog) streams.spawn((async () => {
       try {
-        const [state] = await Promise.all([reviewed, streams.ready(new Set(["groups", "list", "form", "actions"]))]);
-        if (!state || state.catalog) return;
-        const routes = await bindControls(state, destinationId, run.sent, askArchitecture);
+        await streams.ready(new Set(["groups", "list", "form", "actions"]));
+        const routes = await bindControls(architecture!, destinationId, run.sent, askArchitecture);
         run.architecture({ type: "routes", destination: destinationId, routes });
       } catch (error) {
         run.architecture({ type: "architecture-error", message: `Screen controls could not be connected: ${(error as Error).message}` });

@@ -1,3 +1,4 @@
+import { orderedNavigation } from "../../shared/navigation.js";
 // Renderer for the kit catalog (src/shared/kit.ts). One light-DOM element: the
 // component list and the data model go in as messages, plain HTML comes out,
 // styled by kit.css through the `--k-*` variables a DESIGN.md is turned into.
@@ -259,9 +260,10 @@ export class KitSurface extends LitElement {
     const items: any[] = this.value(c.items, s) ?? [];
     const active = Number(this.value(c.active, s) ?? 0);
     if (!items.length) return html`<nav class="k-navbar"><span class="k-skel" style="width:70%"></span></nav>`;
+    if (items.length === 1 && active === 0) return nothing;
     return html`<nav class="k-navbar">
-      ${items.slice(0, 5).map(
-        (item, i) => html`<a class=${i === active ? "k-active" : ""} @click=${() => i !== active && this.tap("nav", item?.label, undefined, { index: i, source: `nav:${item?.destination}` })}>
+      ${orderedNavigation(items).slice(0, 5).map(
+        ({ item, index: i }) => html`<a class=${i === active ? "k-active" : ""} @click=${() => i !== active && this.tap("nav", item?.label, undefined, { index: i, source: `nav:${item?.destination}` })}>
           ${c.icons === false ? nothing : html`<span class="k-navpill">${this.icon(item?.icon && item.icon !== "circle" ? item.icon : this.navigationIcons[item?.destination] ?? item?.icon ?? "circle")}</span>`}
           <span>${item?.label ?? ""}</span>
         </a>`,
