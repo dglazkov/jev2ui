@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Journey observer</title>
+  <style>
+    :root { color-scheme: light dark; font: 15px/1.5 system-ui, sans-serif; color: light-dark(#1d2825, #e0e9e5); background: light-dark(#f6f8f6, #141c19); --line: light-dark(#d5ddd8, #37483f); --panel: light-dark(#fff, #1c2822); --muted: light-dark(#53675c, #acbeb3); --accent: light-dark(#08644a, #83dab8); }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    header { padding: 24px 32px; border-bottom: 1px solid var(--line); }
+    h1 { margin: 0; font-size: 24px; letter-spacing: -.6px; }
+    h2 { margin: 0 0 8px; font-size: 21px; }
+    h3 { margin: 0 0 8px; font-size: 17px; }
+    p { margin: 6px 0 16px; }
+    .muted, small { color: var(--muted); }
+    code, pre { font-family: ui-monospace, monospace; font-size: 12px; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 460px; overflow: auto; padding: 12px; background: var(--panel); }
+    a { color: var(--accent); }
+    button, select { font: inherit; color: inherit; background: var(--panel); border: 1px solid var(--line); padding: 10px 12px; border-radius: 6px; }
+    button { cursor: pointer; text-align: left; }
+    button:focus-visible, select:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    select { width: 100%; margin: 8px 0 16px; }
+    main { display: grid; grid-template-columns: 310px minmax(0, 1fr); max-width: 1500px; margin: auto; }
+    aside { padding: 24px; border-right: 1px solid var(--line); }
+    #cases { display: grid; gap: 8px; }
+    #cases button { width: 100%; }
+    #cases button[aria-current="true"] { border-color: var(--accent); box-shadow: inset 3px 0 var(--accent); }
+    #cases small { display: block; margin-top: 4px; }
+    #content { padding: 24px 32px; min-width: 0; }
+    .summary { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+    .badge { display: inline-block; padding: 3px 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 5px; margin: 0 6px 6px 0; font-size: 12px; }
+    .good { color: var(--accent); }
+    .bad { color: light-dark(#a43c22, #ffa78c); }
+    article { border: 1px solid var(--line); border-radius: 8px; padding: 20px; margin: 16px 0; background: var(--panel); }
+    .states { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 16px 0; }
+    .state { border-left: 2px solid var(--line); padding-left: 12px; }
+    .state p { font-size: 14px; margin: 4px 0; }
+    .state strong { display: block; }
+    .state ul { padding-left: 18px; font-size: 13px; }
+    .state h4 { margin: 14px 0 4px; }
+    .decision { margin: 16px 0; padding: 12px; border: 1px solid var(--line); border-radius: 6px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+    td, th { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); }
+    td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+    details { margin: 10px 0; }
+    summary { cursor: pointer; color: var(--muted); }
+    #connection { min-height: 23px; font-size: 13px; margin-bottom: 0; }
+    @media (max-width: 760px) { main { grid-template-columns: 1fr; } aside { border-right: 0; border-bottom: 1px solid var(--line); } header, #content { padding: 20px; } .states { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Journey observer</h1>
+    <p class="muted">Follow each transition, inspect the evidence, and compare the critic with the hand labels.</p>
+    <p id="connection" role="status" aria-live="polite">Connecting…</p>
+  </header>
+  <main>
+    <aside>
+      <label for="runs">Recorded runs</label>
+      <select id="runs"><option value="">No runs yet</option></select>
+      <p id="run-status" class="muted"></p>
+      <nav id="cases" aria-label="Journeys"></nav>
+      <p><small>Start a run in a terminal:<br><code>npm run probe:coherence</code></small></p>
+    </aside>
+    <section id="content" aria-label="Journey details">
+      <h2>Waiting for a journey</h2>
+      <p>Run <code>npm run probe:coherence</code> for live decisions, or add <code>-- --fixtures</code> to inspect the cases without model calls.</p>
+    </section>
+  </main>
+  <script type="module">
+    const $ = (id) => document.getElementById(id);
+    // All recorded text uses textContent, including model output and fixture content.
+    const el = (tag, text, cls) => { const node = document.createElement(tag); if (text !== undefined) node.textContent = text; if (cls) node.className = cls; return node; };
+    const json = (value) => el('pre', JSON.stringify(value, null, 2));
+    function details(label, value) { const d = el('details'); d.append(el('summary', label), json(value)); return d; }
+    const time = (at) => new Date(at).toLocaleTimeString();
+    const pct = (n) => `${(n * 100).toFixed(1)}%`;
+    let selectedRun = location.hash.slice(1), selectedCase = '', current, signature = '', listSignature = '';
+    function pickRun(id) { selectedRun = id; selectedCase = ''; signature = ''; history.replaceState(null, '', `#${id}`); }
+    $('runs').addEventListener('change', () => { pickRun($('runs').value); void poll(); });
+    window.addEventListener('hashchange', () => { pickRun(location.hash.slice(1)); void poll(); });
+    function events(c, step) { return current.events.filter((e) => e.caseId === c.id && e.step === step); }
+    function state(label, place) {
+      const node = el('div', undefined, 'state'); node.dataset.place = label;
+      node.append(el('small', label), el('strong', place.title), el('p', place.shows), el('small', `ID: ${place.id}`));
+      if (place.content) {
+        const bar = place.content.components.find((c) => c.component === 'AppBar');
+        if (bar) node.append(el('p', `Top-bar actions: ${bar.actions?.join(', ') || 'none'}`, 'muted'));
+        for (const group of place.content.data.groups ?? []) {
+          node.append(el('h4', group.title)); const rows = el('ul');
+          for (const row of group.rows ?? []) {
+            const value = ['switch', 'checkbox'].includes(row.control) ? (row.on ? 'on' : 'off') : row.value;
+            rows.append(el('li', [row.label, value, row.detail, row.control ? `[${row.control}]` : ''].filter(Boolean).join(' · ')));
+          }
+          node.append(rows);
+        }
+        node.append(details('Saved component tree and final data', place.content));
+      }
+      if (place.generation) node.append(details('Original generation plan, request and decisions (not sent to critic)', place.generation));
+      return node;
+    }
+    function render() {
+      const run = current;
+      const totals = run.summary;
+      $('run-status').textContent = `${run.status} · ${run.endpoint ?? 'no model calls'}${totals ? ` · ${totals.matched}/${totals.answered} match · ${totals.errors} errors` : ''}`;
+      const nav = $('cases'); nav.replaceChildren();
+      if (!run.cases.some((c) => c.id === selectedCase)) selectedCase = run.cases[0]?.id;
+      for (const c of run.cases) {
+        const answers = run.events.filter((e) => e.caseId === c.id && e.kind === 'answer');
+        const errors = run.events.filter((e) => e.caseId === c.id && e.kind === 'error');
+        const button = el('button', c.title);
+        button.setAttribute('aria-current', String(c.id === selectedCase));
+        button.append(el('small', `${answers.length}/${c.hops.length} reviewed · ${answers.filter((e) => !e.data.match).length} disagreements${errors.length ? ` · ${errors.length} errors` : ''}`));
+        button.addEventListener('click', () => { selectedCase = c.id; render(); });
+        nav.append(button);
+      }
+      const c = run.cases.find((c) => c.id === selectedCase);
+      const content = $('content');
+      // Preserve open evidence panels as live results arrive.
+      const opened = new Set([...content.querySelectorAll('details[open]')].map((d) => d.dataset.key));
+      content.replaceChildren();
+      const info = el('div', undefined, 'summary');
+      info.append(el('span', run.source === 'saved-app' ? 'Captured shared app' : 'Constructed journeys', 'badge'), el('span', 'Read-only critique · repairs not applied', 'badge'));
+      info.append(el('p', `${run.endpoint ?? 'Fixtures only'} · ${run.model ?? 'no model'} · ${run.rubric} · started ${new Date(run.started).toLocaleString()}`, 'muted'));
+      const download = el('a', 'Download complete recording'); download.href = `/api/runs/${run.id}`; download.download = `${run.id}.json`; info.append(download);
+      if (run.provenance) {
+        const source = el('p');
+        const link = el('a', 'Open original shared app');
+        if (/^https?:\/\//.test(run.provenance.url)) link.href = run.provenance.url;
+        link.target = '_blank'; link.rel = 'noopener'; source.append(link);
+        info.append(source, details('Capture provenance', run.provenance));
+      }
+      if (run.error) info.append(el('p', run.error, 'bad'));
+      content.append(info);
+      if (!c) return;
+      content.append(el('h2', c.title), el('p', `Goal: ${c.goal}`), el('p', c.app, 'muted'));
+      if (c.history?.length) {
+        const prior = el('details'); prior.append(el('summary', 'Observed path before this transition'));
+        for (const edge of c.history) prior.append(el('p', `${edge.from.title} [${edge.from.id}] → ${edge.action} → ${edge.to.title} [${edge.to.id}]`));
+        prior.append(details('Earlier transition evidence', c.history)); content.append(prior);
+      }
+      if (c.existing?.length) {
+        const known = el('details'); known.append(el('summary', `Known destinations before this transition (${c.existing.length})`));
+        for (const place of c.existing) {
+          const one = el('details'); one.dataset.placeId = place.id;
+          one.append(el('summary', `${place.title} [${place.id}]`), state(`Previously created screen ${place.id}`, place)); known.append(one);
+        }
+        content.append(known);
+      }
+      let from = c.start;
+      c.hops.forEach((hop, i) => {
+        const trace = events(c, i);
+        const request = trace.find((e) => e.kind === 'request');
+        const answer = trace.find((e) => e.kind === 'answer');
+        const error = trace.find((e) => e.kind === 'error');
+        const card = el('article'); card.dataset.step = String(i); card.append(el('h3', `${i + 1}. ${hop.action}`));
+        const status = answer ? (answer.data.match ? 'Matches hand labels' : 'Disagrees with hand labels') : error ? 'Request failed' : request ? 'Awaiting answer' : run.status === 'fixtures' ? 'Not evaluated' : run.status === 'running' ? 'Queued' : 'Not reached';
+        card.append(el('span', status, `badge ${error || answer && !answer.data.match ? 'bad' : answer ? 'good' : ''}`));
+        if (request) card.append(el('small', `Requested ${time(request.at)}${answer ? ` · answered ${time(answer.at)} · ${Math.round(answer.data.ms)} ms · ${answer.data.inputTokens} input tokens` : ''}`));
+        const states = el('div', undefined, 'states'); states.append(state('Before', from), state(run.source === 'saved-app' ? 'Observed destination / state (saved)' : 'Observed destination / state (fixture)', hop.to)); card.append(states);
+        if (answer) {
+          for (const key of ['relation', 'repair']) {
+            const a = answer.data.answers[key]; const section = el('div', undefined, 'decision');
+            section.append(el('strong', `${key === 'relation' ? 'Transition' : 'Suggested repair'}: ${a.choice} · ${pct(a.probabilities[a.choice])}`));
+            section.append(el('p', a.choice === hop.expected[key] ? 'Matches this hand label' : `Hand label: ${hop.expected[key]}`, a.choice === hop.expected[key] ? 'good' : 'bad'));
+            const distribution = el('details'); distribution.dataset.decision = key; distribution.append(el('summary', 'All alternatives'));
+            const table = el('table');
+            for (const [name, p] of Object.entries(a.probabilities).sort((a, b) => b[1] - a[1])) { const row = el('tr'); row.append(el('td', name), el('td', pct(p))); table.append(row); }
+            distribution.append(table); section.append(distribution); card.append(section);
+          }
+        }
+        if (error) card.append(el('p', error.data.message, 'bad'));
+        card.append(details('Hand labels (not sent to the model)', hop.expected));
+        if (request) card.append(details('Exact state sent to the model', request.data.state));
+        card.append(details('Questions and choice criteria', run.questions));
+        if (trace.length) card.append(details('Timestamped events and raw answers', trace));
+        content.append(card); from = hop.to;
+      });
+      [...content.querySelectorAll('details')].forEach((d) => {
+        d.dataset.key = `${c.id}:${d.closest('article')?.dataset.step ?? 'journey'}:${d.closest('.state')?.dataset.place ?? ''}:${d.dataset.decision ?? d.querySelector('summary').textContent}`;
+        d.open = opened.has(d.dataset.key);
+      });
+    }
+    async function get(path) { const response = await fetch(path, { cache: 'no-store' }); if (!response.ok) throw new Error(`${response.status} loading ${path}`); return response.json(); }
+    let polling = false;
+    async function poll() {
+      if (polling) return; polling = true;
+      try {
+        const { runs: allRuns, unreadable } = await get('/api/runs');
+        const runs = allRuns.filter((run) => run.version === 1);
+        const nextList = JSON.stringify(runs);
+        if (nextList !== listSignature) {
+          listSignature = nextList;
+          $('runs').replaceChildren(...runs.map((run) => { const option = el('option', `${new Date(run.started).toLocaleString()} · ${run.endpoint ?? 'fixtures'} · ${run.status}`); option.value = run.id; return option; }));
+        }
+        if (!selectedRun && runs.length) pickRun(runs[0].id);
+        $('runs').value = selectedRun;
+        if (selectedRun) {
+          const id = selectedRun; const run = await get(`/api/runs/${encodeURIComponent(id)}`);
+          if (run.version !== 1) { location.href = `/#${encodeURIComponent(id)}`; return; }
+          if (id === selectedRun) {
+            const next = `${run.id}:${run.updated}:${run.events.length}:${run.status}`;
+            current = run;
+            if (signature !== next) { signature = next; render(); }
+          }
+        }
+        const stale = current?.status === 'running' && Date.now() - Date.parse(current.updated) > 60000;
+        $('connection').textContent = `Connected · checked ${new Date().toLocaleTimeString()}${stale ? ' · no recent events; the request may still be running or the probe may have stopped' : ''}${unreadable ? ` · ${unreadable} unreadable recording(s)` : ''}`;
+        $('connection').className = 'muted';
+      } catch (error) { $('connection').textContent = `Observer unavailable: ${error.message}. Retrying…`; $('connection').className = 'bad'; }
+      finally { polling = false; }
+    }
+    await poll(); setInterval(poll, 1000);
+  </script>
+</body>
+</html>

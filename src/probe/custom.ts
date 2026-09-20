@@ -12,7 +12,7 @@ import { askJev, JEV_MODEL } from "../server/models.js";
 import { planQuestions } from "../server/mock/plan.js";
 
 /** true: the kit cannot draw it. false: it can. null: either reading is fine. */
-const PROMPTS: Array<[string, boolean | null, string?]> = [
+export const PROMPTS: Array<[string, boolean | null, string?]> = [
   ["Pomodoro timer", true, "watch"],
   ["Pick your seats for a concert at the Royal Albert Hall", true, "pick"],
   ["Find coffee shops near me on a map", true, "pick"],
@@ -45,6 +45,7 @@ const PROMPTS: Array<[string, boolean | null, string?]> = [
   ["Profile page for a freelance illustrator", false],
 ];
 
+async function main() {
 const verbose = process.argv.includes("-v");
 console.log(`Jev: ${JEV_MODEL}\n`);
 const all = planQuestions();
@@ -65,3 +66,7 @@ for (const [screen, label, use] of PROMPTS) {
   console.log(`${ok} ${p.toFixed(2)}  ${screen.padEnd(62)} ${said || verbose ? contract : ""}${verbose ? `  [${answers.archetype.choice}]` : ""}`);
 }
 console.log(`\n${right}/${judged} agree with the labels`);
+
+}
+
+if (process.argv[1] && import.meta.url === (await import("node:url")).pathToFileURL((await import("node:path")).resolve(process.argv[1])).href) await main();

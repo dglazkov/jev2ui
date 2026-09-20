@@ -17,6 +17,15 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
+To inspect the experimental IA, run `npm run observe:journeys`, then `npm run probe:ia:whole`
+for the saved podcast case. For all 30 custom-component prompts, run `npm run probe:ia:samples --
+--variant=baseline`, followed by `npm run probe:ia:samples -- --variant=neutral --suite=<printed-id>`.
+The [map observer](docs/closed-ia.md) shows decisions, canonical destinations and mock reuse;
+`http://127.0.0.1:5174/samples` compares sample sweeps. IA probes use JEV/GEV only: no Gemini
+and no model calls during navigation. Sample sweeps plan IA from prompts without rendering mocks.
+Production routing is unchanged.
+See the [30-prompt results](docs/ia-sample-sweep.md) for the comparison, limitations and reproduction commands.
+
 Apparite is a conversation on the left and the app on the right. Type a description ("Checkout for a sneaker
 store, with order summary") and the mock appears in a phone, tablet or desktop frame in about a second and a
 half. Everything typed after that is about the app that is there. Every decision is listed under the turn it

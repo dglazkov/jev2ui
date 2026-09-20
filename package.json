@@ -13,7 +13,13 @@
     "probe:design": "tsx src/probe/design.ts",
     "photos:build": "tsx src/server/photos/build.ts",
     "probe:custom": "tsx src/probe/custom.ts",
-    "probe:change": "tsx src/probe/change.ts"
+    "probe:change": "tsx src/probe/change.ts",
+    "probe:coherence": "tsx src/probe/coherence.ts",
+    "probe:ia": "tsx src/probe/ia.ts",
+    "probe:ia:samples:audit": "tsx src/probe/ia-samples-audit.ts",
+    "probe:ia:samples": "tsx src/probe/ia-samples.ts",
+    "probe:ia:whole": "tsx src/probe/ia.ts --whole",
+    "observe:journeys": "tsx src/probe/journey-observer.ts"
   },
   "repository": {
     "type": "git",

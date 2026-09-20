@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IA observer</title>
+  <style>
+    :root { color-scheme: light dark; --page: light-dark(#f4f6f3,#111a16); --panel: light-dark(#fff,#1a2720); --line: light-dark(#d7dfd8,#364b3e); --text: light-dark(#203029,#e4ede6); --muted: light-dark(#526c5c,#a6bcad); --accent: light-dark(#126445,#8bddb5); --bad: light-dark(#b34520,#ffac8d); font:15px/1.5 system-ui,sans-serif; color:var(--text); background:var(--page); }
+    * {box-sizing:border-box} body{margin:0} header{padding:24px 32px;border-bottom:1px solid var(--line);display:flex;gap:24px;justify-content:space-between;align-items:center} h1{font-size:25px;letter-spacing:-.7px;margin:0} h2{font-size:20px;margin:0 0 10px} h3{font-size:16px;margin:0 0 8px} p{margin:6px 0 14px} small,.muted{color:var(--muted)} a{color:var(--accent)} button,select{font:inherit;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:9px 12px} button{cursor:pointer;text-align:left} select{max-width:100%;width:360px} button:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:3px} button[aria-pressed=true]{border-color:var(--accent);box-shadow:inset 3px 0 var(--accent)} main{max-width:1500px;margin:auto;padding:24px 32px} .status{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}.tag{font-size:12px;background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:4px 8px}.good{color:var(--accent)}.bad{color:var(--bad)}#connection{font-size:12px;margin:6px 0 0}#revisions{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.workspace{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}.workspace>aside{max-height:780px;overflow:auto}.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px;min-width:0}.map{position:relative;min-height:200px;padding:18px 6px}#nodes{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:46px 22px}#nodes button{background:var(--panel);min-height:88px;position:relative;z-index:1;overflow-wrap:anywhere}#nodes button small{display:block;font-size:11px;margin-top:4px}#wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}.section{margin-top:20px}.action{display:block;width:100%;margin:8px 0}.action small{display:block}.finding{border-left:3px solid var(--bad);padding-left:12px;margin:12px 0}.finding.uncertain{border-color:var(--muted)}details{margin:12px 0}summary{cursor:pointer;color:var(--muted)}pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:420px;overflow:auto;font:12px/1.5 ui-monospace,monospace;background:var(--page);padding:14px;border-radius:5px}table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}td:last-child{font-variant-numeric:tabular-nums}.scroll{overflow:auto}.replay{display:grid;gap:10px}.replay button{padding:14px}.replay strong{display:block}.replay small{display:block}.mock{border:1px solid var(--line);border-radius:7px;padding:12px;margin-top:16px}.mock ul{padding-left:18px;font-size:12px}.empty{padding:64px 0;max-width:640px}.selected{color:var(--accent)} .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}.stats strong{font-size:24px;display:block}.stats div{padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:6px}.stats small{font-size:12px} @media(max-width:1000px){.workspace{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:650px){header{display:block}header>div+div{margin-top:16px}header,main{padding:18px}#nodes{grid-template-columns:repeat(2,minmax(0,1fr));gap:32px 14px}select{width:100%}}
+  </style>
+</head>
+<body>
+  <header><div><h1>IA observer</h1><p class="muted">One app map. Stable destinations. The same screen mock.</p><p id="connection" role="status">Connecting…</p></div><div><label for="runs">Experiment</label><br><select id="runs"><option>No runs yet</option></select><p><a href="/samples">Sample sweeps</a> · <a href="/transitions">Earlier transition experiments</a></p></div></header>
+  <main id="content"><div class="empty"><h2>Plan the app before exploring it</h2><p>Run <code>npm run probe:ia</code> in another terminal. Watch the first-screen evidence become a closed map, follow critique and revisions, then inspect how the saved journeys resolve.</p></div></main>
+  <script type="module">
+    const $=id=>document.getElementById(id);
+    const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n};
+    const json=v=>el('pre',JSON.stringify(v,null,2));
+    function details(label,v,key=label){const d=el('details');d.dataset.key=key;d.append(el('summary',label),json(v));return d}
+    let selected=location.hash.slice(1),version=null,node='first',current,signature='',optionsSignature='';
+    function choose(id){selected=id;version=null;node='first';signature='';history.replaceState(null,'',`#${id}`)}
+    $('runs').addEventListener('change',()=>{choose($('runs').value);void poll()});
+    window.addEventListener('hashchange',()=>{choose(location.hash.slice(1));void poll()});
+    const pct=p=>`${Math.round(p*100)}%`;
+    function paint(){
+      const r=current,c=$('content');
+      const opened=new Set([...c.querySelectorAll('details[open]')].map(d=>d.dataset.key));c.replaceChildren();
+      const status=el('div',undefined,'status');status.append(el('span',r.status,'tag '+(['stable','resolved'].includes(r.status)?'good':r.status==='failed'?'bad':'')),el('span',r.phase,'tag'),el('span',`${r.endpoint} decides · code assembles`,'tag'),el('span',r.experiment==='whole-app'?'Whole-app expansion + pruning':'First-screen closure','tag'),...(r.connectionStrategy?[el('span','Independent link decisions','tag')]:[]),...(r.vocabulary?[el('span',r.vocabulary,'tag')]:[]),...(r.refinementStrategy?[el('span',r.refinementStrategy==='construct-and-critique'?'One resolved design · journey critique':'Task consequences refine the map','tag')]:[]));c.append(status);
+      c.append(el('h2',r.seed.brief),el('p',r.sample?'Prompt-only IA test from src/probe/custom.ts. The same first-screen plan is reused across variants. No screen mocks are rendered.':'Only the original brief, first screen and observed actions enter map planning. Later screens are held back for replay.','muted'));
+      const source=el('a',r.sample?`Sample ${r.sample.index+1} · ${r.sample.variant} · comparison`:'Original shared app');if(r.sample)source.href=`/samples#${r.sample.suiteId}`;if(/^https?:\/\//.test(r.provenance.url))source.href=r.provenance.url;source.target='_blank';source.rel='noopener';c.append(source,document.createTextNode(' · '));
+      const download=el('a','Download recording');download.href=`/api/runs/${r.id}`;download.download=`${r.id}.json`;c.append(download);
+      if(r.audit)c.append(details('Same-rubric sample audit',r.audit,'sample-audit'));
+      c.append(details(`Planning evidence · ${r.seed.links.length} observed actions`,r.seed,'seed'));
+      if(r.calls)c.append(el('p',`${r.wallMs!==undefined?`${(r.wallMs/1000).toFixed(2)} s total run · `:""}${r.calls.decisions} decision batch${r.calls.decisions===1?'':'es'} · ${Math.round(r.calls.ms)} ms in decision calls · ${r.calls.inputTokens} input tokens · ${r.calls.generation} generation calls · ${r.calls.navigation} navigation calls`,'good'));
+      if(r.candidates){const vocabulary=el('details');vocabulary.dataset.key='candidates';vocabulary.append(el('summary',`Candidate vocabulary · ${r.candidates.length} possibilities constructed by code`));const table=el('table');for(const candidate of r.candidates){const row=el('tr');row.append(el('td',candidate.id),el('td',candidate.label),el('td',candidate.purpose));table.append(row)}vocabulary.append(table);c.append(vocabulary)}
+      if(r.error)c.append(el('p',r.error,'bad'));
+      if(r.summary){const stats=el('div',undefined,'stats');for(const [value,label] of [[r.summary.destinations,'destinations'],[r.summary.actions,'resolved action dispositions'],r.proposalSummary?[r.proposalSummary.remainingReviewFindings.length,'semantic review notes']:r.refinementStrategy?[r.calls.decisions,'decision batches']:[r.summary.unresolved,'remaining findings'],r.sample?[r.calls.generation,'generated mocks']:[`${r.summary.replayPassed}/${r.summary.replayTotal}`,'replay checks passed']]){const s=el('div');s.append(el('strong',value),el('small',label));stats.append(s)}c.append(stats,el('p',r.summary.stopReason,'muted'))}
+      const revisions=el('nav');revisions.id='revisions';revisions.setAttribute('aria-label','Map revisions');
+      const selectedVersion=version??r.revisions.at(-1)?.number;
+      for(const v of r.revisions){const b=el('button',`${v.label??(v.number===0?'Before decisions':`Batch ${v.number}`)} · ${v.structural.length+(v.critique?.findings.length??0)} findings`);b.setAttribute('aria-pressed',String(v.number===selectedVersion));b.onclick=()=>{version=v.number;paint()};revisions.append(b)}
+      if(r.revisions.length)c.append(revisions);
+      const rev=r.revisions.find(v=>v.number===selectedVersion);
+      if(rev){
+        const map=rev.map;const links=(rev.links??[]).filter(l=>map.nodes.some(n=>n.id===l.from)&&map.nodes.some(n=>n.id===l.to));if(!map.nodes.some(n=>n.id===node))node='first';
+        if(rev.proposal){
+          const p=rev.proposal,review=el('section',undefined,'panel section');review.dataset.proposal='';review.append(el('h2','One possible, fully specified IA'),el('p','Routes are concrete design choices. The critique tests whether complete journeys work; probability scores are evidence, not a requirement to find the ideal map.','muted'));
+          if(r.proposalSummary&&selectedVersion===r.revisions.at(-1).number)review.append(el('p',`${r.proposalSummary.resolved?'All graph links resolved.':'Structural defects remain.'} ${r.proposalSummary.reviewed?'The recorded journey and coverage critique passed.':'Semantic review remains separate from graph resolution.'}`,'good'));
+          if(p.coverage)review.append(el('p',`App-wide coverage judgment: ${p.coverage.verdict} · ${pct(p.coverage.p)}. This is a recorded model judgment, not proof of completeness.`,'muted'));
+          for(const receipt of p.receipts)review.append(el('p',receipt));
+          if(p.excluded.length)review.append(el('p',`Tasks outside this design: ${p.excluded.join(', ')}. Their shared destinations may still serve other journeys.`,'muted'));
+          const journeys=el('div',undefined,'replay');
+          for(const j of p.journeys){const card=el('div',undefined,'mock');card.dataset.journey=j.id;card.append(el('strong',j.task),el('p',j.path?j.path.map(id=>map.nodes.find(n=>n.id===id)?.label??id).join(' → '):'No executable route','journey-path'),el('small',`Finish: ${j.activity}${j.activityAvailable===false?" (MISSING)":""}. Return: ${j.returnPath?.map(id=>map.nodes.find(n=>n.id===id)?.label??id).join(' → ')??'No return route'}`));
+            card.append(el('p',j.verdict?`Critique: ${j.verdict} · ${pct(j.p)}`:'Proposed journey · awaiting critique',j.verdict==='works'?'good':'muted'));
+            const inspect=el('button','Inspect this journey’s entry');inspect.onclick=()=>{node=j.owner;paint()};card.append(inspect);journeys.append(card);
+          }const journeyDetails=el('details');journeyDetails.dataset.key=`journeys:${rev.number}`;journeyDetails.append(el('summary',`Concrete journeys · ${p.journeys.filter(j=>j.verdict==='works').length}/${p.journeys.length} accepted${p.state==='draft'?' · proposed, not yet reviewed':''}`),journeys);review.append(journeyDetails);
+          for(const finding of p.reviewFindings){const row=el('div',undefined,'finding');row.append(el('strong',finding.id),el('p',finding.detail));review.append(row)}
+          c.append(review);
+        }
+        if(rev.issues){
+          const impact=el('section',undefined,'panel section');impact.dataset.consequences='';impact.append(el('h2','What still needs a decision'),el('p','Optional shortcuts do not block the map. Journey gaps include failed reachability and coverage checks; unsettled responsibilities and unassessed links need further decisions.','muted'));
+          const stats=el('div',undefined,'stats');for(const [category,label] of [['journey','Journey gaps / coverage'],['responsibility','Responsibilities to settle'],['optional','Optional links'],['unassessed','Unassessed links']]){
+            const issues=rev.issues.filter(i=>i.category===category),box=el('div');box.dataset.category=category;box.append(el('strong',issues.length),el('small',label));stats.append(box);
+          }impact.append(stats);
+          const list=el('details');list.dataset.key=`issues:${rev.number}`;list.append(el('summary','Decision priorities and deferred alternatives'));
+          for(const issue of rev.issues){const row=el('p',`${issue.category} · ${issue.detail}`);list.append(row)}impact.append(list);c.append(impact);
+        }
+        const workspace=el('div',undefined,'workspace');const canvas=el('section',undefined,'panel');canvas.append(el('h2','Destination map'),el('p',map.boundary,'muted'),el('small',rev.proposal?'Select a destination. Solid lines show chosen navigation; dashed lines show explicit returns. All links have destinations.':'Select a destination. Solid lines show navigation; dashed green lines show returns; dotted orange lines show unresolved candidate links. Unresolved links are not navigable.'));
+        const visual=el('div',undefined,'map');visual.id='visual';
+        const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.id='wires';svg.setAttribute('aria-hidden','true');visual.append(svg);
+        const nodes=el('div');nodes.id='nodes';
+        const ordered=[...map.nodes].sort((a,b)=>a.id===map.home?-1:b.id===map.home?1:a.id==='first'?-1:b.id==='first'?1:0);
+        for(const n of ordered){const b=el('button',n.label);b.dataset.node=n.id;b.setAttribute('aria-pressed',String(n.id===node));const unresolved=links.filter(l=>l.from===n.id&&l.status==='unresolved').length;if(unresolved)b.append(el('small',`${unresolved} unresolved link${unresolved===1?'':'s'}`,'bad'));b.append(el('small',`${n.id===map.home?'Home · ':''}${n.id==='first'?(r.sample?'Planned first screen':`Original mock #${r.firstMock.id}`):r.bindings[n.id]?`Replay mock #${r.bindings[n.id]}`:'Planned · no mock yet'}`));b.onclick=()=>{node=n.id;paint()};nodes.append(b)}visual.append(nodes);canvas.append(visual);
+        canvas.append(details('Changes in this revision',rev.changes,`changes:${rev.number}`));
+        const findings=[...rev.structural,...(rev.critique?.findings??[])];
+        canvas.append(el('h3','Consistency checks'));
+        if(rev.critique&&!findings.length)canvas.append(el('p','No findings under the current checks. This is not proof of a complete or optimal IA.','good'));
+        for(const f of findings){const row=el('div',undefined,`finding ${f.severity}`);row.append(el('strong',`${f.id}${f.p!==undefined?` · ${pct(f.p)}`:''}`),el('p',f.detail));canvas.append(row)}
+        if(rev.assembly){const effects=el('details');effects.dataset.key=`effects:${rev.number}`;effects.append(el('summary','How decisions changed the graph'));const table=el('table');for(const decision of rev.assembly.decisions){const row=el('tr');row.append(el('td',decision.id),el('td',decision.choice),el('td',decision.effect));table.append(row)}effects.append(table,details('Canonical destination aliases',rev.assembly.aliases,`aliases:${rev.number}`),details('Outstanding decision IDs',rev.assembly.pending,`pending:${rev.number}`));canvas.append(effects)}
+        if(rev.critique){const evidence=el('details');evidence.dataset.key=`critique:${rev.number}`;evidence.append(el('summary',`All ${Object.keys(rev.critique.answers).length} batch decisions`));const table=el('table');for(const [key,a] of Object.entries(rev.critique.answers)){const tr=el('tr');tr.append(el('td',key),el('td',a.choice),el('td',pct(a.probabilities[a.choice])));table.append(tr)}evidence.append(table,details('Exact questions and distributions',rev.critique,`questions:${rev.number}`));canvas.append(evidence)}
+        workspace.append(canvas);
+        const inspector=el('aside',undefined,'panel');const n=map.nodes.find(n=>n.id===node);inspector.append(el('small',n.id),el('h2',n.label),el('p',n.purpose));
+        if(n.id==='first')inspector.append(el('p',(r.sample?'Planned anchor · no mock was generated':`Original mock #${r.firstMock.id} · one permanent binding`),'good'));inspector.append(el('h3','Actions'));
+        for(const a of n.actions){const b=el('button',a.label,'action');b.append(el('small',`${a.kind} · ${a.target?map.nodes.find(n=>n.id===a.target)?.label??a.target:'no new destination'}`));if(a.sourceLink)b.append(el('small',`Observed: ${a.sourceLink}`));b.onclick=()=>{if(a.target){node=a.target;paint()}};inspector.append(b)}
+        if(rev.links){
+          const outgoing=links.filter(l=>l.from===node),pending=outgoing.filter(l=>l.status==='unresolved'),optional=outgoing.filter(l=>l.status==='optional');
+          if(pending.length){inspector.append(el('h3','Unresolved links'));for(const link of pending){const row=el('div',undefined,'finding');const a=link.assessment?.answer;row.append(el('strong',`? → ${map.nodes.find(n=>n.id===link.to).label}`),el('p',a?`Consequence: ${a.choice} (${pct(a.probabilities[a.choice])}). ${link.assessment.reason??(link.assessment.effect==='review_responsibility'?'Settle destination responsibilities first.':'Task consequence still needs a supported decision.')}`:`Model choice: ${link.choice} (${pct(link.p)}). No supported decision yet; this link has not been omitted.`));inspector.append(row)}}
+          if(optional.length){inspector.append(el('h3','Optional shortcuts'));for(const link of optional){const row=el('div',undefined,'mock');row.append(el('strong',`Deferred → ${map.nodes.find(n=>n.id===link.to).label}`),el('p',`Existing route: ${link.assessment.evidence.alternative.map(id=>map.nodes.find(n=>n.id===id)?.label??id).join(' → ')}`),el('small','The task is supported through this route; the shortcut remains an optional design choice.'));inspector.append(row)}}
+          const decisions=el('details');decisions.dataset.key=`links:${rev.number}:${node}`;decisions.append(el('summary',`Link decisions · ${outgoing.length} independently judged pairs`));
+          const table=el('table');for(const link of outgoing){const row=el('tr'),assessment=link.assessment;row.append(el('td',map.nodes.find(n=>n.id===link.to).label),el('td',link.status),el('td',assessment?`${assessment.answer.choice} · ${pct(assessment.answer.probabilities[assessment.answer.choice])} · ${assessment.effect}`:`${link.choice} · ${pct(link.p)}`));table.append(row)}decisions.append(table,details('Evidence, original probabilities and consequence decisions',outgoing,`link-evidence:${rev.number}:${node}`));inspector.append(decisions);
+        }
+        if(n.id==='first'){const mock=el('div',undefined,'mock');mock.append(el('h3',(r.sample?'First-screen plan':`Bound mock #${r.firstMock.id}`)),el('p',r.firstMock.title),el('small',r.sample?r.firstMock.shows:'This binding stays the same across entry points.'));
+          const groups=r.firstMock.content?.data?.groups??[];for(const group of groups){mock.append(el('h3',group.title));const list=el('ul');for(const row of group.rows??[])list.append(el('li',row.label));mock.append(list)}mock.append(details(r.sample?'Plan evidence':'Original mock snapshot',r.firstMock,'first-mock'));inspector.append(mock)}
+        else inspector.append(el('p',r.bindings[n.id]?`Saved mock #${r.bindings[n.id]} was bound during replay, after planning.`:'This destination is planned. No screen has been generated for it.','muted'));
+        workspace.append(inspector);c.append(workspace);
+        requestAnimationFrame(()=>draw(map,links));
+      }
+      const replay=el('section',undefined,'section panel');replay.append(el('h2','Journey replay'),el('p','Resolve actions against the final map before choosing a mock. Held-out saved screens stand in for first materialization; no new screens are generated in this experiment.','muted'));
+      const steps=el('div',undefined,'replay');
+      for(const [i,step] of r.replay.entries()){const b=el('button');b.append(el('strong',`${step.pass?'✓':'!'} ${step.scenario}`),el('span',`${step.resolution.kind} → ${step.resolution.destination??'outside map'}${step.resolution.mockId?` · mock #${step.resolution.mockId}`:''}`),el('small',step.resolution.reason),el('small',`Action ID: ${step.choice} · deterministic lookup${step.observedMock?` · original exploration created mock #${step.observedMock}`:''}`));if(step.materialization)b.append(el('small',step.materialization));b.onclick=()=>{node=step.resolution.destination??step.from;version=null;paint()};steps.append(b)}
+      if(!r.replay.length)steps.append(el('p',r.sample?'This prompt-only test has no saved mocks to replay.':'Waiting for a map and replay decisions.','muted'));replay.append(steps);c.append(replay);
+      const log=el('section',undefined,'section panel');log.append(el('h2','Requests and responses'));
+      for(const event of r.events)log.append(details(`${event.sequence}. ${event.stage} · ${event.kind} · ${new Date(event.at).toLocaleTimeString()}`,event.data,`event:${event.sequence}`));c.append(log);
+      for(const d of c.querySelectorAll('details'))d.open=opened.has(d.dataset.key);
+      for(const d of c.querySelectorAll('details'))d.addEventListener('toggle',()=>{if(rev)draw(rev.map,rev.links??[])});
+    }
+    function draw(map,links=[]){
+      const svg=$('wires'),box=$('visual');if(!svg||!box)return;svg.replaceChildren();
+      const rect=box.getBoundingClientRect(),source=[...$('nodes').children].find(n=>n.dataset.node===node);if(!source)return;
+      const a=source.getBoundingClientRect();
+      const edges=[...map.nodes.find(n=>n.id===node).actions.filter(a=>a.target).map(a=>({target:a.target,status:a.kind})),...links.filter(l=>l.from===node&&l.status==='unresolved').map(l=>({target:l.to,status:l.status}))];
+      for(const edge of edges){
+        const dest=[...$('nodes').children].find(n=>n.dataset.node===edge.target);if(!dest)continue;
+        const b=dest.getBoundingClientRect(),x1=a.x+a.width/2-rect.x,y1=a.y+a.height/2-rect.y,x2=b.x+b.width/2-rect.x,y2=b.y+b.height/2-rect.y;
+        const path=document.createElementNS(svg.namespaceURI,'path');path.dataset.status=edge.status;
+        path.setAttribute('d',`M ${x1} ${y1} Q ${(x1+x2)/2+20} ${(y1+y2)/2} ${x2} ${y2}`);
+        path.setAttribute('fill','none');path.setAttribute('stroke',edge.status==='unresolved'?'var(--bad)':'var(--accent)');path.setAttribute('stroke-width','2');path.setAttribute('stroke-dasharray',edge.status==='unresolved'?'2 6':edge.status==='back'?'5 4':'none');svg.append(path);
+      }
+    }
+    window.addEventListener('resize',()=>{const rev=current?.revisions.find(r=>r.number===(version??current.revisions.at(-1)?.number));if(rev)draw(rev.map,rev.links??[])});
+    async function get(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(`${r.status} ${url}`);return r.json()}
+    let busy=false;
+    async function poll(){if(busy)return;busy=true;try{const index=await get('/api/runs');const runs=index.runs.filter(r=>r.version===3);const nextOptions=JSON.stringify(runs);if(nextOptions!==optionsSignature){optionsSignature=nextOptions;$('runs').replaceChildren(...runs.map(r=>{const o=el('option',`${r.sample?`${r.sample.variant} · ${r.sample.index+1}. ${r.title}`:new Date(r.started).toLocaleString()} · ${r.status}`);o.value=r.id;return o}))}if(!selected&&runs.length)choose(runs[0].id);$('runs').value=selected;if(selected){const id=selected;const r=await get(`/api/runs/${encodeURIComponent(id)}`);if(r.version===1){location.href=`/transitions#${encodeURIComponent(id)}`;return}if(id===selected){current=r;const next=`${id}:${r.updated}`;if(next!==signature){signature=next;paint()}}}const stale=current?.status==='running'&&Date.now()-Date.parse(current.updated)>60000;$('connection').textContent=`Connected · checked ${new Date().toLocaleTimeString()}${stale?' · no recent events; request may be pending or the probe may have stopped':''}${index.unreadable?` · ${index.unreadable} unreadable recording(s)`:''}`;}catch(e){$('connection').textContent=`Observer unavailable: ${e.message}. Retrying…`}finally{busy=false}}
+    await poll();setInterval(poll,1000);
+  </script>
+</body>
+</html>
