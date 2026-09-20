@@ -35,7 +35,7 @@ export async function save(person: Person, sent: unknown): Promise<{ id: string 
   if (!parsed.success) return { wrong: parsed.error.issues.slice(0, 3).map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; ") };
   const app = parsed.data;
   const ids = new Set(app.screens.map((screen) => screen.id));
-  if (ids.size !== app.screens.length || !app.stack.every((id) => ids.has(id))) return { wrong: "The app's screens don't match its screen list." };
+  if (ids.size !== app.screens.length || !app.stack.every((id) => ids.has(id))) return { wrong: "The apparition's screens don't match its screen list." };
   for (const screen of app.screens)
     for (const message of screen.messages) {
       if (!message.defineComponent) continue;
@@ -48,7 +48,7 @@ export async function save(person: Person, sent: unknown): Promise<{ id: string 
   const id = createHash("sha256").update(person.uid).update("\0").update(JSON.stringify({ ...app, stack: [] })).digest("base64url").slice(0, 22);
   const parts = [{ name: "head", json: JSON.stringify(head) }, ...screens.map((screen) => ({ name: `s${screen.id}`, json: JSON.stringify(screen) }))];
   const big = parts.find((part) => Buffer.byteLength(part.json) > LARGEST_PART);
-  if (big) return { wrong: big.name === "head" ? "The app's DESIGN.md is too large to save." : "One of the app's screens is too large to save." };
+  if (big) return { wrong: big.name === "head" ? "The apparition's DESIGN.md is too large to save." : "One of the apparition's screens is too large to save." };
 
   // Saved before, it is there already, and may have been shared since: leave what is beside it alone.
   if (!(await read(`apps/${id}`))) {

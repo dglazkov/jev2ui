@@ -456,7 +456,7 @@ export class App extends LitElement {
     if (this.choice === AUTO) this.markdown = "";
     history.replaceState(null, "", location.pathname);
     this.view = "chat";
-    this.tell("Started a new app", {
+    this.tell("Started a new apparition", {
       action: {
         label: "Undo",
         run: () => {
@@ -811,7 +811,7 @@ export class App extends LitElement {
       await this.loadLibrary();
       this.saved = this.library.find((one) => one.id === id);
       history.replaceState(null, "", `?app=${id}${location.hash}`);
-      if (share) await this.copy(this.linkTo(id), "Link copied. Anyone with the link can open this app.");
+      if (share) await this.copy(this.linkTo(id), "Link copied. Anyone with the link can open this apparition.");
       else this.tell(`Saved “${this.saved?.name || this.appName}”`, { action: { label: "Share", run: () => void this.share(id) } });
     } catch (error) {
       this.bad(error);
@@ -834,7 +834,7 @@ export class App extends LitElement {
     this.menu = "";
     try {
       await this.setVisibility(id, "link");
-      await this.copy(this.linkTo(id), "Link copied. Anyone with the link can open this app.");
+      await this.copy(this.linkTo(id), "Link copied. Anyone with the link can open this apparition.");
     } catch (error) {
       this.bad(error);
     }
@@ -847,7 +847,7 @@ export class App extends LitElement {
     const gone = this.library.find((one) => one.id === id);
     this.library = this.library.filter((one) => one.id !== id);
     if (this.saved?.id === id) this.movedOn();
-    this.tell(`Deleted “${gone?.name || gone?.title || "Untitled app"}”`);
+    this.tell(`Deleted “${gone?.name || gone?.title || "Untitled apparition"}”`);
   }
 
   private async copy(text: string, said: string) {
@@ -995,11 +995,11 @@ export class App extends LitElement {
     };
     return html`
       <section class="library">
-        <h2>Library <small>${this.library.length ? `${this.library.length} ${this.library.length === 1 ? "app" : "apps"}, with every screen and message` : ""}</small></h2>
+        <h2>Library <small>${this.library.length ? `${this.library.length} ${this.library.length === 1 ? "apparition" : "apparitions"}, with every screen and message` : ""}</small></h2>
         <div class="grid">
           ${session.makes
             ? html`<button class="tile new" @click=${() => this.fresh()}>
-                <span>${icon("add_circle")}<b>New app</b><small>Describe an app, or start from an example.</small></span>
+                <span>${icon("add_circle")}<b>New apparition</b><small>Describe an app, or start from an example.</small></span>
               </button>`
             : nothing}
           ${this.library.map((one) => {
@@ -1028,7 +1028,7 @@ export class App extends LitElement {
                       : html`<button class="mi" role="menuitem" @click=${() => this.openSaved(one.id)}>${icon("open_in_new")}Open</button>
                           ${shared
                             ? html`<button class="mi" role="menuitem" @click=${() => this.copy(this.linkTo(one.id), "Link copied")}>${icon("content_copy")}Copy link</button>
-                                <button class="mi" role="menuitem" @click=${() => (this.menu = "", this.setVisibility(one.id, "private").then(() => this.tell("Only you can open this app now.")).catch(this.bad))}>${icon("lock")}Make private</button>`
+                                <button class="mi" role="menuitem" @click=${() => (this.menu = "", this.setVisibility(one.id, "private").then(() => this.tell("Only you can open this apparition now.")).catch(this.bad))}>${icon("lock")}Make private</button>`
                             : html`<button class="mi" role="menuitem" @click=${() => this.share(one.id)}>${icon("link")}Share by link</button>`}
                           <div class="sep"></div>
                           <button class="mi danger" role="menuitem" @click=${() => (this.deleting = one.id)}>${icon("delete")}Delete</button>`}
@@ -1037,7 +1037,7 @@ export class App extends LitElement {
             </div>`;
           })}
         </div>
-        ${this.library.length ? nothing : html`<p class="empty-note">${icon("bookmark")}You haven't saved any apps yet. Save keeps an app with all of its screens and messages. Share also creates a link that anyone can open.</p>`}
+        ${this.library.length ? nothing : html`<p class="empty-note">${icon("bookmark")}You haven't saved any apparitions yet. Save keeps an apparition with all of its screens and messages. Share also creates a link that anyone can open.</p>`}
       </section>
     `;
   }
@@ -1047,13 +1047,13 @@ export class App extends LitElement {
     return html`
       <section class="visitor">
         <p class="hint">
-          This app has ${this.saved?.screens} ${this.saved?.screens === 1 ? "screen" : "screens"}, created by ${this.saved?.owner || "another user"}. Tap through the preview: every screen that was generated is included. To see how a screen was generated, select the info icon.
+          This apparition has ${this.saved?.screens} ${this.saved?.screens === 1 ? "screen" : "screens"}, created by ${this.saved?.owner || "another user"}. Tap through the preview: every screen that was generated is included. To see how a screen was generated, select the info icon.
         </p>
         ${session.state === "out"
-          ? html`<p class="hint">To create or change apps, sign in with an account that's on the access list.</p>
+          ? html`<p class="hint">To create or change apparitions, sign in with an account that's on the access list.</p>
               <button class="btn primary" @click=${() => session.signIn()}>${icon("login", "s")}Sign in with Google</button>`
           : nothing}
-        ${session.state === "stranger" ? html`<p class="hint">You're signed in as ${session.email}, which isn't on the access list. To create or change apps, ask an admin to add your address.</p>` : nothing}
+        ${session.state === "stranger" ? html`<p class="hint">You're signed in as ${session.email}, which isn't on the access list. To create or change apparitions, ask an admin to add your address.</p>` : nothing}
       </section>
     `;
   }
@@ -1072,7 +1072,7 @@ export class App extends LitElement {
               )
             : html`<div class="opening">
                 <h2>What do you want to make?</h2>
-                <p>Describe an app, or a single screen. Apparite generates a preview beside this conversation. To change it, describe the change or tap an element in the preview.</p>
+                <p>Describe an app, or a single screen. Apparite generates an apparition beside this conversation: a mock that looks like an app, so that you can explore the idea before you build it. To change the apparition, describe the change or tap an element in it.</p>
                 ${session.makes ? html`<div class="examples">${EXAMPLES.map(([symbol, text]) => html`<button ?disabled=${this.busy} @click=${() => this.say(text)}>${icon(symbol)}<span>${text}</span>${icon("north_west", "xs")}</button>`)}</div>` : nothing}
               </div>`}
         </div>
@@ -1118,7 +1118,7 @@ export class App extends LitElement {
     const item = (view: View, symbol: string, name: string, extra = "") =>
       html`<button class=${extra} aria-current=${this.view === view} @click=${() => this.go(view)}>${icon(symbol)}${name}</button>`;
     return html`<nav class="rail" aria-label="Main navigation">
-      ${session.makes ? html`<button class="new" title="New app" aria-label="New app" @click=${() => this.fresh()}>${icon("add")}</button>` : nothing}
+      ${session.makes ? html`<button class="new" title="New apparition" aria-label="New apparition" @click=${() => this.fresh()}>${icon("add")}</button>` : nothing}
       ${item("chat", "chat_bubble", "Chat")} ${item("stage", "smartphone", "Preview", "narrow-only")} ${session.makes ? item("design", "palette", "Design") : nothing}
       ${session.state === "in" ? item("library", "grid_view", "Library") : nothing}
       <span class="grow"></span>
@@ -1137,12 +1137,12 @@ export class App extends LitElement {
       <a class="brand" href="/" title="Apparite" @click=${(e: Event) => (e.preventDefault(), this.go("chat"))}>${mark()}<b>Apparite</b></a>
       ${bench && this.app
         ? html`${icon("chevron_right", "crumb")}
-            <span class="appname" title=${this.app}>${this.appName || "Untitled app"}</span>
+            <span class="appname" title=${this.app}>${this.appName || "Untitled apparition"}</span>
             ${saved?.mine
               ? html`<button
                   class="vis"
-                  title=${saved.visibility === "link" ? "Anyone with the link can open this app. Select to make it private." : "Only you can open this app. Select to share it with a link."}
-                  @click=${() => this.setVisibility(saved.id, saved.visibility === "link" ? "private" : "link").then(() => this.tell(this.saved?.visibility === "link" ? "Anyone with the link can now open this app." : "Only you can open this app now.")).catch(this.bad)}
+                  title=${saved.visibility === "link" ? "Anyone with the link can open this apparition. Select to make it private." : "Only you can open this apparition. Select to share it with a link."}
+                  @click=${() => this.setVisibility(saved.id, saved.visibility === "link" ? "private" : "link").then(() => this.tell(this.saved?.visibility === "link" ? "Anyone with the link can now open this apparition." : "Only you can open this apparition now.")).catch(this.bad)}
                 >
                   ${icon(saved.visibility === "link" ? "link" : "lock", "xs")}${saved.visibility === "link" ? "Shared" : "Private"}
                 </button>`
@@ -1154,12 +1154,12 @@ export class App extends LitElement {
         : nothing}
       <span class="grow"></span>
       ${bench && this.app && session.state === "in"
-        ? html`<button class="btn" ?disabled=${!painted || here!.running || Boolean(saved?.mine)} @click=${() => this.save(false)} title="Save this app, with every screen and message, so that you can open it later.">
+        ? html`<button class="btn" ?disabled=${!painted || here!.running || Boolean(saved?.mine)} @click=${() => this.save(false)} title="Save this apparition, with every screen and message, so that you can open it later.">
               ${icon("bookmark", saved?.mine ? "s fill" : "s")}<span>${saved?.mine ? "Saved" : "Save"}</span>
             </button>
             ${saved?.mine && saved.visibility === "link"
               ? html`<button class="btn primary" @click=${() => this.copy(this.linkTo(saved.id), "Link copied")}>${icon("content_copy", "s")}<span>Copy link</span></button>`
-              : html`<button class="btn primary" ?disabled=${!painted || here!.running} @click=${() => this.save(true)} title="Save this app and create a link. Anyone with the link can open it without signing in.">${icon("link", "s")}<span>Share</span></button>`}`
+              : html`<button class="btn primary" ?disabled=${!painted || here!.running} @click=${() => this.save(true)} title="Save this apparition and create a link. Anyone with the link can open it without signing in.">${icon("link", "s")}<span>Share</span></button>`}`
         : nothing}
       ${limited ? html`<span class="runs ${runs.left === "0" ? "spent" : ""}" title="You have ${runs.left} of ${runs.daily} runs left today. Generating one screen uses one run."><span class="meter"><i style="width:${(100 * Number(runs.left)) / Math.max(1, Number(runs.daily))}%"></i></span>${runs.left} runs left</span>` : nothing}
       ${session.state === "in"

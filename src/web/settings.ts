@@ -34,9 +34,9 @@ export function firstDevice(): Device {
 
 const UNLIMITED = "unlimited";
 const ROLES: Record<string, { icon: string; says: string }> = {
-  maker: { icon: "brush", says: "can create apps, up to a daily run limit." },
-  admin: { icon: "shield_person", says: "can create apps and edit the access list." },
-  none: { icon: "block", says: "can't create apps, even if a broader pattern allows it." },
+  maker: { icon: "brush", says: "can create apparitions, up to a daily run limit." },
+  admin: { icon: "shield_person", says: "can create apparitions and edit the access list." },
+  none: { icon: "block", says: "can't create apparitions, even if a broader pattern allows it." },
 };
 
 /** How long ago, in the fewest words. */
@@ -122,7 +122,7 @@ export class Settings extends LitElement {
     const limited = runs && runs.daily !== UNLIMITED;
     return html`
       <h3>Account</h3>
-      <p class="lede">You're signed in with Google. Apparite stores your name with the apps that you save, and counts the screens that you generate each day.</p>
+      <p class="lede">You're signed in with Google. Apparite stores your name with the apparitions that you save, and counts the screens that you generate each day.</p>
       <div class="card who">
         ${face(session, "big")}
         <div><b>${session.name}</b><small>${session.email}</small></div>
@@ -133,7 +133,7 @@ export class Settings extends LitElement {
           ? html`<p>You have <b>${runs.left} of ${runs.daily}</b> runs left today.</p>
               <div class="meter ${runs.left === "0" ? "spent" : ""}"><i style="width:${(100 * Number(runs.left)) / Math.max(1, Number(runs.daily))}%"></i></div>`
           : html`<p><b>No daily run limit</b></p>`}
-        <p class="hint">Generating one screen uses one run. Changing an app's design uses no runs. Your runs reset at midnight UTC.</p>
+        <p class="hint">Generating one screen uses one run. Changing an apparition's design uses no runs. Your runs reset at midnight UTC.</p>
       </div>
       <button class="btn" @click=${() => session.signOut()}>${icon("logout", "s")}Sign out</button>
     `;
@@ -149,7 +149,7 @@ export class Settings extends LitElement {
     ];
     return html`
       <h3>Appearance</h3>
-      <p class="lede">How Apparite looks. This setting doesn't affect the apps that you make, which use their own DESIGN.md.</p>
+      <p class="lede">How Apparite looks. This setting doesn't affect the apparitions that you make, which use their own DESIGN.md.</p>
       <div class="card setting">
         <div><b>Theme</b><small>System uses your computer's setting.</small></div>
         <div class="segmented wide" role="radiogroup" aria-label="Theme">
@@ -209,7 +209,7 @@ export class Settings extends LitElement {
           ${endpoints.map(([id, symbol, name]) => html`<button role="radio" aria-checked=${session.endpoint === id} @click=${() => (session.endpoint = id)}>${icon(symbol, "s")}${name}</button>`)}
         </div>
       </div>
-      <p class="hint">Switching services doesn't change screens that you've already generated. If Apparite generated the app's design, the next screen that you generate also regenerates the design with the selected service.</p>
+      <p class="hint">Switching services doesn't change screens that you've already generated. If Apparite generated the apparition's design, the next screen that you generate also regenerates the design with the selected service.</p>
     `;
   }
 
@@ -265,7 +265,7 @@ export class Settings extends LitElement {
     return html`
       <h3>Access</h3>
       <p class="lede">
-        Control who can create apps, and how many screens they can generate each day. A pattern is an email address, where * matches any text. If an address
+        Control who can create apparitions, and how many screens they can generate each day. A pattern is an email address, where * matches any text. If an address
         matches more than one pattern, the most specific pattern applies: a personal address takes precedence over a domain.
       </p>
       ${this.error ? html`<p class="note bad">${this.error}</p>` : nothing}

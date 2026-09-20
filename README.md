@@ -1,8 +1,10 @@
 # Apparite
 
-A design tool for developers: say what you want and get a mock of it, keep talking to change it ("make it
-lighter", "more playful", "add a settings page"), tap through it into screens that are designed as you go, all
-painted by your [DESIGN.md](https://github.com/google-labs-code/design.md).
+A design tool for developers: say what you want and get an apparition of it — a mock that looks like an app —
+then keep changing it ("make it lighter", "more playful", "add a settings page"), tap through it into screens
+that are designed as you go, all painted by your [DESIGN.md](https://github.com/google-labs-code/design.md). An
+apparition is not an app and does not become one: no data, no logic, nothing behind the glass. It is how you
+explore an idea before you build it.
 
 Under it is an experiment: build a screen from a text prompt using [TypeSafe's Jev](https://docs.typesafe.ai/)
 for the decisions and a small Gemini model for the words. It began by emitting
@@ -26,22 +28,22 @@ and no model calls during navigation. Sample sweeps plan IA from prompts without
 Production routing is unchanged.
 See the [30-prompt results](docs/ia-sample-sweep.md) for the comparison, limitations and reproduction commands.
 
-Apparite is a conversation on the left and the app on the right. Type a description ("Checkout for a sneaker
-store, with order summary") and the mock appears in a phone, tablet or desktop frame in about a second and a
-half. Everything typed after that is about the app that is there. Every decision is listed under the turn it
-belongs to, with its probability. Copy the messages, the theme as CSS variables, or the DESIGN.md.
+Apparite is a conversation on the left and the apparition on the right. Type a description ("Checkout for a
+sneaker store, with order summary") and the mock appears in a phone, tablet or desktop frame in about a second
+and a half. Everything typed after that is about the apparition that is there. Every decision is listed under
+the turn it belongs to, with its probability. Copy the messages, the theme as CSS variables, or the DESIGN.md.
 
-Around that is an app's furniture (`src/web/app.ts`, `src/web/chrome.ts`). A bar names the app, saves and shares
-it, and carries the face of whoever is signed in, with what they have left today and the way out behind it. A
-rail switches between the conversation, the design, the library of what has been saved, and the settings; **+**
-starts another app, and offers the way back for a moment. The device is drawn at its own size and made to fit the
-window, so a phone is always seen whole; how a screen was made (timings, calls, whether the tree is valid) is
-behind an **i**, and the three things to copy are behind one button. What Apparite has to say about what it just
-did (saved, copied, deleted, failed) it says at the foot of the window. The symbols are Material Symbols, the
-font the kit's own Icon already loads. It is light or dark as the computer is, unless Settings says otherwise;
-none of that touches a mock, which its DESIGN.md paints. On a narrow window the rail runs along the foot and the
-conversation and the mock take turns. Where the person is (`#library`, `#settings/access`) is in the address, so
-Back works and a link can name it.
+Around that is an app's furniture (`src/web/app.ts`, `src/web/chrome.ts`). A bar names the apparition, saves and
+shares it, and carries the face of whoever is signed in, with what they have left today and the way out behind
+it. A rail switches between the conversation, the design, the library of what has been saved, and the settings;
+**+** starts another apparition, and offers the way back for a moment. The device is drawn at its own size and
+made to fit the window, so a phone is always seen whole; how a screen was made (timings, calls, whether the tree
+is valid) is behind an **i**, and the three things to copy are behind one button. What Apparite has to say about
+what it just did (saved, copied, deleted, failed) it says at the foot of the window. The symbols are Material
+Symbols, the font the kit's own Icon already loads. It is light or dark as the computer is, unless Settings says
+otherwise; none of that touches a mock, which its DESIGN.md paints. On a narrow window the rail runs along the
+foot and the conversation and the mock take turns. Where the person is (`#library`, `#settings/access`) is in
+the address, so Back works and a link can name it.
 
 ## How a mock is built: Jev fills a tree
 

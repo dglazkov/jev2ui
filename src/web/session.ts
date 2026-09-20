@@ -123,8 +123,8 @@ class Session {
       <main class="gate">
         <div class="gate-words">
           <p class="brand">${mark()}<b>Apparite</b></p>
-          <h1>Describe what you want.<br />Get an app.<br />Keep talking.</h1>
-          <p class="lede">Describe a screen, and then tap through the preview that Apparite generates. Every message after that changes the preview.</p>
+          <h1>Describe what you want.<br />Get an apparition.<br />Keep changing it.</h1>
+          <p class="lede">An apparition is a mock that looks like an app. Describe a screen, tap through the apparition that Apparite generates, and change it with every message. Explore an idea before you build it.</p>
           ${this.state === "out" ? html`<button class="google" @click=${() => this.signIn()}>${google}Sign in with Google</button>` : nothing}
           ${this.state === "stranger"
             ? html`<div class="stranger">
@@ -135,7 +135,7 @@ class Session {
             : nothing}
           ${this.state === "loading" ? html`<p class="fine">${icon("hourglass_top", "s")}Loading…</p>` : nothing}
           ${this.error ? html`<p class="note bad">${this.error}</p>` : nothing}
-          <p class="fine">${icon("info", "s")}<span>Generating screens uses model capacity, so everyone on the access list has a daily run limit. You don't need to sign in to open an app that someone shared with you.</span></p>
+          <p class="fine">${icon("info", "s")}<span>Generating screens uses model capacity, so everyone on the access list has a daily run limit. You don't need to sign in to open an apparition that someone shared with you.</span></p>
         </div>
         <div class="gate-show" aria-hidden="true">
           <div class="device phone"><img src="/gate-screen.jpg" alt="" /></div>

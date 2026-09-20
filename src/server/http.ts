@@ -169,27 +169,27 @@ async function accessList(url: URL, req: IncomingMessage, res: ServerResponse, a
 async function savedApps(load: Load, id: string, req: IncomingMessage, res: ServerResponse, auth: any) {
   const refuse = (status: number, why: string) => void ((res.statusCode = status), res.end(why));
   const json = (value: unknown) => void (res.setHeader("Content-Type", "application/json"), res.end(JSON.stringify(value)));
-  if (!auth.firebase) return refuse(404, "This server doesn't save apps, because it doesn't require sign-in.");
+  if (!auth.firebase) return refuse(404, "This server doesn't save apparitions, because it doesn't require sign-in.");
   const apps = await load("apps");
   const person = await auth.whoIs(req.headers.authorization);
   if (id && req.method === "GET") {
     const found = await apps.open(id, person);
-    return found ? json(found) : refuse(404, "That app doesn't exist, or it isn't shared.");
+    return found ? json(found) : refuse(404, "That apparition doesn't exist, or it isn't shared.");
   }
   if (!person) return refuse(401, "Sign in to continue.");
   if (!id && req.method === "GET") return json({ apps: await apps.mine(person) });
   const grant = await auth.access(person);
   if (!id && req.method === "POST") {
-    if (!grant) return refuse(403, "To save an app, your address must be on the access list.");
+    if (!grant) return refuse(403, "To save an apparition, your address must be on the access list.");
     const saved = await apps.save(person, await readJson(req, LARGEST_APP).catch(() => undefined));
-    return "wrong" in saved ? refuse(400, `Can't save this app: ${saved.wrong}`) : json(saved);
+    return "wrong" in saved ? refuse(400, `Can't save this apparition: ${saved.wrong}`) : json(saved);
   }
   if (id && req.method === "PATCH") {
     const { visibility } = await readJson(req).catch(() => ({}));
     if (visibility !== "private" && visibility !== "link") return refuse(400, "Visibility must be private or link.");
-    return (await apps.share(id, person, visibility)) ? json({ id, visibility }) : refuse(404, "You don't have an app with that ID.");
+    return (await apps.share(id, person, visibility)) ? json({ id, visibility }) : refuse(404, "You don't have an apparition with that ID.");
   }
-  if (id && req.method === "DELETE") return (await apps.forget(id, person, grant?.role === "admin")) ? json({ id }) : refuse(404, "You don't have an app with that ID.");
+  if (id && req.method === "DELETE") return (await apps.forget(id, person, grant?.role === "admin")) ? json({ id }) : refuse(404, "You don't have an apparition with that ID.");
   refuse(405, "This endpoint doesn't support that request method.");
 }
 
