@@ -28,5 +28,5 @@ gcloud run deploy jev2ui --project "$PROJECT" --region "$REGION" --source . \
   --execution-environment gen2 \
   --add-volume "name=photos,type=cloud-storage,bucket=$PROJECT-photos,mount-options=uid=1000;gid=1000" \
   --add-volume-mount volume=photos,mount-path=/data/photos \
-  --min-instances 0 --max-instances 1 --concurrency 40 --cpu 1 --memory 1Gi --timeout 900 \
+  --min-instances 0 --max-instances 1 --concurrency 40 --cpu 1 --cpu-boost --memory 1Gi --timeout 900 \
   --allow-unauthenticated --quiet

@@ -1,5 +1,9 @@
 // The deployed server: the routes of http.ts, and the built front end
-// (`npm run build`) beside them. The session is the browser's
+// (`npm run build`) beside them. It runs as one file (`build:server`): under
+// tsx, with every package found file by file in node_modules, loading the
+// pipelines took 0.7 s on a laptop and some 3.5 s of a cold Cloud Run
+// instance, and the first person to click paid it. As one file it is 0.08 s,
+// and it is done before the server listens, so nobody pays it at all. The session is the browser's
 // (shared/journey.ts), so nothing here has to last: the designs already read
 // (design-source.ts) are a saving, and made photographs are files.
 
@@ -34,7 +38,21 @@ function built(pathname: string): string | undefined {
 
 if (!existsSync(join(DIST, "index.html"))) throw new Error("nothing is built: run `npm run build` first");
 
-const routes = api((module) => import(`./${module}.js`));
+// Every module the routes load by name (http.ts), spelled out so that the bundler can see them.
+const MODULES: Record<string, () => Promise<unknown>> = {
+  apps: () => import("./apps.js"),
+  auth: () => import("./auth.js"),
+  baseline: () => import("./baseline.js"),
+  change: () => import("./change.js"),
+  "design-source": () => import("./design-source.js"),
+  hybrid: () => import("./hybrid.js"),
+  jobs: () => import("./jobs.js"),
+  "mock/pipeline": () => import("./mock/pipeline.js"),
+  "photos/generate": () => import("./photos/generate.js"),
+};
+const routes = api((module) => MODULES[module]?.() ?? Promise.reject(new Error(`main.ts does not know the module "${module}"`)));
+// Loaded now, while the instance is starting, and not when the first person clicks.
+await Promise.all(Object.values(MODULES).map((load) => load()));
 
 createServer(async (req, res) => {
   try {

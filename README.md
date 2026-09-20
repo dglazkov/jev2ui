@@ -459,6 +459,13 @@ npm run build && npm start          # http://localhost:8080, or wherever PORT sa
 PROJECT=my-project ./deploy.sh      # the same, in a container (Dockerfile), on Cloud Run
 ```
 
+`npm run build` makes the server one file (`dist-server/main.js`, esbuild) beside the front end. That is for
+the cold start. Run from source under tsx, with every package found file by file in `node_modules`, loading
+the pipelines took 0.7 s on a laptop and about 3.5 s of a cold Cloud Run instance, and because they were
+loaded when first needed, the first person to click paid it. As one file it takes 0.08 s, and it happens
+before the server listens. One package stays outside the file: `@google/design.md` reads a config that sits
+beside its own code.
+
 The session is the browser's, the shelf of baked components included, so the process holds nothing that
 matters: designs already read, which are only a saving. It is kept to one instance to bound what a busy day
 can spend, not because a second would be wrong. Made photographs are kept in `.cache/photos`, or wherever `PHOTOS_DIR` says;
