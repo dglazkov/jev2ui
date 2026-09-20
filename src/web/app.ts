@@ -19,7 +19,7 @@ import type { DesignReport, Theme } from "../shared/design.js";
 import type { Journey, Via } from "../shared/journey.js";
 import type { Baked } from "../shared/kit.js";
 import type { SavedAbout, SavedApp, SavedTurn, Visibility } from "../shared/saved.js";
-import { receiptOf, type Option, type PaintChange, type ReceiptLine, type TurnRequest, type TurnResponse } from "../shared/turn.js";
+import { receiptOf, type Option, type PaintChange, type ScreenAbout, type TurnRequest, type TurnResponse } from "../shared/turn.js";
 import { session, streamEvents } from "./session.js";
 
 const EXAMPLES = [
@@ -62,8 +62,10 @@ interface Screen {
   firstPaintMs?: number;
   running: boolean;
   builtWith?: string;
-  /** What it was made from, so that it can be made again; `notes` are what has been said about it since. */
-  request: { prompt: string; journey?: Journey; fresh?: boolean; notes?: string[] };
+  /** The plan it was built from: its kind, its parts, their anatomy. What it takes to make it again with one part changed. */
+  plan?: Record<string, unknown> & { archetype: string; blocks: string[] };
+  /** What it was made from, so that it can be made again; `notes` are what has been said about it since, and `edit` what was settled by saying it. */
+  request: { prompt: string; journey?: Journey; fresh?: boolean; notes?: string[]; edit?: { plan: Record<string, unknown>; blocks: string[] } };
 }
 
 /** Everything a turn can change, as it stood before the turn. Screens are replaced and never edited once made, so a copy of the map is enough. */
@@ -140,7 +142,8 @@ export class App extends LitElement {
   private nextId = 1;
   private nextTurn = 1;
   private shownTurns = 0;
-  private abort: AbortController | undefined;
+  /** Every screen being made. More than one can be: "move the form to a screen of its own" makes two. */
+  private making = new Set<AbortController>();
   private designRequest = 0;
   private editTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -167,6 +170,12 @@ export class App extends LitElement {
 
   private get current(): Screen | undefined {
     return this.stack.at(-1);
+  }
+
+  /** Stops whatever is being made: what it was for is about to be gone. */
+  private stop() {
+    for (const abort of this.making) abort.abort();
+    this.making.clear();
   }
 
   private get made(): Screen[] {
@@ -211,7 +220,7 @@ export class App extends LitElement {
   private undo() {
     const turn = this.turns.at(-1);
     if (!turn?.before) return;
-    this.abort?.abort();
+    this.stop();
     this.designRequest++;
     const b = turn.before;
     Object.assign(this, { app: b.app, nav: b.nav, screens: b.screens, stack: b.stack, nextId: b.nextId, choice: b.choice, markdown: b.markdown, seed: b.seed, change: b.change, report: b.report });
@@ -233,11 +242,13 @@ export class App extends LitElement {
 
     this.reading = true;
     try {
+      const about = (screen: Screen): ScreenAbout => ({ id: screen.id, title: screen.title, archetype: screen.archetype, ...(screen.plan ? { blocks: screen.plan.blocks } : {}) });
       const request: TurnRequest = {
         message,
         app: this.app,
+        others: this.made.filter((screen) => screen !== here && !screen.running && screen.title).map(about),
         design: this.customDesign ? { markdown: this.markdown } : { brief: this.app, seed: this.seed, change: this.change },
-        showing: { title: here.title, archetype: here.archetype, decisions: [...here.log.flatMap((entry) => (entry.kind === "stage" ? entry.decisions : [])), ...(this.report?.decisions ?? [])].slice(0, 60).map(({ question, answer }) => ({ question, answer })) },
+        showing: { ...about(here), decisions: [...here.log.flatMap((entry) => (entry.kind === "stage" ? entry.decisions : [])), ...(this.report?.decisions ?? [])].slice(0, 60).map(({ question, answer }) => ({ question, answer })) },
         // A message that follows a question of the tool's is the answer to it.
         ...(asked?.outcome === "said" && asked.options?.length && asked.text ? { answering: { message: asked.said, question: asked.text } } : {}),
       };
@@ -265,14 +276,15 @@ export class App extends LitElement {
           this.create(message, turn);
           break;
         case "screen": {
+          // What the new screen takes with it leaves the screen it was on.
+          if (answer.screen) this.remake(answer.screen, message, turn, here);
           const screen = this.open(`asked:${turn.id}`, false, { prompt: this.app, journey: { app: this.app, from: { title: here.title, archetype: here.archetype }, via: { kind: "asked", label: message }, ...(this.nav ? { nav: this.nav } : {}) } });
           this.stack = [...this.stack, screen];
           void this.run(screen, turn);
           break;
         }
         case "remake":
-          turn.on = here.title;
-          void this.run(this.again(here, message), turn);
+          this.remake(answer.screen, message, turn, here);
           break;
       }
     } catch (error) {
@@ -283,8 +295,28 @@ export class App extends LitElement {
     }
   }
 
+  /** Makes a screen again as the message asked: the one it named, or the one showing. */
+  private remake(asked: TurnResponse["screen"], message: string, turn: Turn, here: Screen) {
+    const old = this.made.find((screen) => screen.id === asked?.id) ?? here;
+    turn.on = old.title;
+    turn.lines = [...turn.lines, ...(asked?.lines ?? [])];
+    // The person should see what they changed, and it may not be the screen they were on: the way back stops there.
+    this.stack = this.stack.includes(old) ? this.stack.slice(0, this.stack.indexOf(old) + 1) : [old];
+    // To the letter, where the screen's plan is known and Jev could tell what was meant; with the message in mind, otherwise.
+    const exact = asked && !asked.blunt && old.plan ? asked : undefined;
+    const blocks = exact ? [...old.plan!.blocks.filter((block) => !exact.remove.includes(block)), ...exact.add] : undefined;
+    const kept: Record<string, unknown> = {};
+    if (exact)
+      for (const sent of old.messages as Array<Record<string, any>>) {
+        const part = String(sent.updateDataModel?.path ?? "").slice(1);
+        if (part && !part.includes("/") && !exact.rewrite.includes(part) && !exact.remove.includes(part)) kept[part] = sent.updateDataModel.value;
+      }
+    void this.run(this.again(old, message, blocks && { plan: old.plan!, blocks }), turn, kept);
+  }
+
   /** A new description starts a new app, with a design of its own. */
   private create(prompt: string, turn: Turn) {
+    this.stop();
     this.app = prompt;
     this.seed = 0;
     this.change = {};
@@ -410,7 +442,7 @@ export class App extends LitElement {
    * A screen to take the place of `old`, made from the same request, or from that and a `note` of what was asked for.
    * Whatever was reached from the old one goes with it.
    */
-  private again(old: Screen, note?: string): Screen {
+  private again(old: Screen, note?: string, edit?: Screen["request"]["edit"]): Screen {
     const forget = (screen: Screen) => {
       for (const [key, other] of [...this.screens]) {
         if (other === screen) this.screens.delete(key);
@@ -422,7 +454,7 @@ export class App extends LitElement {
     // It may have been the screen that established the navigation bar; if so, it establishes it again.
     const request = old.request.journey && !old.request.journey.nav ? old.request : { ...old.request, ...(old.request.journey && this.nav ? { journey: { ...old.request.journey, nav: this.nav } } : {}) };
     // Made again as it was means made anew: a custom component is baked afresh. Made again with a note, what was baked may well still do.
-    const screen = this.open(old.key, old.topLevel, note ? { ...request, fresh: false, notes: [...(request.notes ?? []), note] } : { ...request, fresh: true });
+    const screen = this.open(old.key, old.topLevel, note ? { ...request, fresh: false, notes: [...(request.notes ?? []), note], ...(edit ? { edit } : {}) } : { ...request, fresh: true });
     for (const key of aliases) this.screens.set(key, screen);
     this.stack = this.stack.map((one) => (one === old ? screen : one));
     this.tick++;
@@ -452,13 +484,14 @@ export class App extends LitElement {
     return [...shelf.values()];
   }
 
-  private async run(screen: Screen, turn?: Turn) {
+  /** `kept` are the words of the parts that stay as they are, by their path: no writer is asked for those again. */
+  private async run(screen: Screen, turn?: Turn, kept: Record<string, unknown> = {}) {
     if (turn) turn.screen = screen.id;
     // A screen made anew has no use for the shelf; any other is told what the app has baked, as of now.
     const shelf = screen.request.journey && !screen.request.fresh ? this.shelf : [];
-    const request = shelf.length ? { ...screen.request, journey: { ...screen.request.journey!, shelf } } : screen.request;
-    this.abort?.abort();
-    const abort = (this.abort = new AbortController());
+    const request = { ...screen.request, ...(shelf.length ? { journey: { ...screen.request.journey!, shelf } } : {}), ...(screen.request.edit ? { edit: { ...screen.request.edit, kept } } : {}) };
+    const abort = new AbortController();
+    this.making.add(abort);
     const note = (tone: "bad" | "plain", text: string, at = 0) => void (screen.log = [...screen.log, { kind: "note", at, tone, text }]);
     try {
       // Every screen of an app is painted by the same design: the developer's file, or the same draw of Jev's mix with what they have asked of it.
@@ -468,6 +501,9 @@ export class App extends LitElement {
             this.designRequest++; // a reading in flight is older than this one
             this.applyDesign(event.report, event.markdown);
             screen.builtWith = event.report.structure;
+            break;
+          case "plan":
+            screen.plan = event.plan;
             break;
           case "a2ui": {
             screen.messages.push(event.message);
@@ -510,6 +546,7 @@ export class App extends LitElement {
         if (turn && !screen.messages.length) turn.text = (error as Error).message;
       }
     } finally {
+      this.making.delete(abort);
       screen.running = false;
       // A screen abandoned before it was planned would be a dead end; forget it so the tap can be tried again.
       if (!screen.messages.length) {
@@ -552,7 +589,7 @@ export class App extends LitElement {
   }
 
   private restore(app: SavedApp) {
-    this.abort?.abort();
+    this.stop();
     this.app = app.app;
     this.nav = app.nav;
     this.choice = app.design.choice === CUSTOM ? CUSTOM : AUTO;
@@ -835,6 +872,7 @@ export class App extends LitElement {
               }}
             >
               <div class="chips">${chips.map((chip) => html`<button type="button" ?disabled=${this.reading} @click=${() => this.say(chip)}>${chip}</button>`)}</div>
+              ${this.current?.title ? html`<p class="about" title="What you say is about the screen that is showing, unless you name another.">about <b>${this.current.title}</b>${this.made.length > 1 ? ", unless you name another screen" : ""}</p>` : nothing}
               <div class="box">
                 <textarea
                   rows="2"

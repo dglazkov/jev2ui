@@ -159,16 +159,31 @@ adjusted would become another app. So Jev is asked **about the change and not th
   and asked again the typefaces come back *elegant*. A choice that comes back as it was gives way to the next
   likeliest: the person asked for another.
 
+- **Each part the screen could have.** For every block its kind of screen allows, a Choice: *add*, *remove* or
+  *keep*, with the block described as a person would speak of it ("the buttons that act on the whole screen …
+  such as Buy now"). And for every part it has, a Noul: is the message about what that part says?
+- **Which screen.** "This screen" is the one showing, and the box says which that is. A message that uses the
+  words of another screen's title is about that screen, and is shown it.
+
 The dials and gates are asked whatever the kind of turn, because Jev calls "no cards" a change to what the
 screen is made of, and the cards gate opens all the same. Then code acts:
 
 | The message is about | What happens | Cost |
 |---|---|---|
 | the look | the design is mixed again with the steps and the choices; every screen repaints at once | one or two Jev requests, no run |
-| the screen's structure or words | the screen showing is made again with the message as a note on its description | a run |
-| another screen | it is made, in the same app, as a tap would have made it (`via: asked`) | a run |
+| a part to add or remove | the screen is made again **to the letter**: its parts are what was asked for, whatever Jev's odds; the plan it had holds for every part that stays, and so do their words, which no writer is asked for again | a run, mostly unspent: only a new part is written |
+| what some parts say | those parts are written again with the message as a note; the rest keep their words | a run |
+| the screen, but no part Jev could name ("show them as a grid") | the whole screen is planned and written again with the message in mind | a run |
+| another screen | it is made, in the same app, as a tap would have made it (`via: asked`). If it takes a part with it ("move shipping and payment to a screen of their own"), the screen it left is made again without that part | a run, or two |
 | another app | a new app, with a design of its own | a run |
 | where things sit, a question, or nothing Jev could map | Gemini says so, or answers, or asks what was meant | one small Gemini call |
+
+**What is asked for is a decision, not a hint.** The first version passed the message along as a note on the
+description and planned the screen again. A developer asked for a "buy now" button on a checkout; Jev said yes
+at 0.67; and the plan dropped it, because a block the archetype does not expect needs 0.75, a bar that is there
+to keep vague prompts from sprouting buttons. It also wrote every word on the screen again. So now the server
+sends the plan with each screen (`plan` event), the browser sends it back with the parts as asked (`edit`), and
+`readPlan` takes those parts as settled. What makes a screen its kind still stays: a feed keeps its list.
 
 **The reply is a receipt.** When something changed, nothing writes the tool's side of the conversation: code
 lists what differs between the design before and after ("accent lightness: L 0.59 → L 0.71"), and the decisions
@@ -563,12 +578,16 @@ rather than a benchmark.
   comes out as a dashboard with a ring on top, and a tall component shares the screen with a list.
 - A baked component is checked, not valid by construction. The lint cannot tell whether it draws the right
   thing, or draws at all. An error in the browser is reported in the trace, not sent back to the baker.
-- A message changes the look precisely and everything else bluntly: a change to a screen's structure or words
-  makes the whole screen again with a note, so its other words change too. Changing one block, or one part's
-  words, is not built; nor has Jev been probed on it.
+- Parts can be added and removed, and a part's words written again, to the letter. What is inside a part cannot
+  yet: "show them as a grid", "put prices on the items" and "use switches" plan the whole screen again with the
+  message in mind, and its words change. A part that is written again is written whole: one item cannot be edited.
+- The questions about parts and screens were tried on some twenty messages, not probed the way the paint
+  questions were.
+- A custom component on a screen that is made again is baked again, unless the app's shelf has it.
 - Moods ("more playful", "more corporate") are carried almost wholly by the typefaces; the dials barely move
   for them.
 - Only a design that Jev mixed can be changed by talking. With your own DESIGN.md the tool says so.
+- A checkout with no form now always has its buttons: nothing else could commit it.
 - A message is read on its own, with the question it answers if the tool had just asked one. "A bit more" and
   "undo that" are not understood; there is a button for the second.
 - What the person says reaches the screen it was said about, as a note. It does not yet reach the screens made

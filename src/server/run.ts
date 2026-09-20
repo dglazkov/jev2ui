@@ -80,6 +80,11 @@ export class Run {
     return { ...result, stage };
   }
 
+  /** The plan the screen is built from, for whoever may want it built again as it is. */
+  plan(plan: Record<string, unknown> & { archetype: string; blocks: string[] }) {
+    this.push({ type: "plan", at: this.at, plan });
+  }
+
   design(report: DesignReport, markdown?: string) {
     this.push({ type: "design", at: this.at, report, ...(markdown ? { markdown } : {}) });
   }

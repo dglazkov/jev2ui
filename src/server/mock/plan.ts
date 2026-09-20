@@ -329,6 +329,32 @@ export interface ScreenPlan {
   contained: boolean;
 }
 
+/**
+ * The plan of a screen that is made again to the developer's word: what was planned afresh, for the parts that are
+ * new, and what the screen had, for everything that stays. `sent` came from a browser, so only what is well-formed is taken.
+ */
+export function keepPlan(fresh: ScreenPlan, sent: Record<string, unknown>, blocks: Block[]): ScreenPlan {
+  const was = sent as Partial<ScreenPlan>;
+  const stays = (block: Block) => blocks.includes(block) && Array.isArray(was.blocks) && was.blocks.includes(block);
+  const list = was.list;
+  const listOk = list && list.layout in LAYOUT && list.leading in LEADING && list.trailing in TRAILING && Array.isArray(list.parts) && list.parts.every((part) => part in ITEM_PARTS);
+  const subject = (s: unknown): s is PictureSubject => !!s && typeof (s as PictureSubject).subject === "string" && (s as PictureSubject).subject in SUBJECT_OPTIONS;
+  return {
+    ...fresh,
+    blocks,
+    ...(typeof was.topLevel === "boolean" ? { topLevel: was.topLevel } : {}),
+    ...(typeof was.person === "boolean" ? { person: was.person } : {}),
+    ...(typeof was.appBarAction === "string" || was.appBarAction === null ? { appBarAction: Object.values(APP_BAR_ACTIONS).some((a) => a.icon === was.appBarAction) ? was.appBarAction : fresh.appBarAction } : {}),
+    ...(stays("list") && listOk ? { list: { layout: list.layout, leading: list.leading, trailing: list.trailing, parts: [...list.parts] } } : {}),
+    ...(stays("filters") && typeof was.search === "boolean" ? { search: was.search } : {}),
+    ...(stays("stats") && typeof was.statDeltas === "boolean" ? { statDeltas: was.statDeltas } : {}),
+    ...(stays("facts") && typeof was.factsTotal === "boolean" ? { factsTotal: was.factsTotal } : {}),
+    ...(stays("custom") && was.custom && was.custom.use in CUSTOM_USE && was.custom.size in CUSTOM_SIZE ? { custom: { use: was.custom.use, size: was.custom.size, linked: Boolean(was.custom.linked) && blocks.includes("list") } } : {}),
+    ...(typeof was.symbol === "string" && /^[a-z0-9_]{1,40}$/.test(was.symbol) ? { symbol: was.symbol } : {}),
+    ...(subject(was.pictures?.hero) && subject(was.pictures?.items) ? { pictures: { hero: { subject: was.pictures.hero.subject, p: 1 }, items: { subject: was.pictures.items.subject, p: 1 } } } : {}),
+  };
+}
+
 export function planQuestions(): Questions {
   const q: Questions = {
     archetype: choice(ask("What kind of screen is this?"), Object.fromEntries(Object.entries(ARCHETYPES).map(([k, v]) => [k, v.criteria]))),
@@ -376,7 +402,8 @@ export function planQuestions(): Questions {
   return q;
 }
 
-export function readPlan(answers: Record<string, any>, known: { topLevel?: boolean; among?: string[] } = {}): { plan: ScreenPlan; screenIcon: string | null; decisions: Decision[] } {
+/** `known.blocks` are the parts the developer has settled by asking: they are the screen's parts, whatever the odds. */
+export function readPlan(answers: Record<string, any>, known: { topLevel?: boolean; among?: string[]; blocks?: string[] } = {}): { plan: ScreenPlan; screenIcon: string | null; decisions: Decision[] } {
   const decisions: Decision[] = [];
   const pick = <T extends string>(id: string, label: string): T => {
     decisions.push({ id, question: label, answer: answers[id].choice, p: answers[id].probabilities[answers[id].choice] });
@@ -400,6 +427,11 @@ export function readPlan(answers: Record<string, any>, known: { topLevel?: boole
   const shape = ARCHETYPES[archetype];
   let blocks = shape.order.filter((block) => {
     const p: number = answers[`has_${block}`].noul;
+    if (known.blocks) {
+      const asked = known.blocks.includes(block);
+      decisions.push({ id: `has_${block}`, question: `${block}?`, answer: asked ? "yes" : "no", p, note: "settled by what the developer asked for" });
+      return asked;
+    }
     const expected = shape.expects.includes(block);
     const required = !!shape.requires?.includes(block);
     const needs = block === "custom" ? CUSTOM_THRESHOLD : expected ? EXPECTED_THRESHOLD : EXTRA_THRESHOLD;
@@ -421,14 +453,19 @@ export function readPlan(answers: Record<string, any>, known: { topLevel?: boole
   }
   // Independent answers under-include as easily as they over-include. A thin screen takes its next likeliest blocks.
   const spare = shape.order.filter((b) => !blocks.includes(b) && b !== "banner" && b !== "custom").sort((x, y) => answers[`has_${y}`].noul - answers[`has_${x}`].noul);
-  while (blocks.length < (shape.atLeast ?? 1) && spare.length) {
+  while (!known.blocks && blocks.length < (shape.atLeast ?? 1) && spare.length) {
     const block = spare.shift()!;
     blocks = shape.order.filter((b) => blocks.includes(b) || b === block);
     decisions.find((d) => d.id === `has_${block}`)!.answer = "yes";
     decisions.find((d) => d.id === `has_${block}`)!.note = `added: a ${archetype} screen needs at least ${shape.atLeast} parts`;
   }
   // A form's submit button is the screen's call to action; a second set of buttons only competes with it.
-  if (blocks.includes("form")) blocks = blocks.filter((b) => b !== "actions");
+  if (blocks.includes("form") && !known.blocks) blocks = blocks.filter((b) => b !== "actions");
+  // A checkout is where the person commits. With no form to submit, it needs a button to do it with.
+  if (archetype === "checkout" && !known.blocks && !blocks.includes("form") && !blocks.includes("actions")) {
+    blocks = shape.order.filter((b) => blocks.includes(b) || b === "actions");
+    Object.assign(decisions.find((d) => d.id === "has_actions")!, { answer: "yes", note: "added: a checkout with no form has no other way to commit" });
+  }
 
   const has = (b: Block) => blocks.includes(b);
   // How the person got here settles this without asking: the navigation bar leads to main screens, everything else drills in.

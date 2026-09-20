@@ -770,6 +770,16 @@ kit-surface.layer.over .k-scroll {
   color: var(--muted);
 }
 
+.say .about {
+  margin: 0 0 6px 4px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.say .about b {
+  color: var(--ink);
+}
+
 .say .box {
   display: flex;
   gap: 8px;

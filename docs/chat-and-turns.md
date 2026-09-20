@@ -207,3 +207,22 @@ The chat column, the turns, and paint: `src/shared/turn.ts`, `src/server/change.
 - **Your own DESIGN.md cannot be changed by talking**; the tool says so.
 - Saved apps are version 2 (turns, and the design's `change`); version 1 opens as before. `stack` is no longer
   part of the id.
+
+## What a first real session showed (2026-09-19, later)
+
+A checkout for a sneaker store. "Move shipping and payment into a separate screen" made the new screen and left
+the form where it was. "Add a buy now button" did nothing: Jev said yes at 0.67 and the plan wanted 0.75 for a
+block a checkout does not expect. And nothing said which screen "this screen" was. All three come from the same
+mistake, which this note had seen coming and step 1 made anyway: what the person asks for was passed along as a
+hint, where it should have been a decision. Built in answer, ahead of steps 2 and 3:
+
+- **Block gates** (add, remove, keep for every block the archetype allows) and **part gates** (is the message
+  about what this part says?), asked on every turn beside the paint questions.
+- **Pins and kept words**: the server sends each screen's plan; a screen made again takes its parts as settled,
+  keeps the plan it had for what stays, and is sent the words that stay, so only what is new is written.
+- **Which screen**: the box says what "this" is; a Choice among the app's screens finds one that is named, and
+  Jev is told which screens exist, so that naming one does not ask for a new one.
+- "Move X to a screen of its own" is a new screen *and* the old one without X.
+
+Still to come from steps 2 and 3: the anatomy inside a block (layout, leading, trailing, item parts) behind
+gates of its own; editing one item; the app's description growing with what is said.

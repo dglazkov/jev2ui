@@ -23,8 +23,10 @@ export const SAVED_SCREEN = z.object({
   stats: z.record(z.unknown()).optional(),
   firstPaintMs: z.number().optional(),
   builtWith: z.string().max(200).optional(),
+  /** The plan it was built from (shared/events.ts), so that it can be made again with one part changed and the rest as it is. */
+  plan: z.record(z.unknown()).optional(),
   /** What it was made from, so that whoever opens the app can have it made again. */
-  request: z.object({ prompt: z.string().max(4000), journey: z.record(z.unknown()).optional(), fresh: z.boolean().optional(), notes: z.array(z.string().max(2000)).max(12).optional() }),
+  request: z.object({ prompt: z.string().max(4000), journey: z.record(z.unknown()).optional(), fresh: z.boolean().optional(), notes: z.array(z.string().max(2000)).max(12).optional(), edit: z.object({ plan: z.record(z.unknown()), blocks: z.array(z.string().max(40)).max(20) }).optional() }),
 });
 
 /** A turn of the chat that made the app (shared/turn.ts), as the browser showed it: what was said, and what came of it. */

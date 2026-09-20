@@ -27,7 +27,8 @@ import type { PipelineEvent } from "../../shared/events.js";
 import type { Journey } from "../../shared/journey.js";
 import { bakeCustom, shelfFrom } from "./bake.js";
 import { destination } from "./link.js";
-import { applyDesign, planQuestions, readPlan, type ScreenPlan } from "./plan.js";
+import { BLOCKS, applyDesign, keepPlan, planQuestions, readPlan, type Block, type ScreenPlan } from "./plan.js";
+import type { ScreenEdit } from "../../shared/turn.js";
 import { Pictures, itemWords } from "./pictures.js";
 import { SYSTEM_PROMPT, partPrompt, partSchema, screen, type Part } from "./screen.js";
 import { refineActions, refineBanner, refineField, refineGroup, refineItems, refineNav, refineStats, type Decoration } from "./refine.js";
@@ -58,14 +59,19 @@ class Decorations {
  * With a `journey`, the screen is the one a tap leads to, in the same app as the screen it was tapped on.
  * `fresh` is set when the developer asks for a screen again: whatever is custom on it is baked anew.
  * `notes` are what they have said about this screen since it was first made; it is made again with them in mind.
+ * `edit` is what they settled by saying it: the parts the screen has, the plan that holds for the parts that stay, and
+ * the words that stay. A part whose words stay has no writer, no refinement and no photograph looked for: it is sent as it was.
  */
-export function runMock(described: string, source?: DesignSource, journey?: Journey, fresh = false, notes: string[] = []): AsyncGenerator<PipelineEvent> {
+export function runMock(described: string, source?: DesignSource, journey?: Journey, fresh = false, notes: string[] = [], edit?: ScreenEdit): AsyncGenerator<PipelineEvent> {
   const markdown = source && "markdown" in source ? source.markdown : undefined;
   const run = new Run("mock");
   const surfaceId = SURFACE_ID;
   const to = journey && destination(journey);
   // Jev and the writers read the notes as part of the description: they are the developer's words as much as it is.
   const prompt = [to?.screen ?? described, ...(notes.length ? [`The developer has seen this screen and asked for these changes, which come before anything above that they contradict:\n${notes.map((note) => `- ${note}`).join("\n")}`] : [])].join("\n\n");
+
+  const kept: Record<string, any> = edit?.kept ?? {};
+  const settled = edit?.blocks.filter((block): block is Block => (BLOCKS as readonly string[]).includes(block));
 
   return run.drive(async () => {
     const streams = new ContentStreams(run, surfaceId);
@@ -142,12 +148,13 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
     };
 
     // t=0: the header is needed whatever the plan turns out to be.
-    const header = write("header");
+    const header: Promise<any> = kept.header ? Promise.resolve(kept.header) : write("header");
     if (to) run.trace({ stage: `Link: ${to.screen}`, ms: 0, detail: `reached by ${to.reachedBy}` });
     const designing = loadDesign(source ?? { brief: journey?.app ?? prompt });
     const state = to ? { first_screen: journey!.app, reached_by: to.reachedBy, screen: prompt } : { screen: prompt };
     const planned = await run.askJev("Jev: plan the screen", state, planQuestions());
-    const read = readPlan(planned.answers, to ? { topLevel: to.topLevel, among: to.among } : {});
+    const was = typeof edit?.plan.archetype === "string" ? [edit.plan.archetype] : undefined;
+    const read = readPlan(planned.answers, { ...(to ? { topLevel: to.topLevel, among: to.among } : {}), ...(settled ? { blocks: settled, ...(was ? { among: was } : {}) } : {}) });
     run.trace({ stage: planned.stage, ms: planned.ms, decisions: read.decisions, tokens: { input: planned.inputTokens, output: 0 } });
 
     const { design, read: look, report, mixed } = await designing.loaded;
@@ -163,8 +170,10 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
       decisions: look.decisions,
       tokens: { input: designing.fresh ? look.jevInputTokens : 0, output: 0 },
     });
-    const designed = applyDesign(read.plan, look);
+    // What stays of the screen keeps the plan it had; what is new takes the plan just made.
+    const designed = applyDesign(edit && settled ? keepPlan(read.plan, edit.plan, read.plan.blocks) : read.plan, look);
     plan = designed.plan;
+    run.plan(plan as unknown as Record<string, unknown> & { archetype: string; blocks: string[] });
     pictures.drawn = plan.illustrated;
     if (designed.overruled.length) run.trace({ stage: `${design.name} overrules the plan: ${designed.overruled.join(", ")}`, ms: 0 });
 
@@ -173,14 +182,16 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
     // The lead picture is of what the header names. The description will not do: it lists what is on the screen, and a picture of that is a picture of a phone.
     if (plan.blocks.includes("hero")) {
       const shown = (url: string) => run.send({ updateDataModel: { surfaceId, path: "/hero", value: { imageUrl: url } } });
-      if (typeof carried === "string") shown(resized(carried, 960, 540));
+      if (kept.hero) run.send({ updateDataModel: { surfaceId, path: "/hero", value: kept.hero } });
+      else if (typeof carried === "string") shown(resized(carried, 960, 540));
       else streams.spawn((async () => pictures.find({ ...plan.pictures.hero, of: itemWords(await header) || prompt, ratio: "16:9", size: [960, 540] }, shown))());
     }
 
     // A profile opens with the person's portrait: the one from the list they were tapped in, if that is how the person got here.
     if (plan.person && plan.imagery) {
       const shown = (url: string) => run.send({ updateDataModel: { surfaceId, path: "/person", value: { imageUrl: url } } });
-      if (typeof carried === "string") shown(resized(carried, 320, 320));
+      if (kept.person) run.send({ updateDataModel: { surfaceId, path: "/person", value: kept.person } });
+      else if (typeof carried === "string") shown(resized(carried, 320, 320));
       else streams.spawn((async () => pictures.find({ subject: "portrait", of: itemWords(await header) || prompt, ratio: "1:1", size: [320, 320] }, shown))());
     }
 
@@ -194,10 +205,13 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
     if (plan.custom) streams.spawn(bakeCustom(run, surfaceId, prompt, plan, { ...setting, voice: setting.voice || (mixed ? parseDesign(mixed).voice : "") }, shelfFrom(journey?.shelf), fresh));
     const parts: Part[] = ["header", ...(plan.topLevel && !nav ? (["nav"] as Part[]) : []), ...plan.blocks.filter((b): b is Exclude<typeof b, "hero" | "custom"> => b !== "hero" && b !== "custom")];
     streams.open(new Set<string>(parts));
+    const staying = parts.filter((part) => kept[part] !== undefined);
+    for (const part of staying) run.send({ updateDataModel: { surfaceId, path: `/${part}`, value: kept[part] } });
+    if (staying.length) run.trace({ stage: `Kept as it was: ${staying.join(", ")}`, ms: 0, detail: "nobody asked for these to change, so nothing wrote them again" });
     // Writers cannot see each other, so a bill would not add up. Totals wait for the line items and are shown them.
-    const billed = plan.factsTotal && plan.blocks.includes("list");
+    const billed = plan.factsTotal && plan.blocks.includes("list") && kept.facts === undefined && kept.list === undefined;
     for (const part of parts) {
-      if (streams.has(part) || (billed && part === "facts")) continue;
+      if (streams.has(part) || kept[part] !== undefined || (billed && part === "facts")) continue;
       const written = write(part);
       if (billed && part === "list") streams.spawn(written.then((list) => void (list && write("facts", list.items))));
     }

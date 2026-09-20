@@ -62,6 +62,26 @@ export interface Option {
   instruction: string;
 }
 
+/**
+ * A screen made again to the person's word, and not only with it in mind. `plan` is the plan it had, which holds for
+ * every part that stays; `blocks` are the parts it is to have now, whatever Jev's odds for them; and `kept` are the
+ * words of the parts nobody asked to change, by their path in the data model, which no writer is asked for again.
+ */
+export interface ScreenEdit {
+  plan: Record<string, unknown>;
+  blocks: string[];
+  kept?: Record<string, unknown>;
+}
+
+/** A screen of the app, as the server needs to know it to tell what a message asks of it. */
+export interface ScreenAbout {
+  id: number;
+  title: string;
+  archetype: string;
+  /** The parts it has, where the browser knows. */
+  blocks?: string[];
+}
+
 export interface TurnRequest {
   message: string;
   /** The description the app started from. */
@@ -69,7 +89,9 @@ export interface TurnRequest {
   /** The design in use: Jev's mix with what has been changed about it, or the person's own file. */
   design: { brief: string; seed: number; change: PaintChange } | { markdown: string };
   /** The screen in front of the person. */
-  showing: { title: string; archetype: string; /** Why it is as it is, for when the person asks. */ decisions?: Array<{ question: string; answer: string }> };
+  showing: ScreenAbout & { /** Why it is as it is, for when the person asks. */ decisions?: Array<{ question: string; answer: string }> };
+  /** The other screens made so far: a message may name one of them. */
+  others?: ScreenAbout[];
   /** Set when the message answers a question the tool asked: what the person had said, and what they were asked. */
   answering?: { message: string; question: string };
 }
@@ -84,6 +106,17 @@ export type TurnResponse = {
    * `text`, and offer `options`.
    */
   act: "paint" | "remake" | "screen" | "app" | "talk";
+  /** For `remake`, and for a `screen` that takes something with it: which screen, if not the one showing, and what is asked of it. */
+  screen?: {
+    id: number;
+    add: string[];
+    remove: string[];
+    /** The parts whose words are to be written again. Every other part that stays keeps its words. */
+    rewrite: string[];
+    /** Jev could not tell which part was meant: the whole screen is planned and written again, with the message in mind. */
+    blunt?: boolean;
+    lines: ReceiptLine[];
+  };
   /** Set whenever the look changed, whatever else is to be done. */
   design?: { delta: PaintChange; change: PaintChange; receipt: ReceiptLine[]; report: DesignReport; markdown: string };
   text?: string;

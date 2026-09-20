@@ -44,6 +44,13 @@ function paintChange(sent: any) {
   return { dials, pins };
 }
 
+/** A screen to be made again to the person's word (shared/turn.ts), as a browser sent it. What the plan holds is checked where it is used (mock/plan.ts). */
+function screenEdit(sent: any) {
+  if (!sent || typeof sent.plan !== "object" || !Array.isArray(sent.blocks)) return undefined;
+  const kept = sent.kept && typeof sent.kept === "object" ? Object.fromEntries(Object.entries(sent.kept).filter(([path]) => /^[a-z]{1,20}$/.test(path)).slice(0, 20)) : {};
+  return { plan: sent.plan, blocks: sent.blocks.slice(0, 20).map(String), kept };
+}
+
 // POST a message typed to an app that is already there (shared/turn.ts); answers what to do about it (change.ts).
 // It reads and repaints, and makes no screen, so it takes no run from the day's allowance.
 async function turn(load: Load, req: IncomingMessage, res: ServerResponse) {
@@ -53,10 +60,12 @@ async function turn(load: Load, req: IncomingMessage, res: ServerResponse) {
     const app = String(body.app ?? "").trim().slice(0, 4000);
     const design = designSource(body.design ?? {});
     if (!message || !app || !design) throw new Error("expected {message, app, design, showing}");
-    const showing = { title: String(body.showing?.title ?? "").slice(0, 200), archetype: String(body.showing?.archetype ?? "").slice(0, 80), decisions: (Array.isArray(body.showing?.decisions) ? body.showing.decisions : []).slice(0, 60).map((d: any) => ({ question: String(d?.question ?? "").slice(0, 200), answer: String(d?.answer ?? "").slice(0, 200) })) };
+    const about = (sent: any) => ({ id: Number(sent?.id) || 0, title: String(sent?.title ?? "").slice(0, 200), archetype: String(sent?.archetype ?? "").slice(0, 80), ...(Array.isArray(sent?.blocks) ? { blocks: sent.blocks.slice(0, 20).map(String) } : {}) });
+    const others = (Array.isArray(body.others) ? body.others : []).slice(0, 12).map(about);
+    const showing = { ...about(body.showing), decisions: (Array.isArray(body.showing?.decisions) ? body.showing.decisions : []).slice(0, 60).map((d: any) => ({ question: String(d?.question ?? "").slice(0, 200), answer: String(d?.answer ?? "").slice(0, 200) })) };
     const answering = body.answering?.message && body.answering?.question ? { message: String(body.answering.message).slice(0, 2000), question: String(body.answering.question).slice(0, 600) } : undefined;
     const { readTurn } = await load("change");
-    const answer = await readTurn({ message, app, design: "markdown" in design ? design : { brief: design.brief, seed: design.seed, change: design.change ?? {} }, showing, ...(answering ? { answering } : {}) });
+    const answer = await readTurn({ message, app, design: "markdown" in design ? design : { brief: design.brief, seed: design.seed, change: design.change ?? {} }, showing, others, ...(answering ? { answering } : {}) });
     res.setHeader("Content-Type", "application/json");
     res.end(JSON.stringify(answer));
   } catch (error) {
@@ -119,7 +128,7 @@ async function generate(load: Load, url: URL, req: IncomingMessage, res: ServerR
   const { runJobs } = await load("jobs");
   const events =
     mode === "mock"
-      ? runMock(prompt, designSource(body), body.journey, Boolean(body.fresh), (Array.isArray(body.notes) ? body.notes : []).slice(0, 12).map((note: unknown) => String(note).slice(0, 2000)))
+      ? runMock(prompt, designSource(body), body.journey, Boolean(body.fresh), (Array.isArray(body.notes) ? body.notes : []).slice(0, 12).map((note: unknown) => String(note).slice(0, 2000)), screenEdit(body.edit))
       : mode === "jobs"
         ? runJobs(prompt)
         : mode === "hybrid"
