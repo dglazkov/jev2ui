@@ -3,6 +3,9 @@
 
 import { html, nothing, svg, type TemplateResult } from "lit";
 
+/** A word as a label: the same word, with its first letter capital. Roles and device names are stored in the small. */
+export const titled = (word: string) => (word ? word[0]!.toUpperCase() + word.slice(1) : word);
+
 /** A Material Symbol, by its name (the font is the one index.html loads for the kit's Icon). */
 export const icon = (name: string, className = "") => html`<span class="i ${className}" aria-hidden="true">${name}</span>`;
 

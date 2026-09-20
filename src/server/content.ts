@@ -112,7 +112,7 @@ export class ContentStreams {
       controller.abort();
       cancelled++;
     }
-    if (cancelled) this.run.trace({ stage: `Cancelled ${cancelled} speculative writer${cancelled > 1 ? "s" : ""}`, ms: 0 });
+    if (cancelled) this.run.trace({ stage: `Canceled ${cancelled} speculative writer${cancelled > 1 ? "s" : ""}`, ms: 0 });
     this.surfaceOpen = true;
     for (const { part, handle } of this.held.splice(0)) if (wanted.has(part)) handle();
   }

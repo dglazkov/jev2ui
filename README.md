@@ -489,7 +489,7 @@ on Cloud Run that is a mounted bucket, so they outlast the instance.
 Two services answer the questions: **jev**, TypeSafe's own (`api.typesafe.ai`), and **gev**
 ([dglazkov/gev](https://github.com/dglazkov/gev)), a service of ours that speaks the same wire format, so nothing
 about the questions changes. Where the server has a `GEV_API_KEY` (`/api/config` says which endpoints it has keys
-for), Settings has a Models pane with the choice; the browser remembers it and names it in a header,
+for), Settings has a Model service pane with the choice; the browser remembers it and names it in a header,
 `X-System-One`, on every request (`src/web/session.ts`). The server holds the choice for as long as the request
 lasts (an `AsyncLocalStorage` in `src/server/models.ts`, so no call site can forget it), and a run keeps the one
 it began with: a screen is never half of each. What is kept of answers, the designs read and mixed, is kept

@@ -123,9 +123,9 @@ export async function everything() {
 /** Writes a line of the list, or says what is wrong with it. `runs` left out is the role's usual; null is no limit. */
 export async function grant(by: Person, line: { pattern?: unknown; role?: unknown; runs?: unknown; note?: unknown }): Promise<string | undefined> {
   const pattern = String(line.pattern ?? "").trim().toLowerCase();
-  if (!/^(\*|[^\s/@]+@[^\s/@]+)$/.test(pattern) || pattern.length > 200) return "a pattern is an address, with * for anything: *@example.com";
-  if (line.role !== "maker" && line.role !== "admin" && line.role !== "none") return "a role is maker, admin or none";
-  if (line.runs !== undefined && line.runs !== null && !(Number.isInteger(line.runs) && (line.runs as number) >= 0)) return "runs is a whole number, or null for no limit";
+  if (!/^(\*|[^\s/@]+@[^\s/@]+)$/.test(pattern) || pattern.length > 200) return "A pattern must be an email address, where * matches any text. For example, *@example.com.";
+  if (line.role !== "maker" && line.role !== "admin" && line.role !== "none") return "Role must be maker, admin, or none.";
+  if (line.runs !== undefined && line.runs !== null && !(Number.isInteger(line.runs) && (line.runs as number) >= 0)) return "Runs must be a whole number, or null for no limit.";
   const data = { role: line.role, ...(line.runs !== undefined && line.role !== "none" ? { runs: line.runs as number | null } : {}), note: String(line.note ?? "").slice(0, 200), by: by.email ?? by.uid, at: new Date().toISOString() };
   await write(`access/${encodeURIComponent(pattern)}`, data);
   kept = undefined;

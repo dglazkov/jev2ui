@@ -26,7 +26,7 @@ async function readJson(req: IncomingMessage, largest = LARGEST_BODY): Promise<a
   let body = "";
   for await (const chunk of req) {
     body += chunk;
-    if (body.length > largest) throw new Error("too much was sent");
+    if (body.length > largest) throw new Error("The request body is too large.");
   }
   return JSON.parse(body || "{}");
 }
@@ -62,7 +62,7 @@ async function turn(load: Load, req: IncomingMessage, res: ServerResponse) {
     const message = String(body.message ?? "").trim().slice(0, 2000);
     const app = String(body.app ?? "").trim().slice(0, 4000);
     const design = designSource(body.design ?? {});
-    if (!message || !app || !design) throw new Error("expected {message, app, design, showing}");
+    if (!message || !app || !design) throw new Error("The request must include message, app, design, and showing.");
     const about = (sent: any) => ({ id: Number(sent?.id) || 0, title: String(sent?.title ?? "").slice(0, 200), archetype: String(sent?.archetype ?? "").slice(0, 80), ...(Array.isArray(sent?.blocks) ? { blocks: sent.blocks.slice(0, 20).map(String) } : {}) });
     const others = (Array.isArray(body.others) ? body.others : []).slice(0, 12).map(about);
     const showing = { ...about(body.showing), decisions: (Array.isArray(body.showing?.decisions) ? body.showing.decisions : []).slice(0, 60).map((d: any) => ({ question: String(d?.question ?? "").slice(0, 200), answer: String(d?.answer ?? "").slice(0, 200) })) };
@@ -82,7 +82,7 @@ async function design(load: Load, req: IncomingMessage, res: ServerResponse) {
   try {
     const body = await readJson(req);
     const source = designSource(body) ?? { brief: "" };
-    if ("brief" in source && !source.brief) throw new Error("expected {markdown} or {brief}");
+    if ("brief" in source && !source.brief) throw new Error("The request must include either markdown or brief.");
     const { loadDesign } = await load("design-source");
     const { report, mixed } = await loadDesign(source).loaded;
     res.setHeader("Content-Type", "application/json");
@@ -108,14 +108,14 @@ async function generate(load: Load, url: URL, req: IncomingMessage, res: ServerR
   const mode = body.mode ?? url.searchParams.get("mode") ?? "mock";
   if (!prompt || !["mock", "jobs", "hybrid", "baseline"].includes(mode)) {
     res.statusCode = 400;
-    res.end("expected a prompt, and mode=mock|jobs|hybrid|baseline");
+    res.end("The request must include a prompt and a mode of mock, jobs, hybrid, or baseline.");
     return;
   }
   const spent = !asking || (await asking.auth.spend(asking.person, asking.grant));
   await allowance(res, asking);
   if (!spent) {
     res.statusCode = 429;
-    res.end(`Today's ${asking!.grant.runs} runs are used up. There are more tomorrow (the day turns over at midnight UTC).`);
+    res.end(`You've used all ${asking!.grant.runs} of today's runs. Your runs reset at midnight UTC.`);
     return;
   }
   res.writeHead(200, {
@@ -150,14 +150,14 @@ async function generate(load: Load, url: URL, req: IncomingMessage, res: ServerR
 async function accessList(url: URL, req: IncomingMessage, res: ServerResponse, asking: Asking) {
   const { auth, person, grant } = asking;
   const refuse = (status: number, why: string) => void ((res.statusCode = status), res.end(why));
-  if (grant.role !== "admin") return refuse(403, "the list is an admin's to edit");
+  if (grant.role !== "admin") return refuse(403, "Only admins can edit the access list.");
   if (req.method === "PUT" || req.method === "DELETE") {
     const line = req.method === "PUT" ? await readJson(req).catch(() => ({})) : { pattern: url.searchParams.get("pattern") ?? "" };
     // Nobody saws off the branch they sit on: the line that makes this person an admin stays, and stays an admin's.
-    if (String(line.pattern).trim().toLowerCase() === grant.pattern && line.role !== "admin") return refuse(400, "that line is what makes you an admin; another admin can change it");
+    if (String(line.pattern).trim().toLowerCase() === grant.pattern && line.role !== "admin") return refuse(400, "You can't change the pattern that grants you admin access. Ask another admin to change it.");
     const wrong = req.method === "PUT" ? await auth.grant(person, line) : await auth.revoke(line.pattern);
     if (wrong) return refuse(400, wrong);
-  } else if (req.method !== "GET") return refuse(405, "GET, PUT or DELETE");
+  } else if (req.method !== "GET") return refuse(405, "This endpoint supports only GET, PUT, and DELETE requests.");
   res.setHeader("Content-Type", "application/json");
   res.end(JSON.stringify(await auth.everything()));
 }
@@ -169,28 +169,28 @@ async function accessList(url: URL, req: IncomingMessage, res: ServerResponse, a
 async function savedApps(load: Load, id: string, req: IncomingMessage, res: ServerResponse, auth: any) {
   const refuse = (status: number, why: string) => void ((res.statusCode = status), res.end(why));
   const json = (value: unknown) => void (res.setHeader("Content-Type", "application/json"), res.end(JSON.stringify(value)));
-  if (!auth.firebase) return refuse(404, "nothing is saved here: nobody has to sign in, so nothing would be anybody's");
+  if (!auth.firebase) return refuse(404, "This server doesn't save apps, because it doesn't require sign-in.");
   const apps = await load("apps");
   const person = await auth.whoIs(req.headers.authorization);
   if (id && req.method === "GET") {
     const found = await apps.open(id, person);
-    return found ? json(found) : refuse(404, "there is no such app, or it is not shared");
+    return found ? json(found) : refuse(404, "That app doesn't exist, or it isn't shared.");
   }
-  if (!person) return refuse(401, "sign in first");
+  if (!person) return refuse(401, "Sign in to continue.");
   if (!id && req.method === "GET") return json({ apps: await apps.mine(person) });
   const grant = await auth.access(person);
   if (!id && req.method === "POST") {
-    if (!grant) return refuse(403, "saving is for the people who can make things here");
+    if (!grant) return refuse(403, "To save an app, your address must be on the access list.");
     const saved = await apps.save(person, await readJson(req, LARGEST_APP).catch(() => undefined));
-    return "wrong" in saved ? refuse(400, `this cannot be saved: ${saved.wrong}`) : json(saved);
+    return "wrong" in saved ? refuse(400, `Can't save this app: ${saved.wrong}`) : json(saved);
   }
   if (id && req.method === "PATCH") {
     const { visibility } = await readJson(req).catch(() => ({}));
-    if (visibility !== "private" && visibility !== "link") return refuse(400, "visibility is private or link");
-    return (await apps.share(id, person, visibility)) ? json({ id, visibility }) : refuse(404, "there is no such app of yours");
+    if (visibility !== "private" && visibility !== "link") return refuse(400, "Visibility must be private or link.");
+    return (await apps.share(id, person, visibility)) ? json({ id, visibility }) : refuse(404, "You don't have an app with that ID.");
   }
-  if (id && req.method === "DELETE") return (await apps.forget(id, person, grant?.role === "admin")) ? json({ id }) : refuse(404, "there is no such app of yours");
-  refuse(405, "not something an app can be asked");
+  if (id && req.method === "DELETE") return (await apps.forget(id, person, grant?.role === "admin")) ? json({ id }) : refuse(404, "You don't have an app with that ID.");
+  refuse(405, "This endpoint doesn't support that request method.");
 }
 
 /** Who is asking, and what the list grants them; `auth` is the module that said so (auth.ts). */
@@ -224,17 +224,17 @@ export function api(load: Load) {
     let asking: Asking | undefined;
     if (auth.firebase) {
       const person = await auth.whoIs(req.headers.authorization);
-      if (!person) return (res.statusCode = 401), res.end("sign in first"), true;
+      if (!person) return (res.statusCode = 401), res.end("Sign in to continue."), true;
       const grant = await auth.access(person);
       // Signed in and on no line of the list is something to tell the person, not an error: /api/me says so.
       if (url.pathname === "/api/me") return await allowance(res, grant && { auth, person, grant }), json({ email: person.email, role: grant?.role ?? null }), true;
-      if (!grant) return (res.statusCode = 403), res.end(`${person.email ?? "this account"} is not on the list of people who can make things here`), true;
+      if (!grant) return (res.statusCode = 403), res.end(`${person.email ?? "This account"} isn't on the access list.`), true;
       asking = { auth, person, grant };
     } else if (url.pathname === "/api/me") return json({ role: "maker" }), true;
 
     if (url.pathname === "/api/access") {
       // With no sign-in there is no list.
-      if (!asking) return (res.statusCode = 404), res.end("there is no list: nobody has to sign in here"), true;
+      if (!asking) return (res.statusCode = 404), res.end("This server has no access list, because it doesn't require sign-in."), true;
       await accessList(url, req, res, asking);
       return true;
     }

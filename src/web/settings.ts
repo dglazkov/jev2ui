@@ -3,7 +3,7 @@
 
 import { LitElement, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { appearance, face, icon, setAppearance, type Appearance } from "./chrome.js";
+import { appearance, face, icon, setAppearance, titled, type Appearance } from "./chrome.js";
 import { session } from "./session.js";
 
 interface Grant {
@@ -34,9 +34,9 @@ export function firstDevice(): Device {
 
 const UNLIMITED = "unlimited";
 const ROLES: Record<string, { icon: string; says: string }> = {
-  maker: { icon: "brush", says: "makes things, so many a day" },
-  admin: { icon: "shield_person", says: "makes things, and edits this list" },
-  none: { icon: "block", says: "is kept out, whatever a wider line says" },
+  maker: { icon: "brush", says: "can create apps, up to a daily run limit." },
+  admin: { icon: "shield_person", says: "can create apps and edit the access list." },
+  none: { icon: "block", says: "can't create apps, even if a broader pattern allows it." },
 };
 
 /** How long ago, in the fewest words. */
@@ -122,18 +122,18 @@ export class Settings extends LitElement {
     const limited = runs && runs.daily !== UNLIMITED;
     return html`
       <h3>Account</h3>
-      <p class="lede">You are signed in with Google. The tool keeps your name beside what you save, and counts the screens you have made today.</p>
+      <p class="lede">You're signed in with Google. The tool stores your name with the apps that you save, and counts the screens that you generate each day.</p>
       <div class="card who">
         ${face(session, "big")}
         <div><b>${session.name}</b><small>${session.email}</small></div>
-        <span class="role ${session.role}">${icon(ROLES[session.role]?.icon ?? "person", "xs")}${session.role}</span>
+        <span class="role ${session.role}">${icon(ROLES[session.role]?.icon ?? "person", "xs")}${titled(session.role)}</span>
       </div>
       <div class="card quota">
         ${limited
-          ? html`<p><b>${runs.left} of ${runs.daily}</b> runs left today</p>
+          ? html`<p>You have <b>${runs.left} of ${runs.daily}</b> runs left today.</p>
               <div class="meter ${runs.left === "0" ? "spent" : ""}"><i style="width:${(100 * Number(runs.left)) / Math.max(1, Number(runs.daily))}%"></i></div>`
-          : html`<p><b>No daily limit</b></p>`}
-        <p class="hint">A screen made is one run; changing how an app looks costs none. The day turns over at midnight UTC.</p>
+          : html`<p><b>No daily run limit</b></p>`}
+        <p class="hint">Generating one screen uses one run. Changing an app's design uses no runs. Your runs reset at midnight UTC.</p>
       </div>
       <button class="btn" @click=${() => session.signOut()}>${icon("logout", "s")}Sign out</button>
     `;
@@ -149,9 +149,9 @@ export class Settings extends LitElement {
     ];
     return html`
       <h3>Appearance</h3>
-      <p class="lede">How the tool itself looks. What you make is painted by its own DESIGN.md, whatever you choose here.</p>
+      <p class="lede">How this tool looks. This setting doesn't affect the apps that you make, which use their own DESIGN.md.</p>
       <div class="card setting">
-        <div><b>Theme</b><small>System follows your computer.</small></div>
+        <div><b>Theme</b><small>System uses your computer's setting.</small></div>
         <div class="segmented wide" role="radiogroup" aria-label="Theme">
           ${looks.map(
             ([id, symbol, name]) =>
@@ -169,8 +169,8 @@ export class Settings extends LitElement {
         </div>
       </div>
       <div class="card setting">
-        <div><b>First device</b><small>What a new session shows its mocks on.</small></div>
-        <div class="segmented wide" role="radiogroup" aria-label="First device">
+        <div><b>Default device</b><small>The device that new previews are shown on.</small></div>
+        <div class="segmented wide" role="radiogroup" aria-label="Default device">
           ${(Object.keys(DEVICES) as Device[]).map(
             (id) =>
               html`<button
@@ -182,7 +182,7 @@ export class Settings extends LitElement {
                   this.dispatchEvent(new CustomEvent("device", { detail: id }));
                 }}
               >
-                ${icon(DEVICE_ICONS[id], "s")}${id[0]!.toUpperCase() + id.slice(1)}
+                ${icon(DEVICE_ICONS[id], "s")}${titled(id)}
               </button>`,
           )}
         </div>
@@ -195,12 +195,12 @@ export class Settings extends LitElement {
   private renderModels() {
     const endpoints = [
       ["jev", "cloud", "jev", "The hosted TypeSafe service at api.typesafe.ai."],
-      ["gev", "dns", "gev", "A self-hosted service that accepts the same requests and answers them with a different model. Its yes-or-no answers are more confident than jev's."],
+      ["gev", "dns", "gev", "A self-hosted service that accepts the same requests and answers them with a different model. Its yes-or-no answers are more confident than the answers from jev."],
     ] as const;
     return html`
-      <h3>Models</h3>
+      <h3>Model service</h3>
       <p class="lede">
-        Select the service that answers System One requests. jev2ui sends a System One request for each design decision. The two services agree on about 80%
+        Select the service that answers System One requests. The tool sends a System One request for each design decision. The two services agree on about 80%
         of decisions. To compare them, switch services, and then regenerate a screen. Each timing in a screen's decision log names the service that answered.
       </p>
       <div class="card setting">
@@ -209,7 +209,7 @@ export class Settings extends LitElement {
           ${endpoints.map(([id, symbol, name]) => html`<button role="radio" aria-checked=${session.endpoint === id} @click=${() => (session.endpoint = id)}>${icon(symbol, "s")}${name}</button>`)}
         </div>
       </div>
-      <p class="hint">Switching services doesn't change screens that you've already made. If jev2ui generated the app's design, the next screen that you make also regenerates the design with the selected service.</p>
+      <p class="hint">Switching services doesn't change screens that you've already generated. If the tool generated the app's design, the next screen that you generate also regenerates the design with the selected service.</p>
     `;
   }
 
@@ -221,12 +221,12 @@ export class Settings extends LitElement {
     return html`<tr>
       <td class="pattern">${grant.pattern}</td>
       <td>
-        <label class="role pick ${role}" title=${`${grant.pattern} ${ROLES[role]?.says ?? ""}`}>
+        <label class="role pick ${role}" title=${`${grant.pattern}: ${ROLES[role]?.says ?? ""}`}>
           ${icon(ROLES[role]?.icon ?? "person", "xs")}
           <select aria-label="Role" .value=${role} ?disabled=${this.busy} @change=${(e: Event) => this.ask("PUT", { ...grant, role: (e.target as HTMLSelectElement).value })}>
-            ${Object.keys(ROLES).map((one) => html`<option ?selected=${one === role}>${one}</option>`)}
+            ${Object.keys(ROLES).map((one) => html`<option value=${one} ?selected=${one === role}>${titled(one)}</option>`)}
           </select>
-          <span>${role}</span>${icon("arrow_drop_down", "xs")}
+          <span>${titled(role)}</span>${icon("arrow_drop_down", "xs")}
         </label>
       </td>
       <td>
@@ -244,7 +244,7 @@ export class Settings extends LitElement {
       <td class="note-cell">${grant.note}</td>
       <td class="end">
         ${this.removing === grant.pattern
-          ? html`<button class="btn small" @click=${() => (this.removing = "")}>Keep</button>
+          ? html`<button class="btn small" @click=${() => (this.removing = "")}>Cancel</button>
               <button class="btn small danger" ?disabled=${this.busy} @click=${() => this.ask("DELETE", grant)}>Remove</button>`
           : html`<button class="ib" title="Remove this line" aria-label="Remove ${grant.pattern}" ?disabled=${this.busy} @click=${() => (this.removing = grant.pattern)}>${icon("delete", "s")}</button>`}
       </td>
@@ -265,17 +265,17 @@ export class Settings extends LitElement {
     return html`
       <h3>Access</h3>
       <p class="lede">
-        Who may make things here, and how many screens a day. A pattern is an address, with * for anything. Of the lines an address fits, the one that says the
-        most wins: a person's own line over their company's.
+        Control who can create apps, and how many screens they can generate each day. A pattern is an email address, where * matches any text. If an address
+        matches more than one pattern, the most specific pattern applies: a personal address takes precedence over a domain.
       </p>
       ${this.error ? html`<p class="note bad">${this.error}</p>` : nothing}
       ${this.listing
         ? html`
             <div class="card">
-              <div class="card-head">${icon("rule", "s")}The list <small>an edit is noticed within a minute</small></div>
+              <div class="card-head">${icon("rule", "s")}Access list <small>changes take effect within a minute</small></div>
               <div class="scroll-x">
                 <table>
-                  <tr><th>Who</th><th>Role</th><th>Runs a day</th><th>Note</th><th></th></tr>
+                  <tr><th>Email pattern</th><th>Role</th><th>Runs per day</th><th>Note</th><th></th></tr>
                   ${grants.map((grant) => this.renderGrant(grant))}
                 </table>
               </div>
@@ -288,16 +288,16 @@ export class Settings extends LitElement {
               >
                 <label class="field grow">${icon("alternate_email", "s")}<input name="pattern" required placeholder="*@example.com" aria-label="Pattern" /></label>
                 <label class="field"
-                  ><select name="role" aria-label="Role"><option>maker</option><option>admin</option><option>none</option></select></label
+                  ><select name="role" aria-label="Role"><option value="maker">Maker</option><option value="admin">Admin</option><option value="none">None</option></select></label
                 >
-                <label class="field narrow"><input name="runs" placeholder=${`runs (${this.listing.dailyRuns})`} aria-label="Runs a day: empty for the usual, or “unlimited”" title="Empty for the usual, or “unlimited”" /></label>
-                <label class="field grow"><input name="note" placeholder="note" aria-label="Note" /></label>
+                <label class="field narrow"><input name="runs" placeholder=${`Runs (${this.listing.dailyRuns})`} aria-label="Runs per day. Leave empty for the default, or enter unlimited." title="Leave empty for the default, or enter unlimited." /></label>
+                <label class="field grow"><input name="note" placeholder="Note" aria-label="Note" /></label>
                 <button class="btn primary" type="submit" ?disabled=${this.busy}>${icon("add", "s")}Add</button>
               </form>
             </div>
 
             <div class="card">
-              <div class="card-head">${icon("group", "s")}Who has made things</div>
+              <div class="card-head">${icon("group", "s")}People with activity</div>
               ${people.length
                 ? html`<div class="scroll-x">
                     <table>
@@ -308,7 +308,7 @@ export class Settings extends LitElement {
                           <td><span class="person">${face(p, "small")}<span>${p.name || p.email || "–"} <small>${p.name ? p.email : ""}</small></span></span></td>
                           <td>
                             <span class="usage">
-                              ${typeof runs === "number" ? html`<span class="meter ${p.today >= runs ? "spent" : ""}"><i style="width:${Math.min(100, (100 * p.today) / Math.max(1, runs))}%"></i></span>${p.today} of ${runs}` : html`${p.today} <small>${runs === null ? "no limit" : ""}</small>`}
+                              ${typeof runs === "number" ? html`<span class="meter ${p.today >= runs ? "spent" : ""}"><i style="width:${Math.min(100, (100 * p.today) / Math.max(1, runs))}%"></i></span>${p.today} of ${runs}` : html`${p.today} <small>${runs === null ? "No limit" : ""}</small>`}
                             </span>
                           </td>
                           <td><small>${p.lastSeen ? ago(p.lastSeen) : ""}</small></td>
@@ -316,25 +316,25 @@ export class Settings extends LitElement {
                       })}
                     </table>
                   </div>`
-                : html`<p class="empty-note">${icon("hourglass_empty")}Nobody has made anything yet.</p>`}
+                : html`<p class="empty-note">${icon("hourglass_empty")}No one has generated a screen yet.</p>`}
             </div>
           `
         : this.error
           ? nothing
-          : html`<p class="empty-note">${icon("hourglass_top")}Reading the list…</p>`}
+          : html`<p class="empty-note">${icon("hourglass_top")}Loading the access list…</p>`}
     `;
   }
 
   render() {
     const sections = this.sections;
     const section = sections.includes(this.section) ? this.section : sections[0]!;
-    const names: Record<Section, [string, string]> = { account: ["account_circle", "Account"], appearance: ["contrast", "Appearance"], models: ["neurology", "Models"], access: ["shield_person", "Access"] };
+    const names: Record<Section, [string, string]> = { account: ["account_circle", "Account"], appearance: ["contrast", "Appearance"], models: ["neurology", "Model service"], access: ["shield_person", "Access"] };
     return html`
       <nav class="snav" aria-label="Settings">
         <h2>Settings</h2>
         ${sections.map(
           (one) =>
-            html`<button class="mi" aria-current=${one === section} @click=${() => this.go(one)}>${icon(names[one][0])}${names[one][1]}${one === "access" ? html`<span class="tag">admin</span>` : nothing}</button>`,
+            html`<button class="mi" aria-current=${one === section} @click=${() => this.go(one)}>${icon(names[one][0])}${names[one][1]}${one === "access" ? html`<span class="tag">Admin</span>` : nothing}</button>`,
         )}
       </nav>
       <div class="pane">${section === "account" ? this.renderAccount() : section === "access" ? this.renderAccess() : section === "models" ? this.renderModels() : this.renderAppearance()}</div>

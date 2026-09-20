@@ -164,7 +164,7 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
     }
     run.design(report, mixed);
     run.trace({
-      stage: mixed ? "Jev: mix a DESIGN.md" : `Jev: read ${design.name}`,
+      stage: mixed ? "Jev: generate a DESIGN.md" : `Jev: read ${design.name}`,
       ms: designing.fresh ? look.ms : 0,
       endpoint: report.endpoint,
       detail: designing.fresh ? "alongside the plan" : "read before; reused",
@@ -208,7 +208,7 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
     streams.open(new Set<string>(parts));
     const staying = parts.filter((part) => kept[part] !== undefined);
     for (const part of staying) run.send({ updateDataModel: { surfaceId, path: `/${part}`, value: kept[part] } });
-    if (staying.length) run.trace({ stage: `Kept as it was: ${staying.join(", ")}`, ms: 0, detail: "nobody asked for these to change, so nothing wrote them again" });
+    if (staying.length) run.trace({ stage: `Unchanged: ${staying.join(", ")}`, ms: 0, detail: "nobody asked for these to change, so nothing wrote them again" });
     // Writers cannot see each other, so a bill would not add up. Totals wait for the line items and are shown them.
     const billed = plan.factsTotal && plan.blocks.includes("list") && kept.facts === undefined && kept.list === undefined;
     for (const part of parts) {

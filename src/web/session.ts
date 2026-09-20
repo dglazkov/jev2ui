@@ -123,19 +123,19 @@ class Session {
       <main class="gate">
         <div class="gate-words">
           <p class="brand">${mark()}<b>jev2ui</b></p>
-          <h1>Say what you want.<br />Get an app.<br />Keep talking.</h1>
-          <p class="lede">Describe a screen and tap through the mock it becomes. Every message after that changes it.</p>
+          <h1>Describe what you want.<br />Get an app.<br />Keep talking.</h1>
+          <p class="lede">Describe a screen, and then tap through the preview that this tool generates. Every message after that changes the preview.</p>
           ${this.state === "out" ? html`<button class="google" @click=${() => this.signIn()}>${google}Sign in with Google</button>` : nothing}
           ${this.state === "stranger"
             ? html`<div class="stranger">
                   ${face(this)}
-                  <p><b>${this.name || this.email}</b>${this.email} is not on the list of people who can make things here. Whoever sent you can have it added.</p>
+                  <p><b>${this.name || this.email}</b>${this.email} isn't on the access list. To get access, ask the person who shared this tool with you to add your address.</p>
                 </div>
                 <button class="google" @click=${() => this.signOut().then(() => this.signIn())}>${google}Use another account</button>`
             : nothing}
-          ${this.state === "loading" ? html`<p class="fine">${icon("hourglass_top", "s")}One moment…</p>` : nothing}
+          ${this.state === "loading" ? html`<p class="fine">${icon("hourglass_top", "s")}Loading…</p>` : nothing}
           ${this.error ? html`<p class="note bad">${this.error}</p>` : nothing}
-          <p class="fine">${icon("info", "s")}<span>Making things spends the models' time, which is shared out by name: so many runs a day to each person on the list. Opening an app someone shared with you takes no sign-in.</span></p>
+          <p class="fine">${icon("info", "s")}<span>Generating screens uses model capacity, so everyone on the access list has a daily run limit. You don't need to sign in to open an app that someone shared with you.</span></p>
         </div>
         <div class="gate-show" aria-hidden="true">
           <div class="device phone"><img src="/gate-screen.jpg" alt="" /></div>

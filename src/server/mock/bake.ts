@@ -190,7 +190,7 @@ async function bakeNew(run: Run, screen: string, plan: ScreenPlan, setting: Sett
       problems = ["the reply was not the JSON asked for"];
     }
     run.trace({
-      stage: `Gemini: bake ${reply?.name ? `"${reply.name}"` : "a component"}${attempt > 1 ? " again" : ""}`,
+      stage: `Gemini: generate ${reply?.name ? `component "${reply.name}"` : "a component"}${attempt > 1 ? " again" : ""}`,
       ms: generated.ms,
       detail: problems.length ? `rejected: ${problems.join("; ")}` : `${BAKER_MODEL}; ${String(reply.source).length} characters of source. ${reply.card}`,
       tokens: { input: generated.inputTokens, output: generated.outputTokens },
@@ -235,7 +235,7 @@ async function fromShelf(run: Run, screen: string, plan: ScreenPlan, shelf: Bake
     // Named by their place on the shelf: an id is a hash, and a hash is noise to whoever reads the options.
     { ...Object.fromEntries(candidates.map((b, i) => [`c${i + 1}`, `${b.name}. ${b.card}`])), none: "None of these: this screen needs something else." },
   );
-  const asked = await run.askJev("Jev: look on the shelf", { screen }, { component: question });
+  const asked = await run.askJev("Jev: reuse a custom component", { screen }, { component: question });
   const answer = asked.answers.component;
   const found = candidates.find((_, i) => `c${i + 1}` === answer.choice);
   run.trace({
@@ -263,7 +263,7 @@ export async function bakeCustom(run: Run, surfaceId: string, screen: string, pl
   if (reused) {
     const data = await writeData(run, screen, reused, setting).catch(() => undefined);
     if (data !== undefined) return send(reused, data);
-    run.trace({ stage: `"${reused.name}" could not be filled from its schema; baking a new one`, ms: 0 });
+    run.trace({ stage: `“${reused.name}” doesn't match its schema. Generating a new component.`, ms: 0 });
   }
   const made = await bakeNew(run, screen, plan, setting);
   if (!made) {

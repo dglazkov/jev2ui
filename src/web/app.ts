@@ -22,7 +22,7 @@ import type { Baked } from "../shared/kit.js";
 import type { SavedAbout, SavedApp, SavedTurn, Visibility } from "../shared/saved.js";
 import { receiptOf, type Option, type PaintChange, type ScreenAbout, type TurnRequest, type TurnResponse } from "../shared/turn.js";
 import { session, streamEvents } from "./session.js";
-import { face, icon, mark } from "./chrome.js";
+import { face, icon, mark, titled } from "./chrome.js";
 import { DEVICES, DEVICE_ICONS, firstDevice, type Device, type Section } from "./settings.js";
 
 /** Things to ask for, each with a symbol of what it is. */
@@ -38,7 +38,7 @@ const EXAMPLES: Array<[string, string]> = [
 /** Things to say to an app that is there, for someone who has not yet tried. */
 const SUGGESTIONS: Array<[string, string]> = [
   ["light_mode", "Make it lighter"],
-  ["celebration", "More playful"],
+  ["celebration", "Make it more playful"],
   ["dark_mode", "Switch to dark mode"],
   ["short_text", "Make the text shorter"],
   ["add_to_queue", "Add a settings page"],
@@ -133,7 +133,7 @@ interface Turn extends Omit<SavedTurn, "outcome" | "decisions"> {
 const BACKS_OUT = /^(cancel|close|back|dismiss|not now|no\b|never mind|keep|go back|done|ok)/i;
 /** Top-bar actions that act in place. */
 const IN_PLACE = new Set(["favorite", "more_vert", "share"]);
-const EDITED = "Edited the DESIGN.md";
+const EDITED = "Edited your DESIGN.md";
 
 const requestedFonts = new Set<string>();
 function loadFonts(theme: Theme) {
@@ -456,7 +456,7 @@ export class App extends LitElement {
     if (this.choice === AUTO) this.markdown = "";
     history.replaceState(null, "", location.pathname);
     this.view = "chat";
-    this.tell("Started afresh", {
+    this.tell("Started a new app", {
       action: {
         label: "Undo",
         run: () => {
@@ -497,7 +497,7 @@ export class App extends LitElement {
   /** The design is either Jev's mix for this app or the developer's own DESIGN.md. */
   private choose(choice: string) {
     if (choice === this.choice) return;
-    const turn = this.app ? this.begin("button", choice === AUTO ? `Switched to ${named(session.endpoint)}'s mix` : "Switched to my DESIGN.md") : undefined;
+    const turn = this.app ? this.begin("button", choice === AUTO ? `Switched to the ${named(session.endpoint)} design` : "Switched to your DESIGN.md") : undefined;
     this.choice = choice;
     this.designError = "";
     if (choice === CUSTOM) this.markdown = localStorage.getItem(STORED_DESIGN) ?? this.markdown;
@@ -621,7 +621,7 @@ export class App extends LitElement {
   private regenerate() {
     const old = this.current;
     if (!old) return;
-    const turn = this.begin("button", "Made this screen again");
+    const turn = this.begin("button", "Regenerated this screen");
     turn.on = old.title;
     void this.run(this.again(old), turn);
   }
@@ -722,7 +722,7 @@ export class App extends LitElement {
   private broke(detail: { name?: string; message: string }) {
     const screen = this.current;
     if (!screen) return;
-    screen.log = [...screen.log, { kind: "note", at: 0, tone: "bad", text: `"${detail.name ?? "custom component"}" failed in the browser: ${detail.message}. Make the screen again to bake it again.` }];
+    screen.log = [...screen.log, { kind: "note", at: 0, tone: "bad", text: `The custom component “${detail.name ?? "untitled"}” failed in the browser: ${detail.message}. To generate the component again, regenerate the screen.` }];
     this.tick++;
   }
 
@@ -811,7 +811,7 @@ export class App extends LitElement {
       await this.loadLibrary();
       this.saved = this.library.find((one) => one.id === id);
       history.replaceState(null, "", `?app=${id}${location.hash}`);
-      if (share) await this.copy(this.linkTo(id), "Anyone with the link can open it. Link copied");
+      if (share) await this.copy(this.linkTo(id), "Link copied. Anyone with the link can open this app.");
       else this.tell(`Saved “${this.saved?.name || this.appName}”`, { action: { label: "Share", run: () => void this.share(id) } });
     } catch (error) {
       this.bad(error);
@@ -834,7 +834,7 @@ export class App extends LitElement {
     this.menu = "";
     try {
       await this.setVisibility(id, "link");
-      await this.copy(this.linkTo(id), "Anyone with the link can open it. Link copied");
+      await this.copy(this.linkTo(id), "Link copied. Anyone with the link can open this app.");
     } catch (error) {
       this.bad(error);
     }
@@ -847,7 +847,7 @@ export class App extends LitElement {
     const gone = this.library.find((one) => one.id === id);
     this.library = this.library.filter((one) => one.id !== id);
     if (this.saved?.id === id) this.movedOn();
-    this.tell(`Deleted “${gone?.name || gone?.title || "the app"}”`);
+    this.tell(`Deleted “${gone?.name || gone?.title || "Untitled app"}”`);
   }
 
   private async copy(text: string, said: string) {
@@ -908,28 +908,28 @@ export class App extends LitElement {
       reply.push(html`<button class="madecard" aria-current=${screen === this.current} @click=${() => this.show(screen)} title="Show this screen">
         <span class="glyph ${screen.running ? "working" : ""}">${icon(screenIcon(screen.archetype))}</span>
         <span class="words">
-          <b>${screen.title || (screen.running ? "Planning the screen…" : "A screen")}</b>
-          <small>${[screen.archetype, screen.running ? "making…" : screen.stats ? `${turn.on ? "made again" : "made"} in ${seconds(screen.stats.totalMs)}` : "", bad ? `${bad} ${bad === 1 ? "problem" : "problems"}` : ""].filter(Boolean).join(" · ")}</small>
+          <b>${screen.title || (screen.running ? "Planning the screen…" : "Untitled screen")}</b>
+          <small>${[screen.archetype, screen.running ? "generating…" : screen.stats ? `${turn.on ? "regenerated" : "generated"} in ${seconds(screen.stats.totalMs)}` : "", bad ? `${bad} ${bad === 1 ? "error" : "errors"}` : ""].filter(Boolean).join(" · ")}</small>
         </span>
         ${icon("chevron_right")}
       </button>`);
-    else if (turn.screen && turn.outcome !== "pending") reply.push(html`<p class="hint gone">${icon("history", "xs")}The screen this made has since been made again.</p>`);
-    if (turn.outcome === "changed" && !turn.lines.length && !turn.screen) reply.push(html`<p class="hint">Nothing looks different for it.</p>`);
+    else if (turn.screen && turn.outcome !== "pending") reply.push(html`<p class="hint gone">${icon("history", "xs")}The screen from this turn was replaced when it was regenerated.</p>`);
+    if (turn.outcome === "changed" && !turn.lines.length && !turn.screen) reply.push(html`<p class="hint">No visible changes.</p>`);
     if (turn.text) reply.push(html`<p class=${turn.outcome === "failed" ? "note bad" : "spoken"}>${turn.text}</p>`);
     if (turn.options?.length)
       reply.push(html`<div class="options">
         ${turn.options.map((option: Option) => html`<button ?disabled=${this.busy || !session.makes} title=${option.instruction} @click=${() => this.say(option.instruction)}>${option.label}</button>`)}
       </div>`);
-    if (turn.outcome === "pending" && !screen) reply.push(html`<p class="reading"><span class="dots"><i></i><i></i><i></i></span>Reading what you meant…</p>`);
+    if (turn.outcome === "pending" && !screen) reply.push(html`<p class="reading"><span class="dots"><i></i><i></i><i></i></span>Interpreting your message…</p>`);
     const count = turn.decisions.length + (screen?.log.reduce((sum, entry) => sum + (entry.kind === "stage" ? entry.decisions.length : 0), 0) ?? 0);
     return html`<article class="turn ${turn.source} ${turn.outcome}">
       <p class="said">${turn.source === "tap" ? icon("touch_app", "xs") : turn.source === "button" ? icon("smart_button", "xs") : nothing}${turn.said}</p>
       <div class="reply">
-        ${turn.on && !turn.lines.length && !screen ? html`<small class="on">on ${turn.on}</small>` : nothing} ${reply}
+        ${turn.on && !turn.lines.length && !screen ? html`<small class="on">On ${turn.on}</small>` : nothing} ${reply}
         <footer>
           ${count
             ? html`<details class="why">
-                <summary>${icon("arrow_right", "s")}${count} ${count === 1 ? "decision" : "decisions"}${turn.ms ? ` · read${turn.endpoint ? ` by ${turn.endpoint}` : ""} in ${turn.ms} ms` : ""}</summary>
+                <summary>${icon("arrow_right", "s")}${count} ${count === 1 ? "decision" : "decisions"}${turn.ms ? ` · ${turn.endpoint ? `${turn.endpoint} responded` : "interpreted"} in ${turn.ms} ms` : ""}</summary>
                 ${turn.decisions.length ? this.renderDecisions(turn.decisions) : nothing} ${screen ? this.renderLog(screen) : nothing}
               </details>`
             : html`<span></span>`}
@@ -942,8 +942,8 @@ export class App extends LitElement {
   private renderDesign() {
     const problems = this.report?.findings.filter((f) => f.severity !== "info") ?? [];
     const options = [
-      { id: AUTO, name: `${named(session.endpoint)}'s mix`, symbol: "auto_awesome" },
-      { id: CUSTOM, name: "My DESIGN.md", symbol: "description" },
+      { id: AUTO, name: `${named(session.endpoint)} design`, symbol: "auto_awesome" },
+      { id: CUSTOM, name: "Your DESIGN.md", symbol: "description" },
     ];
     const asked = [...Object.entries(this.change.dials ?? {}).filter(([, by]) => by), ...Object.entries(this.change.pins ?? {})];
     const vars = this.report?.theme.vars;
@@ -952,9 +952,9 @@ export class App extends LitElement {
       <section class="panel design">
         <header class="panel-head">
           <span class="swatches">${swatches.map((value) => html`<i style="background:${value}"></i>`)}</span>
-          <h2>${this.designBusy ? "Mixing…" : (this.report?.name ?? "Design")}</h2>
+          <h2>${this.designBusy ? "Generating design…" : (this.report?.name ?? "Design")}</h2>
           ${this.choice === AUTO
-            ? html`<button class="btn small" ?disabled=${!this.app || this.designBusy} @click=${() => this.remix()} title="Draw another design from the same ratings; what you have asked for stays">${icon("casino", "s")}Remix</button>`
+            ? html`<button class="btn small" ?disabled=${!this.app || this.designBusy} @click=${() => this.remix()} title="Generate a different design from the same ratings. The changes that you asked for are kept.">${icon("casino", "s")}Remix</button>`
             : nothing}
         </header>
         <div class="segmented wide" role="radiogroup" aria-label="Design system">
@@ -962,14 +962,14 @@ export class App extends LitElement {
         </div>
         <p class="hint">
           ${this.choice === AUTO
-            ? `${named(session.endpoint)} rates the brief on hue, vividness, warmth, roundness and whitespace, and the ratings become a DESIGN.md. Say in the chat what you would change, or remix it.`
-            : `Paste your project's DESIGN.md below: tokens paint the mock, and ${named(session.endpoint)} reads the prose for what tokens cannot say.`}
+            ? `${named(session.endpoint)} rates your description for hue, vividness, warmth, roundness, and whitespace, and then turns the ratings into a DESIGN.md file. To change the design, describe the change in the chat, or select Remix.`
+            : `Paste your project's DESIGN.md. The tool applies the tokens to the preview, and ${named(session.endpoint)} reads the prose for anything the tokens don't specify.`}
         </p>
         ${this.choice === AUTO && asked.length
           ? html`<p class="yours">
               ${icon("push_pin", "xs")}
               ${asked.map(([key, value]) => html`<span>${typeof value === "number" ? `${key} ${value > 0 ? "+" : ""}${value.toFixed(2)}` : `${key} ${value === true ? "yes" : value === false ? "no" : value}`}</span>`)}
-              <small>yours, and kept by a remix</small>
+              <small>Your changes. Remixing keeps them.</small>
             </p>`
           : nothing}
         ${this.designError ? html`<p class="note bad">${this.designError}</p>` : nothing}
@@ -978,7 +978,7 @@ export class App extends LitElement {
           <textarea
             spellcheck="false"
             aria-label="DESIGN.md"
-            placeholder="Paste your project's DESIGN.md here."
+            placeholder="Paste your project's DESIGN.md"
             .value=${this.markdown}
             @input=${(e: InputEvent) => this.edit((e.target as HTMLTextAreaElement).value)}
           ></textarea>
@@ -995,11 +995,11 @@ export class App extends LitElement {
     };
     return html`
       <section class="library">
-        <h2>Library <small>${this.library.length ? `${this.library.length} ${this.library.length === 1 ? "app" : "apps"} · every screen and turn of each` : ""}</small></h2>
+        <h2>Library <small>${this.library.length ? `${this.library.length} ${this.library.length === 1 ? "app" : "apps"}, with every screen and message` : ""}</small></h2>
         <div class="grid">
           ${session.makes
             ? html`<button class="tile new" @click=${() => this.fresh()}>
-                <span>${icon("add_circle")}<b>New app</b><small>describe it, or start from an example</small></span>
+                <span>${icon("add_circle")}<b>New app</b><small>Describe an app, or start from an example.</small></span>
               </button>`
             : nothing}
           ${this.library.map((one) => {
@@ -1015,20 +1015,20 @@ export class App extends LitElement {
                   <b title=${one.title}>${one.name || one.title}</b>
                   <small>${icon(shared ? "link" : "lock", "xs")}${shared ? "Shared · " : ""}${one.screens} ${one.screens === 1 ? "screen" : "screens"} · ${when(one.created)}</small>
                 </div>
-                <button class="ib" aria-label="More" aria-expanded=${this.menu === `app:${one.id}`} @click=${() => ((this.deleting = ""), (this.menu = this.menu === `app:${one.id}` ? "" : `app:${one.id}`))}>${icon("more_vert", "s")}</button>
+                <button class="ib" aria-label="More options for ${one.name || one.title}" aria-expanded=${this.menu === `app:${one.id}`} @click=${() => ((this.deleting = ""), (this.menu = this.menu === `app:${one.id}` ? "" : `app:${one.id}`))}>${icon("more_vert", "s")}</button>
               </div>
               ${this.menu === `app:${one.id}`
                 ? html`<div class="pop tile-menu" role="menu">
                     ${this.deleting === one.id
-                      ? html`<p class="ask">Delete “${one.name || one.title}”? Its link will stop working.</p>
+                      ? html`<p class="ask">Delete “${one.name || one.title}”? Anyone who has its link can no longer open it.</p>
                           <div class="ask-acts">
-                            <button class="btn small" @click=${() => (this.menu = "")}>Keep</button>
+                            <button class="btn small" @click=${() => (this.menu = "")}>Cancel</button>
                             <button class="btn small danger" @click=${() => this.forget(one.id)}>Delete</button>
                           </div>`
                       : html`<button class="mi" role="menuitem" @click=${() => this.openSaved(one.id)}>${icon("open_in_new")}Open</button>
                           ${shared
                             ? html`<button class="mi" role="menuitem" @click=${() => this.copy(this.linkTo(one.id), "Link copied")}>${icon("content_copy")}Copy link</button>
-                                <button class="mi" role="menuitem" @click=${() => (this.menu = "", this.setVisibility(one.id, "private").then(() => this.tell("Only you can open it now")).catch(this.bad))}>${icon("lock")}Make private</button>`
+                                <button class="mi" role="menuitem" @click=${() => (this.menu = "", this.setVisibility(one.id, "private").then(() => this.tell("Only you can open this app now.")).catch(this.bad))}>${icon("lock")}Make private</button>`
                             : html`<button class="mi" role="menuitem" @click=${() => this.share(one.id)}>${icon("link")}Share by link</button>`}
                           <div class="sep"></div>
                           <button class="mi danger" role="menuitem" @click=${() => (this.deleting = one.id)}>${icon("delete")}Delete</button>`}
@@ -1037,7 +1037,7 @@ export class App extends LitElement {
             </div>`;
           })}
         </div>
-        ${this.library.length ? nothing : html`<p class="empty-note">${icon("bookmark")}Nothing saved yet. Save keeps an app, every screen and turn of it; Share also lets anyone with the link open it.</p>`}
+        ${this.library.length ? nothing : html`<p class="empty-note">${icon("bookmark")}You haven't saved any apps yet. Save keeps an app with all of its screens and messages. Share also creates a link that anyone can open.</p>`}
       </section>
     `;
   }
@@ -1047,13 +1047,13 @@ export class App extends LitElement {
     return html`
       <section class="visitor">
         <p class="hint">
-          ${this.saved?.screens} ${this.saved?.screens === 1 ? "screen" : "screens"}, made by ${this.saved?.owner || "someone"}. Tap through it: every screen that was made is here, and above is how it was made.
+          This app has ${this.saved?.screens} ${this.saved?.screens === 1 ? "screen" : "screens"}, created by ${this.saved?.owner || "another user"}. Tap through the preview: every screen that was generated is included. To see how a screen was generated, select the info icon.
         </p>
         ${session.state === "out"
-          ? html`<p class="hint">Making and changing things takes a name, and a place on the list.</p>
+          ? html`<p class="hint">To create or change apps, sign in with an account that's on the access list.</p>
               <button class="btn primary" @click=${() => session.signIn()}>${icon("login", "s")}Sign in with Google</button>`
           : nothing}
-        ${session.state === "stranger" ? html`<p class="hint">You are signed in as ${session.email}, which is not on the list of people who can make things here.</p>` : nothing}
+        ${session.state === "stranger" ? html`<p class="hint">You're signed in as ${session.email}, which isn't on the access list. To create or change apps, ask an admin to add your address.</p>` : nothing}
       </section>
     `;
   }
@@ -1071,8 +1071,8 @@ export class App extends LitElement {
                 (turn, i) => this.renderTurn(turn, i === this.turns.length - 1),
               )
             : html`<div class="opening">
-                <h2>What shall we make?</h2>
-                <p>Say what you want to see: an app, or one screen of one. It appears beside this. Then say what to change, or tap anything in it.</p>
+                <h2>What do you want to make?</h2>
+                <p>Describe an app, or a single screen. The tool generates a preview beside this conversation. To change it, describe the change or tap an element in the preview.</p>
                 ${session.makes ? html`<div class="examples">${EXAMPLES.map(([symbol, text]) => html`<button ?disabled=${this.busy} @click=${() => this.say(text)}>${icon(symbol)}<span>${text}</span>${icon("north_west", "xs")}</button>`)}</div>` : nothing}
               </div>`}
         </div>
@@ -1088,8 +1088,8 @@ export class App extends LitElement {
               <div class="box">
                 <textarea
                   rows="2"
-                  aria-label=${this.app ? "Say what to change" : "Describe an app or a screen"}
-                  placeholder=${this.app ? "Say what to change, or describe another app…" : "Describe an app, or a screen of one…"}
+                  aria-label=${this.app ? "Describe a change" : "Describe an app or a screen"}
+                  placeholder=${this.app ? "Describe a change, or describe another app" : "Describe an app, or one screen of an app"}
                   .value=${this.draft}
                   @input=${(e: InputEvent) => (this.draft = (e.target as HTMLTextAreaElement).value)}
                   @keydown=${(e: KeyboardEvent) => {
@@ -1101,10 +1101,10 @@ export class App extends LitElement {
                 ></textarea>
                 <div class="tools">
                   ${this.current?.title
-                    ? html`<span class="about" title="What you say is about the screen that is showing, unless you name another.">${icon(screenIcon(this.current.archetype), "xs")}about <b>${this.current.title}</b></span>`
+                    ? html`<span class="about" title="Your message applies to the screen that's showing, unless you name a different one.">${icon(screenIcon(this.current.archetype), "xs")}Editing <b>${this.current.title}</b></span>`
                     : html`<span></span>`}
                   ${this.busy && this.turns.at(-1)?.before
-                    ? html`<button type="button" class="send" title="Stop, and take it back" aria-label="Stop" @click=${() => this.undo()}>${icon("stop", "s fill")}</button>`
+                    ? html`<button type="button" class="send" title="Stop and undo this turn" aria-label="Stop and undo this turn" @click=${() => this.undo()}>${icon("stop", "s fill")}</button>`
                     : html`<button type="submit" class="send" ?disabled=${this.busy || !this.draft.trim()} aria-label="Send">${icon("arrow_upward", "s")}</button>`}
                 </div>
               </div>
@@ -1117,7 +1117,7 @@ export class App extends LitElement {
   private renderRail() {
     const item = (view: View, symbol: string, name: string, extra = "") =>
       html`<button class=${extra} aria-current=${this.view === view} @click=${() => this.go(view)}>${icon(symbol)}${name}</button>`;
-    return html`<nav class="rail" aria-label="The tool">
+    return html`<nav class="rail" aria-label="Main navigation">
       ${session.makes ? html`<button class="new" title="New app" aria-label="New app" @click=${() => this.fresh()}>${icon("add")}</button>` : nothing}
       ${item("chat", "chat_bubble", "Chat")} ${item("stage", "smartphone", "Preview", "narrow-only")} ${session.makes ? item("design", "palette", "Design") : nothing}
       ${session.state === "in" ? item("library", "grid_view", "Library") : nothing}
@@ -1137,31 +1137,31 @@ export class App extends LitElement {
       <a class="brand" href="/" title="jev2ui" @click=${(e: Event) => (e.preventDefault(), this.go("chat"))}>${mark()}<b>jev2ui</b></a>
       ${bench && this.app
         ? html`${icon("chevron_right", "crumb")}
-            <span class="appname" title=${this.app}>${this.appName || "A new app"}</span>
+            <span class="appname" title=${this.app}>${this.appName || "Untitled app"}</span>
             ${saved?.mine
               ? html`<button
                   class="vis"
-                  title=${saved.visibility === "link" ? "Anyone with the link can open it. Make it yours alone again." : "Only you can open it. Let anyone with the link."}
-                  @click=${() => this.setVisibility(saved.id, saved.visibility === "link" ? "private" : "link").then(() => this.tell(this.saved?.visibility === "link" ? "Anyone with the link can open it" : "Only you can open it now")).catch(this.bad)}
+                  title=${saved.visibility === "link" ? "Anyone with the link can open this app. Select to make it private." : "Only you can open this app. Select to share it with a link."}
+                  @click=${() => this.setVisibility(saved.id, saved.visibility === "link" ? "private" : "link").then(() => this.tell(this.saved?.visibility === "link" ? "Anyone with the link can now open this app." : "Only you can open this app now.")).catch(this.bad)}
                 >
                   ${icon(saved.visibility === "link" ? "link" : "lock", "xs")}${saved.visibility === "link" ? "Shared" : "Private"}
                 </button>`
               : saved
-                ? html`<span class="vis">${icon("person", "xs")}by ${saved.owner || "someone"}</span>`
+                ? html`<span class="vis">${icon("person", "xs")}Shared by ${saved.owner || "another user"}</span>`
                 : session.state === "in"
                   ? html`<span class="vis quiet">Not saved</span>`
                   : nothing}`
         : nothing}
       <span class="grow"></span>
       ${bench && this.app && session.state === "in"
-        ? html`<button class="btn" ?disabled=${!painted || here!.running || Boolean(saved?.mine)} @click=${() => this.save(false)} title="Keep this app, every screen and turn of it, to open again">
+        ? html`<button class="btn" ?disabled=${!painted || here!.running || Boolean(saved?.mine)} @click=${() => this.save(false)} title="Save this app, with every screen and message, so that you can open it later.">
               ${icon("bookmark", saved?.mine ? "s fill" : "s")}<span>${saved?.mine ? "Saved" : "Save"}</span>
             </button>
             ${saved?.mine && saved.visibility === "link"
               ? html`<button class="btn primary" @click=${() => this.copy(this.linkTo(saved.id), "Link copied")}>${icon("content_copy", "s")}<span>Copy link</span></button>`
-              : html`<button class="btn primary" ?disabled=${!painted || here!.running} @click=${() => this.save(true)} title="Save it, and let anyone with the link open it: they need not sign in">${icon("link", "s")}<span>Share</span></button>`}`
+              : html`<button class="btn primary" ?disabled=${!painted || here!.running} @click=${() => this.save(true)} title="Save this app and create a link. Anyone with the link can open it without signing in.">${icon("link", "s")}<span>Share</span></button>`}`
         : nothing}
-      ${limited ? html`<span class="runs ${runs.left === "0" ? "spent" : ""}" title="${runs.left} of ${runs.daily} runs left today. A screen made is one run."><span class="meter"><i style="width:${(100 * Number(runs.left)) / Math.max(1, Number(runs.daily))}%"></i></span>${runs.left} left</span>` : nothing}
+      ${limited ? html`<span class="runs ${runs.left === "0" ? "spent" : ""}" title="You have ${runs.left} of ${runs.daily} runs left today. Generating one screen uses one run."><span class="meter"><i style="width:${(100 * Number(runs.left)) / Math.max(1, Number(runs.daily))}%"></i></span>${runs.left} runs left</span>` : nothing}
       ${session.state === "in"
         ? html`<button class="facebtn" aria-label="Account" aria-expanded=${this.menu === "account"} @click=${() => (this.menu = this.menu === "account" ? "" : "account")}>${face(session)}</button>`
         : session.state === "out"
@@ -1177,14 +1177,14 @@ export class App extends LitElement {
       <div class="who">
         ${face(session, "big")}
         <div><b>${session.name}</b><small>${session.email}</small></div>
-        <span class="role ${session.role}">${session.role}</span>
+        <span class="role ${session.role}">${titled(session.role)}</span>
       </div>
       <div class="quota">
         ${limited
-          ? html`<p><b>${runs.left} of ${runs.daily}</b> runs left today</p>
+          ? html`<p>You have <b>${runs.left} of ${runs.daily}</b> runs left today.</p>
               <div class="meter ${runs.left === "0" ? "spent" : ""}"><i style="width:${(100 * Number(runs.left)) / Math.max(1, Number(runs.daily))}%"></i></div>
-              <p class="hint">A screen made is one run. Turns over at midnight UTC.</p>`
-          : html`<p><b>No daily limit</b></p>`}
+              <p class="hint">Generating one screen uses one run. Your runs reset at midnight UTC.</p>`
+          : html`<p><b>No daily run limit</b></p>`}
       </div>
       <button class="mi" role="menuitem" @click=${() => this.go("settings", "account")}>${icon("settings")}Settings</button>
       <button class="mi" role="menuitem" @click=${() => this.go("library")}>${icon("grid_view")}Library</button>
@@ -1209,27 +1209,27 @@ export class App extends LitElement {
     return html`<section class="stage">
       <div class="toolbar">
         <div class="segmented" role="radiogroup" aria-label="Device">
-          ${(Object.keys(DEVICES) as Device[]).map((d) => html`<button role="radio" aria-checked=${this.device === d} aria-label=${d} title=${d} @click=${() => (this.device = d)}>${icon(DEVICE_ICONS[d], "s")}</button>`)}
+          ${(Object.keys(DEVICES) as Device[]).map((d) => html`<button role="radio" aria-checked=${this.device === d} aria-label=${titled(d)} title=${titled(d)} @click=${() => (this.device = d)}>${icon(DEVICE_ICONS[d], "s")}</button>`)}
         </div>
-        <nav class="flow" aria-label="Screens made so far">
+        <nav class="flow" aria-label="Screens">
           ${made.length > 1
-            ? made.map((screen) => html`<button aria-current=${screen === here} title=${screen.key} @click=${() => this.show(screen)}>${icon(screenIcon(screen.archetype), "xs")}${screen.title || "…"}</button>`)
+            ? made.map((screen) => html`<button aria-current=${screen === here} title=${screen.title || "Untitled screen"} @click=${() => this.show(screen)}>${icon(screenIcon(screen.archetype), "xs")}${screen.title || "…"}</button>`)
             : nothing}
         </nav>
         <div class="acts">
-          <button class="ib solid" ?disabled=${!here || here.running || !session.makes} @click=${() => this.regenerate()} title="Make this screen again" aria-label="Make this screen again">${icon("refresh", "s")}</button>
-          <button class="ib solid ${wrong ? "wrong" : ""}" ?disabled=${!here} aria-expanded=${this.menu === "info"} @click=${() => toggle("info")} title="How this screen was made" aria-label="How this screen was made">${icon("info", "s")}</button>
+          <button class="ib solid" ?disabled=${!here || here.running || !session.makes} @click=${() => this.regenerate()} title="Regenerate this screen" aria-label="Regenerate this screen">${icon("refresh", "s")}</button>
+          <button class="ib solid ${wrong ? "wrong" : ""}" ?disabled=${!here} aria-expanded=${this.menu === "info"} @click=${() => toggle("info")} title="How this screen was generated" aria-label="How this screen was generated">${icon("info", "s")}</button>
           <button class="ib solid" ?disabled=${!painted && !theme} aria-expanded=${this.menu === "export"} @click=${() => toggle("export")} title="Export" aria-label="Export">${icon("download", "s")}</button>
         </div>
         ${this.menu === "info" && here
           ? html`<div class="pop info">
-              <h4>How this screen was made</h4>
+              <h4>How this screen was generated</h4>
               <dl>
-                <dt>First UI</dt><dd>${here.firstPaintMs !== undefined ? `${here.firstPaintMs.toLocaleString()} ms` : "–"}</dd>
-                <dt>Done</dt><dd>${s ? `${s.totalMs.toLocaleString()} ms` : here.running ? "making…" : "–"}</dd>
+                <dt>First component</dt><dd>${here.firstPaintMs !== undefined ? `${here.firstPaintMs.toLocaleString()} ms` : "–"}</dd>
+                <dt>Total time</dt><dd>${s ? `${s.totalMs.toLocaleString()} ms` : here.running ? "generating…" : "–"}</dd>
                 <dt>${named(s?.endpoint)} calls</dt><dd>${s?.jevCalls ?? "–"}</dd>
-                <dt>Gemini tokens</dt><dd>${s?.geminiOutputTokens?.toLocaleString() ?? "–"}</dd>
-                <dt>Tree</dt><dd class=${s ? (s.valid ? "good" : "bad") : ""}>${s ? html`${icon(s.valid ? "check_circle" : "error", "xs fill")}${s.valid ? "valid" : "invalid"}` : "–"}</dd>
+                <dt>Gemini output tokens</dt><dd>${s?.geminiOutputTokens?.toLocaleString() ?? "–"}</dd>
+                <dt>A2UI tree</dt><dd class=${s ? (s.valid ? "good" : "bad") : ""}>${s ? html`${icon(s.valid ? "check_circle" : "error", "xs fill")}${s.valid ? "Valid" : "Invalid"}` : "–"}</dd>
               </dl>
               ${here.log.filter((entry) => entry.kind === "note" && entry.tone === "bad").map((entry) => html`<p class="note bad">${(entry as { text: string }).text}</p>`)}
             </div>`
@@ -1244,11 +1244,11 @@ export class App extends LitElement {
       </div>
       ${this.unmade && !session.makes
         ? html`<p class="notice">
-            ${icon("lock", "s")}<span>Nobody has made the screen that “${this.unmade}” leads to, and making one takes a name.</span>
+            ${icon("lock", "s")}<span>No one has generated the screen that “${this.unmade}” leads to. To generate it, sign in.</span>
             ${session.state === "out" ? html`<button class="btn small" @click=${() => session.signIn()}>Sign in</button>` : nothing}
           </p>`
         : nothing}
-      ${stale && session.makes ? html`<p class="notice">${icon("info", "s")}<span>This design lays the screen out differently.</span><button class="btn small" @click=${() => this.regenerate()}>Make it again</button></p>` : nothing}
+      ${stale && session.makes ? html`<p class="notice">${icon("info", "s")}<span>The current design uses a different layout for this screen.</span><button class="btn small" @click=${() => this.regenerate()}>Regenerate</button></p>` : nothing}
       <div class="holder">
         <!-- Drawn at its own size and then made to fit, so that what is seen is the whole device and not as much of it as there is room for. -->
         <div class="device ${this.device}" style="width:${DEVICES[this.device]}px;zoom:${this.fit}">
@@ -1258,7 +1258,7 @@ export class App extends LitElement {
               (screen) => screen.id,
               (screen, i) => html`<kit-surface class="layer ${screen.dialog && i > 0 ? "over" : ""}" data-screen=${screen.id} ?inert=${i < layers.length - 1}></kit-surface>`,
             )}
-            ${painted ? nothing : html`<p class="empty">${here?.running ? html`<span class="dots"><i></i><i></i><i></i></span>Planning the screen…` : html`${icon("draw")}What you ask for appears here. Then tap anything.`}</p>`}
+            ${painted ? nothing : html`<p class="empty">${here?.running ? html`<span class="dots"><i></i><i></i><i></i></span>Planning the screen…` : html`${icon("draw")}Your preview appears here. Tap any element to explore it.`}</p>`}
           </div>
         </div>
       </div>

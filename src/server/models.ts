@@ -58,7 +58,7 @@ export async function askJev(state: unknown, questions: Questions, by: Endpoint 
   const start = performance.now();
   const response = await client.systemOne({ model: JEV_MODEL, state: state as any, questions }).catch((error: unknown) => {
     // What a proxy in the way has to say can be a page of HTML; its first line is enough.
-    throw new Error(`${by} did not answer: ${(error instanceof Error ? error.message : String(error)).split("\n")[0]!.slice(0, 200)}`);
+    throw new Error(`${by} didn't respond: ${(error instanceof Error ? error.message : String(error)).split("\n")[0]!.slice(0, 200)}`);
   });
   const modelMs = (response as { gev?: { model_ms?: number } }).gev?.model_ms;
   return {

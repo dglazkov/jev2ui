@@ -205,7 +205,7 @@ export function resolveDesign(design: Design, answers: Record<string, any> | nul
 
   // Text is judged against the page and cards against the text, so order matters.
   for (const role of ["page", "text", "card", "muted", "accent", "border"] as const) {
-    const label = `${role} colour`;
+    const label = `${role} color`;
     const source = COMPONENT_SOURCES[role];
     const fromComponent = source && componentColor(system, source, "backgroundColor");
     if (fromComponent) {
