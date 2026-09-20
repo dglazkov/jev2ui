@@ -13,9 +13,10 @@
 
 import { ARCHITECTURE, ARCHITECTURE_REQUEST, SCREEN_BINDINGS } from "../shared/architecture.js";
 import type { IncomingMessage, ServerResponse } from "node:http";
+import type { ServerModule } from "./modules.js";
 
 /** Loads a module of src/server by its path from there, without the extension: "mock/pipeline". */
-export type Load = (module: string) => Promise<any>;
+export type Load = (module: ServerModule) => Promise<any>;
 
 /** A DESIGN.md is the largest thing anyone sends. */
 const LARGEST_BODY = 1 << 20;

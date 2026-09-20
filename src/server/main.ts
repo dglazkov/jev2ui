@@ -11,6 +11,7 @@ import { createServer } from "node:http";
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { extname, join, normalize, sep } from "node:path";
 import { api } from "./http.js";
+import { MODULES } from "./modules.js";
 
 const DIST = join(process.cwd(), "dist");
 const PORT = Number(process.env.PORT) || 8080;
@@ -38,20 +39,6 @@ function built(pathname: string): string | undefined {
 
 if (!existsSync(join(DIST, "index.html"))) throw new Error("nothing is built: run `npm run build` first");
 
-// Every module the routes load by name (http.ts), spelled out so that the bundler can see them.
-const MODULES: Record<string, () => Promise<unknown>> = {
-  apps: () => import("./apps.js"),
-  auth: () => import("./auth.js"),
-  baseline: () => import("./baseline.js"),
-  change: () => import("./change.js"),
-  "design-source": () => import("./design-source.js"),
-  hybrid: () => import("./hybrid.js"),
-  "ia/navigation": () => import("./ia/navigation.js"),
-  jobs: () => import("./jobs.js"),
-  "mock/pipeline": () => import("./mock/pipeline.js"),
-  models: () => import("./models.js"),
-  "photos/generate": () => import("./photos/generate.js"),
-};
 const routes = api((module) => MODULES[module]?.() ?? Promise.reject(new Error(`main.ts does not know the module "${module}"`)));
 // Loaded now, while the instance is starting, and not when the first person clicks.
 await Promise.all(Object.values(MODULES).map((load) => load()));
