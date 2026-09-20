@@ -1,8 +1,8 @@
 # jev2ui
 
-A design tool for developers: describe the screen you want, get a mock of it, tap through it into screens that
-are designed as you go, all painted by your
-[DESIGN.md](https://github.com/google-labs-code/design.md).
+A design tool for developers: say what you want and get a mock of it, keep talking to change it ("make it
+lighter", "more playful", "add a settings page"), tap through it into screens that are designed as you go, all
+painted by your [DESIGN.md](https://github.com/google-labs-code/design.md).
 
 Under it is an experiment: build a screen from a text prompt using [TypeSafe's Jev](https://docs.typesafe.ai/)
 for the decisions and a small Gemini model for the words. It began by emitting
@@ -17,9 +17,10 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-Type a description ("Checkout for a sneaker store, with order summary") and the mock appears
-in a phone, tablet or desktop frame in about a second and a half. Every decision behind it is listed in the
-trace, with its probability. Copy the messages, the theme as CSS variables, or the DESIGN.md.
+The tool is a conversation on the left and the app on the right. Type a description ("Checkout for a sneaker
+store, with order summary") and the mock appears in a phone, tablet or desktop frame in about a second and a
+half. Everything typed after that is about the app that is there. Every decision is listed under the turn it
+belongs to, with its probability. Copy the messages, the theme as CSS variables, or the DESIGN.md.
 
 ## How a mock is built: Jev fills a tree
 
@@ -137,6 +138,55 @@ forever.
 Two archetypes exist mostly for this: `result` (the outcome of something just done) and the picker that a
 settings screen turns into when it was reached from a value row, whose options are check rows with the
 current value ticked.
+
+### Talking to it: every message after the first is an edit
+
+Jev cannot write a reply, and cannot rewrite anything. A message has to become decisions. Asking all of the
+questions again with the message added would let every answer that sat near even odds flip, and the app being
+adjusted would become another app. So Jev is asked **about the change and not the state**
+(`src/server/change.ts`, one request, about 150 ms):
+
+- **What kind of turn is it?** A Choice: another app, another screen, the look, what the screen is made of, its
+  words, where things sit, or a question.
+- **Each dial of the mix, relatively.** A Score of seven levels from *much less* through *as it is* to *much
+  more*. The expected score is a signed step, so "a touch lighter" moves lightness by 0.7 of a level, "lighter"
+  by 1.1 and "much lighter" by 2.0. A dial the message does not mention comes back *as it is*: over messages
+  that are not about the look, a dial moves by 0.01 on average ([docs/change-probe.md](docs/change-probe.md)).
+  The step is added to where Jev put the dial, and a remix keeps it.
+- **Each choice of the mix, behind a gate.** A Noul, "does the message ask to change this?", for hue, light or
+  dark, typefaces, elevation, pictures and cards. Only a choice whose gate opens is asked again, as the mix
+  asked it, with the message beside the brief. "Make it more fancy" opens the typeface gate and nothing else,
+  and asked again the typefaces come back *elegant*. A choice that comes back as it was gives way to the next
+  likeliest: the person asked for another.
+
+The dials and gates are asked whatever the kind of turn, because Jev calls "no cards" a change to what the
+screen is made of, and the cards gate opens all the same. Then code acts:
+
+| The message is about | What happens | Cost |
+|---|---|---|
+| the look | the design is mixed again with the steps and the choices; every screen repaints at once | one or two Jev requests, no run |
+| the screen's structure or words | the screen showing is made again with the message as a note on its description | a run |
+| another screen | it is made, in the same app, as a tap would have made it (`via: asked`) | a run |
+| another app | a new app, with a design of its own | a run |
+| where things sit, a question, or nothing Jev could map | Gemini says so, or answers, or asks what was meant | one small Gemini call |
+
+**The reply is a receipt.** When something changed, nothing writes the tool's side of the conversation: code
+lists what differs between the design before and after ("accent lightness: L 0.59 → L 0.71"), and the decisions
+are folded under it.
+
+**The tool only speaks when Jev found nothing to do** (`src/server/talk.ts`). Jev decided that; Gemini words
+it. It is told what the tool can change in the words the code already has (the ends of each dial, the criteria
+of each choice, the blocks and archetypes), so the list cannot drift from what is true. It returns a sentence
+and two or three options, each **a whole instruction** ("Make the accent colour more vivid") that is sent as an
+ordinary message when chosen, so nothing has to work out what "the second one" meant. Each instruction is put
+through Jev first, and those that would lead nowhere are dropped: Gemini cannot offer what the tool cannot do.
+A message that may well be a question (p ≥ 0.3) is taken as one, since answering costs next to nothing and
+making a screen costs a run.
+
+**A turn is whatever made or changed the app**: a message, a button (↻, remix, an edit of the DESIGN.md), or a
+tap, but only a tap that had a screen made. Walking around what is already there is not a turn. The turns are
+the app's history: they are saved with it, and the last one can be undone, whatever it was. Undo puts back what
+stood before the turn, which the browser kept.
 
 ### The kit: a humble fork of A2UI
 
@@ -375,7 +425,7 @@ Requires Node 20+ and a `.env` with `GEMINI_API_KEY` and `JEV_API_KEY`.
 
 ```sh
 npm install
-npm run dev        # http://localhost:5173 is the design tool; /compare.html has the pipelines side by side
+npm run dev        # http://localhost:5173 is the design tool; /compare.html still has the old pipelines side by side
 npm run eval       # comparison table over the built-in prompts, all four pipelines
 npm run eval -- "Book a haircut" -v   # one prompt, printing decisions and messages
 ```
@@ -513,12 +563,24 @@ rather than a benchmark.
   comes out as a dashboard with a ring on top, and a tall component shares the screen with a list.
 - A baked component is checked, not valid by construction. The lint cannot tell whether it draws the right
   thing, or draws at all. An error in the browser is reported in the trace, not sent back to the baker.
-- The shelf lives in the browser's memory and goes when the page does: nothing saves an app yet.
+- A message changes the look precisely and everything else bluntly: a change to a screen's structure or words
+  makes the whole screen again with a note, so its other words change too. Changing one block, or one part's
+  words, is not built; nor has Jev been probed on it.
+- Moods ("more playful", "more corporate") are carried almost wholly by the typefaces; the dials barely move
+  for them.
+- Only a design that Jev mixed can be changed by talking. With your own DESIGN.md the tool says so.
+- A message is read on its own, with the question it answers if the tool had just asked one. "A bit more" and
+  "undo that" are not understood; there is a button for the second.
+- What the person says reaches the screen it was said about, as a note. It does not yet reach the screens made
+  after it: "it's called Fern" renames one screen.
+- A description typed mid-conversation is used as it was typed: "Now make me a recipe app" is a worse brief than
+  "A recipe app".
+- Undo is for the turns of this sitting. An app opened from a link shows how it was made and cannot be unwound.
 - A custom slot sits in the archetype's fixed place and there is at most one per screen.
 - Symbol questions are expensive: 175 options each, asked per row, which is why a settings screen costs
   around 19k Jev input tokens against 7k for most screens.
 - Fields and chips draw their state but do not change it, and a form's values do not travel to the next screen.
-- A session lives in the page: reload and the prototype is gone. There is no export of the whole flow yet.
+- A session lives in the page until it is saved: reload and the prototype is gone.
 - Nothing is prefetched; a Jev plan is cheap enough (about 250 ms) to start on hover.
 - Hover and pressed variants in a DESIGN.md are mostly ignored.
 
@@ -552,19 +614,22 @@ src/server/hybrid.ts    the sections pipeline
 src/server/baseline.ts  Gemini writing A2UI directly
 src/server/validate.ts  schema and reference validation
 src/server/run.ts       event stream, stats, end-of-run validation
-src/server/http.ts      the routes: /api/design, /api/generate (Server-Sent Events), /api/photo, /api/config, /api/me, /api/access, /api/apps
+src/shared/turn.ts      a turn of the chat: what the browser asks about a message, and what it is told to do
+src/server/change.ts    what a message asks to have changed: the kind of turn, relative dials, gated choices
+src/server/talk.ts      what Gemini says when Jev found nothing to do, and the options it offers
+src/server/http.ts      the routes: /api/design, /api/turn, /api/generate (Server-Sent Events), /api/photo, /api/config, /api/me, /api/access, /api/apps
 src/server/auth.ts      who is asking (a Firebase ID token), what the access list grants them, what is left of their runs today
 src/server/store.ts     Firestore over REST: the access list, the day's counts, saved apps
-src/shared/saved.ts     an app, saved: the whole session as a document
+src/shared/saved.ts     an app, saved: the whole session as a document, its turns included
 src/server/apps.ts      saved apps in Firestore: whose they are, who may open them
 src/web/access.ts       the access list, for admins (access.html)
 src/web/session.ts      signing in with Google; the gate and the badge both pages show; fetch that says who is asking
 src/server/main.ts      the deployed server: the routes and the built front end (vite.config.ts mounts them in dev)
-src/web/app.ts          the design tool; compare.ts is the side-by-side page (both use @a2ui/lit's v0.9 renderer)
+src/web/app.ts          the design tool: the conversation, the screens, the turns; compare.ts is the old side-by-side page
 src/eval.ts             CLI comparison
 src/probe/jtbd.ts       can Jev see jobs? (docs/jtbd-probe.md)
 src/probe/custom.ts     can Jev tell when a screen needs something the kit cannot draw?
 src/probe/design.ts     how does Jev read a DESIGN.md, and what does it mix? (fixtures in src/probe/designs/)
 src/probe/change.ts     can Jev read a change? "make it lighter" as decisions about what moves (docs/change-probe.md)
-docs/chat-and-turns.md  design note, not built: a chat where every request is a creation or an edit
+docs/chat-and-turns.md  the design note behind the chat: what is built of it, and what is not yet
 ```

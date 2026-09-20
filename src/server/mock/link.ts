@@ -9,8 +9,8 @@ export interface Destination {
   /** Reads like something a developer would have typed. */
   screen: string;
   reachedBy: string;
-  /** Material: a navigation bar on top-level destinations only, a way back everywhere else. */
-  topLevel: boolean;
+  /** Material: a navigation bar on top-level destinations only, a way back everywhere else. Unset where how the person got here does not say, and Jev does. */
+  topLevel?: boolean;
   /** The kinds of screen this can be, when how the person got here rules the others out. */
   among?: string[];
   /** What is already known about the thing this screen is about; the writers must agree with it. */
@@ -52,6 +52,9 @@ export function destination({ app, from, via }: Journey): Destination {
       return { screen: `${via.label}: one of the main screens of the app that "${app}" belongs to`, reachedBy: `tapping "${via.label}" in the app's main navigation`, topLevel: true };
     case "appbar":
       return { screen: APP_BAR[via.label] ?? `${via.label} for ${here}`, reachedBy: `tapping the ${via.label} action in the top bar of ${here}`, topLevel: false };
+    case "asked":
+      // What the developer typed is the description, as it would be for a first screen; it only needs saying whose screen it is.
+      return { screen: `${via.label}. This is another screen of the app that "${app}" belongs to`, reachedBy: `the app's own navigation: the developer asked for this screen after seeing ${here}` };
     case "back":
       // Only asked for when there is nothing to go back to: the session began on a sub-page. The way back from there
       // is the app's home, and a main screen has no back arrow of its own, so the chain ends here by construction.

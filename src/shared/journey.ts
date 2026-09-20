@@ -6,8 +6,11 @@ import type { Baked } from "./kit.js";
 
 /** What was tapped. `data` is the data-model object behind it: the list item, the settings row. */
 export interface Via {
-  /** `part` is a part of a custom component that has a page of its own: a day on a calendar, a room on a plan. */
-  kind: "item" | "itemAction" | "row" | "nav" | "appbar" | "action" | "submit" | "back" | "part";
+  /**
+   * `part` is a part of a custom component that has a page of its own: a day on a calendar, a room on a plan.
+   * `asked` is not a tap: the person asked for the screen in words, and `label` is what they said.
+   */
+  kind: "item" | "itemAction" | "row" | "nav" | "appbar" | "action" | "submit" | "back" | "part" | "asked";
   /** For a `part`: the name of the component it is a part of. */
   component?: string;
   label: string;

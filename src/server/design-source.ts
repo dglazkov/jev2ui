@@ -4,11 +4,12 @@
 
 import { parseDesign, readDesign, resolveDesign, structureKey, type Design, type DesignRead } from "./design-md.js";
 import { mixDesign } from "./design-mix.js";
+import type { PaintChange } from "../shared/turn.js";
 import { buildTheme } from "./theme.js";
 import type { DesignReport } from "../shared/design.js";
 
-/** A supplied DESIGN.md, or a brief for Jev to mix one from; a non-zero `seed` asks for that remix of it. */
-export type DesignSource = { markdown: string } | { brief: string; seed?: number };
+/** A supplied DESIGN.md, or a brief for Jev to mix one from; a non-zero `seed` asks for that remix of it, and `change` is what the developer has since asked for. */
+export type DesignSource = { markdown: string } | { brief: string; seed?: number; change?: PaintChange };
 
 export interface LoadedDesign {
   design: Design;
@@ -28,7 +29,7 @@ async function load(source: DesignSource): Promise<LoadedDesign> {
     design = parseDesign(source.markdown);
     read = await readDesign(design);
   } else {
-    const mix = await mixDesign(source.brief, source.seed ?? 0);
+    const mix = await mixDesign(source.brief, source.seed ?? 0, source.change);
     mixed = mix.markdown;
     design = parseDesign(mix.markdown);
     // The mixer wrote the prose, so nothing needs to read it back; its token names settle every role.
@@ -49,7 +50,7 @@ async function load(source: DesignSource): Promise<LoadedDesign> {
 
 /** `fresh` is false when this design has been worked out before and costs nothing now. */
 export function loadDesign(source: DesignSource): { loaded: Promise<LoadedDesign>; fresh: boolean } {
-  const key = "markdown" in source ? `md:${source.markdown}` : `brief:${source.seed ?? 0}:${source.brief}`;
+  const key = "markdown" in source ? `md:${source.markdown}` : `brief:${source.seed ?? 0}:${JSON.stringify(source.change ?? {})}:${source.brief}`;
   let promise = loaded.get(key);
   const fresh = !promise;
   if (!promise) {

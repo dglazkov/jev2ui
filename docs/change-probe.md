@@ -93,3 +93,11 @@ The first run used five-level rubrics and looser questions. Three things were re
 - Not probed: structure gates (add, remove, keep per block), the per-part gate for words, messages that refer
   to earlier turns ("a bit more", "undo that"), and how the answers hold up when `design` is a real DESIGN.md
   and not a sentence.
+
+## Since
+
+The questions moved into `src/server/change.ts`, where the chat uses them, and the probe imports them from
+there, so what is probed is what runs. The server's context has one more sentence (about a message that answers
+a question of the tool's), and with it the mood messages move the dials a little less still: named dials 33/40,
+all seven misses being "more playful" and "more serious and corporate", all in the right direction. Everything
+named outright is as above; turn kind 83/86, drift 0.045, gates 22/22 and 492/494.

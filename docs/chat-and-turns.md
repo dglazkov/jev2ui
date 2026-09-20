@@ -1,7 +1,7 @@
 # Chat: every request is a creation or an edit
 
-Design note, 2026-09-19. Nothing here is built. It records what was settled in conversation, what is assumed
-and not yet tested, and the order to build in.
+Design note, 2026-09-19. It records what was settled in conversation, what is assumed and not yet tested, and
+the order to build in. **Step 1 is built** (see "What is built" at the end); the rest is still a plan.
 
 ## The idea
 
@@ -185,3 +185,25 @@ What follows:
 3. **Structure.** Blocks added and removed, anatomy re-asked behind gates, `pins`.
 4. **Later**: click a block to say what "this" is; remix one block from Jev's distribution; another picture;
    bake again with a note.
+
+## What is built (step 1, 2026-09-19)
+
+The chat column, the turns, and paint: `src/shared/turn.ts`, `src/server/change.ts`, `src/server/talk.ts`,
+`POST /api/turn`, and `src/web/app.ts` rebuilt around the conversation. Where it differs from the note above:
+
+- **Structure and words act, bluntly.** The note had them wait for steps 2 and 3. Instead a message of either
+  kind makes the screen showing again with the message as a note on its description (`notes` on the request,
+  which survive ↻). It costs a run and rewrites more than was asked, but "add a search bar" does something today.
+  So the blunt path is what these kinds do, and is not offered as an option.
+- **A new screen can be asked for in words** (`via.kind = "asked"`), which the note did not mention.
+- **Torn is not detected.** Everything that moved is acted on: "make it lighter" lightens the accent and adds
+  whitespace, the receipt shows both, and undo takes both back. Offering the runner-up as a chip is not built.
+- **A message that may be a question is taken as one** (p ≥ 0.3), because answering is cheap and making is not.
+- **Undo keeps what stood before each turn** in the browser, and does not fold over the turns. It is simpler
+  and undoes anything, but only for the turns of this sitting: a saved app carries its turns as a record.
+- **`pins` exist for the design only** (the choices of the mix). Pins on a screen's plan, and `kept` words, wait
+  for steps 2 and 3.
+- **The app's description does not yet grow** with what the person says; a note reaches one screen.
+- **Your own DESIGN.md cannot be changed by talking**; the tool says so.
+- Saved apps are version 2 (turns, and the design's `change`); version 1 opens as before. `stack` is no longer
+  part of the id.

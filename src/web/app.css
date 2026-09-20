@@ -58,15 +58,10 @@ textarea {
   align-items: baseline;
 }
 
-.workbench {
+.bench {
   display: grid;
-  grid-template-columns: 340px minmax(0, 1fr) 360px;
-  min-height: calc(100vh - 46px);
-}
-
-.controls,
-.trace {
-  padding: 16px 20px 48px;
+  grid-template-columns: 400px minmax(0, 1fr);
+  height: calc(100vh - 46px);
 }
 
 h2 {
@@ -86,12 +81,6 @@ h2 small {
 
 /* --- Saved apps: what a visitor sees, and the person's library ------------ */
 
-.visitor .about {
-  margin: 0 0 8px;
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.35;
-}
 
 .visitor .primary {
   padding: 8px 14px;
@@ -107,9 +96,6 @@ h2 small {
   text-align: center;
 }
 
-.library {
-  margin-top: 24px;
-}
 
 .saved {
   padding: 8px 0;
@@ -145,49 +131,10 @@ h2 small {
 
 /* --- Prompt ------------------------------------------------------------- */
 
-.prompt textarea {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 10px 12px;
-  resize: vertical;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
 
-.prompt button {
-  width: 100%;
-  margin-top: 6px;
-  padding: 9px 18px;
-  font-weight: 600;
-  color: #fff;
-  background: var(--accent);
-  border: 0;
-  border-radius: 8px;
-  cursor: pointer;
-}
 
-.examples {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin: 10px 0 24px;
-}
 
-.examples button {
-  padding: 3px 9px;
-  font-size: 12px;
-  text-align: left;
-  color: var(--muted);
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  cursor: pointer;
-}
 
-.examples button:hover {
-  color: var(--ink);
-  border-color: var(--muted);
-}
 
 /* --- Design --------------------------------------------------------------- */
 
@@ -256,40 +203,15 @@ h2 small {
   align-items: center;
 }
 
-.swatches {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: 10px 0;
-  font-size: 11px;
-  color: var(--muted);
-}
 
-.swatches span {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-}
 
-.swatches i {
-  width: 34px;
-  height: 34px;
-  border: 1px solid rgb(0 0 0 / 0.12);
-  border-radius: 50%;
-}
 
-.editor summary {
-  margin: 12px 0 6px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
 
 .editor textarea {
   box-sizing: border-box;
   width: 100%;
-  height: 360px;
+  height: 100%;
+  min-height: 320px;
   padding: 10px;
   font:
     11.5px/1.5 ui-monospace,
@@ -317,11 +239,12 @@ h2 small {
 /* --- Stage ---------------------------------------------------------------- */
 
 .stage {
+  overflow-y: auto;
   padding: 12px 24px 48px;
   background-color: var(--canvas);
   background-image: radial-gradient(rgb(0 0 0 / 0.07) 1px, transparent 1px);
   background-size: 16px 16px;
-  border-inline: 1px solid var(--line);
+  border-left: 1px solid var(--line);
 }
 
 .toolbar {
@@ -539,34 +462,34 @@ kit-surface.layer.over .k-scroll {
   color: var(--muted);
 }
 
-.trace table {
+.why table {
   width: 100%;
   font-size: 12px;
   border-collapse: collapse;
 }
 
-.trace td {
+.why td {
   padding: 3px 6px 3px 0;
   vertical-align: top;
   border-bottom: 1px solid var(--line);
 }
 
-.trace td em {
+.why td em {
   display: block;
   font-size: 11px;
   color: var(--muted);
 }
 
-.trace .answer {
+.why .answer {
   font-weight: 600;
 }
 
-.trace .bar {
+.why .bar {
   width: 48px;
   padding-top: 8px;
 }
 
-.trace .bar span {
+.why .bar span {
   display: block;
   height: 5px;
   background: var(--muted);
@@ -587,19 +510,318 @@ kit-surface.layer.over .k-scroll {
   color: #8a5a00;
 }
 
-@media (max-width: 1200px) {
-  .workbench {
-    grid-template-columns: 320px minmax(0, 1fr);
-  }
+/* --- The conversation ------------------------------------------------------- */
 
-  .trace {
-    grid-column: 1 / -1;
-    border-top: 1px solid var(--line);
+.chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.chat-head {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tab {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.tab:hover,
+.tab[aria-expanded="true"] {
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.tab:disabled {
+  cursor: default;
+}
+
+.tab .swatches {
+  display: flex;
+}
+
+.tab .swatches i {
+  width: 14px;
+  height: 14px;
+  margin-left: -4px;
+  border: 1px solid rgb(0 0 0 / 0.15);
+  border-radius: 50%;
+}
+
+.tab .swatches i:first-child {
+  margin-left: 0;
+}
+
+.panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 12px 16px 16px;
+  overflow-y: auto;
+}
+
+.panel .editor {
+  flex: 1;
+  min-height: 0;
+  margin-top: 8px;
+}
+
+.pad {
+  padding: 0 16px;
+}
+
+.turns {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.opening {
+  margin-top: 24px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.turn {
+  margin-bottom: 18px;
+}
+
+.turn .said {
+  width: fit-content;
+  max-width: 88%;
+  margin: 0 0 8px auto;
+  padding: 8px 12px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  color: #fff;
+  background: var(--ink);
+  border-radius: 14px 14px 4px 14px;
+}
+
+/* A tap or a button is the person's doing too, but it was not said. */
+.turn.tap .said,
+.turn.button .said {
+  padding: 0;
+  font-size: 12px;
+  color: var(--muted);
+  background: none;
+}
+
+.reply {
+  max-width: 94%;
+}
+
+.reply .on {
+  color: var(--muted);
+}
+
+.receipt {
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+}
+
+.receipt li {
+  padding: 5px 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--line);
+}
+
+.receipt b {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.receipt .from {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.receipt .to {
+  font-weight: 600;
+}
+
+.made {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.made .link {
+  margin-left: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.made small {
+  margin-left: 6px;
+  color: var(--muted);
+}
+
+.spoken {
+  margin: 0 0 8px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.working {
+  animation: working 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes working {
+  to {
+    opacity: 0.4;
   }
 }
 
-@media (max-width: 760px) {
-  .workbench {
+.options,
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.options {
+  margin-bottom: 8px;
+}
+
+.options button,
+.chips button {
+  padding: 5px 11px;
+  font-size: 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.options button {
+  font-weight: 600;
+  border-color: var(--ink);
+}
+
+.options button:hover:not(:disabled),
+.chips button:hover:not(:disabled) {
+  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.options button:disabled,
+.chips button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.reply footer {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.why {
+  flex: 1;
+  min-width: 0;
+}
+
+.why summary {
+  font-size: 11.5px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.undo {
+  font-size: 11.5px;
+}
+
+.say {
+  padding: 10px 12px 14px;
+  border-top: 1px solid var(--line);
+}
+
+.chips {
+  flex-wrap: nowrap;
+  margin-bottom: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chips button {
+  flex: none;
+  color: var(--muted);
+}
+
+.say .box {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 8px 8px 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.say .box:focus-within {
+  border-color: var(--ink);
+}
+
+.say textarea {
+  flex: 1;
+  padding: 2px 0;
+  line-height: 1.4;
+  resize: none;
+  background: none;
+  border: 0;
+  outline: 0;
+}
+
+.say .box button {
+  width: 30px;
+  height: 30px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--ink);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.say .box button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.visitor {
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 900px) {
+  .bench {
     grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+
+  .chat {
+    height: 70vh;
+    border-bottom: 1px solid var(--line);
   }
 }

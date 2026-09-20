@@ -1,4 +1,4 @@
-// The pipelines over HTTP: two JSON routes and one of Server-Sent Events; who may use them; and what they saved.
+// The pipelines over HTTP: three JSON routes and one of Server-Sent Events; who may use them; and what they saved.
 // Where sign-in is on (auth.ts), each wants to know who is asking and that the
 // list lets them make things, and a run is taken from their allowance for the day.
 //
@@ -32,7 +32,37 @@ async function readJson(req: IncomingMessage, largest = LARGEST_BODY): Promise<a
 function designSource(body: any) {
   if (typeof body.markdown === "string" && body.markdown.trim()) return { markdown: body.markdown as string };
   const brief = String(body.brief ?? "").trim();
-  return brief ? { brief, seed: Number(body.seed) || 0 } : undefined;
+  return brief ? { brief, seed: Number(body.seed) || 0, ...(body.change ? { change: paintChange(body.change) } : {}) } : undefined;
+}
+
+/** What has been changed about a mix, as a browser sent it: numbers where numbers go, and nothing that is not a dial or a choice. */
+function paintChange(sent: any) {
+  const dials = Object.fromEntries(["vivid", "light", "warmth", "round", "air"].flatMap((key) => (Number.isFinite(sent?.dials?.[key]) ? [[key, Math.max(-4, Math.min(4, Number(sent.dials[key])))]] : [])));
+  const pins = Object.fromEntries(
+    Object.entries({ hue: "string", dark: "boolean", type: "string", elevation: "string", photos: "boolean", photo_look: "string", cards: "boolean" }).flatMap(([key, kind]) => (typeof sent?.pins?.[key] === kind ? [[key, sent.pins[key]]] : [])),
+  );
+  return { dials, pins };
+}
+
+// POST a message typed to an app that is already there (shared/turn.ts); answers what to do about it (change.ts).
+// It reads and repaints, and makes no screen, so it takes no run from the day's allowance.
+async function turn(load: Load, req: IncomingMessage, res: ServerResponse) {
+  try {
+    const body = await readJson(req);
+    const message = String(body.message ?? "").trim().slice(0, 2000);
+    const app = String(body.app ?? "").trim().slice(0, 4000);
+    const design = designSource(body.design ?? {});
+    if (!message || !app || !design) throw new Error("expected {message, app, design, showing}");
+    const showing = { title: String(body.showing?.title ?? "").slice(0, 200), archetype: String(body.showing?.archetype ?? "").slice(0, 80), decisions: (Array.isArray(body.showing?.decisions) ? body.showing.decisions : []).slice(0, 60).map((d: any) => ({ question: String(d?.question ?? "").slice(0, 200), answer: String(d?.answer ?? "").slice(0, 200) })) };
+    const answering = body.answering?.message && body.answering?.question ? { message: String(body.answering.message).slice(0, 2000), question: String(body.answering.question).slice(0, 600) } : undefined;
+    const { readTurn } = await load("change");
+    const answer = await readTurn({ message, app, design: "markdown" in design ? design : { brief: design.brief, seed: design.seed, change: design.change ?? {} }, showing, ...(answering ? { answering } : {}) });
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify(answer));
+  } catch (error) {
+    res.statusCode = 400;
+    res.end(error instanceof Error ? error.message : String(error));
+  }
 }
 
 // POST {markdown} reads a DESIGN.md; POST {brief} has Jev mix one. Either way: a theme, lint findings, Jev's reading.
@@ -89,7 +119,7 @@ async function generate(load: Load, url: URL, req: IncomingMessage, res: ServerR
   const { runJobs } = await load("jobs");
   const events =
     mode === "mock"
-      ? runMock(prompt, designSource(body), body.journey, Boolean(body.fresh))
+      ? runMock(prompt, designSource(body), body.journey, Boolean(body.fresh), (Array.isArray(body.notes) ? body.notes : []).slice(0, 12).map((note: unknown) => String(note).slice(0, 2000)))
       : mode === "jobs"
         ? runJobs(prompt)
         : mode === "hybrid"
@@ -172,7 +202,7 @@ export function api(load: Load) {
     // A photograph is asked for by an <img>, which cannot say who is asking. Its name is a hash, and serving it costs nothing.
     if (url.pathname.startsWith("/api/photo/")) return await photo(load, url.pathname.slice("/api/photo/".length), res), true;
     const saved = url.pathname.match(/^\/api\/apps(?:\/([^/]*))?$/);
-    if (!saved && !["/api/config", "/api/me", "/api/access", "/api/design", "/api/generate"].includes(url.pathname)) return false;
+    if (!saved && !["/api/config", "/api/me", "/api/access", "/api/design", "/api/turn", "/api/generate"].includes(url.pathname)) return false;
     const auth = await load("auth");
     if (saved) return await savedApps(load, saved[1] ?? "", req, res, auth), true;
     const json = (value: unknown) => (res.setHeader("Content-Type", "application/json"), res.end(JSON.stringify(value)));
@@ -196,6 +226,9 @@ export function api(load: Load) {
     } else if (url.pathname === "/api/design") {
       await allowance(res, asking);
       await design(load, req, res);
+    } else if (url.pathname === "/api/turn") {
+      await allowance(res, asking);
+      await turn(load, req, res);
     } else await generate(load, url, req, res, asking);
     return true;
   };

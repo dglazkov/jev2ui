@@ -19,6 +19,7 @@ import { choice, noul, score, type Questions } from "@typesafe-ai/sdk";
 import { askJev, ranked } from "./models.js";
 import { contrast, type Treatment } from "./design-md.js";
 import type { Decision } from "../shared/events.js";
+import type { PaintChange, Pins } from "../shared/turn.js";
 
 // --- OKLCH -------------------------------------------------------------------
 
@@ -50,10 +51,11 @@ export function oklch(l: number, c: number, h: number): string {
 
 const CONTEXT =
   "brief describes an app, or one screen of an app. A visual style is being chosen that suits the product and the people who use it. If the brief asks for a style or color outright, follow it.";
-const ask = (question: string) => ({ context: CONTEXT, question });
+type Ask = (question: string) => { context: string; question: string };
+const defaultAsk: Ask = (question) => ({ context: CONTEXT, question });
 
 /** OKLCH hue angles, in order around the circle. */
-const HUES: Record<string, { angle: number; criteria: string }> = {
+export const HUES: Record<string, { angle: number; criteria: string }> = {
   red: { angle: 27, criteria: "Red: urgency, appetite, passion, alerts, sales." },
   orange: { angle: 55, criteria: "Orange: energy, warmth, play, pets, construction." },
   amber: { angle: 78, criteria: "Amber and gold: honey, craft, premium warmth, beer, bakeries." },
@@ -68,7 +70,7 @@ const HUES: Record<string, { angle: number; criteria: string }> = {
   pink: { angle: 350, criteria: "Pink and magenta: fun, beauty, romance, sweets." },
 };
 
-const DIALS = {
+export const DIALS = {
   vivid: {
     q: "How vivid should this product's accent color be?",
     levels: [
@@ -115,7 +117,7 @@ const DIALS = {
   },
 } as const;
 
-const TYPE: Record<string, { criteria: string; headline: string; body: string; label: string; headlineWeight: number }> = {
+export const TYPE: Record<string, { criteria: string; headline: string; body: string; label: string; headlineWeight: number }> = {
   neutral: { criteria: "A neutral sans-serif: utilitarian product UI that stays out of the way.", headline: "Inter", body: "Inter", label: "Inter", headlineWeight: 700 },
   geometric: { criteria: "A geometric grotesk: modern, technical, startup.", headline: "Space Grotesk", body: "Inter", label: "Space Grotesk", headlineWeight: 600 },
   humanist: { criteria: "A warm humanist sans-serif: approachable everyday consumer apps.", headline: "Plus Jakarta Sans", body: "Plus Jakarta Sans", label: "Plus Jakarta Sans", headlineWeight: 700 },
@@ -127,14 +129,14 @@ const TYPE: Record<string, { criteria: string; headline: string; body: string; l
   condensed: { criteria: "Tall condensed capitals: sport, fitness, events, bold and loud.", headline: "Oswald", body: "Barlow", label: "Barlow", headlineWeight: 600 },
 };
 
-const ELEVATION = {
+export const ELEVATION = {
   shadow: { criteria: "Soft drop shadows under cards: friendly, tactile, consumer.", prose: "Cards float: each casts a soft, wide drop shadow. There are no borders; the shadow does the work." },
   outline: { criteria: "Flat, with thin borders and hairlines: precise, printed, technical.", prose: "There are no shadows. Edges are drawn with 1px borders in the outline colour." },
   tonal: { criteria: "Flat, with layers told apart only by background color: quiet, minimal.", prose: "There are no shadows and no borders. Layers differ only by background colour." },
 };
 
 /** Asked about the product and not about photography: what the pictures are for decides how far a brand may bend them. */
-const PHOTO_LOOK: Record<Treatment, { criteria: string; prose: string }> = {
+export const PHOTO_LOOK: Record<Treatment, { criteria: string; prose: string }> = {
   natural: {
     criteria: "True colour: the pictures are what people choose by. Food, places to stay, products, homes, animals, anything bought by its look.",
     prose: "Show photographs in their natural colours; people choose by them.",
@@ -157,7 +159,13 @@ const PHOTO_LOOK: Record<Treatment, { criteria: string; prose: string }> = {
   },
 };
 
-function questions(): Questions {
+/** The questions of a mix; `only` names the ones wanted, and `ask` sets them in another context (change.ts asks some of them again). */
+export function mixQuestions(only?: string[], ask: Ask = defaultAsk): Questions {
+  const all = questions(ask);
+  return only ? Object.fromEntries(Object.entries(all).filter(([key]) => only.includes(key))) : all;
+}
+
+function questions(ask: Ask): Questions {
   const out: Questions = {
     hue: choice(ask("Which hue suits this product's accent color?"), Object.fromEntries(Object.entries(HUES).map(([k, v]) => [k, v.criteria]))),
     dark: noul(ask("Should this product's interface be dark, with light text on a dark background?"), {
@@ -206,6 +214,10 @@ export interface MixedDesign {
   /** What the prose of the mixed file says, known without reading it back. */
   known: { elevation: "shadow" | "outline" | "tonal"; treatment: Treatment; imagery: boolean; icons: boolean; contained: boolean };
   decisions: Decision[];
+  /** Where every choice stands, by the names `Pins` uses. */
+  chosen: Required<Pins>;
+  /** How it looks, in a sentence: what Jev is told when it reads a request to change it. */
+  summary: string;
   ms: number;
   jevInputTokens: number;
 }
@@ -213,15 +225,15 @@ export interface MixedDesign {
 const asked = new Map<string, ReturnType<typeof askJev>>();
 
 /** One Jev request per brief, however many times it is remixed; the design panel and the mock pipeline share it. */
-export async function mixDesign(brief: string, seed = 0): Promise<MixedDesign> {
+export async function mixDesign(brief: string, seed = 0, change: PaintChange = {}): Promise<MixedDesign> {
   let answers = asked.get(brief);
   if (!answers) {
-    answers = askJev({ brief }, questions());
+    answers = askJev({ brief }, questions(defaultAsk));
     asked.set(brief, answers);
     answers.catch(() => asked.delete(brief));
     if (asked.size > 50) asked.delete(asked.keys().next().value!);
   }
-  return build(brief, await answers, seed);
+  return build(brief, await answers, seed, change);
 }
 
 /** Small seeded generator (mulberry32), so a remix can be named by its seed and made again. */
@@ -243,23 +255,32 @@ function draw(probabilities: Record<string, number>, rng: () => number, temperat
   return weighted.at(-1)![0];
 }
 
-function build(brief: string, asked: Awaited<ReturnType<typeof askJev>>, seed: number): MixedDesign {
+function build(brief: string, asked: Awaited<ReturnType<typeof askJev>>, seed: number, change: PaintChange): MixedDesign {
   const rng = seed ? random(seed) : null;
   const a = asked.answers;
+  const pins = change.pins ?? {};
+  const theirs = { note: "asked for" };
   const decisions: Decision[] = [];
   const levels = {} as Record<keyof typeof DIALS, number>;
   const rate = (key: keyof typeof DIALS, label: string, show: (level: number) => string): number => {
     // The expected score; or, for a remix, a level drawn from the distribution and nudged off the rubric's grid.
-    const level: number = rng ? Math.min(4, Math.max(0, Number(draw(a[key].probabilities, rng)) + (rng() - 0.5) * 0.9)) : a[key].score;
+    const jevs: number = rng ? Math.min(4, Math.max(0, Number(draw(a[key].probabilities, rng)) + (rng() - 0.5) * 0.9)) : a[key].score;
+    const moved = change.dials?.[key] ?? 0;
+    const level = Math.min(4, Math.max(0, jevs + moved));
     levels[key] = level;
-    decisions.push({ id: key, question: label, answer: `${level.toFixed(2)} of 4 → ${show(level)}`, p: level / 4, ...(rng ? { note: `drawn; Jev's expectation is ${a[key].score.toFixed(2)}` } : {}) });
+    const note = [rng ? `drawn; Jev's expectation is ${a[key].score.toFixed(2)}` : "", moved ? `moved ${moved > 0 ? "+" : ""}${moved.toFixed(2)} on request, from ${jevs.toFixed(2)}` : ""].filter(Boolean).join("; ");
+    decisions.push({ id: key, question: label, answer: `${level.toFixed(2)} of 4 → ${show(level)}`, p: level / 4, ...(note ? { note } : {}) });
     return level;
   };
-  const yes = (key: string, label: string) => {
-    decisions.push({ id: key, question: label, answer: a[key].noul >= 0.5 ? "yes" : "no", p: a[key].noul });
-    return a[key].noul >= 0.5;
+  const yes = (key: "photos" | "cards", label: string) => {
+    const pinned = pins[key];
+    const answer = pinned ?? a[key].noul >= 0.5;
+    decisions.push({ id: key, question: label, answer: answer ? "yes" : "no", p: pinned === undefined ? a[key].noul : 1, ...(pinned === undefined ? {} : theirs) });
+    return answer;
   };
-  const pick = (key: string, label: string) => {
+  const pick = (key: "type" | "elevation", label: string) => {
+    const pinned = pins[key];
+    if (pinned !== undefined && pinned in a[key].probabilities) return decisions.push({ id: key, question: label, answer: pinned, p: 1, ...theirs }), pinned;
     const chosen = rng ? draw(a[key].probabilities, rng) : (a[key].choice as string);
     decisions.push({ id: key, question: label, answer: chosen, p: a[key].probabilities[chosen], ...(rng && chosen !== a[key].choice ? { note: `drawn; Jev's first choice is ${a[key].choice}` } : {}) });
     return chosen;
@@ -267,23 +288,27 @@ function build(brief: string, asked: Awaited<ReturnType<typeof askJev>>, seed: n
 
   // Hue is where a remix shows most, so it is drawn flattest of all, then moved a little around the wheel.
   const drawn = rng ? draw(a.hue.probabilities, rng, 2.6) : null;
-  const hue = drawn ? { name: drawn, angle: (HUES[drawn].angle + (rng!() - 0.5) * 24 + 360) % 360, p: a.hue.probabilities[drawn] as number } : readHue(a.hue);
-  decisions.push({ id: "hue", question: "accent hue", answer: `${hue.name} → ${hue.angle.toFixed(0)}°`, p: hue.p, ...(drawn && drawn !== a.hue.choice ? { note: `drawn; Jev's first choice is ${a.hue.choice}` } : {}) });
+  const hue = pins.hue && HUES[pins.hue] ? { name: pins.hue, angle: HUES[pins.hue].angle, p: 1 } : drawn ? { name: drawn, angle: (HUES[drawn].angle + (rng!() - 0.5) * 24 + 360) % 360, p: a.hue.probabilities[drawn] as number } : readHue(a.hue);
+  decisions.push({ id: "hue", question: "accent hue", answer: `${hue.name} → ${hue.angle.toFixed(0)}°`, p: hue.p, ...(pins.hue === hue.name ? theirs : drawn && drawn !== a.hue.choice ? { note: `drawn; Jev's first choice is ${a.hue.choice}` } : {}) });
   // Light or dark is a coin weighted by Jev's answer; what the screens contain is not remixed, only how they look.
-  const dark = rng ? rng() < a.dark.noul : a.dark.noul >= 0.5;
-  decisions.push({ id: "dark", question: "dark interface?", answer: dark ? "yes" : "no", p: a.dark.noul, ...(rng && dark !== a.dark.noul >= 0.5 ? { note: "drawn against the odds" } : {}) });
+  const dark = pins.dark ?? (rng ? rng() < a.dark.noul : a.dark.noul >= 0.5);
+  decisions.push({ id: "dark", question: "dark interface?", answer: dark ? "yes" : "no", p: pins.dark === undefined ? a.dark.noul : 1, ...(pins.dark !== undefined ? theirs : rng && dark !== a.dark.noul >= 0.5 ? { note: "drawn against the odds" } : {}) });
   const chroma = dial([0.04, 0.09, 0.15, 0.21, 0.3], rate("vivid", "accent vividness", (l) => `chroma ${dial([0.04, 0.09, 0.15, 0.21, 0.3], l).toFixed(3)}`));
   const lightStops = dark ? [0.6, 0.66, 0.73, 0.8, 0.87] : [0.36, 0.45, 0.55, 0.65, 0.76];
   const lightness = dial(lightStops, rate("light", "accent lightness", (l) => `L ${dial(lightStops, l).toFixed(2)}`));
   const warmth = rate("warmth", "warmth of neutrals", (l) => (Math.abs(l - 2) < 0.4 ? "pure greys" : l > 2 ? "toward cream" : "toward steel"));
   const radius = dial([0, 3, 8, 14, 22], rate("round", "roundness", (l) => `${dial([0, 3, 8, 14, 22], l).toFixed(0)}px`));
   const unit = dial([4, 6, 8, 10, 12], rate("air", "whitespace", (l) => `${dial([4, 6, 8, 10, 12], l).toFixed(0)}px unit`));
-  const type = TYPE[pick("type", "typefaces")];
+  const typeName = pick("type", "typefaces");
+  const type = TYPE[typeName];
   const elevation = pick("elevation", "how depth is shown") as keyof typeof ELEVATION;
   const photos = yes("photos", "pictures?");
   // Drawn or photographed is what the screens contain, and that is not remixed; among photographs, the treatment is paint and is.
   let treatment: Treatment = "natural";
-  if (photos && (a.photo_look.choice === "illustrated" || !rng)) {
+  if (photos && pins.photo_look && pins.photo_look in PHOTO_LOOK) {
+    treatment = pins.photo_look as Treatment;
+    decisions.push({ id: "photo_look", question: "how pictures look", answer: treatment, p: 1, ...theirs });
+  } else if (photos && (a.photo_look.choice === "illustrated" || !rng)) {
     treatment = a.photo_look.choice;
     decisions.push({ id: "photo_look", question: "how pictures look", answer: treatment, p: a.photo_look.probabilities[treatment] });
   } else if (photos) {
@@ -420,5 +445,17 @@ ${level("round")}. The base radius is ${px(radius)}${pill ? "; buttons are full 
 `;
 
   const known = { elevation, treatment, imagery: photos, icons: true, contained: cards };
-  return { markdown: yaml.join("\n") + "\n" + prose, known, decisions, ms: Math.round(asked.ms), jevInputTokens: asked.inputTokens };
+  const chosen = { hue: hue.name, dark, type: typeName, elevation, photos, photo_look: treatment, cards };
+  const lower = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
+  const summary = [
+    `A ${dark ? "dark" : "light"} interface with ${/^[aeiou]/.test(hue.name) ? "an" : "a"} ${hue.name} accent (${lower(level("vivid"))}; ${lower(level("light"))})`,
+    `neutrals: ${lower(level("warmth"))}`,
+    `typefaces: ${lower(type.criteria.replace(/\.$/, ""))}`,
+    `corners: ${lower(level("round"))}`,
+    `whitespace: ${lower(level("air"))}`,
+    lower(ELEVATION[elevation].criteria.replace(/\.$/, "")),
+    cards ? "content in cards" : "no cards",
+    photos ? `pictures: ${treatment}` : "no pictures",
+  ].join("; ") + ".";
+  return { markdown: yaml.join("\n") + "\n" + prose, known, decisions, chosen, summary, ms: Math.round(asked.ms), jevInputTokens: asked.inputTokens };
 }

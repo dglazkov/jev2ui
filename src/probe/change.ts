@@ -4,6 +4,7 @@
 // again with the message added would let every answer that sat near even odds flip. So the questions here are
 // about the change and not the state: for each dial, a Score from "much less" to "much more" with "as it is" in
 // the middle; for each choice, a Noul, "does the message ask to change this?"; and first, what kind of turn it is.
+// The questions are the server's own (server/change.ts), so what is probed is what runs.
 //
 // What has to hold for that to be worth building on:
 //   the kind of turn is read correctly
@@ -16,89 +17,9 @@
 //   npm run probe:change            summary
 //   npm run probe:change -- -v      plus every message's answers
 
-import { choice, noul, score, type Questions } from "@typesafe-ai/sdk";
 import { askJev, JEV_MODEL, ranked } from "../server/models.js";
-
-const CONTEXT =
-  "A developer is making an app with a design tool. `app` describes the app, `design` says how it looks now, and `showing` is the screen in front of them. They have typed `message` to the tool to have something changed.";
-const ask = (question: string) => ({ context: CONTEXT, question });
-
-const TURNS = {
-  new_app: "The message describes a different app or product from the one in `app`, and asks for that in its place.",
-  new_screen: "The message asks for another screen or page of the same app, one that is not the screen showing.",
-  look: "How the app looks: colours, light or dark, typefaces, corners, how dense or spacious it is, shadows, how pictures are treated, its mood or style. Nothing about what is on the screen.",
-  structure: "What the screen showing is made of: a section, control, picture or component added, removed or swapped, or its items laid out another way.",
-  words: "The text or the data on the screen: a name, the wording, how long it is, its tone, its language, units or currency, which example items appear.",
-  arrange: "Where something sits: moving one thing to another place on the screen, or changing the order things come in.",
-  question: "The message asks a question about the design and does not ask for anything to change.",
-};
-type Turn = keyof typeof TURNS;
-
-/** Seven levels and not five: with two steps a side, "a little" and the plain word land on the same one. */
-const steps = (less: [string, string, string], same: string, more: [string, string, string]) => [...less, same, ...more];
-
-const DIALS = {
-  vivid: {
-    q: "What does the message ask for, as to how saturated the accent colour is? This is not about photographs, and not about how light or dark anything is.",
-    levels: steps(
-      ["Much more muted: far greyer and quieter.", "Clearly more muted.", "A touch more muted."],
-      "As saturated as it is: the message does not ask for a more or a less saturated accent.",
-      ["A touch more vivid.", "Clearly more vivid.", "Much more vivid: as bright and saturated as it can be."],
-    ),
-  },
-  light: {
-    q: "What does the message ask for, as to how light or deep the accent colour is?",
-    levels: steps(
-      ["Much deeper and darker.", "Clearly deeper.", "A touch deeper."],
-      "As light as it is: the message does not ask for a lighter or a deeper accent colour.",
-      ["A touch lighter.", "Clearly lighter.", "Much lighter: toward a pale pastel."],
-    ),
-  },
-  warmth: {
-    q: "What does the message ask for, as to whether backgrounds and greys lean cold or warm?",
-    levels: steps(
-      ["Much colder: toward steel and blue-grey.", "Clearly cooler.", "A touch cooler."],
-      "As they are: the message does not ask for warmer or cooler backgrounds.",
-      ["A touch warmer.", "Clearly warmer.", "Much warmer: toward cream, sand and paper."],
-    ),
-  },
-  round: {
-    q: "What does the message ask for, as to how rounded corners are?",
-    levels: steps(
-      ["Much sharper: toward square.", "Clearly sharper.", "A touch sharper."],
-      "As rounded as they are: the message does not ask for rounder or sharper corners.",
-      ["A touch rounder.", "Clearly rounder.", "Much rounder: toward pills and circles."],
-    ),
-  },
-  air: {
-    q: "What does the message ask for, as to how much whitespace the screens have?",
-    levels: steps(
-      ["Much denser: far more packed onto each screen.", "Clearly more compact.", "A touch more compact."],
-      "As roomy as they are: the message does not ask for more or less space.",
-      ["A touch roomier.", "Clearly roomier.", "Much airier: far more space around everything."],
-    ),
-  },
-};
-/** A dial's answer as a step from −2 (much less) to +2 (much more), whatever the number of levels. */
-const step = (score: number) => ((score - 3) * 2) / 3;
-type Dial = keyof typeof DIALS;
-
-const GATES = {
-  hue: ["Does the message ask for a different accent colour, or object to the one there is?", "It names a colour, or says the present colour is wrong.", "It says nothing about which colour the accent is. Lighter, darker, brighter or duller are not a different colour."],
-  dark: ["Does the message ask to switch between a dark interface and a light one?", "It asks for dark mode, night mode, a dark or black background; or for a light or white background.", "It does not ask for the background to go from light to dark or from dark to light."],
-  type: ["Does the message ask for different typefaces?", "It names a kind of font, says the lettering feels wrong, or asks for a change of mood or personality (more playful, more serious, more elegant, fancier), which lettering carries.", "It says nothing about fonts or lettering, and asks for no change of mood."],
-  elevation: ["Does the message ask to change how cards are set off from the page: shadows, borders or flat?", "It mentions shadows, borders, outlines, flatness or depth.", "It says nothing about shadows, borders or depth."],
-  pictures: ["Does the message ask to change whether there are pictures, or how they are treated?", "It asks for pictures or for none, or for them to be black and white, tinted, muted, natural or drawn.", "It says nothing about pictures."],
-  cards: ["Does the message ask to change whether content sits in cards?", "It asks for cards, boxes or containers, or for content to flow without them.", "It says nothing about cards or containers."],
-} as const;
-type Gate = keyof typeof GATES;
-
-function questions(): Questions {
-  const out: Questions = { turn: choice(ask("What kind of change does the message ask for?"), TURNS) };
-  for (const [key, { q, levels }] of Object.entries(DIALS)) out[key] = score(ask(q), levels as unknown as [string, string, ...string[]]);
-  for (const [key, [q, yes, no]] of Object.entries(GATES)) out[key] = noul(ask(q), { true: yes, false: no });
-  return out;
-}
+import { CHANGE_DIALS as DIALS, GATES, changeQuestions as questions, step as stepOf, type Gate } from "../server/change.js";
+import type { DialName as Dial, TurnKind as Turn } from "../shared/turn.js";
 
 const APPS = [
   {
@@ -205,7 +126,7 @@ async function read(app: (typeof APPS)[number], c: Case): Promise<Read> {
     turn: order[0][0] as Turn,
     turnP: order[0][1],
     runnerUp: order[1],
-    deltas: Object.fromEntries(Object.keys(DIALS).map((k) => [k, step(answers[k].score)])) as Record<Dial, number>,
+    deltas: Object.fromEntries(Object.keys(DIALS).map((k) => [k, stepOf(answers[k])])) as Record<Dial, number>,
     gates: Object.fromEntries(Object.keys(GATES).map((k) => [k, answers[k].noul])) as Record<Gate, number>,
     ms,
     tokens: inputTokens,

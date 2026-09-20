@@ -42,7 +42,8 @@ export async function save(person: Person, sent: unknown): Promise<{ id: string 
     }
 
   const { screens, ...head } = app;
-  const id = createHash("sha256").update(person.uid).update("\0").update(JSON.stringify(app)).digest("base64url").slice(0, 22);
+  // Walking around an app makes nothing, so where the person stood when they saved is no part of what the app is.
+  const id = createHash("sha256").update(person.uid).update("\0").update(JSON.stringify({ ...app, stack: [] })).digest("base64url").slice(0, 22);
   const parts = [{ name: "head", json: JSON.stringify(head) }, ...screens.map((screen) => ({ name: `s${screen.id}`, json: JSON.stringify(screen) }))];
   const big = parts.find((part) => Buffer.byteLength(part.json) > LARGEST_PART);
   if (big) return { wrong: big.name === "head" ? "its DESIGN.md is too long to save" : "one of its screens is too large to save" };

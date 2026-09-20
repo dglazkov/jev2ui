@@ -57,13 +57,15 @@ class Decorations {
  * `source` is the developer's DESIGN.md, or the brief and seed of a mix; without one, Jev mixes a design from the description.
  * With a `journey`, the screen is the one a tap leads to, in the same app as the screen it was tapped on.
  * `fresh` is set when the developer asks for a screen again: whatever is custom on it is baked anew.
+ * `notes` are what they have said about this screen since it was first made; it is made again with them in mind.
  */
-export function runMock(described: string, source?: DesignSource, journey?: Journey, fresh = false): AsyncGenerator<PipelineEvent> {
+export function runMock(described: string, source?: DesignSource, journey?: Journey, fresh = false, notes: string[] = []): AsyncGenerator<PipelineEvent> {
   const markdown = source && "markdown" in source ? source.markdown : undefined;
   const run = new Run("mock");
   const surfaceId = SURFACE_ID;
   const to = journey && destination(journey);
-  const prompt = to?.screen ?? described;
+  // Jev and the writers read the notes as part of the description: they are the developer's words as much as it is.
+  const prompt = [to?.screen ?? described, ...(notes.length ? [`The developer has seen this screen and asked for these changes, which come before anything above that they contradict:\n${notes.map((note) => `- ${note}`).join("\n")}`] : [])].join("\n\n");
 
   return run.drive(async () => {
     const streams = new ContentStreams(run, surfaceId);
