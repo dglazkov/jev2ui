@@ -4,6 +4,8 @@ import { askJev, endpoint } from "./models.js";
 import type { Questions } from "@typesafe-ai/sdk";
 import type { DesignReport } from "../shared/design.js";
 
+type WithoutTime<T> = T extends unknown ? Omit<T, "at"> : never;
+
 export const A2UI_VERSION = "v0.9";
 export const CATALOG_ID = "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json";
 export const SURFACE_ID = "main";
@@ -50,6 +52,12 @@ export class Run {
 
   get at(): number {
     return Math.round(performance.now() - this.start);
+  }
+
+  get sent(): readonly A2uiMessage[] { return this.messages; }
+
+  architecture(event: WithoutTime<Extract<PipelineEvent, { type: "architecture" | "architecture-error" | "routes" }>>) {
+    this.push({ ...event, at: this.at } as PipelineEvent);
   }
 
   private push(event: PipelineEvent) {

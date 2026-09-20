@@ -25,7 +25,7 @@ export interface Decoration {
 const CONTROLS = {
   switch: "A setting that is simply on or off and takes effect at once: notifications, dark mode, autoplay, sync.",
   value: "A setting with one current value picked from several, changed on another page: language, quality, theme, frequency, units.",
-  nav: "Not a setting itself but a way into another page: account, privacy, help, about, manage something.",
+  nav: "A link to another page: a content item, details, account, privacy, help, about, or managing something. Its text and section identify what it opens.",
   check: "One of several alternative options listed together, of which one is chosen: the choices of a single setting, such as '10 seconds', '30 seconds', 'High', 'Low'.",
   danger: "A final or destructive account action: sign out, delete account, clear data, reset.",
 };
@@ -43,13 +43,13 @@ async function ask(run: Run, stage: string, state: unknown, questions: Questions
   run.trace({ stage: asked.stage, ms: asked.ms, decisions: read(asked.answers), tokens: { input: asked.inputTokens, output: 0 } });
 }
 
-/** One request per group of settings: for every row, its control, its symbol, and whether it starts switched on. */
+/** One request per group: for every row, its control, its symbol, and whether it starts switched on. */
 export async function refineGroup(run: Run, screen: string, g: number, group: any, icons: boolean, chosen?: string): Promise<Decoration[]> {
   const rows: any[] = Array.isArray(group?.rows) ? group.rows : [];
   if (!rows.length) return [];
   const questions: Questions = {};
   rows.forEach((row, r) => {
-    const context = `\`row_${r}\` is one row on a settings screen.`;
+    const context = `\`row_${r}\` is a row in the supplied screen and section. Grouped rows can represent content, navigation, settings or actions; use their actual text and context to decide.`;
     questions[`control_${r}`] = choice({ context, question: `What kind of row is row_${r}?` }, CONTROLS);
     questions[`on_${r}`] = noul({ context, question: `If row_${r} is an on/off setting, would a typical person have it switched on?` });
     if (icons) questions[`icon_${r}`] = iconQuestion(`row_${r}`);

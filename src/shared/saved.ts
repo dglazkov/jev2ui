@@ -5,11 +5,16 @@
 // A saved app does not change: its id is a hash of what it is and whose (server/apps.ts), and saving a session
 // that has moved on makes another. Where the person was standing in it is not what it is: `stack` is kept, not hashed. Whether others may open it is beside the app, and its owner's to change.
 
+import { ARCHITECTURE, ROUTES } from "./architecture.js";
 import { z } from "zod";
 
 const MESSAGE = z.record(z.unknown());
 
 export const SAVED_SCREEN = z.object({
+  destination: z.string().max(40).optional(),
+  subject: z.string().max(2000).optional(),
+  routes: ROUTES.optional(),
+  links: z.record(z.string().max(40)).refine((v) => Object.keys(v).length <= 200).optional(),
   id: z.number().int().positive(),
   /** Every way this screen is reached: `start`, `nav:Saved`, `3:item:Il Corvo Pasta`. */
   keys: z.array(z.string().max(400)).min(1).max(40),
@@ -47,8 +52,9 @@ export const SAVED_TURN = z.object({
 });
 
 export const SAVED_APP = z.object({
-  /** 2 has the turns, and what has been changed about the design; 1 was made before there was a chat. */
-  version: z.union([z.literal(1), z.literal(2)]),
+  /** 3 adds the app map and canonical screen bindings; 2 adds chat and design changes; 1 predates chat. */
+  version: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  architecture: ARCHITECTURE.optional(),
   /** The description the session started from. */
   app: z.string().min(1).max(4000),
   nav: z.object({ items: z.array(z.object({ label: z.string(), icon: z.string().optional() })) }).optional(),
@@ -57,6 +63,17 @@ export const SAVED_APP = z.object({
   screens: z.array(SAVED_SCREEN).min(1).max(80),
   /** The ids of the screens that were showing, the way back first. */
   stack: z.array(z.number().int().positive()).min(1).max(40),
+}).superRefine((app, context) => {
+  if (app.version === 3 && !app.architecture) context.addIssue({ code: "custom", message: "An app map is required for version 3." });
+  if (!app.architecture) return;
+  const bound = new Set<string>();
+  for (const screen of app.screens) {
+    const node = app.architecture.map.nodes.find((n) => n.id === screen.destination);
+    if (!node || bound.has(node.id)) { context.addIssue({ code: "custom", message: "Each screen must bind to a unique map destination." }); continue; }
+    bound.add(node.id);
+    if (screen.links && Object.values(screen.links).some((id) => !app.architecture!.map.nodes.some((n) => n.id === id))) context.addIssue({ code: "custom", message: "Saved link points outside the catalog." });
+    if (screen.routes && (screen.routes.revision !== app.architecture.revision || Object.values(screen.routes.controls).some((r) => r.kind === "action" && !node.actions.some((a) => a.id === r.action)))) context.addIssue({ code: "custom", message: "Screen controls must belong to the saved map revision." });
+  }
 });
 
 export type SavedScreen = z.infer<typeof SAVED_SCREEN>;

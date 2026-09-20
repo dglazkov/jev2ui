@@ -13,6 +13,8 @@ export interface Via {
   kind: "item" | "itemAction" | "row" | "nav" | "appbar" | "action" | "submit" | "back" | "part" | "asked";
   /** For a `part`: the name of the component it is a part of. */
   component?: string;
+  /** The visible section containing a grouped row, such as Recent Episodes or Display. */
+  group?: string;
   label: string;
   data?: Record<string, unknown>;
   index?: number;

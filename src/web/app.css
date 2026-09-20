@@ -953,6 +953,20 @@ button.vis:hover {
   color: var(--muted);
 }
 
+/* Transient route feedback overlays the canvas without changing its fitted size. */
+.resolve-status {
+  position: absolute;
+  top: 60px;
+  left: 14px;
+  z-index: 3;
+  display: block;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
 .holder {
   display: grid;
   flex: 1;
@@ -1616,4 +1630,12 @@ input.runs:focus {
     bottom: 70px;
     left: 12px;
   }
+}
+
+/* One right drawer for every preview device. The existing fitter owns the remaining canvas. */
+.stage-body { display:flex; flex:1; min-height:0; min-width:0; position:relative; container-type:inline-size; }
+.stage-body .holder { min-width:0; }
+.stage-body app-map { flex:0 0 284px; }
+@container (max-width: 650px) {
+  .stage-body app-map { position:absolute; right:0; top:0; bottom:0; z-index:4; width:min(284px, 100%); box-shadow:var(--lift); }
 }

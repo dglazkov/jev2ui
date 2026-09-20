@@ -160,6 +160,7 @@ function brief(screen: string, plan: ScreenPlan, setting: Setting): string {
     contract.linked
       ? `The component draws the same items the screen lists, so the two agree: read them from state.items, place or plot each one, and call kit.openItem(item) when one is opened. Each item matches this schema:\n${JSON.stringify(itemSchema(plan))}\nItems carry no coordinates: derive a stable position for each from a hash of its title.`
       : "",
+    setting.architecture ?? "",
     setting.voice ? `The brand, for the component's character only (its metaphors are not the subject):\n${setting.voice}` : "",
   ]
     .filter(Boolean)
@@ -212,6 +213,7 @@ async function writeData(run: Run, screen: string, baked: Baked, setting: Settin
       setting.app ? `The app, as first described: ${setting.app}` : "",
       setting.reachedBy ? `The person got to this screen by ${setting.reachedBy}.` : "",
       setting.about ? `What the previous screen showed about this, which you must agree with:\n${JSON.stringify(setting.about)}` : "",
+      setting.architecture ?? "",
       `Screen description: ${screen}`,
       `Write the content of its "${baked.name}" component. ${baked.card}`,
     ]

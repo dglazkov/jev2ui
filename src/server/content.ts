@@ -21,6 +21,7 @@ export interface PartHooks {
 
 export class ContentStreams {
   private readonly background: Promise<void>[] = [];
+  private readonly byPart = new Map<string, Promise<void>[]>();
   private failure: unknown;
   private surfaceOpen = false;
   /** Content that arrives before the surface exists is held until it does. */
@@ -34,8 +35,21 @@ export class ContentStreams {
   ) {}
 
   /** Starts work without awaiting it. A failure surfaces from settle(), not as an unhandled rejection. */
-  spawn(work: Promise<void>) {
+  spawn(work: Promise<void>, part?: string) {
     this.background.push(work.catch((error) => void (this.failure ??= error)));
+    if (part) this.byPart.set(part, [...(this.byPart.get(part) ?? []), work]);
+  }
+
+  /** Waits for selected writers and their refinements, without waiting for images or baking. */
+  async ready(parts: ReadonlySet<string>) {
+    let count = 0;
+    while (true) {
+      const work = [...parts].flatMap((part) => this.byPart.get(part) ?? []);
+      if (work.length === count) return;
+      count = work.length;
+      await Promise.all(work);
+      // Completing a writer can start refinements; include those before declaring it ready.
+    }
   }
 
   has(part: string) {
@@ -92,6 +106,7 @@ export class ContentStreams {
           tokens: { input: generated.inputTokens, output: generated.outputTokens },
         });
       })().finally(() => finished(undefined)),
+      part,
     );
     return result;
   }

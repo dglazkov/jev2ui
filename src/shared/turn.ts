@@ -4,6 +4,7 @@
 // The server is asked what a typed message means (POST /api/turn, server/change.ts) and keeps nothing. It answers
 // with what to do, and where the look is what changed, with the design as it now is.
 
+import type { Architecture, ScreenRoutes } from "./architecture.js";
 import type { Decision, Endpoint } from "./events.js";
 import type { DesignReport } from "./design.js";
 
@@ -75,6 +76,7 @@ export interface ScreenEdit {
 
 /** A screen of the app, as the server needs to know it to tell what a message asks of it. */
 export interface ScreenAbout {
+  destination?: string;
   id: number;
   title: string;
   archetype: string;
@@ -83,6 +85,8 @@ export interface ScreenAbout {
 }
 
 export interface TurnRequest {
+  bindings?: Array<{ destination: string; routes: ScreenRoutes }>;
+  architecture?: Architecture;
   message: string;
   /** The description the app started from. */
   app: string;
@@ -97,6 +101,10 @@ export interface TurnRequest {
 }
 
 export type TurnResponse = {
+  routes?: Record<string, ScreenRoutes>;
+  architecture?: Architecture;
+  destination?: string;
+  architectureChanges?: string[];
   kind: TurnKind;
   /** What Jev made of the message. */
   decisions: Decision[];

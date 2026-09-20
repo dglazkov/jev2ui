@@ -27,7 +27,7 @@ import { SUBJECT_OPTIONS } from "./pictures.js";
 import type { SubjectName } from "../photos/subjects.js";
 
 const CONTEXT =
-  "A developer describes one screen of an app in `screen`. A designer is working out what that screen is made of. If present, `first_screen` describes the first screen that was designed for the same app, which tells you what app this is, and `reached_by` says how the person got to the screen being designed now.";
+  "Design the destination requested in `screen`. Work out what that destination is made of. If present, `first_screen` is the original app brief and `reached_by` describes the source screen and how the person left it. Those are background context: their layouts and purposes do not define the destination being requested. A source section describes where a link was selected, not a section to recreate on the destination.";
 const ask = (question: string) => ({ context: CONTEXT, question });
 
 export const BLOCKS = ["banner", "hero", "filters", "custom", "stats", "list", "groups", "facts", "prose", "steps", "form", "actions"] as const;
@@ -53,7 +53,7 @@ interface Archetype {
 export const ARCHETYPES: Record<string, Archetype> = {
   feed: {
     criteria: "A collection to look through: search results, a catalogue, a feed, an inbox, a directory, a list of records.",
-    order: ["filters", "banner", "custom", "list"],
+    order: ["filters", "banner", "hero", "custom", "list"],
     requires: ["list"],
     expects: ["list"],
   },
@@ -127,8 +127,8 @@ const BLOCK_QUESTIONS: Record<Block, { q: string; yes: string; no: string }> = {
   },
   hero: {
     q: "Should a large picture lead this screen?",
-    yes: "The subject is one thing a person can picture: a place, a dish, a recipe, a product, a property, an animal, a trip, an event, a class, a film, a story, a character, something being made.",
-    no: "The subject has no look: an order, an account, a transaction, a message, a setting, a set of figures. Or the screen is about many things rather than one.",
+    yes: "One visual subject leads: a place, dish, product, property, animal, trip, event, class, film, story, character or something being made. A content home or discovery feed can also lead with featured content or artwork before its supporting items.",
+    no: "The subject has no look: an order, an account, a transaction, a message, a setting, a set of figures. A plain results list or directory has no featured visual subject.",
   },
   filters: {
     q: "Will the person need to search or narrow down what is shown?",

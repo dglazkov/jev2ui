@@ -174,9 +174,9 @@ function questions(ask: Ask): Questions {
     }),
     type: choice(ask("Which typefaces suit this product?"), Object.fromEntries(Object.entries(TYPE).map(([k, v]) => [k, v.criteria]))),
     elevation: choice(ask("How should this product show that a card sits above the page?"), Object.fromEntries(Object.entries(ELEVATION).map(([k, v]) => [k, v.criteria]))),
-    photos: noul(ask("Would pictures, photographed or drawn, belong on this product's screens?"), {
-      true: "Something in the product has a look, or is imagined: places, food, products, animals, activities, events, people who are chosen or followed, stories, characters, games.",
-      false: "Nothing in the product has a look: it is figures, code, documents, system settings or infrastructure, and a picture could only be decoration.",
+    photos: noul(ask("Would pictures, photographed or drawn, belong anywhere in this product? A brief about its settings, login or checkout identifies an entry screen, not an app-wide ban on imagery. Respect an explicit request for no imagery."), {
+      true: "The product has visual content or subjects: media artwork, places, food, products, animals, activities, events, people who are chosen or followed, stories, characters or games, even if its starting screen needs no pictures.",
+      false: "The product as a whole is only figures, code, documents, system administration or infrastructure with nothing visual to show, or the brief explicitly rules out imagery throughout the app.",
     }),
     photo_look: choice(ask("If this product's screens show pictures, how should they look?"), Object.fromEntries(Object.entries(PHOTO_LOOK).map(([k, v]) => [k, v.criteria]))),
     cards: noul(ask("Should this product group content into cards?"), {

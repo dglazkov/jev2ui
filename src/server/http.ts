@@ -11,6 +11,7 @@
 // That is why nothing here imports a pipeline: whoever mounts the routes says
 // how a module is loaded.
 
+import { ARCHITECTURE, ARCHITECTURE_REQUEST, SCREEN_BINDINGS } from "../shared/architecture.js";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 /** Loads a module of src/server by its path from there, without the extension: "mock/pipeline". */
@@ -63,12 +64,12 @@ async function turn(load: Load, req: IncomingMessage, res: ServerResponse) {
     const app = String(body.app ?? "").trim().slice(0, 4000);
     const design = designSource(body.design ?? {});
     if (!message || !app || !design) throw new Error("The request must include message, app, design, and showing.");
-    const about = (sent: any) => ({ id: Number(sent?.id) || 0, title: String(sent?.title ?? "").slice(0, 200), archetype: String(sent?.archetype ?? "").slice(0, 80), ...(Array.isArray(sent?.blocks) ? { blocks: sent.blocks.slice(0, 20).map(String) } : {}) });
+    const about = (sent: any) => ({ ...(typeof sent?.destination === "string" ? { destination: sent.destination.slice(0, 40) } : {}), id: Number(sent?.id) || 0, title: String(sent?.title ?? "").slice(0, 200), archetype: String(sent?.archetype ?? "").slice(0, 80), ...(Array.isArray(sent?.blocks) ? { blocks: sent.blocks.slice(0, 20).map(String) } : {}) });
     const others = (Array.isArray(body.others) ? body.others : []).slice(0, 12).map(about);
     const showing = { ...about(body.showing), decisions: (Array.isArray(body.showing?.decisions) ? body.showing.decisions : []).slice(0, 60).map((d: any) => ({ question: String(d?.question ?? "").slice(0, 200), answer: String(d?.answer ?? "").slice(0, 200) })) };
     const answering = body.answering?.message && body.answering?.question ? { message: String(body.answering.message).slice(0, 2000), question: String(body.answering.question).slice(0, 600) } : undefined;
     const { readTurn } = await load("change");
-    const answer = await readTurn({ message, app, design: "markdown" in design ? design : { brief: design.brief, seed: design.seed, change: design.change ?? {} }, showing, others, ...(answering ? { answering } : {}) });
+    const answer = await readTurn({ message, app, design: "markdown" in design ? design : { brief: design.brief, seed: design.seed, change: design.change ?? {} }, showing, others, ...(body.architecture ? { architecture: ARCHITECTURE.parse(body.architecture), bindings: SCREEN_BINDINGS.optional().parse(body.bindings) } : {}), ...(answering ? { answering } : {}) });
     res.setHeader("Content-Type", "application/json");
     res.end(JSON.stringify(answer));
   } catch (error) {
@@ -111,6 +112,12 @@ async function generate(load: Load, url: URL, req: IncomingMessage, res: ServerR
     res.end("The request must include a prompt and a mode of mock, jobs, hybrid, or baseline.");
     return;
   }
+  const parsedArchitecture = ARCHITECTURE_REQUEST.optional().safeParse(body.architecture);
+  if (!parsedArchitecture.success || (parsedArchitecture.data && "state" in parsedArchitecture.data && !parsedArchitecture.data.state.map.nodes.some((n) => n.id === (parsedArchitecture.data as { destination: string }).destination))) {
+    res.statusCode = 400;
+    res.end("The app map or destination is invalid.");
+    return;
+  }
   const spent = !asking || (await asking.auth.spend(asking.person, asking.grant));
   await allowance(res, asking);
   if (!spent) {
@@ -131,7 +138,7 @@ async function generate(load: Load, url: URL, req: IncomingMessage, res: ServerR
   const { runJobs } = await load("jobs");
   const events =
     mode === "mock"
-      ? runMock(prompt, designSource(body), body.journey, Boolean(body.fresh), (Array.isArray(body.notes) ? body.notes : []).slice(0, 12).map((note: unknown) => String(note).slice(0, 2000)), screenEdit(body.edit))
+      ? runMock(prompt, designSource(body), body.journey, Boolean(body.fresh), (Array.isArray(body.notes) ? body.notes : []).slice(0, 12).map((note: unknown) => String(note).slice(0, 2000)), screenEdit(body.edit), parsedArchitecture.data)
       : mode === "jobs"
         ? runJobs(prompt)
         : mode === "hybrid"
@@ -214,7 +221,7 @@ export function api(load: Load) {
     // A photograph is asked for by an <img>, which cannot say who is asking. Its name is a hash, and serving it costs nothing.
     if (url.pathname.startsWith("/api/photo/")) return await photo(load, url.pathname.slice("/api/photo/".length), res), true;
     const saved = url.pathname.match(/^\/api\/apps(?:\/([^/]*))?$/);
-    if (!saved && !["/api/config", "/api/me", "/api/access", "/api/design", "/api/turn", "/api/generate"].includes(url.pathname)) return false;
+    if (!saved && !["/api/config", "/api/me", "/api/access", "/api/design", "/api/turn", "/api/resolve", "/api/generate"].includes(url.pathname)) return false;
     const auth = await load("auth");
     if (saved) return await savedApps(load, saved[1] ?? "", req, res, auth), true;
     const json = (value: unknown) => (res.setHeader("Content-Type", "application/json"), res.end(JSON.stringify(value)));
@@ -242,6 +249,12 @@ export function api(load: Load) {
       if (url.pathname === "/api/design") {
         await allowance(res, asking);
         await design(load, req, res);
+      } else if (url.pathname === "/api/resolve") {
+        if (req.method !== "POST") { res.statusCode = 405; res.end("Use POST."); return; }
+        try {
+          const { resolveNavigation } = await load("ia/navigation");
+          json(await resolveNavigation(await readJson(req)));
+        } catch (error) { res.statusCode = 400; res.end((error as Error).message); }
       } else if (url.pathname === "/api/turn") {
         await allowance(res, asking);
         await turn(load, req, res);

@@ -1,3 +1,4 @@
+import { withCatalog } from "../../shared/catalog.js";
 // The mock pipeline: describe a screen, get a mock.
 //
 //   t=0    Jev plans the tree (archetype, blocks, anatomy: one request)   }
@@ -17,6 +18,9 @@
 // valid by construction, and it is on screen before the first word is. The one
 // exception is what fills a custom slot, which is checked instead (bake.ts).
 
+import { architectureNav, type ArchitectureRequest, type Architecture } from "../../shared/architecture.js";
+import { createArchitecture, plannedSeed, type AskArchitecture } from "../ia/live.js";
+import { bindControls } from "../ia/controls.js";
 import { ContentStreams, type PartHooks } from "../content.js";
 import { loadDesign, type DesignSource } from "../design-source.js";
 import { parseDesign } from "../design-md.js";
@@ -26,11 +30,11 @@ import { KIT_CATALOG_ID } from "../../shared/kit.js";
 import type { PipelineEvent } from "../../shared/events.js";
 import type { Journey } from "../../shared/journey.js";
 import { bakeCustom, shelfFrom } from "./bake.js";
-import { destination } from "./link.js";
+import { destination, destinationIntent, homeTask } from "./link.js";
 import { BLOCKS, applyDesign, keepPlan, planQuestions, readPlan, type Block, type ScreenPlan } from "./plan.js";
 import type { ScreenEdit } from "../../shared/turn.js";
 import { Pictures, itemWords } from "./pictures.js";
-import { SYSTEM_PROMPT, partPrompt, partSchema, screen, type Part } from "./screen.js";
+import { SYSTEM_PROMPT, partPrompt, partSchema, screen, knownSubjects, type Part, type Setting } from "./screen.js";
 import { refineActions, refineBanner, refineField, refineGroup, refineItems, refineNav, refineStats, type Decoration } from "./refine.js";
 
 /** Jev's per-instance answers, kept apart from Gemini's words and merged into them on the way out. */
@@ -62,13 +66,30 @@ class Decorations {
  * `edit` is what they settled by saying it: the parts the screen has, the plan that holds for the parts that stay, and
  * the words that stay. A part whose words stay has no writer, no refinement and no photograph looked for: it is sent as it was.
  */
-export function runMock(described: string, source?: DesignSource, journey?: Journey, fresh = false, notes: string[] = [], edit?: ScreenEdit): AsyncGenerator<PipelineEvent> {
+export function runMock(described: string, source?: DesignSource, journey?: Journey, fresh = false, notes: string[] = [], edit?: ScreenEdit, architectureRequest?: ArchitectureRequest): AsyncGenerator<PipelineEvent> {
   const markdown = source && "markdown" in source ? source.markdown : undefined;
   const run = new Run("mock");
   const surfaceId = SURFACE_ID;
   const to = journey && destination(journey);
+  const existing = architectureRequest && "state" in architectureRequest ? architectureRequest : undefined;
+  const destinationId = existing?.destination ?? "first";
+  const target = existing?.state.map.nodes.find((n) => n.id === destinationId);
+  const catalogEntry = existing?.state.catalog?.find((c) => c.id === destinationId);
+  // Old sessions may have materialized a generic planned Details node without recording
+  // the subject that opened it. Its original journey still supplies that subject on regeneration.
+  const observedTask = catalogEntry?.evidence.from.archetype === "plan" && to && ["row", "item", "itemAction", "part"].includes(journey!.via.kind) ? to.screen : catalogEntry ? destinationIntent(catalogEntry.evidence) : undefined;
+  const catalogTask = catalogEntry ? `${destinationId === "home" ? homeTask(existing!.state.seed.brief) : observedTask}
+${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) => n.message).join("\n")}` : undefined;
+  const destinationPrompt = catalogEntry ? `Make this destination, ${target!.label}: ${catalogTask}
+The app was introduced by this first-screen brief (background context only): ${existing!.state.seed.brief}
+` : target ? `${destinationId === "first" ? "The original requested screen" : `A DIFFERENT screen in the same app: ${target.label}`}.
+The app was introduced by this first-screen brief (background context only): ${existing!.state.seed.brief}
+THIS screen's assignment: ${destinationId === "home" ? "The app's main landing page. Show entry points to the app's primary activities below. The original first screen already exists separately; do not recreate it here." : target.purpose}
+Its allowed destinations and activities: ${JSON.stringify(target.actions.map((a) => ({ activity: a.label, disposition: a.kind, destination: a.target, purpose: existing!.state.map.nodes.find((n) => n.id === a.target)?.purpose })))}
+Choose the layout and all content for THIS assignment. The first-screen brief identifies the product, not this screen's layout.
+${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) => n.message).join("\n")}` : undefined;
   // Jev and the writers read the notes as part of the description: they are the developer's words as much as it is.
-  const prompt = [to?.screen ?? described, ...(notes.length ? [`The developer has seen this screen and asked for these changes, which come before anything above that they contradict:\n${notes.map((note) => `- ${note}`).join("\n")}`] : [])].join("\n\n");
+  const prompt = [destinationPrompt ?? to?.screen ?? described, ...(notes.length ? [`The developer has seen this screen and asked for these changes, which come before anything above that they contradict:\n${notes.map((note) => `- ${note}`).join("\n")}`] : [])].join("\n\n");
 
   const kept: Record<string, any> = edit?.kept ?? {};
   const settled = edit?.blocks.filter((block): block is Block => (BLOCKS as readonly string[]).includes(block));
@@ -78,6 +99,14 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
     const decorations = new Decorations();
     const pictures = new Pictures(run, prompt, journey?.app ?? prompt);
     let plan: ScreenPlan | undefined;
+    let architecture = existing?.state;
+    const askArchitecture: AskArchitecture = async (stage, state, questions) => {
+      const result = await run.askJev(stage, state, questions);
+      run.trace({ stage, ms: result.ms, tokens: { input: result.inputTokens, output: 0 } });
+      return result;
+    };
+    let firstMap: Promise<Architecture | undefined> = Promise.resolve(architecture);
+    let reviewed: Promise<Architecture | undefined> = firstMap;
 
     /** Runs a refinement, then re-sends the part so the answers reach the screen. */
     const refine = (part: Part, work: Promise<Decoration[]>) =>
@@ -86,6 +115,7 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
           decorations.add(part, found);
           streams.refresh(part);
         }),
+        part,
       );
     /** Calls `each` once for every element that is complete: all but the last while streaming, all of them at the end. */
     const asTheyComplete = (each: (item: any, i: number) => void) => {
@@ -137,7 +167,8 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
     // Parsing is local and instant, so even the header, requested before Jev has answered, is written in the brand's voice.
     // The photograph of a tapped item goes with the person to the page it opens; the writers have no use for it.
     const { imageUrl: carried, ...about } = (to?.about ?? {}) as Record<string, unknown>;
-    const setting = { voice: markdown ? parseDesign(markdown).voice : "", ...(to ? { app: journey!.app, reachedBy: to.reachedBy, ...(to.about ? { about } : {}) } : {}) };
+    const setting: Setting = { voice: markdown ? parseDesign(markdown).voice : "", ...(to ? { app: journey!.app, reachedBy: to.reachedBy, ...(to.about ? { about } : {}) } : {}) };
+    setting.knownScreens = knownSubjects(existing?.state.catalog, destinationId);
     const write = (part: Part, agreeWith?: unknown) => {
       const own = hooks[part];
       return streams.write(
@@ -151,11 +182,26 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
     const header: Promise<any> = kept.header ? Promise.resolve(kept.header) : write("header");
     if (to) run.trace({ stage: `Link: ${to.screen}`, ms: 0, detail: `reached by ${to.reachedBy}` });
     const designing = loadDesign(source ?? { brief: journey?.app ?? prompt });
-    const state = to ? { first_screen: journey!.app, reached_by: to.reachedBy, screen: prompt } : { screen: prompt };
+    const screenTask = catalogTask ? [catalogTask, ...notes].join("\n\n") : prompt;
+    const state = to ? { first_screen: journey!.app, reached_by: to.reachedBy, screen: screenTask } : { screen: screenTask };
     const planned = await run.askJev("Jev: plan the screen", state, planQuestions());
     const was = typeof edit?.plan.archetype === "string" ? [edit.plan.archetype] : undefined;
-    const read = readPlan(planned.answers, { ...(to ? { topLevel: to.topLevel, among: to.among } : {}), ...(settled ? { blocks: settled, ...(was ? { among: was } : {}) } : {}) });
+    const read = readPlan(planned.answers, { ...(catalogEntry && to ? { topLevel: to.topLevel, among: to.among } : target ? (destinationId === "first" ? {} : { topLevel: destinationId === "home" }) : to ? { topLevel: to.topLevel, among: to.among } : {}), ...(settled ? { blocks: settled, ...(was ? { among: was } : {}) } : {}) });
     run.trace({ stage: planned.stage, ms: planned.ms, decisions: read.decisions, tokens: { input: planned.inputTokens, output: 0 } });
+
+    if (architectureRequest && "create" in architectureRequest) {
+      let draft!: (value: Architecture | undefined) => void;
+      firstMap = new Promise((resolve) => { draft = resolve; });
+      reviewed = createArchitecture(plannedSeed(described, read.plan), askArchitecture, (value) => {
+        architecture = withCatalog(value);
+        draft(architecture);
+        run.architecture({ type: "architecture", architecture });
+      }).then(withCatalog).catch((error) => {
+        draft(undefined);
+        run.architecture({ type: "architecture-error", message: `The app map could not be planned: ${error.message}` });
+        return undefined;
+      });
+    }
 
     const { design, read: look, report, mixed } = await designing.loaded;
     if (designing.fresh) {
@@ -197,15 +243,22 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
     }
 
     // The app's navigation is established once; every main screen after that shows the same one.
-    const nav = journey?.nav;
+    const nav = architectureRequest ? undefined : journey?.nav;
     if (nav && plan.topLevel) {
       const active = nav.items.findIndex((item) => item.label === journey!.via.label);
       run.send({ updateDataModel: { surfaceId, path: "/nav", value: { items: nav.items, active: Math.max(0, active) } } });
     }
+    // Open the skeleton and header before waiting for the app decisions. No extra content writers.
+    const parts: Part[] = ["header", ...(plan.topLevel && !nav && !architectureRequest ? (["nav"] as Part[]) : []), ...plan.blocks.filter((b): b is Exclude<typeof b, "hero" | "custom"> => b !== "hero" && b !== "custom")];
+    streams.open(new Set<string>(parts));
+    const draft = await firstMap;
+    if (draft) {
+      const node = draft.map.nodes.find((n) => n.id === destinationId)!;
+      if (!draft.catalog) setting.architecture = `Closed app contract: ${JSON.stringify({ responsibility: node.purpose, actions: node.actions, destinations: draft.map.nodes.map(({ id, label, purpose }) => ({ id, label, purpose })) })}\nUse only these navigation responsibilities. Local controls may work in place; do not invent other destinations.\n`;
+      if (plan.topLevel) run.send({ updateDataModel: { surfaceId, path: "/nav", value: architectureNav(draft, destinationId) } });
+    }
     // Baking takes seconds, not milliseconds. It starts now and the slot shimmers, like a picture that has not loaded.
     if (plan.custom) streams.spawn(bakeCustom(run, surfaceId, prompt, plan, { ...setting, voice: setting.voice || (mixed ? parseDesign(mixed).voice : "") }, shelfFrom(journey?.shelf), fresh));
-    const parts: Part[] = ["header", ...(plan.topLevel && !nav ? (["nav"] as Part[]) : []), ...plan.blocks.filter((b): b is Exclude<typeof b, "hero" | "custom"> => b !== "hero" && b !== "custom")];
-    streams.open(new Set<string>(parts));
     const staying = parts.filter((part) => kept[part] !== undefined);
     for (const part of staying) run.send({ updateDataModel: { surfaceId, path: `/${part}`, value: kept[part] } });
     if (staying.length) run.trace({ stage: `Unchanged: ${staying.join(", ")}`, ms: 0, detail: "nobody asked for these to change, so nothing wrote them again" });
@@ -216,6 +269,21 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
       const written = write(part);
       if (billed && part === "list") streams.spawn(written.then((list) => void (list && write("facts", list.items))));
     }
+    // The reviewed map releases code-owned navigation immediately. Generated controls
+    // need their words and control refinements, but never wait for pictures or baking.
+    streams.spawn(reviewed.then((state) => {
+      if (state && plan!.topLevel) run.send({ updateDataModel: { surfaceId, path: "/nav", value: architectureNav(state, destinationId) } });
+    }));
+    if (architectureRequest) streams.spawn((async () => {
+      try {
+        const [state] = await Promise.all([reviewed, streams.ready(new Set(["groups", "list", "form", "actions"]))]);
+        if (!state || state.catalog) return;
+        const routes = await bindControls(state, destinationId, run.sent, askArchitecture);
+        run.architecture({ type: "routes", destination: destinationId, routes });
+      } catch (error) {
+        run.architecture({ type: "architecture-error", message: `Screen controls could not be connected: ${(error as Error).message}` });
+      }
+    })());
     await streams.settle();
   });
 }

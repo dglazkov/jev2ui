@@ -1,6 +1,7 @@
 // Events streamed from the server pipelines to the browser (and the eval CLI).
 
 import type { DesignReport } from "./design.js";
+import type { Architecture, ScreenRoutes } from "./architecture.js";
 
 export type A2uiMessage = Record<string, unknown> & { version: string };
 
@@ -22,6 +23,9 @@ export interface Decision {
 }
 
 export type PipelineEvent =
+  | { type: "architecture"; at: number; architecture: Architecture }
+  | { type: "architecture-error"; at: number; message: string }
+  | { type: "routes"; at: number; destination: string; routes: ScreenRoutes }
   /** The design the mock is painted with. `markdown` is set when Jev mixed it, so the browser can show the file. */
   | { type: "design"; at: number; report: DesignReport; markdown?: string }
   /** The plan the screen was built from: what it would take to build it again as it is (shared/turn.ts, `ScreenEdit`). */

@@ -1,3 +1,4 @@
+import { resolveNavigation } from "./ia/navigation.js";
 // What a message asks to have changed (docs/chat-and-turns.md).
 //
 // After the first message, every message to the tool is about something that is already there. Asking Jev all of
@@ -16,6 +17,9 @@
 // be: Jev calls "no cards" a change to what the screen is made of, and the cards gate opens all the same. What was
 // found when this was probed is in docs/change-probe.md; the wording below is what that probe arrived at.
 
+import { bindObservedControls } from "./ia/controls.js";
+import { rebaseRoutes } from "../shared/architecture.js";
+import { reviseArchitecture } from "./ia/live.js";
 import { choice, noul, score, type Questions } from "@typesafe-ai/sdk";
 import { askJev, endpoint, ranked } from "./models.js";
 import { mixDesign, mixQuestions } from "./design-mix.js";
@@ -149,8 +153,9 @@ export function screenQuestions(allowed: Block[], has: string[]): Questions {
 /** What the grammar calls a block, in a word or two, for a receipt. */
 export const BLOCK_NAMES: Record<Block, string> = { banner: "notice", hero: "lead picture", filters: "search and filters", custom: "custom component", stats: "headline numbers", list: "list", groups: "grouped rows", facts: "details", prose: "text", steps: "steps", form: "form", actions: "buttons" };
 
-export function changeQuestions(others: ScreenAbout[] = []): Questions {
+export function changeQuestions(others: ScreenAbout[] = [], architecture = false): Questions {
   const out: Questions = { turn: choice(ask("What kind of change does the message ask for?"), TURNS) };
+  if (architecture) out.architecture = choice("Does this message change the app's destinations, navigation, or responsibilities? Styling, text, layout and changing controls within the same responsibility keep the map. Adding, moving or removing a screen or a task changes it.", { keep: "The map keeps its responsibilities and destinations.", revise: "The message adds, removes or moves a responsibility or navigation destination." });
   // "This screen" is the one showing. A message may also name another by its title or by what it is.
   if (others.length)
     out.about = choice(ask("Which screen is the message about? Go by the screen's title first: a message that uses the words of a title means that screen."), {
@@ -166,6 +171,7 @@ export function changeQuestions(others: ScreenAbout[] = []): Questions {
 export interface ChangeRead {
   kind: TurnKind;
   kindP: number;
+  architecture?: boolean;
   dials: Partial<Record<DialName, number>>;
   gates: Gate[];
   /** The id of the screen the message names, if it is not the one showing. */
@@ -174,8 +180,8 @@ export interface ChangeRead {
   inputTokens: number;
 }
 
-export async function readChange(state: Record<string, unknown>, others: ScreenAbout[] = []): Promise<ChangeRead> {
-  const { answers, inputTokens } = await askJev(state, changeQuestions(others));
+export async function readChange(state: Record<string, unknown>, others: ScreenAbout[] = [], architecture = false): Promise<ChangeRead> {
+  const { answers, inputTokens } = await askJev(state, changeQuestions(others, architecture));
   const order = ranked(answers.turn);
   const [second, secondP] = order[1];
   // Making a screen spends a run, and answering a question spends next to nothing: a message that may well be a question is taken as one.
@@ -195,7 +201,7 @@ export async function readChange(state: Record<string, unknown>, others: ScreenA
     about = Number(String(answers.about.choice).slice(1));
     decisions.push({ id: "about", question: "which screen?", answer: others.find((screen) => screen.id === about)?.title ?? String(about), p: answers.about.probabilities[answers.about.choice], note: "not the one showing" });
   }
-  return { kind: kind as TurnKind, kindP, dials, gates, ...(about !== undefined ? { about } : {}), decisions, inputTokens };
+  return { kind: kind as TurnKind, kindP, architecture: answers.architecture?.choice === "revise", dials, gates, ...(about !== undefined ? { about } : {}), decisions, inputTokens };
 }
 
 /** What a message asks of one screen's parts. Nothing, for a screen whose parts the browser does not know. */
@@ -262,11 +268,12 @@ export async function readTurn(request: TurnRequest): Promise<TurnResponse> {
         app,
         design: look,
         showing: `"${showing.title}", ${showing.archetype ? `a ${showing.archetype} screen` : "a screen"} of the app`,
+        app_map: request.architecture?.map,
         other_screens: others.map((screen) => `"${screen.title}"`),
         message,
         ...(answering ? { earlier_message: answering.message, question_asked: answering.question } : {}),
       },
-      others,
+      others, Boolean(request.architecture),
     ),
     readScreen(showing, message),
   ]);
@@ -275,7 +282,32 @@ export async function readTurn(request: TurnRequest): Promise<TurnResponse> {
   if (read.kind === "new_screen" && target !== showing) read.kind = "structure";
   const of = target === showing ? ofShowing : await readScreen(target, message);
   const decisions = [...read.decisions, ...(read.kind === "new_app" || read.kind === "question" ? [] : of.decisions)];
-  const done = (rest: Pick<TurnResponse, "act"> & Partial<TurnResponse>): TurnResponse => ({ kind: read.kind, decisions, ms: Math.round(performance.now() - start), endpoint: endpoint(), ...rest });
+  let revision: Partial<TurnResponse> = {};
+  const done = (rest: Pick<TurnResponse, "act"> & Partial<TurnResponse>): TurnResponse => ({ kind: read.kind, decisions, ms: Math.round(performance.now() - start), endpoint: endpoint(), ...revision, ...rest });
+
+  if (request.architecture?.catalog && read.kind === "new_screen") {
+    const resolved = await resolveNavigation({ state: request.architecture, from: { destination: target.destination ?? "first", title: target.title, archetype: target.archetype }, via: { kind: "asked", label: message.slice(0, 200) } });
+    if (!("state" in resolved)) return done({ act: "talk", text: "That could refer to more than one destination. Name the screen you want to open.", options: [] });
+    revision = { architecture: resolved.state, destination: resolved.destination };
+  } else if (request.architecture && !request.architecture.catalog && read.kind !== "new_app" && read.kind !== "question" && (read.architecture || read.kind === "new_screen")) {
+    try {
+      const updated = await reviseArchitecture(request.architecture, message, target.destination ?? "first", [showing, ...others].flatMap((s) => s.destination ? [s.destination] : []), (_stage, state, questions) => askJev(state, questions));
+      const changedBindings = (request.bindings ?? []).filter((binding) => {
+        const beforeNode = request.architecture!.map.nodes.find((n) => n.id === binding.destination);
+        const afterNode = updated.state.map.nodes.find((n) => n.id === binding.destination);
+        return binding.routes.observed && afterNode && JSON.stringify(beforeNode) !== JSON.stringify(afterNode);
+      });
+      const routes = Object.fromEntries(await Promise.all(changedBindings.map(async (binding) => {
+        const rebound = await bindObservedControls(updated.state, binding.destination, binding.routes.observed!, (_stage, state, questions) => askJev(state, questions))
+          .catch(() => rebaseRoutes(request.architecture!, updated.state, binding.destination, binding.routes)!);
+        return [binding.destination, rebound];
+      })));
+      revision = { routes, architecture: updated.state, destination: updated.destination, architectureChanges: updated.changes };
+      if (read.kind === "new_screen" && !updated.destination) return done({ act: "talk", text: "This request needs a destination the current app map does not represent. The previous map was kept.", architecture: undefined, options: [] });
+    } catch (error) {
+      return done({ act: "talk", text: (error as Error).message, options: [] });
+    }
+  }
 
   // The look is listened to whatever else the message asks for.
   let design: TurnResponse["design"];
@@ -301,17 +333,26 @@ export async function readTurn(request: TurnRequest): Promise<TurnResponse> {
   const reshaped = of.add.length > 0 || of.remove.length > 0;
 
   if (read.kind === "new_app") return done({ act: "app" });
+  if (revision.destination) return done({ act: "screen", design, ...(of.remove.length ? { screen: { ...screen, add: [], rewrite: [], lines: screen.lines.filter((l) => l.to === "removed") } } : {}) });
+  if (revision.architecture && target.destination && !revision.architecture.map.nodes.some((n) => n.id === target.destination)) return done({ act: "paint", design });
   // "Move the payment form to a screen of its own" is two things: the new screen, and this one without the form.
   if (read.kind === "new_screen") return done({ act: "screen", design, ...(of.remove.length ? { screen: { ...screen, add: [], rewrite: [], lines: screen.lines.filter((l) => l.to === "removed") } } : {}) });
   // Parts added or taken away are done to the letter, whatever else Jev made of the message.
   if (read.kind !== "question" && reshaped) return done({ act: "remake", design, screen: { ...screen, rewrite: [] } });
   // Words: only the parts the message is about are written again. If Jev could not tell which, all of them are.
   if (read.kind === "words") return done({ act: "remake", design, screen: of.rewrite.length ? screen : { ...screen, blunt: true } });
+  // A map-only revision refreshes routes and navigation locally. It does not restart screen writers.
+  if (revision.architecture && read.kind === "structure" && !reshaped) {
+    const was = request.architecture!.map.nodes.find((n) => n.id === target.destination);
+    const now = revision.architecture.map.nodes.find((n) => n.id === target.destination);
+    if (was?.purpose === now?.purpose) return done({ act: "paint", design });
+  }
   // A change to what the screen is made of that named no part ("show them as a grid"): made again with the message in mind. Unless it was the look after all ("no cards").
   if (read.kind === "structure" && !design) return done({ act: "remake", screen: { ...screen, blunt: true } });
   if (design) return done({ act: "paint", design });
   if (read.kind === "look" && !mix) return done({ act: "talk", text: `The look comes from your own DESIGN.md, and I only change a design that ${named(endpoint())} mixed. Edit the file, or switch to ${named(endpoint())}'s mix and ask again.`, options: [] });
   if (read.kind === "look" && asksForPaint) return done({ act: "talk", text: "Nothing moved: what you asked for is already as far as it goes.", options: [] });
+  if (revision.architecture) return done({ act: "paint", design });
   // An instruction leads somewhere if Jev, asked the same way, finds something for it to do.
   const leads = async (instruction: string) => {
     const would = await readChange({ app, design: look, showing: `"${showing.title}"`, message: instruction });

@@ -7,6 +7,13 @@
 import type { KitComponent } from "../../shared/kit.js";
 import type { Block, ScreenPlan } from "./plan.js";
 import { ARCHETYPES, CUSTOM_SIZE } from "./plan.js";
+import type { KnownDestination } from "../../shared/identity.js";
+
+/** Only screens about individual subjects belong in a content collection. A made
+ * home, index, settings page or workflow is navigation, not another content item. */
+export function knownSubjects(catalog: KnownDestination[] | undefined, destination: string) {
+  return catalog?.filter((c) => c.id !== destination && c.rendered && ["detail", "guide"].includes(c.rendered.archetype)).map((c) => c.rendered!);
+}
 
 const at = (path: string) => ({ path });
 type C = KitComponent;
@@ -299,11 +306,13 @@ Other parts of the same screen are written separately, so stay strictly within y
 Keep every string short. Do not describe the UI, do not mention buttons or layout, and do not use HTML.`;
 
 export interface Setting {
+  architecture?: string;
   voice: string;
   /** The app the screen belongs to and how the person got here, when it was reached by a tap. */
   app?: string;
   reachedBy?: string;
   about?: unknown;
+  knownScreens?: Array<{ title: string; archetype: string; content: string }>;
 }
 
 export function partPrompt(description: string, part: Part, plan: ScreenPlan | null, setting: Setting, agreeWith?: unknown): string {
@@ -316,6 +325,7 @@ export function partPrompt(description: string, part: Part, plan: ScreenPlan | n
   // model writes about the brand's metaphor (gummies, signal boxes) instead of about the app.
   const brand = voice ? `Background, the brand's voice. Take the tone from it and nothing else. Its metaphors are not the subject:\n${voice}\n\n` : "";
   const given = agreeWith ? `Already on the screen, which your figures must agree with:\n${JSON.stringify(agreeWith)}\n` : "";
+  const known = setting.knownScreens?.length && (part === "list" || part === "groups") ? `Existing screens in this prototype have already established these subjects and facts:\n${JSON.stringify(setting.knownScreens)}\nWhen this collection includes those kinds of subjects, include the relevant existing subjects using their exact established titles and consistent facts. Give them priority over inventing similar replacements; additional distinct subjects are welcome. These are content references, not a menu of app screens: do not turn settings, home or other navigation destinations into content items.\n` : "";
   const subject = `Every name, figure and label must be about what this app is actually for${setting.app ? ` ("${setting.app}")` : ""}, as its real users would see it.`;
-  return `${brand}${journey}${parts}${about}${given}Screen description: ${description}\n${subject}\nWrite the "${part}" part.`;
+  return `${brand}${journey}${parts}${about}${given}${setting.architecture ?? ""}Screen description: ${description}\n${known}${subject}\nWrite the "${part}" part.`;
 }

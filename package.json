@@ -19,7 +19,8 @@
     "probe:ia:samples:audit": "tsx src/probe/ia-samples-audit.ts",
     "probe:ia:samples": "tsx src/probe/ia-samples.ts",
     "probe:ia:whole": "tsx src/probe/ia.ts --whole",
-    "observe:journeys": "tsx src/probe/journey-observer.ts"
+    "observe:journeys": "tsx src/probe/journey-observer.ts",
+    "probe:identity": "tsx src/probe/identity.ts"
   },
   "repository": {
     "type": "git",

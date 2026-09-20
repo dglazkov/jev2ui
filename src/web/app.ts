@@ -1,3 +1,5 @@
+import { withCatalog, withRenderedScreens, connectDestination } from "../shared/catalog.js";
+import type { DestinationEvidence } from "../shared/identity.js";
 // The tool: a conversation on the left, the app it is about on the right (docs/chat-and-turns.md).
 //
 // The first thing typed makes an app. Everything typed after that changes it: the server is asked what the message
@@ -7,6 +9,8 @@
 // A turn is whatever made or changed the app: a message, a tap that led to a screen nobody had made, a button.
 // Walking around what is already made is not a turn. The turns are the app's history, and the last can be undone.
 
+import "./app-map.js";
+import { architectureIcon, architectureNav, boundScreens, rebaseRoutes, type Architecture, type ScreenRoutes } from "../shared/architecture.js";
 import { LitElement, html, nothing, type TemplateResult } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
@@ -89,6 +93,9 @@ type LogEntry =
  * has been followed before shows the screen it made then, so the prototype holds still while it is explored.
  */
 interface Screen {
+  destination?: string;
+  routes?: ScreenRoutes;
+  links?: Record<string, string>;
   id: number;
   /** What leads here: `nav:Saved`, or `3:item:Il Corvo Pasta` for a tap on screen 3. */
   key: string;
@@ -110,6 +117,8 @@ interface Screen {
 
 /** Everything a turn can change, as it stood before the turn. Screens are replaced and never edited once made, so a copy of the map is enough. */
 interface Before {
+  architecture?: Architecture;
+  architectureError: string;
   app: string;
   nav: Journey["nav"];
   screens: Map<string, Screen>;
@@ -184,6 +193,10 @@ export class App extends LitElement {
 
   // The session: what app this is, every screen made for it, the way back, and how it came to be.
   private app = "";
+  @state() private architecture?: Architecture;
+  @state() private architectureError = "";
+  @state() private mapOpen = true;
+  @state() private mapSelected = "first";
   private nav: Journey["nav"];
   private screens = new Map<string, Screen>();
   private stack: Screen[] = [];
@@ -192,8 +205,10 @@ export class App extends LitElement {
   private nextTurn = 1;
   private shownTurns = 0;
   /** Every screen being made. More than one can be: "move the form to a screen of its own" makes two. */
-  private making = new Set<AbortController>();
+  private making = new Map<AbortController, Screen>();
   private readingAbort: AbortController | undefined;
+  private resolveAbort?: AbortController;
+  @state() private resolving = "";
   private designRequest = 0;
   private editTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -272,10 +287,14 @@ export class App extends LitElement {
   }
 
   /** Stops whatever is being made: what it was for is about to be gone. */
-  private stop() {
+  private stop(retain = new Set<Screen>()) {
     this.readingAbort?.abort();
-    for (const abort of this.making) abort.abort();
-    this.making.clear();
+    this.resolveAbort?.abort();
+    this.resolving = "";
+    for (const [abort, screen] of this.making) if (!retain.has(screen)) {
+      abort.abort();
+      this.making.delete(abort);
+    }
   }
 
   private get made(): Screen[] {
@@ -290,8 +309,10 @@ export class App extends LitElement {
 
   protected updated() {
     const byId = new Map(this.made.map((screen) => [String(screen.id), screen]));
+    const navigationIcons = Object.fromEntries(this.architecture?.map.nodes.map((node) => [node.id, architectureIcon(this.architecture!, node.id)]) ?? []);
     for (const surface of this.querySelectorAll<KitSurface>("kit-surface")) {
       surface.theme = this.report?.theme;
+      surface.navigationIcons = navigationIcons;
       surface.sync(byId.get(surface.dataset.screen!)?.messages ?? []);
     }
     document.title = this.appName ? `${this.appName} · Apparite` : "Apparite";
@@ -325,7 +346,7 @@ export class App extends LitElement {
   // --- Turns ------------------------------------------------------------------
 
   private asItStands(): Before {
-    return { app: this.app, nav: this.nav, screens: new Map(this.screens), stack: [...this.stack], nextId: this.nextId, choice: this.choice, markdown: this.markdown, seed: this.seed, change: this.change, report: this.report };
+    return { architecture: this.architecture, architectureError: this.architectureError, app: this.app, nav: this.nav, screens: new Map(this.screens), stack: [...this.stack], nextId: this.nextId, choice: this.choice, markdown: this.markdown, seed: this.seed, change: this.change, report: this.report };
   }
 
   /** Every turn starts here: what stood before it is kept, so that it can be undone. */
@@ -341,18 +362,21 @@ export class App extends LitElement {
   /** Nothing can be said yet: a message is being read, or the screen it would be about has not got as far as being drawn. */
   private get busy() {
     const here = this.current;
-    return this.reading || Boolean(here?.running && here.firstPaintMs === undefined);
+    return this.reading || Boolean(this.resolving) || Boolean(here?.destination ? this.making.size || this.architecture?.status === "reviewing" : here?.running && here.firstPaintMs === undefined);
   }
 
   /** Takes back the last turn, whatever it was. */
   private undo() {
     const turn = this.turns.at(-1);
     if (!turn?.before) return;
-    this.stop();
+    // Opening a destination can overlap the previous screen's remaining assets.
+    // Undo the new screen while allowing the restored screen to finish its run.
+    this.stop(new Set(turn.before.screens.values()));
     this.designRequest++;
     const b = turn.before;
-    Object.assign(this, { app: b.app, nav: b.nav, screens: b.screens, stack: b.stack, nextId: b.nextId, choice: b.choice, markdown: b.markdown, seed: b.seed, change: b.change, report: b.report });
+    Object.assign(this, { architecture: b.architecture, architectureError: b.architectureError, app: b.app, nav: b.nav, screens: b.screens, stack: b.stack, nextId: b.nextId, choice: b.choice, markdown: b.markdown, seed: b.seed, change: b.change, report: b.report });
     if (b.report) loadFonts(b.report.theme);
+    for (const screen of this.made) if (screen.links) screen.links = Object.fromEntries(Object.entries(screen.links).filter(([, id]) => this.architecture?.map.nodes.some((n) => n.id === id)));
     this.turns = this.turns.slice(0, -1);
     this.movedOn();
     this.tick++;
@@ -370,10 +394,12 @@ export class App extends LitElement {
 
     this.reading = true;
     try {
-      const about = (screen: Screen): ScreenAbout => ({ id: screen.id, title: screen.title, archetype: screen.archetype, ...(screen.plan ? { blocks: screen.plan.blocks } : {}) });
+      const about = (screen: Screen): ScreenAbout => ({ destination: screen.destination, id: screen.id, title: screen.title, archetype: screen.archetype, ...(screen.plan ? { blocks: screen.plan.blocks } : {}) });
       const request: TurnRequest = {
         message,
         app: this.app,
+        architecture: this.architecture ? withRenderedScreens(this.architecture, this.made) : undefined,
+        bindings: this.architecture ? this.made.flatMap((s) => s.destination && s.routes ? [{ destination: s.destination, routes: s.routes }] : []) : undefined,
         others: this.made.filter((screen) => screen !== here && !screen.running && screen.title).map(about),
         design: this.customDesign ? { markdown: this.markdown } : { brief: this.app, seed: this.seed, change: this.change },
         showing: { ...about(here), decisions: [...here.log.flatMap((entry) => (entry.kind === "stage" ? entry.decisions : [])), ...(this.report?.decisions ?? [])].slice(0, 60).map(({ question, answer }) => ({ question, answer })) },
@@ -394,6 +420,10 @@ export class App extends LitElement {
         this.applyDesign(answer.design.report, answer.design.markdown);
         turn.lines = answer.design.receipt;
       }
+      if (answer.architecture) {
+        this.applyArchitecture(answer.architecture, answer.routes);
+        turn.lines = [...turn.lines, ...(answer.architectureChanges ?? []).slice(0, 20).map((to) => ({ what: "App map", from: "Previous map", to }))];
+      }
       switch (answer.act) {
         case "paint":
           turn.outcome = "changed";
@@ -407,6 +437,10 @@ export class App extends LitElement {
         case "screen": {
           // What the new screen takes with it leaves the screen it was on.
           if (answer.screen) this.remake(answer.screen, message, turn, here);
+          if (answer.destination && this.architecture) {
+            this.visitDestination(answer.destination, { kind: "asked", label: message }, turn);
+            break;
+          }
           const screen = this.open(`asked:${turn.id}`, false, { prompt: this.app, journey: { app: this.app, from: { title: here.title, archetype: here.archetype }, via: { kind: "asked", label: message }, ...(this.nav ? { nav: this.nav } : {}) } });
           this.stack = [...this.stack, screen];
           void this.run(screen, turn);
@@ -427,7 +461,7 @@ export class App extends LitElement {
 
   /** Makes a screen again as the message asked: the one it named, or the one showing. */
   private remake(asked: TurnResponse["screen"], message: string, turn: Turn, here: Screen) {
-    const old = this.made.find((screen) => screen.id === asked?.id) ?? here;
+    const old = this.made.find((screen) => screen.id === asked?.id) ?? this.current ?? here;
     turn.on = old.title;
     turn.lines = [...turn.lines, ...(asked?.lines ?? [])];
     // The person should see what they changed, and it may not be the screen they were on: the way back stops there.
@@ -452,7 +486,7 @@ export class App extends LitElement {
     const was = { ...this.asItStands(), turns: this.turns, saved: this.saved, search: location.search };
     this.stop();
     this.designRequest++;
-    Object.assign(this, { app: "", nav: undefined, screens: new Map(), stack: [], turns: [], change: {}, seed: 0, report: undefined, saved: undefined, unmade: "" });
+    Object.assign(this, { architecture: undefined, architectureError: "", app: "", nav: undefined, screens: new Map(), stack: [], turns: [], change: {}, seed: 0, report: undefined, saved: undefined, unmade: "" });
     if (this.choice === AUTO) this.markdown = "";
     history.replaceState(null, "", location.pathname);
     this.view = "chat";
@@ -475,11 +509,16 @@ export class App extends LitElement {
   private create(prompt: string, turn: Turn) {
     this.stop();
     this.app = prompt;
+    this.architecture = undefined;
+    this.architectureError = "";
+    this.mapSelected = "first";
+    this.mapOpen = true;
     this.seed = 0;
     this.change = {};
     this.nav = undefined;
     this.screens = new Map();
     const screen = this.open("start", true, { prompt });
+    screen.destination = "first";
     this.stack = [screen];
     void this.run(screen, turn);
   }
@@ -568,9 +607,10 @@ export class App extends LitElement {
   }
 
   /** What a tap does: go back, show the screen this tap made before, or have a new one made. Only the last is a turn. */
-  private follow(detail: { kind: string; label: string; data?: Record<string, unknown>; index?: number; variant?: string; component?: string }) {
+  private follow(detail: { kind: string; label: string; data?: Record<string, unknown>; index?: number; variant?: string; component?: string; source?: string }) {
     const here = this.current;
     if (!here) return;
+    if (here.destination) return void this.followDestination(detail);
     const kind = (detail.kind === "item" && detail.variant !== undefined ? "itemAction" : detail.kind) as Via["kind"];
     if (kind === "appbar" && IN_PLACE.has(detail.label)) return;
     const backsOut = kind === "back" || ((kind === "action" || kind === "submit") && here.dialog && (BACKS_OUT.test(detail.label) || detail.variant === "secondary"));
@@ -595,6 +635,63 @@ export class App extends LitElement {
     if (made) void this.run(screen, turn);
   }
 
+  /** Identity decisions are serialized; registered in-flight destinations are visible to the next decision. */
+  private async followDestination(detail: { kind: string; label: string; data?: Record<string, unknown>; source?: string; group?: string; component?: string }) {
+    const here = this.current, map = this.architecture;
+    if (!here?.destination || !map || this.reading || this.resolving) return;
+    if (map.status === "reviewing") return this.tell("The app map is still being reviewed.");
+    const kind = detail.kind as Via["kind"];
+    if (kind === "appbar" && IN_PLACE.has(detail.label)) return;
+    if (kind === "back" && this.stack.length > 1) {
+      this.stack = this.stack.slice(0, -1); this.mapSelected = this.current!.destination!; this.tick++; return;
+    }
+    const source = detail.source ?? `${kind}:${detail.label}`;
+    const direct = here.links?.[source] ?? (source.startsWith("nav:") && map.map.nodes.some((n) => n.id === source.slice(4)) ? source.slice(4) : kind === "back" ? map.map.nodes.find((n) => n.id === here.destination)?.actions.find((a) => a.kind === "back")?.target : undefined);
+    if (direct) return this.visitDestination(direct, { ...detail, kind });
+    if (!session.makes) return void (this.unmade = detail.label);
+    const abort = new AbortController(); this.resolveAbort = abort;
+    this.resolving = detail.label;
+    const state = withRenderedScreens(map, this.made);
+    const accept = (next: Architecture, destination: string) => {
+      if (abort.signal.aborted || this.architecture !== map || this.current !== here || this.screens.get(here.key) !== here) return;
+      const isNew = !boundScreens(this.made).has(destination);
+      const turn = isNew ? this.begin("tap", `Opened “${detail.label}”`) : undefined;
+      here.links = { ...here.links, [source]: destination };
+      this.adoptCatalog(next);
+      this.resolving = "";
+      this.visitDestination(destination, { ...detail, kind }, turn);
+    };
+    try {
+      const response = await session.fetch("/api/resolve", { method: "POST", signal: abort.signal, body: JSON.stringify({ state, from: { destination: here.destination, title: here.title, archetype: here.archetype }, via: { ...detail, kind } }) });
+      if (!response.ok) throw new Error(await response.text());
+      const answer = await response.json() as { state?: Architecture; destination?: string; requested: DestinationEvidence; ms: number; result: { kind: string } };
+      if (abort.signal.aborted || this.architecture !== map || this.current !== here || this.screens.get(here.key) !== here) return;
+      here.log = [...here.log, { kind: "stage", stage: `Jev: resolve “${detail.label}”`, at: 0, ms: answer.ms, detail: answer.result.kind, decisions: [] }];
+      if (answer.state && answer.destination) accept(answer.state, answer.destination);
+      else this.tell(`“${detail.label}” could refer to more than one screen. You can open an existing screen from the map, or make a separate mock.`, { action: { label: "Make separate mock", run: () => {
+        if (this.architecture !== map || this.current !== here) return;
+        const next = connectDestination(map, here.destination!, answer.requested, { kind: "new" });
+        accept(next.state, next.destination);
+      } } });
+    } catch (error) {
+      if (!abort.signal.aborted) this.tell(`Could not resolve this link: ${(error as Error).message}`);
+    } finally {
+      if (this.resolveAbort === abort) { this.resolving = ""; this.resolveAbort = undefined; }
+      this.tick++;
+    }
+  }
+
+  /** Additive catalog changes keep streaming screen objects alive and refresh visible navigation. */
+  private adoptCatalog(next: Architecture) {
+    this.architecture = next;
+    this.architectureError = "";
+    for (const screen of this.made) {
+      screen.routes = undefined;
+      if (screen.destination && screen.topLevel) screen.messages.push({ version: "v0.9", updateDataModel: { surfaceId: "main", path: "/nav", value: architectureNav(next, screen.destination) } });
+    }
+    this.tick++;
+  }
+
   /**
    * A screen to take the place of `old`, made from the same request, or from that and a `note` of what was asked for.
    * Whatever was reached from the old one goes with it.
@@ -607,15 +704,57 @@ export class App extends LitElement {
       }
     };
     const aliases = [...this.screens].filter(([, screen]) => screen === old).map(([key]) => key);
-    forget(old);
+    if (!old.destination) forget(old);
     // It may have been the screen that established the navigation bar; if so, it establishes it again.
     const request = old.request.journey && !old.request.journey.nav ? old.request : { ...old.request, ...(old.request.journey && this.nav ? { journey: { ...old.request.journey, nav: this.nav } } : {}) };
     // Made again as it was means made anew: a custom component is baked afresh. Made again with a note, what was baked may well still do.
     const screen = this.open(old.key, old.topLevel, note ? { ...request, fresh: false, notes: [...(request.notes ?? []), note], ...(edit ? { edit } : {}) } : { ...request, fresh: true });
+    screen.destination = old.destination;
     for (const key of aliases) this.screens.set(key, screen);
     this.stack = this.stack.map((one) => (one === old ? screen : one));
     this.tick++;
     return screen;
+  }
+
+  /** Revisions are atomic: copies keep undo snapshots intact, and cached control bindings are checked again. */
+  private applyArchitecture(next: Architecture, routes: Record<string, ScreenRoutes> = {}) {
+    const before = this.architecture;
+    const valid = new Set(next.map.nodes.map((n) => n.id));
+    const replaced = new Map<Screen, Screen>();
+    for (const screen of this.made) {
+      if (!screen.destination || !valid.has(screen.destination)) continue;
+      const copy = { ...screen, messages: [...screen.messages], routes: routes[screen.destination] ?? (before ? rebaseRoutes(before, next, screen.destination, screen.routes) : screen.routes) };
+      if (copy.topLevel) copy.messages.push({ version: "v0.9", updateDataModel: { surfaceId: "main", path: "/nav", value: architectureNav(next, screen.destination) } });
+      replaced.set(screen, copy);
+    }
+    this.screens = new Map([...this.screens].flatMap(([key, screen]) => replaced.has(screen) ? [[key, replaced.get(screen)!] as const] : []));
+    this.stack = this.stack.flatMap((screen) => replaced.has(screen) ? [replaced.get(screen)!] : []);
+    if (!this.stack.length) { const first = boundScreens(this.made).get("first"); if (first) this.stack = [first]; }
+    this.architecture = next;
+    this.architectureError = "";
+    this.tick++;
+  }
+
+  private visitDestination(destination: string, via?: Via, turn?: Turn) {
+    const architecture = this.architecture, here = this.current;
+    const node = architecture?.map.nodes.find((n) => n.id === destination);
+    if (!architecture || !node || !here || architecture.status === "reviewing" || (!turn && (this.reading || Boolean(this.resolving)))) return;
+    const existing = boundScreens(this.made).get(destination);
+    // A resolved route names the canonical screen. Generated labels and legacy subject hints
+    // are presentation data, not a second identity check on an already-bound destination.
+    this.mapSelected = destination;
+    if (existing) {
+      if (turn) Object.assign(turn, { outcome: "changed", screen: existing.id, text: `Opened the existing ${node.label} screen.` });
+      return this.show(existing);
+    }
+    if (!session.makes) return void (this.unmade = node.label);
+    turn ??= this.begin("tap", `Opened “${node.label}” from the app map`);
+    const screen = this.open(`destination:${destination}`, false, { prompt: this.app, journey: { app: this.app, from: { title: here.title, archetype: here.archetype }, via: via ?? { kind: "asked", label: `Open ${node.label}` } } });
+    screen.destination = destination;
+    this.stack = via?.kind === "back" || via?.kind === "nav" ? [screen] : [...this.stack, screen];
+    this.unmade = "";
+    this.tick++;
+    void this.run(screen, turn);
   }
 
   private regenerate() {
@@ -648,14 +787,26 @@ export class App extends LitElement {
     if (matchMedia("(max-width: 900px)").matches && (this.view === "chat" || this.view === "stage")) this.go("stage");
     // A screen made anew has no use for the shelf; any other is told what the app has baked, as of now.
     const shelf = screen.request.journey && !screen.request.fresh ? this.shelf : [];
-    const request = { ...screen.request, ...(shelf.length ? { journey: { ...screen.request.journey!, shelf } } : {}), ...(screen.request.edit ? { edit: { ...screen.request.edit, kept } } : {}) };
+    const request = { ...screen.request, ...(screen.destination ? { architecture: this.architecture ? { state: withRenderedScreens(this.architecture, this.made), destination: screen.destination } : { create: true as const } } : {}), ...(shelf.length ? { journey: { ...screen.request.journey!, shelf } } : {}), ...(screen.request.edit ? { edit: { ...screen.request.edit, kept } } : {}) };
     const abort = new AbortController();
-    this.making.add(abort);
+    this.making.set(abort, screen);
     const note = (tone: "bad" | "plain", text: string, at = 0) => void (screen.log = [...screen.log, { kind: "note", at, tone, text }]);
     try {
       // Every screen of an app is painted by the same design: the developer's file, or the same draw of Jev's mix with what they have asked of it.
       await streamEvents({ ...request, ...this.designSource }, abort.signal, (event) => {
+        if (abort.signal.aborted || this.screens.get(screen.key) !== screen) return;
         switch (event.type) {
+          case "architecture":
+            this.architecture = event.architecture;
+            this.architectureError = "";
+            break;
+          case "architecture-error":
+            this.architectureError = event.message;
+            note("bad", event.message, event.at);
+            break;
+          case "routes":
+            if (event.destination === screen.destination && event.routes.revision === this.architecture?.revision) screen.routes = event.routes;
+            break;
           case "design":
             this.designRequest++; // a reading in flight is older than this one
             this.applyDesign(event.report, event.markdown);
@@ -676,7 +827,7 @@ export class App extends LitElement {
             const data = message.updateDataModel;
             if (data?.path === "/header" && data.value?.title) screen.title = data.value.title;
             // The first screen with a navigation bar establishes it for the app, symbols included once they arrive.
-            if (data?.path === "/nav" && Array.isArray(data.value?.items) && !request.journey?.nav) {
+            if (!screen.destination && data?.path === "/nav" && Array.isArray(data.value?.items) && !request.journey?.nav) {
               this.nav = { items: data.value.items };
               const active = data.value.items[data.value.active ?? 0]?.label;
               if (active) this.screens.set(`nav:${active}`, screen);
@@ -737,7 +888,8 @@ export class App extends LitElement {
     const from = this.turns.findLastIndex((turn) => turn.before?.app !== undefined && turn.before.app !== this.app);
     const turns = this.turns.slice(Math.max(0, from)).filter((turn): turn is Turn & { outcome: SavedTurn["outcome"] } => turn.outcome !== "pending");
     return {
-      version: 2,
+      version: this.architecture ? 3 : 2,
+      architecture: this.architecture ? withRenderedScreens(this.architecture, this.made) : undefined,
       app: this.app,
       ...(this.nav ? { nav: this.nav } : {}),
       design: { choice: this.choice, markdown: this.markdown, seed: this.seed, change: this.change as Record<string, unknown>, ...(this.report ? { report: this.report as unknown as Record<string, unknown> } : {}) },
@@ -750,6 +902,9 @@ export class App extends LitElement {
   private restore(app: SavedApp) {
     this.stop();
     this.app = app.app;
+    this.architecture = app.architecture ? withCatalog(app.architecture) : undefined;
+    this.architectureError = "";
+    this.mapSelected = "first";
     this.nav = app.nav;
     this.choice = app.design.choice === CUSTOM ? CUSTOM : AUTO;
     this.markdown = app.design.markdown;
@@ -1154,12 +1309,12 @@ export class App extends LitElement {
         : nothing}
       <span class="grow"></span>
       ${bench && this.app && session.state === "in"
-        ? html`<button class="btn" ?disabled=${!painted || here!.running || Boolean(saved?.mine)} @click=${() => this.save(false)} title="Save this apparition, with every screen and message, so that you can open it later.">
+        ? html`<button class="btn" ?disabled=${!painted || here!.running || this.busy || Boolean(saved?.mine)} @click=${() => this.save(false)} title="Save this apparition, with every screen and message, so that you can open it later.">
               ${icon("bookmark", saved?.mine ? "s fill" : "s")}<span>${saved?.mine ? "Saved" : "Save"}</span>
             </button>
             ${saved?.mine && saved.visibility === "link"
               ? html`<button class="btn primary" @click=${() => this.copy(this.linkTo(saved.id), "Link copied")}>${icon("content_copy", "s")}<span>Copy link</span></button>`
-              : html`<button class="btn primary" ?disabled=${!painted || here!.running} @click=${() => this.save(true)} title="Save this apparition and create a link. Anyone with the link can open it without signing in.">${icon("link", "s")}<span>Share</span></button>`}`
+              : html`<button class="btn primary" ?disabled=${!painted || here!.running || this.busy} @click=${() => this.save(true)} title="Save this apparition and create a link. Anyone with the link can open it without signing in.">${icon("link", "s")}<span>Share</span></button>`}`
         : nothing}
       ${limited ? html`<span class="runs ${runs.left === "0" ? "spent" : ""}" title="You have ${runs.left} of ${runs.daily} runs left today. Generating one screen uses one run."><span class="meter"><i style="width:${(100 * Number(runs.left)) / Math.max(1, Number(runs.daily))}%"></i></span>${runs.left} runs left</span>` : nothing}
       ${session.state === "in"
@@ -1212,11 +1367,12 @@ export class App extends LitElement {
           ${(Object.keys(DEVICES) as Device[]).map((d) => html`<button role="radio" aria-checked=${this.device === d} aria-label=${titled(d)} title=${titled(d)} @click=${() => (this.device = d)}>${icon(DEVICE_ICONS[d], "s")}</button>`)}
         </div>
         <nav class="flow" aria-label="Screens">
-          ${made.length > 1
+          ${!here?.destination && made.length > 1
             ? made.map((screen) => html`<button aria-current=${screen === here} title=${screen.title || "Untitled screen"} @click=${() => this.show(screen)}>${icon(screenIcon(screen.archetype), "xs")}${screen.title || "…"}</button>`)
             : nothing}
         </nav>
         <div class="acts">
+          ${here?.destination ? html`<button class="ib solid" aria-label="App map" title="App map" aria-expanded=${this.mapOpen} aria-controls="app-map-drawer" @click=${() => (this.mapOpen = !this.mapOpen)}>${icon("account_tree", "s")}</button>` : nothing}
           <button class="ib solid" ?disabled=${!here || here.running || !session.makes} @click=${() => this.regenerate()} title="Regenerate this screen" aria-label="Regenerate this screen">${icon("refresh", "s")}</button>
           <button class="ib solid ${wrong ? "wrong" : ""}" ?disabled=${!here} aria-expanded=${this.menu === "info"} @click=${() => toggle("info")} title="How this screen was generated" aria-label="How this screen was generated">${icon("info", "s")}</button>
           <button class="ib solid" ?disabled=${!painted && !theme} aria-expanded=${this.menu === "export"} @click=${() => toggle("export")} title="Export" aria-label="Export">${icon("download", "s")}</button>
@@ -1249,6 +1405,8 @@ export class App extends LitElement {
           </p>`
         : nothing}
       ${stale && session.makes ? html`<p class="notice">${icon("info", "s")}<span>The current design uses a different layout for this screen.</span><button class="btn small" @click=${() => this.regenerate()}>Regenerate</button></p>` : nothing}
+      ${this.resolving ? html`<p class="notice resolve-status" role="status">Finding “${this.resolving}”…</p>` : nothing}
+      <div class="stage-body">
       <div class="holder">
         <!-- Drawn at its own size and then made to fit, so that what is seen is the whole device and not as much of it as there is room for. -->
         <div class="device ${this.device}" style="width:${DEVICES[this.device]}px;zoom:${this.fit}">
@@ -1261,6 +1419,8 @@ export class App extends LitElement {
             ${painted ? nothing : html`<p class="empty">${here?.running ? html`<span class="dots"><i></i><i></i><i></i></span>Planning the screen…` : html`${icon("draw")}Your preview appears here. Tap any element to explore it.`}</p>`}
           </div>
         </div>
+      </div>
+      ${here?.destination && this.mapOpen ? html`<app-map id="app-map-drawer" .architecture=${this.architecture} .titles=${Object.fromEntries(made.filter((s) => s.destination && s.title).map((s) => [s.destination!, s.title]))} .current=${here.destination} .selected=${this.mapSelected} .made=${made.filter((s) => !s.running && s.messages.length).flatMap((s) => s.destination ? [s.destination] : [])} .working=${made.filter((s) => s.running).flatMap((s) => s.destination ? [s.destination] : [])} .busy=${this.reading || Boolean(this.resolving)} .error=${this.architectureError} .issues=${here.routes?.findings ?? []} @map-close=${() => { this.mapOpen = false; this.querySelector<HTMLButtonElement>('[aria-label="App map"]')?.focus(); }} @map-select=${(e: CustomEvent<string>) => (this.mapSelected = e.detail)} @map-open=${(e: CustomEvent<string>) => this.visitDestination(e.detail)}></app-map>` : nothing}
       </div>
     </section>`;
   }

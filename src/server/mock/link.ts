@@ -1,9 +1,15 @@
 // From a tap to the description of the screen it leads to. No model is involved:
-// what was tapped, and what kind of thing it was, already says what comes next.
+// Preserve what was tapped so the existing planner can interpret what comes next.
 // The description then goes through the same planning as one a developer typed,
 // with the journey alongside it so that Jev knows where the person came from.
 
 import type { Journey } from "../../shared/journey.js";
+import type { DestinationEvidence } from "../../shared/identity.js";
+
+/** Home is a product experience; routing responsibilities are not its content. */
+export function homeTask(app: string): string {
+  return `Home: the main screen of the product introduced by this brief: "${app}". The brief describes the starting screen, not the contents of Home. Show the product's actual content and primary activity, with concrete subjects people came to use, browse or resume. Give visual content a prominent featured hero and supporting items when appropriate to the product. Navigation belongs in the navigation controls; the body should not be a directory of app pages or a reproduction of the starting screen.`;
+}
 
 export interface Destination {
   /** Reads like something a developer would have typed. */
@@ -43,7 +49,7 @@ export function destination({ app, from, via }: Journey): Destination {
           ? `Choose ${title}: the available options for this one setting, with "${value}" currently chosen`
           : control === "danger"
             ? `Confirm: ${title}`
-            : `${title}: a sub-page of settings`;
+            : `${title}: the page for this one subject or task. It was selected in ${via.group ? `the "${via.group}" section of ` : ""}${here}. The selected row reads: ${JSON.stringify(Object.fromEntries(Object.entries(via.data ?? {}).filter(([key, value]) => !["imageUrl", "icon", "on", "control"].includes(key) && ["string", "number", "boolean"].includes(typeof value))))}`;
       return { screen, reachedBy: `tapping the row "${title}" on ${here}`, topLevel: false, about: via.data };
     }
     case "part":
@@ -74,4 +80,16 @@ export function destination({ app, from, via }: Journey): Destination {
         about: via.data,
       };
   }
+}
+
+/** Older catalogs stored a layout assumption as intent. Repair that exact legacy template
+ * from the recorded click, preserving the destination ID and all explicitly requested intent. */
+export function destinationIntent(evidence: DestinationEvidence): string {
+  if (evidence.link.kind !== "row" || !evidence.intent.endsWith(": a sub-page of settings")) return evidence.intent;
+  let data: Record<string, unknown> | undefined;
+  try {
+    const parsed = JSON.parse(evidence.link.subject ?? "{}");
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) data = parsed;
+  } catch { /* The label and section still identify the observed row. */ }
+  return destination({ app: "", from: evidence.from, via: { kind: "row", label: evidence.link.label, group: evidence.link.group, data: { ...data, control: evidence.link.control ?? data?.control } } }).screen;
 }

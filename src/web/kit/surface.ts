@@ -44,6 +44,8 @@ const initials = (name: string) =>
 
 @customElement("kit-surface")
 export class KitSurface extends LitElement {
+  /** Host-supplied icons also repair placeholders in previously generated navigation. */
+  navigationIcons: Readonly<Record<string, string>> = {};
   private components = new Map<string, Component>();
   /** The part of the catalog that arrived with the screen: custom components, by id. */
   private definitions = new Map<string, Definition>();
@@ -100,8 +102,11 @@ export class KitSurface extends LitElement {
         return this.write("/custom/selection", message.value);
       case "open":
         return this.tap("part", message.label, undefined, { data: message.data, component: name });
-      case "openItem":
-        return this.tap("item", message.item?.title, undefined, { data: message.item });
+      case "openItem": {
+        const items = this.read("/list/items");
+        const index = Array.isArray(items) ? items.findIndex((item: any) => JSON.stringify(item) === JSON.stringify(message.item)) : -1;
+        return this.tap("item", message.item?.title, undefined, { data: message.item, source: index >= 0 ? `item:/list/items/${index}` : "custom:outside" });
+      }
     }
   };
 
@@ -147,7 +152,9 @@ export class KitSurface extends LitElement {
     const data = scope?.base ? this.read(scope.base) : whole ? JSON.parse(JSON.stringify(this.data, (key, value) => (key === "imageUrl" || key === "nav" ? undefined : value))) : undefined;
     // Of a custom component, the next screen needs to know what was chosen in it, not everything it drew.
     if (whole && data?.custom) data.custom = { component: data.custom.name, chosen: data.custom.selection };
-    this.dispatchEvent(new CustomEvent("kit-tap", { detail: { kind, label: String(label ?? ""), data, title: this.read("/header/title"), ...extra }, bubbles: true }));
+    const groupPath = scope?.base.match(/^\/groups\/\d+/)?.[0];
+    const group = groupPath ? this.read(`${groupPath}/title`) : undefined;
+    this.dispatchEvent(new CustomEvent("kit-tap", { detail: { ...(typeof group === "string" ? { group } : {}), source: kind === "back" ? "back" : `${kind}:${scope?.base ?? String(label ?? "")}`, kind, label: String(label ?? ""), data, title: this.read("/header/title"), ...extra }, bubbles: true }));
   }
 
   /** Switches and checkboxes change their own state in place, so a mock feels alive without a round trip. */
@@ -254,8 +261,8 @@ export class KitSurface extends LitElement {
     if (!items.length) return html`<nav class="k-navbar"><span class="k-skel" style="width:70%"></span></nav>`;
     return html`<nav class="k-navbar">
       ${items.slice(0, 5).map(
-        (item, i) => html`<a class=${i === active ? "k-active" : ""} @click=${() => i !== active && this.tap("nav", item?.label, undefined, { index: i })}>
-          ${c.icons === false ? nothing : html`<span class="k-navpill">${this.icon(item?.icon ?? "circle")}</span>`}
+        (item, i) => html`<a class=${i === active ? "k-active" : ""} @click=${() => i !== active && this.tap("nav", item?.label, undefined, { index: i, source: `nav:${item?.destination}` })}>
+          ${c.icons === false ? nothing : html`<span class="k-navpill">${this.icon(item?.icon && item.icon !== "circle" ? item.icon : this.navigationIcons[item?.destination] ?? item?.icon ?? "circle")}</span>`}
           <span>${item?.label ?? ""}</span>
         </a>`,
       )}
@@ -460,7 +467,7 @@ export class KitSurface extends LitElement {
     const classes = `k-button k-${this.value(c.variant, s) ?? "secondary"} ${c.full ? "k-full" : ""} ${c.small ? "k-small" : ""}`;
     const fire = (e: Event) => {
       e.stopPropagation(); // a button on a list item acts on the item; it does not open it
-      this.tap(c.event ?? "action", this.value(c.label, s), s, { variant: this.value(c.variant, s) });
+      this.tap(c.event ?? "action", this.value(c.label, s), s, { variant: this.value(c.variant, s), source: c.id === "form_submit" ? "submit:form_submit" : `${c.event ?? "action"}:${s?.base ?? c.id}` });
     };
     return html`<button class=${classes} style=${this.flex(c)} @click=${fire}>${this.icon(this.value(c.icon, s))}<span>${this.words(c.label, s, 70)}</span></button>`;
   }

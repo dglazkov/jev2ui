@@ -81,7 +81,7 @@ export function constructNeutral(base: AppMap, seed: Seed, answers: Answers, pla
   };
   if (plannedAnchor) {
     const n = map.nodes.find((n) => n.id === "first")!;
-    n.purpose = `Requested task: ${seed.brief}. Activities apply to that exact subject, not to an abstract generic app. Activity: ${activity}. This is the canonical ${anchor} responsibility, not a second copy.`;
+    n.purpose = `Requested task: ${seed.brief}. Activities apply to that exact subject, not to an abstract generic app. Activity: ${activity}. This is the canonical ${anchor} responsibility, not a second copy.`.slice(0, 600);
     const primary = n.actions.find((a) => a.sourceLink === "primary");
     if (primary) { primary.label = activity; primary.kind = answers.activity.choice === "commit" ? "complete" : "in_place"; }
     // The activity set supplements, rather than replaces, the structural contract of the anchor.
