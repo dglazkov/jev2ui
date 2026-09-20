@@ -39,6 +39,8 @@ export interface Person {
   /** Set only if Google vouches for it: it is what the list is matched against. */
   email?: string;
   name?: string;
+  /** Where their picture is, as Google says. */
+  picture?: string;
 }
 
 /** The person an `Authorization: Bearer <Firebase ID token>` header names, or nobody: no token, or not one of ours. */
@@ -49,7 +51,7 @@ export async function whoIs(authorization: string | undefined): Promise<Person |
     const { payload } = await jwtVerify(token, keys, { algorithms: ["RS256"], audience: PROJECT, issuer: `https://securetoken.google.com/${PROJECT}` });
     if (!payload.sub) return undefined;
     const email = payload.email_verified === true && typeof payload.email === "string" ? payload.email.toLowerCase() : undefined;
-    return { uid: payload.sub, email, name: typeof payload.name === "string" ? payload.name : undefined };
+    return { uid: payload.sub, email, name: typeof payload.name === "string" ? payload.name : undefined, picture: typeof payload.picture === "string" ? payload.picture : undefined };
   } catch {
     return undefined;
   }
@@ -113,7 +115,7 @@ export async function everything() {
   const [grants, people] = await Promise.all([list("access"), list("people")]);
   return {
     grants: grants.map(({ id, data }) => ({ pattern: id, role: data.role ?? null, ...("runs" in data ? { runs: data.runs } : {}), note: data.note ?? "" })),
-    people: people.map(({ data }) => ({ email: data.email, name: data.name, lastSeen: data.lastSeen, today: (data.days as Record<string, number> | undefined)?.[date] ?? 0 })),
+    people: people.map(({ data }) => ({ email: data.email, name: data.name, picture: data.picture, lastSeen: data.lastSeen, today: (data.days as Record<string, number> | undefined)?.[date] ?? 0 })),
     dailyRuns: DAILY_RUNS,
   };
 }
@@ -168,7 +170,7 @@ export async function left(person: Person, grant: Grant): Promise<number | null>
 export async function spend(person: Person, grant: Grant): Promise<boolean> {
   if ((await left(person, grant)) === 0) return false;
   const date = today();
-  const now = await count(`people/${person.uid}`, `days.\`${date}\``, { email: person.email ?? "", name: person.name ?? "", lastSeen: new Date().toISOString() });
+  const now = await count(`people/${person.uid}`, `days.\`${date}\``, { email: person.email ?? "", name: person.name ?? "", picture: person.picture ?? "", lastSeen: new Date().toISOString() });
   seen.set(person.uid, now);
   return grant.runs === null || now <= grant.runs;
 }

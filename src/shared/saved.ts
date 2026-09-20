@@ -67,7 +67,11 @@ export type Visibility = "private" | "link";
 /** What is kept beside a saved app, and listed in its owner's library. */
 export interface SavedAbout {
   id: string;
+  /** The description it started from. */
   title: string;
+  /** The title of its first screen, and the colours it is painted with (page, card, text, accent, border): what a tile in the library is drawn from. Apps saved before there were tiles have neither. */
+  name: string;
+  palette: string[];
   owner: string;
   visibility: Visibility;
   created: string;

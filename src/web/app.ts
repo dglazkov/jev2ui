@@ -12,6 +12,7 @@ import { customElement, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { repeat } from "lit/directives/repeat.js";
 import "./kit/surface.js";
+import "./settings.js";
 import "./kit/kit.css";
 import type { KitSurface } from "./kit/surface.js";
 import type { A2uiMessage, Decision, RunStats } from "../shared/events.js";
@@ -21,24 +22,63 @@ import type { Baked } from "../shared/kit.js";
 import type { SavedAbout, SavedApp, SavedTurn, Visibility } from "../shared/saved.js";
 import { receiptOf, type Option, type PaintChange, type ScreenAbout, type TurnRequest, type TurnResponse } from "../shared/turn.js";
 import { session, streamEvents } from "./session.js";
+import { face, icon, mark } from "./chrome.js";
+import { DEVICES, DEVICE_ICONS, firstDevice, type Device, type Section } from "./settings.js";
 
-const EXAMPLES = [
-  "Settings screen for a podcast app",
-  "Checkout for a sneaker store, with order summary",
-  "Home energy dashboard showing today's usage",
-  "Find a dog walker: nearby walkers with ratings",
-  "Recipe page for sourdough bread",
-  "Kubernetes cluster health for on-call engineers",
-  "Bedtime story picker for a kids' reading app",
+/** Things to ask for, each with a symbol of what it is. */
+const EXAMPLES: Array<[string, string]> = [
+  ["podcasts", "Settings screen for a podcast app"],
+  ["shopping_bag", "Checkout for a sneaker store, with order summary"],
+  ["bolt", "Home energy dashboard showing today's usage"],
+  ["pets", "Find a dog walker: nearby walkers with ratings"],
+  ["bakery_dining", "Recipe page for sourdough bread"],
+  ["dns", "Kubernetes cluster health for on-call engineers"],
+  ["auto_stories", "Bedtime story picker for a kids' reading app"],
 ];
 /** Things to say to an app that is there, for someone who has not yet tried. */
-const SUGGESTIONS = ["Make it lighter", "More playful", "Switch to dark mode", "Make the text shorter", "Add a settings page"];
+const SUGGESTIONS: Array<[string, string]> = [
+  ["light_mode", "Make it lighter"],
+  ["celebration", "More playful"],
+  ["dark_mode", "Switch to dark mode"],
+  ["short_text", "Make the text shorter"],
+  ["add_to_queue", "Add a settings page"],
+];
+
+/** A symbol for each kind of screen (server/mock/plan.ts), and one for a kind this file has not heard of. */
+const ARCHETYPE_ICONS: Record<string, string> = { feed: "view_agenda", dashboard: "dashboard", detail: "article", guide: "menu_book", settings: "tune", form: "edit_note", checkout: "shopping_cart", result: "task_alt", confirm: "help" };
+const screenIcon = (archetype: string) => ARCHETYPE_ICONS[archetype] ?? "smartphone";
+
+/** A symbol for a line of a receipt, going by what the line says was changed. */
+function lineIcon(what: string): string {
+  const found = (
+    [
+      [/hue|vivid|accent|colou?r/i, "palette"],
+      [/round/i, "rounded_corner"],
+      [/type|font|letter/i, "text_fields"],
+      [/dark|light/i, "contrast"],
+      [/warm/i, "thermostat"],
+      [/space|dens|room/i, "density_medium"],
+      [/picture|photo/i, "image"],
+      [/shadow|flat|card|border/i, "layers"],
+      [/title|text|words/i, "edit_note"],
+    ] as Array<[RegExp, string]>
+  ).find(([pattern]) => pattern.test(what));
+  return found ? found[1] : "tune";
+}
+
+type View = "chat" | "stage" | "design" | "library" | "settings";
+/** What a snackbar says, and the one thing that can be done about it. */
+interface Snack {
+  text: string;
+  tone?: "bad";
+  action?: { label: string; run: () => void };
+}
 
 const AUTO = "auto";
 const CUSTOM = "custom";
 const STORED_DESIGN = "jev2ui.design.md";
-const DEVICES = { phone: 390, tablet: 768, desktop: 1180 } as const;
-type Device = keyof typeof DEVICES;
+/** Every device is this tall at most; a phone is always. */
+const DEVICE_HEIGHTS: Record<Device, number> = { phone: 780, tablet: 1024, desktop: 760 };
 
 type LogEntry =
   | { kind: "stage"; at: number; stage: string; ms: number; detail?: string; decisions: Decision[]; tokens?: { input: number; output: number } }
@@ -113,9 +153,19 @@ function loadFonts(theme: Theme) {
 @customElement("jev2ui-app")
 export class App extends LitElement {
   @state() private draft = "";
-  @state() private device: Device = "phone";
-  /** Which of the panels over the conversation is open. */
-  @state() private panel: "" | "design" | "saved" = "";
+  @state() private device: Device = firstDevice();
+  /** What the rail says is showing. The conversation and the design sit beside the stage; the library and the settings take its place. On a narrow window, `stage` is the mock alone. */
+  @state() private view: View = "chat";
+  @state() private section: Section = "account";
+  /** Which menu is open: `account`, `info`, `export`, or `app:<id>` for a tile of the library. */
+  @state() private menu = "";
+  /** The saved app that is about to be deleted, once the person says so again. */
+  @state() private deleting = "";
+  @state() private snack: Snack | undefined;
+  private snackTimer: ReturnType<typeof setTimeout> | undefined;
+  /** How much smaller than life the device is drawn, so that all of it is in the window. */
+  @state() private fit = 1;
+  private fitting: ResizeObserver | undefined;
 
   @state() private choice: string = AUTO;
   @state() private markdown = "";
@@ -127,7 +177,6 @@ export class App extends LitElement {
   /** What the person has asked to have changed about the mix. A remix keeps it. */
   private change: PaintChange = {};
 
-  @state() private copied = "";
   /** Bumped whenever a screen or a turn changes; both are mutated in place as things arrive. */
   @state() private tick = 0;
   /** A message is being read. Screens may still be streaming; that does not stop the next message. */
@@ -144,6 +193,7 @@ export class App extends LitElement {
   private shownTurns = 0;
   /** Every screen being made. More than one can be: "move the form to a screen of its own" makes two. */
   private making = new Set<AbortController>();
+  private readingAbort: AbortController | undefined;
   private designRequest = 0;
   private editTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -151,7 +201,6 @@ export class App extends LitElement {
   @state() private saved: SavedAbout | undefined;
   /** What the person has saved. */
   @state() private library: SavedAbout[] = [];
-  @state() private saveError = "";
   /** What a visitor tapped that leads to a screen nobody has made. */
   @state() private unmade = "";
   /** The app a link names (`?app=<id>`), until it has been opened or has turned out not to be there. */
@@ -161,6 +210,56 @@ export class App extends LitElement {
   constructor() {
     super();
     session.attach(this);
+    this.readAddress();
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    window.addEventListener("hashchange", this.readAddress);
+    window.addEventListener("keydown", this.onKey);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    window.removeEventListener("hashchange", this.readAddress);
+    window.removeEventListener("keydown", this.onKey);
+    this.fitting?.disconnect();
+  }
+
+  private onKey = (e: KeyboardEvent) => {
+    if (e.key === "Escape" && this.menu) this.menu = "";
+  };
+
+  // --- Where the person is: the view is in the address, after the #, so that a link can name it and Back works -------
+
+  private readAddress = () => {
+    const [view, section] = location.hash.slice(1).split("/");
+    this.view = view === "design" || view === "library" || view === "settings" || view === "stage" ? view : "chat";
+    if (section === "account" || section === "appearance" || section === "access") this.section = section;
+    this.menu = "";
+  };
+
+  private go(view: View, section?: Section) {
+    if (section) this.section = section;
+    this.menu = "";
+    const hash = view === "chat" ? "" : view === "settings" ? `#settings/${section ?? this.section}` : `#${view}`;
+    if (hash !== location.hash) history.pushState(null, "", location.pathname + location.search + hash);
+    this.view = view;
+  }
+
+  /** Says something at the foot of the window, for a few seconds. */
+  private tell(text: string, more: Omit<Snack, "text"> = {}) {
+    clearTimeout(this.snackTimer);
+    this.snack = { text, ...more };
+    this.snackTimer = setTimeout(() => (this.snack = undefined), more.tone === "bad" ? 9000 : 4500);
+  }
+
+  private bad = (error: unknown) => this.tell(error instanceof Error ? error.message : String(error), { tone: "bad" });
+
+  /** The name of the app: the title of the screen it started with. */
+  private get appName(): string {
+    const first = this.screens.get("start") ?? this.made[0];
+    return first?.title || (this.app.length > 48 ? `${this.app.slice(0, 46)}…` : this.app);
   }
 
   // Light DOM, so the theme variables set on the device frame reach the renderer.
@@ -174,6 +273,7 @@ export class App extends LitElement {
 
   /** Stops whatever is being made: what it was for is about to be gone. */
   private stop() {
+    this.readingAbort?.abort();
     for (const abort of this.making) abort.abort();
     this.making.clear();
   }
@@ -194,12 +294,32 @@ export class App extends LitElement {
       surface.theme = this.report?.theme;
       surface.sync(byId.get(surface.dataset.screen!)?.messages ?? []);
     }
+    document.title = this.appName ? `${this.appName} · jev2ui` : "jev2ui";
+    this.watchFit();
     // The conversation follows its last turn.
     if (this.shownTurns !== this.turns.length) {
       this.shownTurns = this.turns.length;
       const turns = this.querySelector(".turns");
       turns?.scrollTo({ top: turns.scrollHeight, behavior: "smooth" });
     }
+  }
+
+  /** Keeps the device, drawn at its own size, within what the window has room for: a phone whose foot is off the page is not seen whole. */
+  private watchFit() {
+    const holder = this.querySelector<HTMLElement>(".holder");
+    if (!holder) return;
+    const measure = () => {
+      const padding = getComputedStyle(holder);
+      const wide = holder.clientWidth - parseFloat(padding.paddingLeft) - parseFloat(padding.paddingRight);
+      const high = holder.clientHeight - parseFloat(padding.paddingTop) - parseFloat(padding.paddingBottom);
+      const frame = this.device === "phone" ? 20 : 0;
+      const fit = Math.min(1, wide / (DEVICES[this.device] + frame), high / (DEVICE_HEIGHTS[this.device] + frame));
+      if (fit > 0 && Math.abs(fit - this.fit) > 0.004) this.fit = fit;
+    };
+    if (!this.fitting) this.fitting = new ResizeObserver(measure);
+    this.fitting.disconnect();
+    this.fitting.observe(holder);
+    measure();
   }
 
   // --- Turns ------------------------------------------------------------------
@@ -260,7 +380,7 @@ export class App extends LitElement {
         // A message that follows a question of the tool's is the answer to it.
         ...(asked?.outcome === "said" && asked.options?.length && asked.text ? { answering: { message: asked.said, question: asked.text } } : {}),
       };
-      const response = await session.fetch("/api/turn", { method: "POST", body: JSON.stringify(request) });
+      const response = await session.fetch("/api/turn", { method: "POST", body: JSON.stringify(request), signal: (this.readingAbort = new AbortController()).signal });
       if (!response.ok) throw new Error(await response.text());
       const answer = (await response.json()) as TurnResponse;
       // Undone while it was being read: there is nothing to answer.
@@ -296,7 +416,8 @@ export class App extends LitElement {
           break;
       }
     } catch (error) {
-      Object.assign(turn, { outcome: "failed", text: (error as Error).message });
+      // Stopped by the person, the turn is gone already, and there is nobody to tell.
+      if (this.turns.includes(turn)) Object.assign(turn, { outcome: "failed", text: (error as Error).message });
     } finally {
       this.reading = false;
       this.tick++;
@@ -321,6 +442,32 @@ export class App extends LitElement {
         if (part && !part.includes("/") && !exact.rewrite.includes(part) && !exact.remove.includes(part)) kept[part] = sent.updateDataModel.value;
       }
     void this.run(this.again(old, message, blocks && { plan: old.plan!, blocks }), turn, kept);
+  }
+
+  /** Clears the bench for another app. What was there is gone unless it was saved, so the way back is offered for a moment. */
+  private fresh() {
+    this.menu = "";
+    if (!this.app) return this.go("chat");
+    const was = { ...this.asItStands(), turns: this.turns, saved: this.saved, search: location.search };
+    this.stop();
+    this.designRequest++;
+    Object.assign(this, { app: "", nav: undefined, screens: new Map(), stack: [], turns: [], change: {}, seed: 0, report: undefined, saved: undefined, unmade: "" });
+    if (this.choice === AUTO) this.markdown = "";
+    history.replaceState(null, "", location.pathname);
+    this.view = "chat";
+    this.tell("Started afresh", {
+      action: {
+        label: "Undo",
+        run: () => {
+          const { turns, saved, search, ...before } = was;
+          Object.assign(this, before, { turns, saved });
+          if (before.report) loadFonts(before.report.theme);
+          history.replaceState(null, "", location.pathname + search);
+          this.tick++;
+        },
+      },
+    });
+    this.tick++;
   }
 
   /** A new description starts a new app, with a design of its own. */
@@ -496,6 +643,8 @@ export class App extends LitElement {
   /** `kept` are the words of the parts that stay as they are, by their path: no writer is asked for those again. */
   private async run(screen: Screen, turn?: Turn, kept: Record<string, unknown> = {}) {
     if (turn) turn.screen = screen.id;
+    // Where there is room for only one of them, what was asked for is what is shown.
+    if (matchMedia("(max-width: 900px)").matches && (this.view === "chat" || this.view === "stage")) this.go("stage");
     // A screen made anew has no use for the shelf; any other is told what the app has baked, as of now.
     const shelf = screen.request.journey && !screen.request.fresh ? this.shelf : [];
     const request = { ...screen.request, ...(shelf.length ? { journey: { ...screen.request.journey!, shelf } } : {}), ...(screen.request.edit ? { edit: { ...screen.request.edit, kept } } : {}) };
@@ -626,7 +775,7 @@ export class App extends LitElement {
   private movedOn() {
     if (!this.saved && !new URLSearchParams(location.search).has("app")) return;
     this.saved = undefined;
-    history.replaceState(null, "", location.pathname);
+    history.replaceState(null, "", location.pathname + location.hash);
   }
 
   private async openSaved(id: string) {
@@ -637,11 +786,11 @@ export class App extends LitElement {
       const { about, app } = (await response.json()) as { about: SavedAbout; app: SavedApp };
       this.restore(app);
       this.saved = about;
-      this.saveError = "";
-      this.panel = "";
       history.replaceState(null, "", `?app=${about.id}`);
+      this.view = "chat";
+      this.menu = "";
     } catch (error) {
-      this.saveError = (error as Error).message;
+      this.bad(error);
     }
   }
 
@@ -660,12 +809,11 @@ export class App extends LitElement {
       if (share) await this.setVisibility(id, "link");
       await this.loadLibrary();
       this.saved = this.library.find((one) => one.id === id);
-      this.saveError = "";
-      history.replaceState(null, "", `?app=${id}`);
-      if (share) await this.copy("share", this.linkTo(id));
-      else this.flash("save");
+      history.replaceState(null, "", `?app=${id}${location.hash}`);
+      if (share) await this.copy(this.linkTo(id), "Anyone with the link can open it. Link copied");
+      else this.tell(`Saved “${this.saved?.name || this.appName}”`, { action: { label: "Share", run: () => void this.share(id) } });
     } catch (error) {
-      this.saveError = (error as Error).message;
+      this.bad(error);
     }
   }
 
@@ -680,22 +828,35 @@ export class App extends LitElement {
     if (this.saved?.id === id) this.saved = { ...this.saved, visibility };
   }
 
+  /** Lets anyone with the link open a saved app, and puts the link on the clipboard. */
+  private async share(id: string) {
+    this.menu = "";
+    try {
+      await this.setVisibility(id, "link");
+      await this.copy(this.linkTo(id), "Anyone with the link can open it. Link copied");
+    } catch (error) {
+      this.bad(error);
+    }
+  }
+
   private async forget(id: string) {
+    this.menu = this.deleting = "";
     const response = await session.fetch(`/api/apps/${id}`, { method: "DELETE" });
-    if (!response.ok) return void (this.saveError = await response.text());
+    if (!response.ok) return this.bad(await response.text());
+    const gone = this.library.find((one) => one.id === id);
     this.library = this.library.filter((one) => one.id !== id);
     if (this.saved?.id === id) this.movedOn();
+    this.tell(`Deleted “${gone?.name || gone?.title || "the app"}”`);
   }
 
-  private async copy(what: string, text: string) {
-    await navigator.clipboard.writeText(text);
-    this.flash(what);
-  }
-
-  /** Says for a moment, on the button that did it, that a thing was done. */
-  private flash(what: string) {
-    this.copied = what;
-    setTimeout(() => (this.copied = ""), 1200);
+  private async copy(text: string, said: string) {
+    this.menu = "";
+    try {
+      await navigator.clipboard.writeText(text);
+      this.tell(said);
+    } catch (error) {
+      this.bad(error);
+    }
   }
 
   private themeCss() {
@@ -740,35 +901,38 @@ export class App extends LitElement {
     const reply: TemplateResult[] = [];
     if (turn.lines.length)
       reply.push(html`<ul class="receipt">
-        ${turn.lines.map((line) => html`<li><b>${line.what}</b> <span class="from">${line.from}</span> → <span class="to">${line.to}</span></li>`)}
+        ${turn.lines.map((line) => html`<li>${icon(lineIcon(line.what))}<span><b>${line.what}</b><span class="from">${line.from}</span> ${icon("arrow_forward", "xs")} <span class="to">${line.to}</span></span></li>`)}
       </ul>`);
     if (screen)
-      reply.push(html`<p class="made">
-        <button class="link" @click=${() => this.show(screen)} title="Show this screen">${screen.title || (screen.running ? "Planning the screen…" : "A screen")}</button>
-        ${screen.archetype ? html`<small>${screen.archetype}</small>` : nothing}
-        <small>${screen.running ? "making…" : screen.stats ? `${turn.on ? "made again" : "made"} in ${seconds(screen.stats.totalMs)}` : ""}${bad ? ` · ${bad} ${bad === 1 ? "problem" : "problems"}` : ""}</small>
-      </p>`);
-    else if (turn.screen && turn.outcome !== "pending") reply.push(html`<p class="made gone"><small>The screen this made has since been made again.</small></p>`);
+      reply.push(html`<button class="madecard" aria-current=${screen === this.current} @click=${() => this.show(screen)} title="Show this screen">
+        <span class="glyph ${screen.running ? "working" : ""}">${icon(screenIcon(screen.archetype))}</span>
+        <span class="words">
+          <b>${screen.title || (screen.running ? "Planning the screen…" : "A screen")}</b>
+          <small>${[screen.archetype, screen.running ? "making…" : screen.stats ? `${turn.on ? "made again" : "made"} in ${seconds(screen.stats.totalMs)}` : "", bad ? `${bad} ${bad === 1 ? "problem" : "problems"}` : ""].filter(Boolean).join(" · ")}</small>
+        </span>
+        ${icon("chevron_right")}
+      </button>`);
+    else if (turn.screen && turn.outcome !== "pending") reply.push(html`<p class="hint gone">${icon("history", "xs")}The screen this made has since been made again.</p>`);
     if (turn.outcome === "changed" && !turn.lines.length && !turn.screen) reply.push(html`<p class="hint">Nothing looks different for it.</p>`);
     if (turn.text) reply.push(html`<p class=${turn.outcome === "failed" ? "note bad" : "spoken"}>${turn.text}</p>`);
     if (turn.options?.length)
       reply.push(html`<div class="options">
         ${turn.options.map((option: Option) => html`<button ?disabled=${this.busy || !session.makes} title=${option.instruction} @click=${() => this.say(option.instruction)}>${option.label}</button>`)}
       </div>`);
-    if (turn.outcome === "pending" && !screen) reply.push(html`<p class="hint working">Reading what you meant…</p>`);
+    if (turn.outcome === "pending" && !screen) reply.push(html`<p class="reading"><span class="dots"><i></i><i></i><i></i></span>Reading what you meant…</p>`);
     const count = turn.decisions.length + (screen?.log.reduce((sum, entry) => sum + (entry.kind === "stage" ? entry.decisions.length : 0), 0) ?? 0);
     return html`<article class="turn ${turn.source} ${turn.outcome}">
-      <p class="said">${turn.said}</p>
+      <p class="said">${turn.source === "tap" ? icon("touch_app", "xs") : turn.source === "button" ? icon("smart_button", "xs") : nothing}${turn.said}</p>
       <div class="reply">
         ${turn.on && !turn.lines.length && !screen ? html`<small class="on">on ${turn.on}</small>` : nothing} ${reply}
         <footer>
           ${count
             ? html`<details class="why">
-                <summary>${count} ${count === 1 ? "decision" : "decisions"}${turn.ms ? ` · read in ${turn.ms} ms` : ""}</summary>
+                <summary>${icon("arrow_right", "s")}${count} ${count === 1 ? "decision" : "decisions"}${turn.ms ? ` · read in ${turn.ms} ms` : ""}</summary>
                 ${turn.decisions.length ? this.renderDecisions(turn.decisions) : nothing} ${screen ? this.renderLog(screen) : nothing}
               </details>`
-            : nothing}
-          ${last && turn.before && turn.outcome !== "pending" && session.makes ? html`<button class="link undo" @click=${() => this.undo()}>undo</button>` : nothing}
+            : html`<span></span>`}
+          ${last && turn.before && turn.outcome !== "pending" && session.makes ? html`<button class="ib small" title="Undo this turn" aria-label="Undo this turn" @click=${() => this.undo()}>${icon("undo", "s")}</button>` : nothing}
         </footer>
       </div>
     </article>`;
@@ -777,26 +941,38 @@ export class App extends LitElement {
   private renderDesign() {
     const problems = this.report?.findings.filter((f) => f.severity !== "info") ?? [];
     const options = [
-      { id: AUTO, name: "Jev's mix" },
-      { id: CUSTOM, name: "My DESIGN.md" },
+      { id: AUTO, name: "Jev's mix", symbol: "auto_awesome" },
+      { id: CUSTOM, name: "My DESIGN.md", symbol: "description" },
     ];
     const asked = [...Object.entries(this.change.dials ?? {}).filter(([, by]) => by), ...Object.entries(this.change.pins ?? {})];
+    const vars = this.report?.theme.vars;
+    const swatches = vars ? [vars["--k-page"], vars["--k-card"], vars["--k-text"], vars["--k-accent"], vars["--k-border"]] : [];
     return html`
       <section class="panel design">
-        <div class="segmented" role="radiogroup" aria-label="Design system">
-          ${options.map((o) => html`<button role="radio" aria-checked=${this.choice === o.id} @click=${() => this.choose(o.id)}>${o.name}</button>`)}
+        <header class="panel-head">
+          <span class="swatches">${swatches.map((value) => html`<i style="background:${value}"></i>`)}</span>
+          <h2>${this.designBusy ? "Mixing…" : (this.report?.name ?? "Design")}</h2>
+          ${this.choice === AUTO
+            ? html`<button class="btn small" ?disabled=${!this.app || this.designBusy} @click=${() => this.remix()} title="Draw another design from the same ratings; what you have asked for stays">${icon("casino", "s")}Remix</button>`
+            : nothing}
+        </header>
+        <div class="segmented wide" role="radiogroup" aria-label="Design system">
+          ${options.map((o) => html`<button role="radio" aria-checked=${this.choice === o.id} @click=${() => this.choose(o.id)}>${icon(o.symbol, "s")}${o.name}</button>`)}
         </div>
         <p class="hint">
           ${this.choice === AUTO
-            ? html`Jev rates the brief on hue, vividness, warmth, roundness and whitespace, and the ratings become a DESIGN.md. Say what you would change, or
-                <button class="remix" ?disabled=${!this.app} @click=${() => this.remix()} title="Draw another design from the same ratings; what you have asked for stays">↻ remix</button> it.`
+            ? "Jev rates the brief on hue, vividness, warmth, roundness and whitespace, and the ratings become a DESIGN.md. Say in the chat what you would change, or remix it."
             : "Paste your project's DESIGN.md below: tokens paint the mock, and Jev reads the prose for what tokens cannot say."}
         </p>
         ${this.choice === AUTO && asked.length
-          ? html`<p class="hint">Yours, and kept by a remix: ${asked.map(([key, value]) => (typeof value === "number" ? `${key} ${value > 0 ? "+" : ""}${value.toFixed(2)}` : `${key} ${value === true ? "yes" : value === false ? "no" : value}`)).join(" · ")}</p>`
+          ? html`<p class="yours">
+              ${icon("push_pin", "xs")}
+              ${asked.map(([key, value]) => html`<span>${typeof value === "number" ? `${key} ${value > 0 ? "+" : ""}${value.toFixed(2)}` : `${key} ${value === true ? "yes" : value === false ? "no" : value}`}</span>`)}
+              <small>yours, and kept by a remix</small>
+            </p>`
           : nothing}
         ${this.designError ? html`<p class="note bad">${this.designError}</p>` : nothing}
-        ${problems.map((f) => html`<p class="note ${f.severity === "error" ? "bad" : "warn"}">${f.severity}: ${f.message}</p>`)}
+        ${problems.map((f) => html`<p class="note ${f.severity === "error" ? "bad" : "warn"}">${icon(f.severity === "error" ? "error" : "warning", "xs")}${f.message}</p>`)}
         <div class="editor">
           <textarea
             spellcheck="false"
@@ -810,22 +986,57 @@ export class App extends LitElement {
     `;
   }
 
+  /** What the person has saved: a tile for each, drawn from the colours it is painted with. */
   private renderLibrary() {
+    const when = (created: string) => {
+      const date = new Date(created);
+      return Date.now() - date.getTime() < 86_400_000 && date.getDate() === new Date().getDate() ? "today" : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    };
     return html`
-      <section class="panel library">
-        ${this.library.length ? nothing : html`<p class="hint">Nothing saved yet. Save keeps an app, every screen and turn of it; Share also lets anyone with the link open it.</p>`}
-        ${this.library.map(
-          (one) => html`<div class="saved" aria-current=${one.id === this.saved?.id}>
-            <button class="open" title=${one.title} @click=${() => this.openSaved(one.id)}>${one.title}<small>${one.screens} ${one.screens === 1 ? "screen" : "screens"} · ${new Date(one.created).toLocaleDateString()}</small></button>
-            <span class="acts">
-              <button class="link" title=${one.visibility === "link" ? "Anyone with the link can open it. Make it yours alone again." : "Only you can open it. Let anyone with the link."} @click=${() => this.setVisibility(one.id, one.visibility === "link" ? "private" : "link").catch((error) => (this.saveError = error.message))}>
-                ${one.visibility === "link" ? "shared" : "private"}
+      <section class="library">
+        <h2>Library <small>${this.library.length ? `${this.library.length} ${this.library.length === 1 ? "app" : "apps"} · every screen and turn of each` : ""}</small></h2>
+        <div class="grid">
+          ${session.makes
+            ? html`<button class="tile new" @click=${() => this.fresh()}>
+                <span>${icon("add_circle")}<b>New app</b><small>describe it, or start from an example</small></span>
+              </button>`
+            : nothing}
+          ${this.library.map((one) => {
+            const [page, card, text, accent, border] = one.palette ?? [];
+            const paint = page ? `--p:${page};--c:${card};--t:${text};--a:${accent};--b:${border}` : "";
+            const shared = one.visibility === "link";
+            return html`<div class="tile" aria-current=${one.id === this.saved?.id}>
+              <button class="shot" title=${one.title} aria-label="Open ${one.name || one.title}" @click=${() => this.openSaved(one.id)}>
+                <span class="mini" style=${paint}><i class="t"></i><i class="a"></i><i class="r"></i><i class="r"></i><i class="r"></i><i class="n"></i></span>
               </button>
-              ${one.visibility === "link" ? html`<button class="link" @click=${() => this.copy(`link:${one.id}`, this.linkTo(one.id))}>${this.copied === `link:${one.id}` ? "copied" : "copy link"}</button>` : nothing}
-              <button class="link" @click=${() => this.forget(one.id)}>delete</button>
-            </span>
-          </div>`,
-        )}
+              <div class="meta">
+                <div>
+                  <b title=${one.title}>${one.name || one.title}</b>
+                  <small>${icon(shared ? "link" : "lock", "xs")}${shared ? "Shared · " : ""}${one.screens} ${one.screens === 1 ? "screen" : "screens"} · ${when(one.created)}</small>
+                </div>
+                <button class="ib" aria-label="More" aria-expanded=${this.menu === `app:${one.id}`} @click=${() => ((this.deleting = ""), (this.menu = this.menu === `app:${one.id}` ? "" : `app:${one.id}`))}>${icon("more_vert", "s")}</button>
+              </div>
+              ${this.menu === `app:${one.id}`
+                ? html`<div class="pop tile-menu" role="menu">
+                    ${this.deleting === one.id
+                      ? html`<p class="ask">Delete “${one.name || one.title}”? Its link will stop working.</p>
+                          <div class="ask-acts">
+                            <button class="btn small" @click=${() => (this.menu = "")}>Keep</button>
+                            <button class="btn small danger" @click=${() => this.forget(one.id)}>Delete</button>
+                          </div>`
+                      : html`<button class="mi" role="menuitem" @click=${() => this.openSaved(one.id)}>${icon("open_in_new")}Open</button>
+                          ${shared
+                            ? html`<button class="mi" role="menuitem" @click=${() => this.copy(this.linkTo(one.id), "Link copied")}>${icon("content_copy")}Copy link</button>
+                                <button class="mi" role="menuitem" @click=${() => (this.menu = "", this.setVisibility(one.id, "private").then(() => this.tell("Only you can open it now")).catch(this.bad))}>${icon("lock")}Make private</button>`
+                            : html`<button class="mi" role="menuitem" @click=${() => this.share(one.id)}>${icon("link")}Share by link</button>`}
+                          <div class="sep"></div>
+                          <button class="mi danger" role="menuitem" @click=${() => (this.deleting = one.id)}>${icon("delete")}Delete</button>`}
+                  </div>`
+                : nothing}
+            </div>`;
+          })}
+        </div>
+        ${this.library.length ? nothing : html`<p class="empty-note">${icon("bookmark")}Nothing saved yet. Save keeps an app, every screen and turn of it; Share also lets anyone with the link open it.</p>`}
       </section>
     `;
   }
@@ -839,7 +1050,7 @@ export class App extends LitElement {
         </p>
         ${session.state === "out"
           ? html`<p class="hint">Making and changing things takes a name, and a place on the list.</p>
-              <button class="primary" @click=${() => session.signIn()}>Sign in with Google</button>`
+              <button class="btn primary" @click=${() => session.signIn()}>${icon("login", "s")}Sign in with Google</button>`
           : nothing}
         ${session.state === "stranger" ? html`<p class="hint">You are signed in as ${session.email}, which is not on the list of people who can make things here.</p>` : nothing}
       </section>
@@ -847,41 +1058,32 @@ export class App extends LitElement {
   }
 
   private renderChat() {
-    const vars = this.report?.theme.vars;
-    const swatches = vars ? [vars["--k-page"], vars["--k-card"], vars["--k-text"], vars["--k-accent"], vars["--k-border"]] : [];
-    const toggle = (panel: "design" | "saved") => (this.panel = this.panel === panel ? "" : panel);
-    const chips = this.app ? SUGGESTIONS : EXAMPLES;
+    if (this.view === "design" && session.makes) return html`<aside class="chat">${this.renderDesign()}</aside>`;
+    const chips = this.app ? SUGGESTIONS : [];
     return html`
       <aside class="chat">
-        <div class="chat-head">
-          <button class="tab" aria-expanded=${this.panel === "design"} ?disabled=${!session.makes} @click=${() => toggle("design")}>
-            <span class="swatches">${swatches.map((value) => html`<i style="background:${value}"></i>`)}</span>
-            ${this.designBusy ? "mixing…" : (this.report?.name ?? "Design")}
-          </button>
-          ${session.state === "in" ? html`<button class="tab" aria-expanded=${this.panel === "saved"} @click=${() => toggle("saved")}>Saved${this.library.length ? ` (${this.library.length})` : ""}</button>` : nothing}
-        </div>
-        ${this.panel === "design" ? this.renderDesign() : this.panel === "saved" ? this.renderLibrary() : nothing}
-        ${this.saveError ? html`<p class="note bad pad">${this.saveError}</p>` : nothing}
-        <div class="turns" ?hidden=${this.panel !== ""}>
+        <div class="turns">
           ${this.turns.length
             ? repeat(
                 this.turns,
                 (turn) => turn.id,
                 (turn, i) => this.renderTurn(turn, i === this.turns.length - 1),
               )
-            : html`<p class="hint opening">Say what you want to see: an app, or one screen of one. It appears on the right. Then say what to change (“make it lighter”, “more playful”, “add a settings page”), or tap anything in it.</p>`}
+            : html`<div class="opening">
+                <h2>What shall we make?</h2>
+                <p>Say what you want to see: an app, or one screen of one. It appears beside this. Then say what to change, or tap anything in it.</p>
+                ${session.makes ? html`<div class="examples">${EXAMPLES.map(([symbol, text]) => html`<button ?disabled=${this.busy} @click=${() => this.say(text)}>${icon(symbol)}<span>${text}</span>${icon("north_west", "xs")}</button>`)}</div>` : nothing}
+              </div>`}
         </div>
         ${session.makes
           ? html`<form
               class="say"
-              ?hidden=${this.panel !== ""}
               @submit=${(e: Event) => {
                 e.preventDefault();
                 void this.say();
               }}
             >
-              <div class="chips">${chips.map((chip) => html`<button type="button" ?disabled=${this.busy} @click=${() => this.say(chip)}>${chip}</button>`)}</div>
-              ${this.current?.title ? html`<p class="about" title="What you say is about the screen that is showing, unless you name another.">about <b>${this.current.title}</b>${this.made.length > 1 ? ", unless you name another screen" : ""}</p>` : nothing}
+              ${chips.length ? html`<div class="chips">${chips.map(([symbol, text]) => html`<button type="button" ?disabled=${this.busy} @click=${() => this.say(text)}>${icon(symbol, "xs")}${text}</button>`)}</div>` : nothing}
               <div class="box">
                 <textarea
                   rows="2"
@@ -896,7 +1098,14 @@ export class App extends LitElement {
                     }
                   }}
                 ></textarea>
-                <button type="submit" ?disabled=${this.busy || !this.draft.trim()} aria-label="Send">↑</button>
+                <div class="tools">
+                  ${this.current?.title
+                    ? html`<span class="about" title="What you say is about the screen that is showing, unless you name another.">${icon(screenIcon(this.current.archetype), "xs")}about <b>${this.current.title}</b></span>`
+                    : html`<span></span>`}
+                  ${this.busy && this.turns.at(-1)?.before
+                    ? html`<button type="button" class="send" title="Stop, and take it back" aria-label="Stop" @click=${() => this.undo()}>${icon("stop", "s fill")}</button>`
+                    : html`<button type="submit" class="send" ?disabled=${this.busy || !this.draft.trim()} aria-label="Send">${icon("arrow_upward", "s")}</button>`}
+                </div>
               </div>
             </form>`
           : this.renderVisitor()}
@@ -904,10 +1113,87 @@ export class App extends LitElement {
     `;
   }
 
-  render() {
-    // A saved app is for anyone its owner shares it with, signed in or not; everything else waits for a name.
-    const gate = this.saved || this.linked ? undefined : session.gate();
-    if (gate) return html`${gate}${this.saveError ? html`<p class="gate-note note bad">${this.saveError}</p>` : nothing}`;
+  private renderRail() {
+    const item = (view: View, symbol: string, name: string, extra = "") =>
+      html`<button class=${extra} aria-current=${this.view === view} @click=${() => this.go(view)}>${icon(symbol)}${name}</button>`;
+    return html`<nav class="rail" aria-label="The tool">
+      ${session.makes ? html`<button class="new" title="New app" aria-label="New app" @click=${() => this.fresh()}>${icon("add")}</button>` : nothing}
+      ${item("chat", "chat_bubble", "Chat")} ${item("stage", "smartphone", "Preview", "narrow-only")} ${session.makes ? item("design", "palette", "Design") : nothing}
+      ${session.state === "in" ? item("library", "grid_view", "Library") : nothing}
+      <span class="grow"></span>
+      ${item("settings", "settings", "Settings")}
+    </nav>`;
+  }
+
+  private renderBar() {
+    const bench = this.view !== "library" && this.view !== "settings";
+    const here = this.current;
+    const painted = here?.firstPaintMs !== undefined;
+    const runs = session.runs;
+    const limited = runs && runs.daily !== "unlimited";
+    const saved = this.saved;
+    return html`<header class="topbar">
+      <a class="brand" href="/" title="jev2ui" @click=${(e: Event) => (e.preventDefault(), this.go("chat"))}>${mark()}<b>jev2ui</b></a>
+      ${bench && this.app
+        ? html`${icon("chevron_right", "crumb")}
+            <span class="appname" title=${this.app}>${this.appName || "A new app"}</span>
+            ${saved?.mine
+              ? html`<button
+                  class="vis"
+                  title=${saved.visibility === "link" ? "Anyone with the link can open it. Make it yours alone again." : "Only you can open it. Let anyone with the link."}
+                  @click=${() => this.setVisibility(saved.id, saved.visibility === "link" ? "private" : "link").then(() => this.tell(this.saved?.visibility === "link" ? "Anyone with the link can open it" : "Only you can open it now")).catch(this.bad)}
+                >
+                  ${icon(saved.visibility === "link" ? "link" : "lock", "xs")}${saved.visibility === "link" ? "Shared" : "Private"}
+                </button>`
+              : saved
+                ? html`<span class="vis">${icon("person", "xs")}by ${saved.owner || "someone"}</span>`
+                : session.state === "in"
+                  ? html`<span class="vis quiet">Not saved</span>`
+                  : nothing}`
+        : nothing}
+      <span class="grow"></span>
+      ${bench && this.app && session.state === "in"
+        ? html`<button class="btn" ?disabled=${!painted || here!.running || Boolean(saved?.mine)} @click=${() => this.save(false)} title="Keep this app, every screen and turn of it, to open again">
+              ${icon("bookmark", saved?.mine ? "s fill" : "s")}<span>${saved?.mine ? "Saved" : "Save"}</span>
+            </button>
+            ${saved?.mine && saved.visibility === "link"
+              ? html`<button class="btn primary" @click=${() => this.copy(this.linkTo(saved.id), "Link copied")}>${icon("content_copy", "s")}<span>Copy link</span></button>`
+              : html`<button class="btn primary" ?disabled=${!painted || here!.running} @click=${() => this.save(true)} title="Save it, and let anyone with the link open it: they need not sign in">${icon("link", "s")}<span>Share</span></button>`}`
+        : nothing}
+      ${limited ? html`<span class="runs ${runs.left === "0" ? "spent" : ""}" title="${runs.left} of ${runs.daily} runs left today. A screen made is one run."><span class="meter"><i style="width:${(100 * Number(runs.left)) / Math.max(1, Number(runs.daily))}%"></i></span>${runs.left} left</span>` : nothing}
+      ${session.state === "in"
+        ? html`<button class="facebtn" aria-label="Account" aria-expanded=${this.menu === "account"} @click=${() => (this.menu = this.menu === "account" ? "" : "account")}>${face(session)}</button>`
+        : session.state === "out"
+          ? html`<button class="btn" @click=${() => session.signIn()}>${icon("login", "s")}<span>Sign in</span></button>`
+          : nothing}
+    </header>`;
+  }
+
+  private renderAccountMenu() {
+    const runs = session.runs;
+    const limited = runs && runs.daily !== "unlimited";
+    return html`<div class="pop account" role="menu">
+      <div class="who">
+        ${face(session, "big")}
+        <div><b>${session.name}</b><small>${session.email}</small></div>
+        <span class="role ${session.role}">${session.role}</span>
+      </div>
+      <div class="quota">
+        ${limited
+          ? html`<p><b>${runs.left} of ${runs.daily}</b> runs left today</p>
+              <div class="meter ${runs.left === "0" ? "spent" : ""}"><i style="width:${(100 * Number(runs.left)) / Math.max(1, Number(runs.daily))}%"></i></div>
+              <p class="hint">A screen made is one run. Turns over at midnight UTC.</p>`
+          : html`<p><b>No daily limit</b></p>`}
+      </div>
+      <button class="mi" role="menuitem" @click=${() => this.go("settings", "account")}>${icon("settings")}Settings</button>
+      <button class="mi" role="menuitem" @click=${() => this.go("library")}>${icon("grid_view")}Library</button>
+      ${session.role === "admin" ? html`<button class="mi" role="menuitem" @click=${() => this.go("settings", "access")}>${icon("shield_person")}Access list</button>` : nothing}
+      <div class="sep"></div>
+      <button class="mi" role="menuitem" @click=${() => ((this.menu = ""), session.signOut())}>${icon("logout")}Sign out</button>
+    </div>`;
+  }
+
+  private renderStage() {
     const here = this.current;
     const s = here?.stats;
     const theme = this.report?.theme;
@@ -917,60 +1203,110 @@ export class App extends LitElement {
     // A dialog sits over the screen it was opened from.
     const layers = here?.dialog && this.stack.length > 1 ? this.stack.slice(-2) : here ? [here] : [];
     const made = this.made;
-    return html`
-      <header class="top">
-        <h1>jev2ui <small>say what you want, get an app, keep talking</small></h1>
-        <span class="aside">${session.badge()}</span>
-      </header>
-      <div class="bench">
-        ${this.renderChat()}
-        <section class="stage">
-          <div class="toolbar">
-            <div class="segmented" role="radiogroup" aria-label="Device">
-              ${(Object.keys(DEVICES) as Device[]).map((d) => html`<button role="radio" aria-checked=${this.device === d} @click=${() => (this.device = d)}>${d}</button>`)}
-            </div>
-            <!-- Every pill is there from the start, empty until its figure arrives, so the shelf never re-wraps and pushes the mock down. -->
-            <div class="stats">
-              <button class="again" ?disabled=${!here || here.running || !session.makes} @click=${() => this.regenerate()} title="Make this screen again" aria-label="Make this screen again">↻</button>
-              <span class="pill first ${here?.firstPaintMs === undefined ? "pending" : ""}">first UI ${here?.firstPaintMs ?? "–"} ms</span>
-              <span class="pill total ${s ? "" : "pending"}">done ${s?.totalMs ?? "–"} ms</span>
-              <span class="pill cost ${s ? "" : "pending"}">${s?.jevCalls ?? "–"} Jev · ${s?.geminiOutputTokens ?? "–"} Gemini tok</span>
-              <span class="pill verdict ${s ? (s.valid ? "good" : "bad") : "pending"}">${s && !s.valid ? "invalid tree" : "valid tree"}</span>
-            </div>
-            <div class="exports">
-              ${session.state === "in"
-                ? html`<button ?disabled=${!painted || here!.running} @click=${() => this.save(false)} title="Keep this app, every screen and turn of it, to open again">${this.copied === "save" ? "Saved" : "Save"}</button>
-                    <button ?disabled=${!painted || here!.running} @click=${() => this.save(true)} title="Save it, and let anyone with the link open it: they need not sign in">${this.copied === "share" ? "Link copied" : "Share"}</button>`
-                : nothing}
-              <button ?disabled=${!painted} @click=${() => this.copy("a2ui", JSON.stringify(here!.messages, null, 2))}>${this.copied === "a2ui" ? "Copied" : "Copy messages"}</button>
-              <button ?disabled=${!theme} @click=${() => this.copy("css", this.themeCss())}>${this.copied === "css" ? "Copied" : "Copy theme CSS"}</button>
-              <button ?disabled=${!this.markdown} @click=${() => this.copy("design", this.markdown)}>${this.copied === "design" ? "Copied" : "Copy DESIGN.md"}</button>
-            </div>
-          </div>
+    const wrong = Boolean((s && !s.valid) || here?.log.some((entry) => entry.kind === "note" && entry.tone === "bad"));
+    const toggle = (menu: string) => (this.menu = this.menu === menu ? "" : menu);
+    return html`<section class="stage">
+      <div class="toolbar">
+        <div class="segmented" role="radiogroup" aria-label="Device">
+          ${(Object.keys(DEVICES) as Device[]).map((d) => html`<button role="radio" aria-checked=${this.device === d} aria-label=${d} title=${d} @click=${() => (this.device = d)}>${icon(DEVICE_ICONS[d], "s")}</button>`)}
+        </div>
+        <nav class="flow" aria-label="Screens made so far">
           ${made.length > 1
-            ? html`<nav class="flow" aria-label="Screens made so far">
-                ${made.map((screen) => html`<button aria-current=${screen === here} title=${screen.key} @click=${() => this.show(screen)}>${screen.title || "…"}<small>${screen.archetype}</small></button>`)}
-              </nav>`
+            ? made.map((screen) => html`<button aria-current=${screen === here} title=${screen.key} @click=${() => this.show(screen)}>${icon(screenIcon(screen.archetype), "xs")}${screen.title || "…"}</button>`)
             : nothing}
-          ${this.unmade && !session.makes
-            ? html`<p class="stale">
-                Nobody has made the screen that "${this.unmade}" leads to, and making one takes a name.
-                ${session.state === "out" ? html`<button class="link" @click=${() => session.signIn()}>Sign in with Google</button>` : nothing}
-              </p>`
-            : nothing}
-          ${stale && session.makes ? html`<p class="stale">This design lays the screen out differently. <button class="link" @click=${() => this.regenerate()}>Make it again</button></p>` : nothing}
-          <div class="device ${this.device}" style="max-width:${DEVICES[this.device]}px">
-            <div class="screen" style=${styleMap(frame)} @kit-tap=${(e: CustomEvent) => this.follow(e.detail)} @kit-custom-error=${(e: CustomEvent) => this.broke(e.detail)}>
-              ${repeat(
-                layers,
-                (screen) => screen.id,
-                (screen, i) => html`<kit-surface class="layer ${screen.dialog && i > 0 ? "over" : ""}" data-screen=${screen.id} ?inert=${i < layers.length - 1}></kit-surface>`,
-              )}
-              ${painted ? nothing : html`<p class="empty">${here?.running ? "Planning the screen…" : "What you ask for appears here. Then tap anything."}</p>`}
-            </div>
-          </div>
-        </section>
+        </nav>
+        <div class="acts">
+          <button class="ib solid" ?disabled=${!here || here.running || !session.makes} @click=${() => this.regenerate()} title="Make this screen again" aria-label="Make this screen again">${icon("refresh", "s")}</button>
+          <button class="ib solid ${wrong ? "wrong" : ""}" ?disabled=${!here} aria-expanded=${this.menu === "info"} @click=${() => toggle("info")} title="How this screen was made" aria-label="How this screen was made">${icon("info", "s")}</button>
+          <button class="ib solid" ?disabled=${!painted && !theme} aria-expanded=${this.menu === "export"} @click=${() => toggle("export")} title="Export" aria-label="Export">${icon("download", "s")}</button>
+        </div>
+        ${this.menu === "info" && here
+          ? html`<div class="pop info">
+              <h4>How this screen was made</h4>
+              <dl>
+                <dt>First UI</dt><dd>${here.firstPaintMs !== undefined ? `${here.firstPaintMs.toLocaleString()} ms` : "–"}</dd>
+                <dt>Done</dt><dd>${s ? `${s.totalMs.toLocaleString()} ms` : here.running ? "making…" : "–"}</dd>
+                <dt>Jev calls</dt><dd>${s?.jevCalls ?? "–"}</dd>
+                <dt>Gemini tokens</dt><dd>${s?.geminiOutputTokens?.toLocaleString() ?? "–"}</dd>
+                <dt>Tree</dt><dd class=${s ? (s.valid ? "good" : "bad") : ""}>${s ? html`${icon(s.valid ? "check_circle" : "error", "xs fill")}${s.valid ? "valid" : "invalid"}` : "–"}</dd>
+              </dl>
+              ${here.log.filter((entry) => entry.kind === "note" && entry.tone === "bad").map((entry) => html`<p class="note bad">${(entry as { text: string }).text}</p>`)}
+            </div>`
+          : nothing}
+        ${this.menu === "export"
+          ? html`<div class="pop export" role="menu">
+              <button class="mi" role="menuitem" ?disabled=${!painted} @click=${() => this.copy(JSON.stringify(here!.messages, null, 2), "A2UI messages copied")}>${icon("data_object")}Copy A2UI messages</button>
+              <button class="mi" role="menuitem" ?disabled=${!theme} @click=${() => this.copy(this.themeCss(), "Theme CSS copied")}>${icon("css")}Copy theme CSS</button>
+              <button class="mi" role="menuitem" ?disabled=${!this.markdown} @click=${() => this.copy(this.markdown, "DESIGN.md copied")}>${icon("description")}Copy DESIGN.md</button>
+            </div>`
+          : nothing}
       </div>
+      ${this.unmade && !session.makes
+        ? html`<p class="notice">
+            ${icon("lock", "s")}<span>Nobody has made the screen that “${this.unmade}” leads to, and making one takes a name.</span>
+            ${session.state === "out" ? html`<button class="btn small" @click=${() => session.signIn()}>Sign in</button>` : nothing}
+          </p>`
+        : nothing}
+      ${stale && session.makes ? html`<p class="notice">${icon("info", "s")}<span>This design lays the screen out differently.</span><button class="btn small" @click=${() => this.regenerate()}>Make it again</button></p>` : nothing}
+      <div class="holder">
+        <!-- Drawn at its own size and then made to fit, so that what is seen is the whole device and not as much of it as there is room for. -->
+        <div class="device ${this.device}" style="width:${DEVICES[this.device]}px;zoom:${this.fit}">
+          <div class="screen" style=${styleMap({ ...frame, height: `${DEVICE_HEIGHTS[this.device]}px` })} @kit-tap=${(e: CustomEvent) => this.follow(e.detail)} @kit-custom-error=${(e: CustomEvent) => this.broke(e.detail)}>
+            ${repeat(
+              layers,
+              (screen) => screen.id,
+              (screen, i) => html`<kit-surface class="layer ${screen.dialog && i > 0 ? "over" : ""}" data-screen=${screen.id} ?inert=${i < layers.length - 1}></kit-surface>`,
+            )}
+            ${painted ? nothing : html`<p class="empty">${here?.running ? html`<span class="dots"><i></i><i></i><i></i></span>Planning the screen…` : html`${icon("draw")}What you ask for appears here. Then tap anything.`}</p>`}
+          </div>
+        </div>
+      </div>
+    </section>`;
+  }
+
+  render() {
+    // A saved app is for anyone its owner shares it with, signed in or not; everything else waits for a name.
+    const waits = !this.saved && !this.linked;
+    if (waits && session.state === "loading") return html`<main class="splash">${mark()}</main>`;
+    const gate = waits ? session.gate() : undefined;
+    if (gate) return html`${gate}${this.renderSnack()}`;
+    const view = this.view === "library" && session.state !== "in" ? "chat" : this.view;
+    return html`
+      ${this.renderBar()}
+      <div class="shell view-${view}">
+        ${this.renderRail()}
+        ${view === "library"
+          ? this.renderLibrary()
+          : view === "settings"
+            ? html`<jev2ui-settings
+                .section=${this.section}
+                @section=${(e: CustomEvent<Section>) => this.go("settings", e.detail)}
+                @device=${(e: CustomEvent<Device>) => (this.device = e.detail)}
+              ></jev2ui-settings>`
+            : html`${this.renderChat()}${this.renderStage()}`}
+      </div>
+      ${this.menu ? html`<div class="scrim" @click=${() => (this.menu = "")}></div>` : nothing}
+      ${this.menu === "account" ? this.renderAccountMenu() : nothing}
+      ${this.renderSnack()}
     `;
+  }
+
+  private renderSnack() {
+    const snack = this.snack;
+    if (!snack) return nothing;
+    return html`<div class="snack ${snack.tone ?? ""}" role="status">
+      ${icon(snack.tone === "bad" ? "error" : "check_circle", "s")}<span>${snack.text}</span>
+      ${snack.action
+        ? html`<button
+            @click=${() => {
+              this.snack = undefined;
+              snack.action!.run();
+            }}
+          >
+            ${snack.action.label}
+          </button>`
+        : nothing}
+      <button class="ib small" aria-label="Dismiss" @click=${() => (this.snack = undefined)}>${icon("close", "s")}</button>
+    </div>`;
   }
 }

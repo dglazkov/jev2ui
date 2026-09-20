@@ -22,6 +22,18 @@ store, with order summary") and the mock appears in a phone, tablet or desktop f
 half. Everything typed after that is about the app that is there. Every decision is listed under the turn it
 belongs to, with its probability. Copy the messages, the theme as CSS variables, or the DESIGN.md.
 
+Around that is an app's furniture (`src/web/app.ts`, `src/web/chrome.ts`). A bar names the app, saves and shares
+it, and carries the face of whoever is signed in, with what they have left today and the way out behind it. A
+rail switches between the conversation, the design, the library of what has been saved, and the settings; **+**
+starts another app, and offers the way back for a moment. The device is drawn at its own size and made to fit the
+window, so a phone is always seen whole; how a screen was made (timings, calls, whether the tree is valid) is
+behind an **i**, and the three things to copy are behind one button. What the tool has to say about what it just
+did (saved, copied, deleted, failed) it says at the foot of the window. The symbols are Material Symbols, the
+font the kit's own Icon already loads. It is light or dark as the computer is, unless Settings says otherwise;
+none of that touches a mock, which its DESIGN.md paints. On a narrow window the rail runs along the foot and the
+conversation and the mock take turns. Where the person is (`#library`, `#settings/access`) is in the address, so
+Back works and a link can name it.
+
 ## How a mock is built: Jev fills a tree
 
 Jev cannot draw a tree, but it can choose, and a tree is a nest of choices (`src/server/mock/plan.ts`):
@@ -441,6 +453,7 @@ Requires Node 20+ and a `.env` with `GEMINI_API_KEY` and `JEV_API_KEY`.
 ```sh
 npm install
 npm run dev        # http://localhost:5173 is the design tool; /compare.html still has the old pipelines side by side
+                   # with no sign-in there, ?as=maker (or admin, stranger, out) stands in for one, so the signed-in chrome can be seen
 npm run eval       # comparison table over the built-in prompts, all four pipelines
 npm run eval -- "Book a haircut" -v   # one prompt, printing decisions and messages
 ```
@@ -493,8 +506,9 @@ address only if Google vouches for it, and looks it up (`src/server/auth.ts`) in
 `*` stands for anything (`*@example.com` does not cover `x@corp.example.com`; `*@*.example.com` does), and
 of the patterns an address fits, the one that says the most wins: a person's own line over their company's.
 A maker whose grant names no `runs` gets `DAILY_RUNS` (50 unless said); an admin, or `runs: null`, has no
-limit. Admins edit the list at `/access.html` (`src/web/access.ts`, over `/api/access`), which also shows who
-has made things and how many today; the one line an admin cannot change is the one that makes them an admin,
+limit. Admins edit the list in Settings, under Access (`src/web/settings.ts`, over `/api/access`; `/access.html`
+is kept only to send old links there), which also shows who has made things, by face, and how many today against
+what their line allows; the one line an admin cannot change is the one that makes them an admin,
 and the first admin is written into Firestore by hand. The list is read again within a minute of an edit made
 elsewhere, and at once after one made here. Someone signed in and on no line of it is told so,
 and makes nothing (403).
@@ -502,7 +516,7 @@ and makes nothing (403).
 Limited or not is one role with a dial on it, and the dial is the count: each screen made adds one to today's
 figure in `people/<uid>`, in the same write that notes who they are and when they were last seen, and when
 the day's runs are gone the answer is 429. Firestore does the adding, so two requests at once cannot both
-read the old figure. What is left rides back in a header and shows beside the person's name. Browsers cannot
+read the old figure. What is left rides back in a header and shows as a meter beside the person's face. Browsers cannot
 reach the database (no rules are published for it); `src/server/store.ts` is the three REST calls used.
 Photographs are served to anyone: an `<img>` cannot say who is asking, and their names are hashes.
 
@@ -519,8 +533,10 @@ document holds a megabyte and a well-explored app is more than that.
 A saved app does not change. Its id is a hash of what it is and who saved it, so it cannot be guessed, saving
 the same session twice is one app, and nobody's save lands on anybody else's; a session that has moved on
 saves as another. What can change is beside it: **Save** keeps it for its owner, **Share** also lets anyone
-who has the link open it (`/?app=<id>`), and the owner can take that back, or delete it, from the list of
-what they have saved. To everyone else a private app is no app at all (404).
+who has the link open it (`/?app=<id>`), and the owner can take that back, or delete it (asked twice, since
+its link dies with it), from the library. A tile there is drawn, not photographed: beside each app the server
+keeps the title of its first screen and the five colours it is painted with, and the tile is a screen in a few
+strokes of those. To everyone else a private app is no app at all (404).
 
 Reading is open: opening a shared app needs no sign-in, and calls no model. A visitor taps through every
 screen that was made; a tap that leads to one nobody has made says so, and offers the way in, because making
@@ -648,10 +664,11 @@ src/server/auth.ts      who is asking (a Firebase ID token), what the access lis
 src/server/store.ts     Firestore over REST: the access list, the day's counts, saved apps
 src/shared/saved.ts     an app, saved: the whole session as a document, its turns included
 src/server/apps.ts      saved apps in Firestore: whose they are, who may open them
-src/web/access.ts       the access list, for admins (access.html)
-src/web/session.ts      signing in with Google; the gate and the badge both pages show; fetch that says who is asking
+src/web/settings.ts     settings: the account, light or dark, and the access list, for admins
+src/web/session.ts      signing in with Google; the gate that stands in for the tool; fetch that says who is asking
+src/web/chrome.ts       what the tool's own chrome is made of: a symbol, the mark, a face, light or dark (chrome.css)
 src/server/main.ts      the deployed server: the routes and the built front end (vite.config.ts mounts them in dev)
-src/web/app.ts          the design tool: the conversation, the screens, the turns; compare.ts is the old side-by-side page
+src/web/app.ts          the design tool: the bar, the rail, the conversation, the stage, the library; compare.ts is the old side-by-side page
 src/eval.ts             CLI comparison
 src/probe/jtbd.ts       can Jev see jobs? (docs/jtbd-probe.md)
 src/probe/custom.ts     can Jev tell when a screen needs something the kit cannot draw?

@@ -3,10 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>jev2ui: describe a screen, get a mock</title>
-    <!-- The A2UI Icon component renders ligatures from this font. -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0" />
-    <link rel="icon" href="data:," />
+    <title>jev2ui</title>
+    <meta name="description" content="Say what you want, get an app, keep talking." />
+    <!-- The A2UI Icon component renders ligatures from this font, and so does the tool's own chrome. `block`, so that the name of a symbol is never shown in place of it. -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=block" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- Light or dark is settled before anything is painted (web/chrome.ts keeps it). -->
+    <script>
+      {
+        const said = localStorage.getItem("jev2ui.appearance");
+        document.documentElement.dataset.theme = said === "light" || said === "dark" ? said : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+    </script>
     <link rel="stylesheet" href="/src/web/app.css" />
   </head>
   <body>
