@@ -194,22 +194,22 @@ export class Settings extends LitElement {
 
   private renderModels() {
     const endpoints = [
-      ["jev", "cloud", "jev", "TypeSafe's own, at api.typesafe.ai."],
-      ["gev", "dns", "gev", "Ours: the same questions, another model answering. Its yes and no are surer of themselves."],
+      ["jev", "cloud", "jev", "The hosted TypeSafe service at api.typesafe.ai."],
+      ["gev", "dns", "gev", "A self-hosted service that accepts the same requests and answers them with a different model. Its yes-or-no answers are more confident than jev's."],
     ] as const;
     return html`
       <h3>Models</h3>
       <p class="lede">
-        Every decision here is a question put to System One, and two services answer it. They agree on about four decisions in five: choose one, make a screen
-        again, and see what changes. Each timing says who answered.
+        Select the service that answers System One requests. jev2ui sends a System One request for each design decision. The two services agree on about 80%
+        of decisions. To compare them, switch services, and then regenerate a screen. Each timing in a screen's decision log names the service that answered.
       </p>
       <div class="card setting">
-        <div><b>System One</b><small>${endpoints.find(([id]) => id === session.endpoint)![3]} This browser remembers.</small></div>
-        <div class="segmented wide" role="radiogroup" aria-label="System One endpoint">
+        <div><b>System One service</b><small>${endpoints.find(([id]) => id === session.endpoint)![3]} This setting is saved in your browser.</small></div>
+        <div class="segmented wide" role="radiogroup" aria-label="System One service">
           ${endpoints.map(([id, symbol, name]) => html`<button role="radio" aria-checked=${session.endpoint === id} @click=${() => (session.endpoint = id)}>${icon(symbol, "s")}${name}</button>`)}
         </div>
       </div>
-      <p class="hint">What is already made stays as it is. A design mixed by one is mixed again by the other, the first time it makes a screen.</p>
+      <p class="hint">Switching services doesn't change screens that you've already made. If jev2ui generated the app's design, the next screen that you make also regenerates the design with the selected service.</p>
     `;
   }
 
