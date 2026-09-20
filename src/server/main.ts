@@ -72,4 +72,4 @@ createServer(async (req, res) => {
     if (!res.headersSent) res.statusCode = 500;
     res.end();
   }
-}).listen(PORT, () => console.log(`jev2ui on :${PORT}`));
+}).listen(PORT, () => console.log(`Apparite on :${PORT}`));

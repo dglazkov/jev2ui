@@ -6,7 +6,7 @@ I–L settings · M sign-in gate · N server messages · O trace labels · P oth
 
 ## Rules applied
 
-- R1. Second person, present tense, active voice. Name the actor: you, jev2ui, Jev, gev, Gemini.
+- R1. Second person, present tense, active voice. Name the actor: you, Apparite, Jev, gev, Gemini.
 - R2. Sentence case for headings, labels and buttons. Role and device names are capitalized where shown.
 - R3. One verb per concept: generate / regenerate, save, share, delete, sign in. Not: make, made again, bake, forget, keep.
 - R4. An error says what happened and what to do about it, as a complete sentence.
@@ -46,7 +46,7 @@ I–L settings · M sign-in gate · N server messages · O trace labels · P oth
 | # | Now | Proposed |
 |---|---|---|
 | C1 | `What shall we make?` | `What do you want to make?` (R6: no "we") |
-| C2 | `Say what you want to see: an app, or one screen of one. It appears beside this. Then say what to change, or tap anything in it.` | `Describe an app, or a single screen. jev2ui generates a preview beside this conversation. To change it, describe the change or tap an element in the preview.` |
+| C2 | `Say what you want to see: an app, or one screen of one. It appears beside this. Then say what to change, or tap anything in it.` | `Describe an app, or a single screen. Apparite generates a preview beside this conversation. To change it, describe the change or tap an element in the preview.` |
 | C3 | aria-label `Say what to change` / `Describe an app or a screen` | `Describe a change` / `Describe an app or a screen` |
 | C4 | placeholder `Say what to change, or describe another app…` / `Describe an app, or a screen of one…` | `Describe a change, or describe another app` / `Describe an app, or one screen of an app` |
 | C5 | `What you say is about the screen that is showing, unless you name another.` | `Your message applies to the screen that's showing, unless you name a different one.` |
@@ -87,7 +87,7 @@ I–L settings · M sign-in gate · N server messages · O trace labels · P oth
 | E2 | `Jev's mix` / `My DESIGN.md` (the two options) | `Jev design` / `Your DESIGN.md` |
 | E3 | `Draw another design from the same ratings; what you have asked for stays` | `Generate a different design from the same ratings. The changes that you asked for are kept.` |
 | E4 | `Jev rates the brief on hue, vividness, warmth, roundness and whitespace, and the ratings become a DESIGN.md. Say in the chat what you would change, or remix it.` | `Jev rates your description for hue, vividness, warmth, roundness, and whitespace, and then turns the ratings into a DESIGN.md file. To change the design, describe the change in the chat, or select Remix.` |
-| E5 | `Paste your project's DESIGN.md below: tokens paint the mock, and Jev reads the prose for what tokens cannot say.` | `Paste your project's DESIGN.md. jev2ui applies the tokens to the preview, and Jev reads the prose for anything the tokens don't specify.` |
+| E5 | `Paste your project's DESIGN.md below: tokens paint the mock, and Jev reads the prose for what tokens cannot say.` | `Paste your project's DESIGN.md. Apparite applies the tokens to the preview, and Jev reads the prose for anything the tokens don't specify.` |
 | E6 | `yours, and kept by a remix` | `Your changes. Remixing keeps them.` |
 | E7 | placeholder `Paste your project's DESIGN.md here.` | `Paste your project's DESIGN.md` (no terminal period in a placeholder) |
 | E8 | `Remix` / `Design` / aria-label `Design system` / aria-label `DESIGN.md` | Unchanged. |
@@ -133,7 +133,7 @@ I–L settings · M sign-in gate · N server messages · O trace labels · P oth
 
 | # | Now | Proposed |
 |---|---|---|
-| I1 | `You are signed in with Google. The tool keeps your name beside what you save, and counts the screens you have made today.` | `You're signed in with Google. jev2ui stores your name with the apps that you save, and counts the screens that you generate each day.` |
+| I1 | `You are signed in with Google. The tool keeps your name beside what you save, and counts the screens you have made today.` | `You're signed in with Google. Apparite stores your name with the apps that you save, and counts the screens that you generate each day.` |
 | I2 | `**{left} of {daily}** runs left today` | `You have **{left} of {daily}** runs left today.` |
 | I3 | `A screen made is one run; changing how an app looks costs none. The day turns over at midnight UTC.` | `Generating one screen uses one run. Changing an app's design uses no runs. Your runs reset at midnight UTC.` |
 | I4 | role chip renders raw value | `Maker` / `Admin` / `None` |
@@ -143,7 +143,7 @@ I–L settings · M sign-in gate · N server messages · O trace labels · P oth
 
 | # | Now | Proposed |
 |---|---|---|
-| J1 | `How the tool itself looks. What you make is painted by its own DESIGN.md, whatever you choose here.` | `How jev2ui looks. This setting doesn't affect the apps that you make, which use their own DESIGN.md.` |
+| J1 | `How the tool itself looks. What you make is painted by its own DESIGN.md, whatever you choose here.` | `How Apparite looks. This setting doesn't affect the apps that you make, which use their own DESIGN.md.` |
 | J2 | `System follows your computer.` | `System uses your computer's setting.` |
 | J3 | `First device` / `What a new session shows its mocks on.` | `Default device` / `The device that new previews are shown on.` |
 | J4 | `Appearance` / `Theme` / `System` / `Light` / `Dark` / `Phone` / `Tablet` / `Desktop` | Unchanged. |
@@ -184,8 +184,8 @@ I–L settings · M sign-in gate · N server messages · O trace labels · P oth
 | # | Now | Proposed |
 |---|---|---|
 | M1 | `Say what you want.` / `Get an app.` / `Keep talking.` | `Describe what you want.` / `Get an app.` / `Keep talking.` — see decision D1: this is a brand line, not UI copy. |
-| M2 | `Describe a screen and tap through the mock it becomes. Every message after that changes it.` | `Describe a screen, and then tap through the preview that jev2ui generates. Every message after that changes the preview.` |
-| M3 | `{email} is not on the list of people who can make things here. Whoever sent you can have it added.` | `{email} isn't on the access list. To get access, ask the person who shared jev2ui with you to add your address.` |
+| M2 | `Describe a screen and tap through the mock it becomes. Every message after that changes it.` | `Describe a screen, and then tap through the preview that Apparite generates. Every message after that changes the preview.` |
+| M3 | `{email} is not on the list of people who can make things here. Whoever sent you can have it added.` | `{email} isn't on the access list. To get access, ask the person who shared Apparite with you to add your address.` |
 | M4 | `One moment…` | `Loading…` |
 | M5 | `Making things spends the models' time, which is shared out by name: so many runs a day to each person on the list. Opening an app someone shared with you takes no sign-in.` | `Generating screens uses model capacity, so everyone on the access list has a daily run limit. You don't need to sign in to open an app that someone shared with you.` |
 | M6 | `<meta name="description">`: `Say what you want, get an app, keep talking.` | Match M1 once M1 is settled. |
@@ -243,7 +243,7 @@ they are consistent with each other today, and inconsistent with everything abov
 | # | Now | Proposed |
 |---|---|---|
 | P1 | access.html: `The access list has moved into Settings.` | `The access list is now in Settings.` |
-| P2 | compare.html / compare.ts: `jev2ui: pipelines compared`, `Jev decides · Gemini writes · code assembles A2UI`, `Describe a UI…`, `Generate`, `Trace`, `Waiting for the first components…`, `Nothing rendered yet.`, `Jobs: Jev profiles the person`, `Sections: Jev picks the parts`, `Baseline: Gemini writes A2UI` | Developer-only comparison page. Out of scope unless you want it in. |
+| P2 | compare.html / compare.ts: `Apparite: pipelines compared`, `Jev decides · Gemini writes · code assembles A2UI`, `Describe a UI…`, `Generate`, `Trace`, `Waiting for the first components…`, `Nothing rendered yet.`, `Jobs: Jev profiles the person`, `Sections: Jev picks the parts`, `Baseline: Gemini writes A2UI` | Developer-only comparison page. Out of scope unless you want it in. |
 
 ## Decisions that change many entries at once
 
@@ -256,5 +256,7 @@ they are consistent with each other today, and inconsistent with everything abov
 - D3. Terminology. Three internal metaphors surface in the UI: **mock** (proposed: preview),
   **mix** (proposed: design), **bake / shelf** (proposed: custom component). A fourth, **turn**,
   appears in Save and Library copy (proposed: message). **Run** stays, defined once in Account.
-- D4. `jev2ui` vs "the tool". Copy today says "the tool"; the audit names the product, which the
-  style guide prefers. It does mean saying "jev2ui" about a dozen times.
+- D4. **Settled: the product is named.** The product is Apparite, and the copy says so wherever it
+  used to say "the tool" or "this tool", which is what the style guide prefers. The name is written
+  `Apparite`, capitalized, in every sentence and in the wordmark. `jev2ui` remains the name of the
+  repository, the npm package, the custom elements and the Cloud Run service; a person never sees it.

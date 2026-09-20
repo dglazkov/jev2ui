@@ -8,9 +8,14 @@
 # not a secret), making things takes a Google sign-in and a line on the access
 # list in Firestore (src/server/auth.ts). It is said once: a later deploy
 # without it leaves sign-in as it was. A service never given it has no login.
-# For that the project also needs: Google enabled as a sign-in provider and the
-# service's domain authorized, in Firebase Authentication; a Firestore database;
-# and roles/datastore.user for the service account.
+# For that the project also needs: Google enabled as a sign-in provider and
+# every domain the service answers on authorized, in Firebase Authentication --
+# the run.app one and the custom domain both, or sign-in fails on whichever was
+# left out; a Firestore database; and roles/datastore.user for the service account.
+#
+# The service is named jev2ui, which is the name a person never sees: the tool
+# calls itself Apparite, and a custom domain points at this service. Rename the
+# service and the domain still points at the old one, so leave the name alone.
 #
 # One instance at most, to bound what a busy day can spend: the process holds
 # nothing a second one would miss. The keys come from Secret Manager, and made

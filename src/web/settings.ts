@@ -122,7 +122,7 @@ export class Settings extends LitElement {
     const limited = runs && runs.daily !== UNLIMITED;
     return html`
       <h3>Account</h3>
-      <p class="lede">You're signed in with Google. The tool stores your name with the apps that you save, and counts the screens that you generate each day.</p>
+      <p class="lede">You're signed in with Google. Apparite stores your name with the apps that you save, and counts the screens that you generate each day.</p>
       <div class="card who">
         ${face(session, "big")}
         <div><b>${session.name}</b><small>${session.email}</small></div>
@@ -149,7 +149,7 @@ export class Settings extends LitElement {
     ];
     return html`
       <h3>Appearance</h3>
-      <p class="lede">How this tool looks. This setting doesn't affect the apps that you make, which use their own DESIGN.md.</p>
+      <p class="lede">How Apparite looks. This setting doesn't affect the apps that you make, which use their own DESIGN.md.</p>
       <div class="card setting">
         <div><b>Theme</b><small>System uses your computer's setting.</small></div>
         <div class="segmented wide" role="radiogroup" aria-label="Theme">
@@ -200,7 +200,7 @@ export class Settings extends LitElement {
     return html`
       <h3>Model service</h3>
       <p class="lede">
-        Select the service that answers System One requests. The tool sends a System One request for each design decision. The two services agree on about 80%
+        Select the service that answers System One requests. Apparite sends a System One request for each design decision. The two services agree on about 80%
         of decisions. To compare them, switch services, and then regenerate a screen. Each timing in a screen's decision log names the service that answered.
       </p>
       <div class="card setting">
@@ -209,7 +209,7 @@ export class Settings extends LitElement {
           ${endpoints.map(([id, symbol, name]) => html`<button role="radio" aria-checked=${session.endpoint === id} @click=${() => (session.endpoint = id)}>${icon(symbol, "s")}${name}</button>`)}
         </div>
       </div>
-      <p class="hint">Switching services doesn't change screens that you've already generated. If the tool generated the app's design, the next screen that you generate also regenerates the design with the selected service.</p>
+      <p class="hint">Switching services doesn't change screens that you've already generated. If Apparite generated the app's design, the next screen that you generate also regenerates the design with the selected service.</p>
     `;
   }
 

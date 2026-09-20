@@ -294,7 +294,7 @@ export class App extends LitElement {
       surface.theme = this.report?.theme;
       surface.sync(byId.get(surface.dataset.screen!)?.messages ?? []);
     }
-    document.title = this.appName ? `${this.appName} · jev2ui` : "jev2ui";
+    document.title = this.appName ? `${this.appName} · Apparite` : "Apparite";
     this.watchFit();
     // The conversation follows its last turn.
     if (this.shownTurns !== this.turns.length) {
@@ -963,7 +963,7 @@ export class App extends LitElement {
         <p class="hint">
           ${this.choice === AUTO
             ? `${named(session.endpoint)} rates your description for hue, vividness, warmth, roundness, and whitespace, and then turns the ratings into a DESIGN.md file. To change the design, describe the change in the chat, or select Remix.`
-            : `Paste your project's DESIGN.md. The tool applies the tokens to the preview, and ${named(session.endpoint)} reads the prose for anything the tokens don't specify.`}
+            : `Paste your project's DESIGN.md. Apparite applies the tokens to the preview, and ${named(session.endpoint)} reads the prose for anything the tokens don't specify.`}
         </p>
         ${this.choice === AUTO && asked.length
           ? html`<p class="yours">
@@ -1072,7 +1072,7 @@ export class App extends LitElement {
               )
             : html`<div class="opening">
                 <h2>What do you want to make?</h2>
-                <p>Describe an app, or a single screen. The tool generates a preview beside this conversation. To change it, describe the change or tap an element in the preview.</p>
+                <p>Describe an app, or a single screen. Apparite generates a preview beside this conversation. To change it, describe the change or tap an element in the preview.</p>
                 ${session.makes ? html`<div class="examples">${EXAMPLES.map(([symbol, text]) => html`<button ?disabled=${this.busy} @click=${() => this.say(text)}>${icon(symbol)}<span>${text}</span>${icon("north_west", "xs")}</button>`)}</div>` : nothing}
               </div>`}
         </div>
@@ -1134,7 +1134,7 @@ export class App extends LitElement {
     const limited = runs && runs.daily !== "unlimited";
     const saved = this.saved;
     return html`<header class="topbar">
-      <a class="brand" href="/" title="jev2ui" @click=${(e: Event) => (e.preventDefault(), this.go("chat"))}>${mark()}<b>jev2ui</b></a>
+      <a class="brand" href="/" title="Apparite" @click=${(e: Event) => (e.preventDefault(), this.go("chat"))}>${mark()}<b>Apparite</b></a>
       ${bench && this.app
         ? html`${icon("chevron_right", "crumb")}
             <span class="appname" title=${this.app}>${this.appName || "Untitled app"}</span>

@@ -167,7 +167,7 @@ export class App extends LitElement {
     const gate = session.gate();
     if (gate) return gate;
     return html`
-      <h1>jev2ui <small>Jev decides · Gemini writes · code assembles A2UI</small></h1>
+      <h1>Apparite <small>Jev decides · Gemini writes · code assembles A2UI</small></h1>
       <form
         class="prompt"
         @submit=${(e: Event) => {

@@ -122,14 +122,14 @@ class Session {
     return html`
       <main class="gate">
         <div class="gate-words">
-          <p class="brand">${mark()}<b>jev2ui</b></p>
+          <p class="brand">${mark()}<b>Apparite</b></p>
           <h1>Describe what you want.<br />Get an app.<br />Keep talking.</h1>
-          <p class="lede">Describe a screen, and then tap through the preview that this tool generates. Every message after that changes the preview.</p>
+          <p class="lede">Describe a screen, and then tap through the preview that Apparite generates. Every message after that changes the preview.</p>
           ${this.state === "out" ? html`<button class="google" @click=${() => this.signIn()}>${google}Sign in with Google</button>` : nothing}
           ${this.state === "stranger"
             ? html`<div class="stranger">
                   ${face(this)}
-                  <p><b>${this.name || this.email}</b>${this.email} isn't on the access list. To get access, ask the person who shared this tool with you to add your address.</p>
+                  <p><b>${this.name || this.email}</b>${this.email} isn't on the access list. To get access, ask the person who shared Apparite with you to add your address.</p>
                 </div>
                 <button class="google" @click=${() => this.signOut().then(() => this.signIn())}>${google}Use another account</button>`
             : nothing}
