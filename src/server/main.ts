@@ -46,6 +46,7 @@ const MODULES: Record<string, () => Promise<unknown>> = {
   change: () => import("./change.js"),
   "design-source": () => import("./design-source.js"),
   hybrid: () => import("./hybrid.js"),
+  "ia/navigation": () => import("./ia/navigation.js"),
   jobs: () => import("./jobs.js"),
   "mock/pipeline": () => import("./mock/pipeline.js"),
   models: () => import("./models.js"),
