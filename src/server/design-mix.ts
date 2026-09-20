@@ -18,7 +18,7 @@
 import { choice, noul, score, type Questions } from "@typesafe-ai/sdk";
 import { askJev, endpoint, ranked } from "./models.js";
 import { contrast, type Treatment } from "./design-md.js";
-import type { Decision } from "../shared/events.js";
+import { named, type Decision } from "../shared/events.js";
 import type { PaintChange, Pins } from "../shared/turn.js";
 
 // --- OKLCH -------------------------------------------------------------------
@@ -356,7 +356,7 @@ function build(brief: string, asked: Awaited<ReturnType<typeof askJev>>, seed: n
   const yaml = [
     "---",
     "version: alpha",
-    `name: ${seed ? `Remixed by Jev (draw ${seed % 1000})` : "Mixed by Jev"}`,
+    `name: ${seed ? `Remixed by ${named(asked.endpoint)} (draw ${seed % 1000})` : `Mixed by ${named(asked.endpoint)}`}`,
     `description: ${JSON.stringify(brief.slice(0, 140))}`,
     "colors:",
     ...Object.entries(colors).map(([k, v]) => `  ${k}: "${v}"`),
@@ -407,7 +407,7 @@ function build(brief: string, asked: Awaited<ReturnType<typeof askJev>>, seed: n
   const prose = `
 ## Overview
 
-Mixed by Jev for this brief: "${brief}". Every value above is a rating turned into a number; edit any of them.
+Mixed by ${named(asked.endpoint)} for this brief: "${brief}". Every value above is a rating turned into a number; edit any of them.
 
 - Accent: ${hue.name}. ${level("vivid")}. ${level("light")}.
 - Neutrals: ${level("warmth")}.

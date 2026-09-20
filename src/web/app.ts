@@ -15,7 +15,7 @@ import "./kit/surface.js";
 import "./settings.js";
 import "./kit/kit.css";
 import type { KitSurface } from "./kit/surface.js";
-import type { A2uiMessage, Decision, Endpoint, RunStats } from "../shared/events.js";
+import { named, type A2uiMessage, type Decision, type Endpoint, type RunStats } from "../shared/events.js";
 import type { DesignReport, Theme } from "../shared/design.js";
 import type { Journey, Via } from "../shared/journey.js";
 import type { Baked } from "../shared/kit.js";
@@ -497,7 +497,7 @@ export class App extends LitElement {
   /** The design is either Jev's mix for this app or the developer's own DESIGN.md. */
   private choose(choice: string) {
     if (choice === this.choice) return;
-    const turn = this.app ? this.begin("button", choice === AUTO ? "Switched to Jev's mix" : "Switched to my DESIGN.md") : undefined;
+    const turn = this.app ? this.begin("button", choice === AUTO ? `Switched to ${named(session.endpoint)}'s mix` : "Switched to my DESIGN.md") : undefined;
     this.choice = choice;
     this.designError = "";
     if (choice === CUSTOM) this.markdown = localStorage.getItem(STORED_DESIGN) ?? this.markdown;
@@ -887,7 +887,7 @@ export class App extends LitElement {
         ? html`<p class="note ${entry.tone}">${entry.text}</p>`
         : html`<section class="stage-entry">
             <h3>
-              ${entry.stage}
+              ${entry.endpoint ? entry.stage.replace(/^Jev/, named(entry.endpoint)) : entry.stage}
               <small>at ${entry.at} ms${entry.ms ? ` · ${entry.endpoint ? `${entry.endpoint} took` : "took"} ${entry.ms} ms${entry.modelMs ? `, its model ${entry.modelMs}` : ""}` : ""}${entry.detail ? ` · ${entry.detail}` : ""}${entry.tokens?.input ? ` · ${entry.tokens.input} in tok` : ""}</small>
             </h3>
             ${entry.decisions.length ? this.renderDecisions(entry.decisions) : nothing}
@@ -942,7 +942,7 @@ export class App extends LitElement {
   private renderDesign() {
     const problems = this.report?.findings.filter((f) => f.severity !== "info") ?? [];
     const options = [
-      { id: AUTO, name: "Jev's mix", symbol: "auto_awesome" },
+      { id: AUTO, name: `${named(session.endpoint)}'s mix`, symbol: "auto_awesome" },
       { id: CUSTOM, name: "My DESIGN.md", symbol: "description" },
     ];
     const asked = [...Object.entries(this.change.dials ?? {}).filter(([, by]) => by), ...Object.entries(this.change.pins ?? {})];
@@ -962,8 +962,8 @@ export class App extends LitElement {
         </div>
         <p class="hint">
           ${this.choice === AUTO
-            ? "Jev rates the brief on hue, vividness, warmth, roundness and whitespace, and the ratings become a DESIGN.md. Say in the chat what you would change, or remix it."
-            : "Paste your project's DESIGN.md below: tokens paint the mock, and Jev reads the prose for what tokens cannot say."}
+            ? `${named(session.endpoint)} rates the brief on hue, vividness, warmth, roundness and whitespace, and the ratings become a DESIGN.md. Say in the chat what you would change, or remix it.`
+            : `Paste your project's DESIGN.md below: tokens paint the mock, and ${named(session.endpoint)} reads the prose for what tokens cannot say.`}
         </p>
         ${this.choice === AUTO && asked.length
           ? html`<p class="yours">
@@ -1227,7 +1227,7 @@ export class App extends LitElement {
               <dl>
                 <dt>First UI</dt><dd>${here.firstPaintMs !== undefined ? `${here.firstPaintMs.toLocaleString()} ms` : "–"}</dd>
                 <dt>Done</dt><dd>${s ? `${s.totalMs.toLocaleString()} ms` : here.running ? "making…" : "–"}</dd>
-                <dt>${s?.endpoint === "gev" ? "gev" : "Jev"} calls</dt><dd>${s?.jevCalls ?? "–"}</dd>
+                <dt>${named(s?.endpoint)} calls</dt><dd>${s?.jevCalls ?? "–"}</dd>
                 <dt>Gemini tokens</dt><dd>${s?.geminiOutputTokens?.toLocaleString() ?? "–"}</dd>
                 <dt>Tree</dt><dd class=${s ? (s.valid ? "good" : "bad") : ""}>${s ? html`${icon(s.valid ? "check_circle" : "error", "xs fill")}${s.valid ? "valid" : "invalid"}` : "–"}</dd>
               </dl>

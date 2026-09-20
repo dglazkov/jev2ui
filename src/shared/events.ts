@@ -7,6 +7,9 @@ export type A2uiMessage = Record<string, unknown> & { version: string };
 /** Which service answers System One: jev is TypeSafe's, gev is ours, and they speak the same wire format (server/models.ts). */
 export type Endpoint = "jev" | "gev";
 
+/** What to call whoever answered, where a person reads it: "Jev" is the name of the job in the code, and of only one of the two that do it. */
+export const named = (endpoint?: Endpoint) => (endpoint === "gev" ? "gev" : "Jev");
+
 /** One Jev answer, flattened for display. */
 export interface Decision {
   id: string;

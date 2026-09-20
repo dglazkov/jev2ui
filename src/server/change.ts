@@ -22,7 +22,7 @@ import { mixDesign, mixQuestions } from "./design-mix.js";
 import { loadDesign } from "./design-source.js";
 import { talk } from "./talk.js";
 import { ARCHETYPES, type Block } from "./mock/plan.js";
-import type { Decision } from "../shared/events.js";
+import { named, type Decision } from "../shared/events.js";
 import { addChange, receiptOf, type DialName, type PaintChange, type Pins, type ScreenAbout, type TurnKind, type TurnRequest, type TurnResponse } from "../shared/turn.js";
 
 const CONTEXT =
@@ -310,7 +310,7 @@ export async function readTurn(request: TurnRequest): Promise<TurnResponse> {
   // A change to what the screen is made of that named no part ("show them as a grid"): made again with the message in mind. Unless it was the look after all ("no cards").
   if (read.kind === "structure" && !design) return done({ act: "remake", screen: { ...screen, blunt: true } });
   if (design) return done({ act: "paint", design });
-  if (read.kind === "look" && !mix) return done({ act: "talk", text: "The look comes from your own DESIGN.md, and I only change a design that Jev mixed. Edit the file, or switch to Jev's mix and ask again.", options: [] });
+  if (read.kind === "look" && !mix) return done({ act: "talk", text: `The look comes from your own DESIGN.md, and I only change a design that ${named(endpoint())} mixed. Edit the file, or switch to ${named(endpoint())}'s mix and ask again.`, options: [] });
   if (read.kind === "look" && asksForPaint) return done({ act: "talk", text: "Nothing moved: what you asked for is already as far as it goes.", options: [] });
   // An instruction leads somewhere if Jev, asked the same way, finds something for it to do.
   const leads = async (instruction: string) => {
