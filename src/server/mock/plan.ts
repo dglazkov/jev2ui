@@ -278,7 +278,7 @@ export interface CustomContract {
 }
 
 /** Material top app bar: at most a couple of actions, the most used one first. */
-const APP_BAR_ACTIONS: Record<string, { icon: string | null; criteria: string }> = {
+export const APP_BAR_ACTIONS: Record<string, { icon: string | null; criteria: string }> = {
   none: { icon: null, criteria: "The screen needs no action in its top bar." },
   search: { icon: "search", criteria: "The person will look for something specific among the content." },
   add: { icon: "add", criteria: "The person creates new items here: a new message, task, record or entry." },

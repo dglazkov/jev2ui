@@ -243,7 +243,7 @@ of choosing makes a rich screen out of those. The kit has molecules, with anatom
 | Stat: label, value, delta | the KPI card (Tremor, shadcn/ui blocks) |
 | Banner, Badge: tone | Polaris |
 | Text roles: display, headline, title, body, label, caption | the DESIGN.md typography scale itself |
-| Icon | any of 175 Material Symbols |
+| Icon | any of 185 Material Symbols |
 
 The schemas are shared: the server validates every message against them, and a small light-DOM renderer
 (`src/web/kit/`) draws them. Owning the renderer is also what lets a DESIGN.md carry over whole (below).
@@ -294,6 +294,25 @@ the repo. The repo holds only the mechanism, and the kit is a catalog that grows
 Measured: a pomodoro timer's tree at 325 ms and its ring 11 s later; the Royal Albert Hall in 22 s; a coffee
 map whose pins are the list's items in 27 s; all valid, none needing the second attempt. Ordinary screens are
 untouched (no bake, ~2 s).
+
+### The graph, written down: can anyone bring their own?
+
+A DESIGN.md made paint portable. What decides structure (the questions, how they nest, what code does with
+the answers) is tables and rules in `plan.ts`, and nobody can bring their own of that. `grammar/` is a probe
+of whether they could: the same graph as a markdown file, in which each of Jev's primitives is a kind of
+list (`+`/`-` lines are a Noul, bold-name bullets a Choice, a numbered rubric a Score, and with a value at
+every level, a dial), headings nest the way decisions do, a kind of screen is one line
+(`` `banner? custom? list facts form? actions?` at least 2 ``: order, always, expected, extra), what is left
+is a rule with its reason (`when form, no actions — …`), and there are no thresholds, because those belong to
+whoever answers. A file carries its own examples, labelled, and a lint warns of what Jev is known to stumble on.
+
+`grammar/screen.md` and `grammar/paint.md` are written out from the code and held to it by tests: read from
+the file, the request to Jev is deep-equal to `planQuestions()`, and a reader that knows nothing about screens
+makes the plan `readPlan` makes, over 3000 random sets of answers and, live, 30 of 30 prompts.
+`grammar/examples/email.md` is a graph nobody wrote code for (the emails a product sends), run by the same
+reader: every kind right on its first run, 10 of 12 examples whole. Nothing the tool serves reads these files
+yet, and a reading of a brought graph has nowhere to go until the catalog can be written down too. The format,
+the results and what resisted are in [docs/grammar.md](docs/grammar.md).
 
 ## Rendering strategy: the mock is painted by a DESIGN.md
 
@@ -467,6 +486,8 @@ npm run dev        # http://localhost:5173 is the design tool; /compare.html sti
                    # with no sign-in there, ?as=maker (or admin, stranger, out) stands in for one, so the signed-in chrome can be seen
 npm run eval       # comparison table over the built-in prompts, all four pipelines
 npm run eval -- "Book a haircut" -v   # one prompt, printing decisions and messages
+npm run probe:grammar                 # the graph in grammar/screen.md, run on its own examples and held against readPlan
+npm run probe:grammar -- grammar/examples/email.md   # any graph file
 ```
 
 `GEMINI_MODEL` (default `gemini-3.5-flash-lite`) and `JEV_MODEL` (default `jev-latest`) can be overridden
@@ -647,7 +668,7 @@ rather than a benchmark.
   "A recipe app".
 - Undo is for the turns of this sitting. An app opened from a link shows how it was made and cannot be unwound.
 - A custom slot sits in the archetype's fixed place and there is at most one per screen.
-- Symbol questions are expensive: 175 options each, asked per row, which is why a settings screen costs
+- Symbol questions are expensive: 185 options each, asked per row, which is why a settings screen costs
   around 19k Jev input tokens against 7k for most screens.
 - Fields and chips draw their state but do not change it, and a form's values do not travel to the next screen.
 - A session lives in the page until it is saved: reload and the prototype is gone.
@@ -664,6 +685,9 @@ src/server/theme.ts         tokens and the reading, as the kit's --k-* variables
 src/shared/kit.ts           the kit: component schemas of the A2UI fork, shared by server and renderer
 src/server/mock/plan.ts     the grammar (archetypes, blocks, anatomy) and the questions that fill it
 src/server/mock/screen.ts   plan to component tree; and the content schema Gemini is asked to fill
+grammar/                    the graph as files: screen.md and paint.md (written out by npm run grammar:export), the sets they link to, examples/email.md
+src/server/grammar/         format.ts reads, writes and checks a graph file; read.ts asks it and reads the answers; export.ts writes the tool's own; screen-plan.ts renames a reading into a ScreenPlan
+src/probe/grammar.ts        a graph file run on its own examples; screen.md held against readPlan
 src/server/mock/refine.ts   per-instance decisions from the content, written into the data model
 src/server/mock/bake.ts     what the kit cannot draw: the baker's contract, the lint, the app's shelf
 src/web/kit/sandbox.ts      the frame a baked component runs in

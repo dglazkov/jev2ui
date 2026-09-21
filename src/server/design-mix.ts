@@ -203,8 +203,11 @@ function readHue(answer: any): { angle: number; name: string; p: number } {
   return { angle: ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360, name: top, p };
 }
 
+/** What each level of a dial is worth, where that does not depend on another answer: a chroma, a corner radius in px, a spacing unit in px. */
+export const STOPS = { vivid: [0.04, 0.09, 0.15, 0.21, 0.3], round: [0, 3, 8, 14, 22], air: [4, 6, 8, 10, 12] };
+
 /** Piecewise-linear reading of a dial: `stops[i]` is the value at rubric level i. */
-const dial = (stops: number[], level: number) => {
+export const dial = (stops: number[], level: number) => {
   const i = Math.min(stops.length - 2, Math.max(0, Math.floor(level)));
   return stops[i] + (stops[i + 1] - stops[i]) * Math.min(1, Math.max(0, level - i));
 };
@@ -294,12 +297,12 @@ function build(brief: string, asked: Awaited<ReturnType<typeof askJev>>, seed: n
   // Light or dark is a coin weighted by Jev's answer; what the screens contain is not remixed, only how they look.
   const dark = pins.dark ?? (rng ? rng() < a.dark.noul : a.dark.noul >= 0.5);
   decisions.push({ id: "dark", question: "dark interface?", answer: dark ? "yes" : "no", p: pins.dark === undefined ? a.dark.noul : 1, ...(pins.dark !== undefined ? theirs : rng && dark !== a.dark.noul >= 0.5 ? { note: "drawn against the odds" } : {}) });
-  const chroma = dial([0.04, 0.09, 0.15, 0.21, 0.3], rate("vivid", "accent vividness", (l) => `chroma ${dial([0.04, 0.09, 0.15, 0.21, 0.3], l).toFixed(3)}`));
+  const chroma = dial(STOPS.vivid, rate("vivid", "accent vividness", (l) => `chroma ${dial(STOPS.vivid, l).toFixed(3)}`));
   const lightStops = dark ? [0.6, 0.66, 0.73, 0.8, 0.87] : [0.36, 0.45, 0.55, 0.65, 0.76];
   const lightness = dial(lightStops, rate("light", "accent lightness", (l) => `L ${dial(lightStops, l).toFixed(2)}`));
   const warmth = rate("warmth", "warmth of neutrals", (l) => (Math.abs(l - 2) < 0.4 ? "pure grays" : l > 2 ? "toward cream" : "toward steel"));
-  const radius = dial([0, 3, 8, 14, 22], rate("round", "roundness", (l) => `${dial([0, 3, 8, 14, 22], l).toFixed(0)}px`));
-  const unit = dial([4, 6, 8, 10, 12], rate("air", "whitespace", (l) => `${dial([4, 6, 8, 10, 12], l).toFixed(0)}px unit`));
+  const radius = dial(STOPS.round, rate("round", "roundness", (l) => `${dial(STOPS.round, l).toFixed(0)}px`));
+  const unit = dial(STOPS.air, rate("air", "whitespace", (l) => `${dial(STOPS.air, l).toFixed(0)}px unit`));
   const typeName = pick("type", "typefaces");
   const type = TYPE[typeName];
   const elevation = pick("elevation", "how depth is shown") as keyof typeof ELEVATION;

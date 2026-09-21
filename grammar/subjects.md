@@ -1,0 +1,48 @@
+# subjects
+
+What a picture on a screen can be of. The answer names a shelf of the photo library to look on.
+
+- **dish** — A meal or a plate of food: restaurant dishes, recipes, takeaway, a menu.
+- **dessert** — Something sweet or baked: cakes, pastries, ice cream, chocolate, bread, a bakery.
+- **drink** — A drink: coffee, tea, cocktails, wine, beer, juice, a bar or café menu.
+- **produce** — Fresh ingredients or groceries: fruit, vegetables, herbs, a market stall, a delivery box.
+- **venue** — Somewhere people go out to: a restaurant, café, bar, shop or club, seen from inside or from the street.
+- **stay** — Somewhere to sleep: a hotel, a rental, a cabin, a villa, a resort, a bedroom.
+- **home** — A house or a building as property: homes for sale or rent, real estate, a neighbourhood.
+- **interior** — A room or the things in it: furniture, decor, lighting, a kitchen, a workspace.
+- **city** — A city: streets, skylines, neighbourhoods, nightlife, public transport, a destination that is a town.
+- **landmark** — A notable building or sight: a monument, a museum, a temple, a bridge, a castle, an attraction.
+- **beach** — The coast: a beach, an island, the sea, a seaside destination, sailing.
+- **mountain** — Mountains and high country: peaks, alpine valleys, trails with a view, ski country.
+- **woods** — Woods and green country: forests, parks, fields, trails, gardens, countryside.
+- **water** — Fresh water: a lake, a river, a waterfall, a pond, fishing, paddling.
+- **desert** — Dry, open country: desert, dunes, canyons, badlands, a road through nowhere.
+- **winter** — Snow and cold: winter landscapes, skiing, ice, the far north.
+- **sky** — The sky: weather, clouds, sunsets, stars, the night sky, astronomy, flight.
+- **dog** — A dog: pets, walkers, adoption, vets, training.
+- **cat** — A cat or a kitten.
+- **bird** — A bird: birdwatching, a species guide, poultry, parrots.
+- **wildlife** — A wild animal: safaris, zoos, conservation, a species guide, sea life, insects.
+- **farm_animal** — A horse or a farm animal: riding, stables, livestock, cattle, sheep.
+- **flower** — Flowers: bouquets, florists, blossom, a flower guide.
+- **plant** — Plants and leaves: houseplants, gardening, succulents, herbs, a plant-care guide.
+- **portrait** — One person, as a person: a professional, a host, a teacher, a match, an author, a contact with a photograph.
+- **gathering** — People together: an event, a party, a festival, a concert crowd, a team, a community, a wedding.
+- **fitness** — Exercise and sport: running, yoga, the gym, cycling, swimming, team sports, a class or a workout.
+- **adventure** — Doing things outdoors: hiking, camping, surfing, skiing, climbing, kayaking, a guided trip.
+- **family** — Children and family life: babies, kids, parenting, school, childcare.
+- **fashion** — Things people wear: clothing, shoes, bags, jewellery, watches, glasses.
+- **gadget** — Electronics and devices: phones, laptops, cameras, headphones, speakers, smart-home kit.
+- **vehicle** — A car, a motorbike, a van or a truck: rentals, listings, rides, deliveries.
+- **bicycle** — A bicycle or a scooter: bike shops, bike share, cycling routes.
+- **transit** — Getting there: planes, trains, boats, airports, stations, a journey or a ticket.
+- **book** — Books and reading: a library, a bookshop, a reading list, study, stationery, writing.
+- **music** — Music: instruments, records, albums, a studio, a gig, a playlist.
+- **story** — Something told or imagined: a story, a fairy tale, a chapter, a character, a game world, a dream, a guided meditation.
+- **film** — Something to watch: films, series, shows, videos, a cinema.
+- **art** — Art and making: paintings, illustration, sculpture, galleries, crafts, pottery, design work.
+- **tools** — Work with the hands: tools, DIY, repairs, construction, a workshop, gardening kit, machinery.
+- **play** — Play: toys, board games, video games, puzzles, hobbies for children and adults.
+- **care** — Looking after yourself: skincare, cosmetics, perfume, a spa, a salon, wellness, medicine.
+- **work** — Work and study: an office, a desk, a meeting, a course, a classroom, a job.
+- **abstract** — Nothing in particular: a texture, a pattern, a colour or a mood, for things with no physical look.
