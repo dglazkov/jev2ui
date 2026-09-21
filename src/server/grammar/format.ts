@@ -40,6 +40,20 @@
 //     - `price` as meta, when item_price — Price…         there only when that answer is yes
 //     - `tone` as tone, decided                           bound, but not written: Jev decides it later
 //   #### list_layout → layout                             the answer turns the pattern's `layout`
+//
+// What nobody writes comes from somewhere, and may not be there, so where it comes
+// from is a chain, tried in order, that ends in something that cannot fail:
+//
+//   - `imageUrl` as picture, from library by item_subject else painted else placeholder
+//   filled from shelf else baked else closed               a whole part, when what draws it is a slot
+//
+// The names are the catalog's sources: a set Jev chooses from (or says none of these),
+// a model that makes one to a contract, a terminal. The contract is what the graph
+// decided under the part, and what each answer means to whoever makes the thing is a
+// line under the option that opens with an arrow:
+//
+//   - **watch** — It shows something that changes on its own: a timer, a gauge.
+//     → Make it run: it moves, counts or updates by itself once started.
 
 export interface Shape {
   /** The parts a thing of this kind may have, in the order they come. */
@@ -56,6 +70,8 @@ export interface Option {
   value?: string;
   criteria: string | null;
   shape?: Shape;
+  /** What whoever makes the thing is told, when this is the answer. The criteria are for Jev; this is for a model that writes, bakes or paints. */
+  told?: string;
 }
 
 export interface Level {
@@ -71,8 +87,22 @@ export type Asking =
   | { type: "choice"; options: Option[]; among?: { name: string; href: string } }
   | { type: "score"; levels: Level[] };
 
-/** Where a field's value comes from, when nobody writes it: Jev, once the words exist; the photo library; code; the baker; another part's data. */
-export type Source = "decided" | "found" | "computed" | "baked" | { from: string };
+/**
+ * One place a value can come from: a source of the catalog (`library`, `painted`, `decided`), or a path to another
+ * part's data (`/list/items`). `by` names the answer that says which of a set's shelves to look on.
+ */
+export interface Step {
+  name: string;
+  /** Written with "from" before it, as sets and paths are: it is looked in, not asked to make anything. */
+  from?: boolean;
+  by?: string;
+}
+
+/** Where a value comes from when nobody writes it: a chain, tried in order. What is missing falls to the next. */
+export type Source = Step[];
+
+/** The path in a chain, if it has one: the data is another part's, and is simply there. */
+export const pathIn = (source?: Source) => source?.find((step) => step.name.startsWith("/"))?.name;
 
 /** One piece of what a part is made of: what the writer is asked for, and where it goes in what draws the part. */
 export interface Field {
@@ -101,8 +131,14 @@ export interface Node {
   /** A part of the kind of thing being made. Its question is answered under `has_<name>`. */
   block: boolean;
   traits: string[];
-  /** Where the answer goes, when it is a value in some other document: a token of a DESIGN.md. */
+  /** Where it goes: a token of a DESIGN.md for a dial, the pattern that draws a part, the knob an answer turns. */
   target?: string;
+  /** Knobs of the pattern that no answer turns, set where the pattern is named: `→ slot with ratio 3:1`. */
+  fixed?: Record<string, string>;
+  /** A part that arrives whole, from a chain: what draws it is a slot, and what fills the slot may have to be made. */
+  filled?: Source;
+  /** What whoever makes the part is told about it, whatever was answered. */
+  told?: string;
   /** Anything said under the heading that is not asked of Jev: where the knowledge came from. */
   prose: string[];
   question?: string;
@@ -164,6 +200,20 @@ const EXAMPLES = /^Examples(?:\s+\((\w+)\))?$/;
 const EXAMPLE = /^- (.+?)(?: → (.+))?$/;
 const FIELD = /^(\s*)- (?:`([^`]+)`|(each|when)\b)\s*(.*)$/;
 const YIELD = /^(?:`([^`]*)`\s+)?(.*)$/;
+const TOLD = /^(\s*)→\s+(.+)$/;
+const FILLED = /^filled (.+)$/;
+const STEP = /^(from )?([\w/]+)(?: by (\w+))?$/;
+const WORDS = new Set(["number", "integer", "boolean", "optional", "required"]);
+
+function parseSource(text: string, line: number): Source {
+  return text.split(" else ").map((part) => {
+    const step = STEP.exec(part.trim());
+    if (!step || WORDS.has(step[2])) throw new Error(`line ${line}: "${part.trim()}" is not somewhere a value comes from: a source ("baked", "from library by item_subject") or a path ("from /list/items")`);
+    return { name: step[2], ...(step[1] ? { from: true } : {}), ...(step[3] ? { by: step[3] } : {}) };
+  });
+}
+
+const printSource = (source: Source) => source.map((step) => `${step.from ? "from " : ""}${step.name}${step.by ? ` by ${step.by}` : ""}`).join(" else ");
 
 const parseWhen = (text: string, line: number) => text.split(" and ").map((atom) => parseAtom(atom.trim(), line));
 
@@ -173,16 +223,13 @@ function parseSpec(spec: string, line: number): Partial<Field> {
   for (const word of spec.split(",").map((w) => w.trim()).filter(Boolean)) {
     const bounds = /^(\d+)–(\d+)$/.exec(word);
     const role = /^as (\w+)$/.exec(word);
-    const from = /^from (\S+)$/.exec(word);
     if (word === "number" || word === "integer" || word === "boolean") out.type = word;
     else if (bounds) out.list = { min: Number(bounds[1]), max: Number(bounds[2]) };
     else if (role) out.role = role[1];
     else if (word === "optional") out.optional = true;
     else if (word === "required") out.required = true;
-    else if (word === "decided" || word === "found" || word === "computed" || word === "baked") out.source = word;
-    else if (from) out.source = { from: from[1] };
     else if (word.startsWith("when ")) out.when = parseWhen(word.slice(5), line);
-    else throw new Error(`line ${line}: "${word}" says nothing about a field: a type, how many (3–8), "as" a slot, optional, where it comes from, or "when"`);
+    else out.source = parseSource(word, line);
   }
   return out;
 }
@@ -208,6 +255,14 @@ function parseShape(tokens: string, rest: string): Shape {
     else shape.traits.push(word);
   }
   return shape;
+}
+
+/** `→ slot with ratio 3:1, tone quiet`: what it goes to, and what is set there without asking. */
+function targetOf(text?: string): Pick<Node, "target" | "fixed"> {
+  if (!text) return {};
+  const [target, settings] = text.trim().split(/ with (.+)/);
+  if (!settings) return { target };
+  return { target, fixed: Object.fromEntries(settings.split(",").map((pair) => pair.trim().split(/\s+(.+)/).slice(0, 2) as [string, string])) };
 }
 
 /** `load` fetches the text of a file a question links to; without it, a question that chooses `among` a set has no options. */
@@ -280,7 +335,7 @@ export function parseGrammar(markdown: string, load?: (href: string) => string):
         name: title[1],
         block: !!(parent?.asking?.type === "choice" && parent.asking.options.some((o) => o.shape)),
         traits: title[2] ? title[2].split(",").map((t) => t.trim()).filter(Boolean) : [],
-        ...(title[3] ? { target: title[3].trim() } : {}),
+        ...targetOf(title[3]),
         prose: [],
         fields: [],
         children: [],
@@ -304,6 +359,22 @@ export function parseGrammar(markdown: string, load?: (href: string) => string):
       if (!example) return void paragraph.push(text.trim());
       flush();
       grammar.examples.push({ text: example[1].trim(), expect: (example[2] ?? "").split(",").map((atom) => atom.trim()).filter(Boolean).map((atom) => parseAtom(atom, line)) });
+      return;
+    }
+
+    const told = TOLD.exec(raw);
+    if (told) {
+      flush();
+      const node = here();
+      if (told[1].length && lastOption) lastOption.told = told[2];
+      else if (node) node.told = told[2];
+      else throw new Error(`line ${line}: "→ …" is what a maker is told about the part or the option above it`);
+      return;
+    }
+    const filled = FILLED.exec(text);
+    if (filled && here() && filled[1].split(" else ").every((part) => STEP.test(part.trim()))) {
+      flush();
+      here()!.filled = parseSource(filled[1], line);
       return;
     }
 
@@ -410,13 +481,14 @@ function printOptions(options: Option[]): string[] {
     bare = [];
   };
   for (const option of options) {
-    if (option.criteria === null && option.value === undefined && !option.shape) {
+    if (option.criteria === null && option.value === undefined && !option.shape && !option.told) {
       bare.push(option.name);
       continue;
     }
     flushBare();
     out.push(`- **${option.name}**${option.value !== undefined ? ` \`${option.value}\`` : ""}${option.criteria !== null ? ` — ${oneLine(option.criteria, option.name)}` : ""}`);
     if (option.shape) out.push(printShape(option.shape));
+    if (option.told) out.push(`  → ${oneLine(option.told, option.name)}`);
   }
   flushBare();
   while (out.at(-1) === "") out.pop();
@@ -430,7 +502,7 @@ function printField(field: Field, pad = ""): string[] {
     ...(field.role ? [`as ${field.role}`] : []),
     ...(field.required ? ["required"] : []),
     ...(field.optional ? ["optional"] : []),
-    ...(field.source ? [typeof field.source === "string" ? field.source : `from ${field.source.from}`] : []),
+    ...(field.source ? [printSource(field.source)] : []),
     ...(field.when ? [`when ${field.when.map(printAtom).join(" and ")}`] : []),
   ].join(", ");
   const said = (text?: string) => (text ? ` — ${oneLine(text, field.name)}` : "");
@@ -443,7 +515,8 @@ function printField(field: Field, pad = ""): string[] {
 }
 
 function printNode(node: Node, depth: number): string[] {
-  const out = [`${"#".repeat(depth)} ${node.name}${node.traits.length ? ` (${node.traits.join(", ")})` : ""}${node.target ? ` → ${node.target}` : ""}`, ""];
+  const fixed = node.fixed ? ` with ${Object.entries(node.fixed).map(([knob, value]) => `${knob} ${value}`).join(", ")}` : "";
+  const out = [`${"#".repeat(depth)} ${node.name}${node.traits.length ? ` (${node.traits.join(", ")})` : ""}${node.target ? ` → ${node.target}${fixed}` : ""}`, ""];
   for (const paragraph of node.prose) out.push(oneLine(paragraph, node.name), "");
   if (node.question) out.push(`> ${oneLine(node.question, node.name)}`, "");
   const asking = node.asking;
@@ -466,6 +539,8 @@ function printNode(node: Node, depth: number): string[] {
     });
     out.push("");
   }
+  if (node.told) out.push(`→ ${oneLine(node.told, node.name)}`, "");
+  if (node.filled) out.push(`filled ${printSource(node.filled)}`, "");
   if (node.fields.length) out.push(...node.fields.flatMap((field) => printField(field)), "");
   for (const child of node.children) out.push(...printNode(child, depth + 1));
   return out;
@@ -537,8 +612,13 @@ export function checkGrammar(grammar: Grammar): { errors: string[]; warnings: st
     [...rule.when, rule.then].forEach(checkAtom);
     if (!("block" in rule.then) && (rule.then.is.length > 1 || rule.then.not)) errors.push(`a rule ends in "${printAtom(rule.then)}", which does not say what it is to be`);
   }
+  const checkSource = (source: Source | undefined, where: string) => {
+    for (const step of source ?? []) if (step.by && byId.get(step.by)?.asking?.type !== "choice") errors.push(`"${where}" is looked for by "${step.by}", which is not a choice that is asked`);
+  };
+  walk(grammar.nodes, (node) => checkSource(node.filled, node.name));
   const checkFields = (fields: Field[]) => {
     for (const field of fields) {
+      checkSource(field.source, field.name);
       field.when?.forEach(checkAtom);
       for (const note of field.notes) note.when.forEach(checkAtom);
       checkFields(field.fields);

@@ -134,7 +134,7 @@ test("a list inside a part may have the part's own name, and is still inside it"
 
 test("a graph can be checked against a catalog by someone who has only the two files", () => {
   assert.deepEqual(checkBindings(screen, kit), { errors: [], warnings: [] });
-  assert.deepEqual(checkBindings(loadGrammar("examples/email.md"), kit), { errors: [], warnings: ['nothing draws "code": it names no pattern'] });
+  assert.deepEqual(checkBindings(loadGrammar("examples/email.md"), kit), { errors: [], warnings: [] });
   const broken = parseGrammar(
     [
       "# thing",

@@ -52,7 +52,11 @@ export function shelfFrom(sent: unknown): Baked[] {
   return [...shelf.values()];
 }
 
-const USES: Record<CustomContract["use"], string> = {
+/** The models this file calls, where a test can stand in for them. */
+export const calls = { bake: bakeGeminiJson, write: streamGeminiJson };
+
+/** What each answer about the component means to whoever bakes it (grammar/screen.md has them under `custom_use`, after the arrow). */
+export const USES: Record<CustomContract["use"], string> = {
   watch: "It shows something that changes on its own, and the person keeps an eye on it. Make it run: it moves, counts or updates by itself once started.",
   pick: "The person picks one or more parts of it. Tapping a part selects it, visibly, and tapping again deselects it. Report every change with kit.select.",
   adjust: "The person works it directly by dragging, turning or playing it, and it responds at once. Report the current value with kit.select whenever it changes.",
@@ -171,7 +175,7 @@ async function bakeNew(run: Run, screen: string, plan: ScreenPlan, setting: Sett
   const prompt = brief(screen, plan, setting);
   let feedback = "";
   for (let attempt = 1; attempt <= 2; attempt++) {
-    const generated = await bakeGeminiJson({ system: SYSTEM, prompt: prompt + feedback, schema: RESPONSE });
+    const generated = await calls.bake({ system: SYSTEM, prompt: prompt + feedback, schema: RESPONSE });
     run.stats.geminiInputTokens += generated.inputTokens;
     run.stats.geminiOutputTokens += generated.outputTokens;
     let problems: string[];
@@ -207,7 +211,7 @@ async function bakeNew(run: Run, screen: string, plan: ScreenPlan, setting: Sett
 
 /** The small model fills a component that is already on the shelf, as it fills any other part of a screen. */
 async function writeData(run: Run, screen: string, baked: Baked, setting: Setting): Promise<unknown> {
-  const generated = await streamGeminiJson({
+  const generated = await calls.write({
     system: "You write the sample content shown inside one component of a mock-up of an app screen, as JSON matching the schema. Specific, plausible names, figures and states, never placeholders. Keep every string short.",
     prompt: [
       setting.app ? `The app, as first described: ${setting.app}` : "",
@@ -249,29 +253,43 @@ async function fromShelf(run: Run, screen: string, plan: ScreenPlan, shelf: Bake
   return found;
 }
 
+export interface Filling {
+  baked: Baked;
+  data: unknown;
+}
+
+/**
+ * The places a custom part can come from, each by the name a graph file calls it (grammar/kit.md, Sources). Each comes
+ * back empty when it has nothing: no component on the shelf that Jev will take, no bake that passed its checks.
+ */
+export const CUSTOM_SOURCES = {
+  /** Off the app's shelf, if Jev says one of them is the thing; then only its data is written. */
+  async shelf(run: Run, screen: string, plan: ScreenPlan, setting: Setting, shelf: Baked[]): Promise<Filling | undefined> {
+    const reused = shelf.length ? await fromShelf(run, screen, plan, shelf) : undefined;
+    if (!reused) return undefined;
+    const data = await writeData(run, screen, reused, setting).catch(() => undefined);
+    if (data !== undefined) return { baked: reused, data };
+    run.trace({ stage: `“${reused.name}” doesn't match its schema. Generating a new component.`, ms: 0 });
+    return undefined;
+  },
+  baked: (run: Run, screen: string, plan: ScreenPlan, setting: Setting): Promise<Filling | undefined> => bakeNew(run, screen, plan, setting),
+};
+
+/** What reaches the screen: the component whole and its data, or, when nothing could be had, word that the slot is to close. */
+export function sendCustom(run: Run, surfaceId: string, filling: Filling | undefined, path = "/custom") {
+  // The slot closes up and the rest of the screen stands: every other block was valid before this one was tried.
+  if (!filling) return void run.send({ updateDataModel: { surfaceId, path, value: { failed: true } } });
+  // Whole, even when it came off the shelf: a screen's messages say everything about it, and the browser's shelf is read from them.
+  run.send({ defineComponent: { surfaceId, ...filling.baked } });
+  run.send({ updateDataModel: { surfaceId, path, value: { use: filling.baked.id, name: filling.baked.name, data: filling.data } } });
+}
+
 /**
  * Fills the custom slot of a screen whose tree has already been sent. `shelf` is what the app has baked so far, as
  * the browser tells it. `fresh` bakes a new component even if the shelf has one that fits: the developer asked for
  * this screen to be made again.
  */
 export async function bakeCustom(run: Run, surfaceId: string, screen: string, plan: ScreenPlan, setting: Setting, shelf: Baked[], fresh = false): Promise<void> {
-  const send = (baked: Baked, data: unknown) => {
-    // Whole, even when it came off the shelf: a screen's messages say everything about it, and the browser's shelf is read from them.
-    run.send({ defineComponent: { surfaceId, ...baked } });
-    run.send({ updateDataModel: { surfaceId, path: "/custom", value: { use: baked.id, name: baked.name, data } } });
-  };
-
-  const reused = !fresh && shelf.length ? await fromShelf(run, screen, plan, shelf) : undefined;
-  if (reused) {
-    const data = await writeData(run, screen, reused, setting).catch(() => undefined);
-    if (data !== undefined) return send(reused, data);
-    run.trace({ stage: `“${reused.name}” doesn't match its schema. Generating a new component.`, ms: 0 });
-  }
-  const made = await bakeNew(run, screen, plan, setting);
-  if (!made) {
-    // The slot closes up and the rest of the screen stands: every other block was valid before this one was tried.
-    run.send({ updateDataModel: { surfaceId, path: "/custom", value: { failed: true } } });
-    return;
-  }
-  send(made.baked, made.data);
+  const reused = fresh ? undefined : await CUSTOM_SOURCES.shelf(run, screen, plan, setting, shelf);
+  sendCustom(run, surfaceId, reused ?? (await CUSTOM_SOURCES.baked(run, screen, plan, setting)));
 }

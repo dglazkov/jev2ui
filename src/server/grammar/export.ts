@@ -12,9 +12,11 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import type { Question, Questions } from "@typesafe-ai/sdk";
 import { HUES, STOPS, mixQuestions } from "../design-mix.js";
+import { USES } from "../mock/bake.js";
 import { ICON_OPTIONS } from "../mock/icons.js";
 import { SUBJECT_OPTIONS } from "../mock/pictures.js";
 import { APP_BAR_ACTIONS, ARCHETYPES, BLOCKS, CUSTOM_SIZE, planQuestions, type Block } from "../mock/plan.js";
+import { SUBJECTS } from "../photos/subjects.js";
 import { PROMPTS } from "../../probe/custom.js";
 import { parseGrammar, printGrammar, type Atom, type Example, type Grammar, type Node, type Option, type Rule, type Shape } from "./format.js";
 import { GRAMMAR_DIR } from "./load.js";
@@ -25,6 +27,10 @@ interface Extra {
   target?: string;
   /** What it is made of, as the file says it. */
   made?: string;
+  /** For a part that arrives whole: the chain it comes from, as the file says it. */
+  filled?: string;
+  /** What a maker is told when an option is the answer, by option. */
+  told?: Record<string, string>;
   prose?: string[];
   /** What each option yields, by name; or what each level of a score is worth, in order. */
   values?: Record<string, string> | number[];
@@ -44,6 +50,7 @@ function nodeOf(name: string, question: Question, extra: Extra = {}, block = fal
     ...(extra.target ? { target: extra.target } : {}),
     prose: extra.prose ?? [],
     question: typeof instructions === "string" ? instructions : instructions.question,
+    ...(extra.filled ? { filled: parseGrammar(`## part\nfilled ${extra.filled}`).nodes[0].filled } : {}),
     fields: extra.made ? fieldsOf(extra.made) : [],
     children: [],
   };
@@ -51,7 +58,7 @@ function nodeOf(name: string, question: Question, extra: Extra = {}, block = fal
   if (question.type === "choice") {
     const options = Object.entries(question.criteria).map(([option, criteria]): Option => {
       const value = values && !Array.isArray(values) ? values[option] : undefined;
-      return { name: option, ...(value !== undefined && value !== option ? { value } : {}), criteria: criteria === null ? null : String(criteria), ...(extra.shapes?.[option] ? { shape: extra.shapes[option] } : {}) };
+      return { name: option, ...(value !== undefined && value !== option ? { value } : {}), criteria: criteria === null ? null : String(criteria), ...(extra.shapes?.[option] ? { shape: extra.shapes[option] } : {}), ...(extra.told?.[option] ? { told: extra.told[option] } : {}) };
     });
     node.asking = { type: "choice", options, ...(extra.among ? { among: extra.among } : {}) };
   }
@@ -86,8 +93,8 @@ function grammarOf(name: string, questions: Questions, prose: string[], extras: 
   return { name, ...(contexts.size ? { context: [...contexts][0] } : {}), prose, options: [], nodes: [...made].filter(([id]) => !nested.has(id)).map(([, node]) => node), rules: [], examples: [] };
 }
 
-function setOf(name: string, prose: string[], options: Record<string, string | null>): Grammar {
-  return { name, prose, options: Object.entries(options).map(([option, criteria]) => ({ name: option, criteria })), nodes: [], rules: [], examples: [] };
+function setOf(name: string, prose: string[], options: Record<string, string | null>, told: Record<string, string> = {}): Grammar {
+  return { name, prose, options: Object.entries(options).map(([option, criteria]) => ({ name: option, criteria, ...(told[option] ? { told: told[option] } : {}) })), nodes: [], rules: [], examples: [] };
 }
 
 // --- The screen ------------------------------------------------------------------
@@ -125,14 +132,18 @@ const SCREEN_EXAMPLES: Example[] = PROMPTS.map(([text, custom, use]) => ({
  * What each part is made of: what partSchema asks a writer for and what BUILDERS binds, said once. `as` names the slot of
  * the pattern the part is drawn by (patterns.ts); a field with a source is bound but not written. Tests hold both halves.
  */
-const MADE_OF: Record<Block, { pattern: string; made: string }> = {
+/** The two chains the tool has, in the order bakeCustom (mock/bake.ts) and Pictures.find (mock/pictures.ts) try them. A test runs each against the code it was read off. */
+export const CUSTOM_CHAIN = "from shelf else baked else closed";
+const pictureChain = (by: string) => `from library by ${by} else painted else placeholder`;
+
+const MADE_OF: Record<Block, { pattern: string; made: string; filled?: string }> = {
   banner: { pattern: "banner", made: "- `title` as title — What needs attention, in a few words.\n- `text` as text — One sentence of detail.\n- `tone` as tone, decided" },
-  hero: { pattern: "picture", made: "- `imageUrl` as picture, found" },
+  hero: { pattern: "picture", made: `- \`imageUrl\` as picture, ${pictureChain("hero_subject")}` },
   filters: {
     pattern: "filters",
     made: "- `searchPlaceholder` as search, when search is yes — Placeholder of the search field.\n- `chips` 3–6, as chips — Filter categories. The first is the one currently selected, usually 'All'.\n  - each — One or two words.",
   },
-  custom: { pattern: "slot", made: "- `use` as use, baked\n- `data` as data, baked\n- `selection` as selection, baked\n- `failed` as failed, baked\n- `items` as items, from /list/items, when custom_linked is yes" },
+  custom: { pattern: "slot", filled: CUSTOM_CHAIN, made: "- `items` as items, from /list/items, when custom_linked is yes" },
   stats: {
     pattern: "stats",
     made: [
@@ -161,7 +172,7 @@ const MADE_OF: Record<Block, { pattern: string; made: string }> = {
       "  - `on` boolean, as on, when item_trailing is switch or checkbox — Whether it is currently on or ticked.",
       "  - `tone` as tone, decided",
       "  - `icon` as icon, decided",
-      "  - `imageUrl` as picture, found",
+      `  - \`imageUrl\` as picture, ${pictureChain("item_subject")}`,
     ].join("\n"),
   },
   groups: {
@@ -218,8 +229,9 @@ export function screenGrammar(): Grammar {
   const extras: Record<string, Extra> = {
     archetype: { shapes: SHAPES, prose: ["The order of the parts is not asked. It belongs to the kind of screen, where the best practice lives."] },
     ...Object.fromEntries(BLOCKS.map((block) => [`has_${block}`, { target: MADE_OF[block].pattern, made: MADE_OF[block].made }])),
+    custom_use: { told: USES },
     has_banner: { target: "banner", made: MADE_OF.banner.made, traits: ["never padding"], prose: ["Polaris: banners are for important, often time-sensitive status; use sparingly."] },
-    has_custom: { target: "slot", made: MADE_OF.custom.made, traits: ["never padding"], prose: ["The one part the kit has no component for. What it is gets baked at run time; the graph only knows that it is there, and what it is held to."] },
+    has_custom: { target: "slot", made: MADE_OF.custom.made, filled: MADE_OF.custom.filled, traits: ["never padding"], prose: ["The one part the kit has no component for. What it is gets baked at run time; the graph only knows that it is there, and what it is held to."] },
     custom_size: { target: "ratio", values: Object.fromEntries(Object.entries(CUSTOM_SIZE).map(([name, size]) => [name, size.ratio])) },
     list_layout: { target: "layout", prose: ["Cards and grids are for browsing by look; rows are for scanning text (NN/g, Material)."] },
     item_leading: { target: "leading", prose: ["Material 3 list item: the leading slot says what kind of thing each item is."] },
@@ -270,7 +282,14 @@ export function files(): Record<string, string> {
     "screen.md": printGrammar(screenGrammar()),
     "paint.md": printGrammar(paintGrammar()),
     "icons.md": printGrammar(setOf("icons", ["Material Symbols. The symbols Jev can choose from, wherever a screen, a row, an item or a destination wants one."], ICON_OPTIONS)),
-    "subjects.md": printGrammar(setOf("subjects", ["What a picture on a screen can be of. The answer names a shelf of the photo library to look on."], SUBJECT_OPTIONS)),
+    "subjects.md": printGrammar(
+      setOf(
+        "subjects",
+        ["What a picture on a screen can be of. The answer names a shelf of the photo library to look on, and, after the arrow, says how such a thing is photographed: the art direction, when a picture has to be made."],
+        SUBJECT_OPTIONS,
+        Object.fromEntries(Object.entries(SUBJECTS).map(([name, subject]) => [name, subject.shot])),
+      ),
+    ),
   };
 }
 

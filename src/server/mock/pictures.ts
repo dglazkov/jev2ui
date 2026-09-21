@@ -13,6 +13,9 @@ import type { Run } from "../run.js";
 
 const OFFERED = 5;
 
+/** The model this file calls, where a test can stand in for it. */
+export const calls = { makePhoto, makesPhotos };
+
 export const SUBJECT_OPTIONS = Object.fromEntries(Object.entries(SUBJECTS).map(([name, subject]) => [name, subject.criteria]));
 
 /** Below this, the plan's reading of the subject was a guess, and the words are read instead. */
@@ -49,19 +52,34 @@ export class Pictures {
 
   /** Calls `show` with a photograph from the library if one suits, and with a made one if none did. */
   async find(wanted: Wanted, show: (url: string) => void): Promise<void> {
-    if ((wanted.p ?? 1) < SURE) wanted = { ...wanted, subject: await this.subject(wanted) };
+    wanted = await this.settle(wanted);
+    const url = (await this.library(wanted)) ?? (await this.painted(wanted));
+    if (url) show(url);
+  }
+
+  /** A subject read off the description, before there were words, may have been a guess. If it was, the words are read instead. */
+  async settle(wanted: Wanted): Promise<Wanted> {
+    return (wanted.p ?? 1) < SURE ? { ...wanted, subject: await this.subject(wanted) } : wanted;
+  }
+
+  /** The places a picture can come from, each by the name a graph file calls it (grammar/kit.md, Sources); each comes back empty when it has none. */
+  async library(wanted: Wanted): Promise<string | undefined> {
     const found = await this.choose(wanted);
-    if (found) return show(photoUrl(found, ...wanted.size));
-    if (!makesPhotos()) return;
+    return found && photoUrl(found, ...wanted.size);
+  }
+
+  async painted(wanted: Wanted): Promise<string | undefined> {
+    if (!calls.makesPhotos()) return undefined;
     const start = performance.now();
     try {
-      const made = await makePhoto({ subject: wanted.subject, of: wanted.of, screen: this.screen, ratio: wanted.ratio, drawn: this.drawn, app: this.app });
+      const made = await calls.makePhoto({ subject: wanted.subject, of: wanted.of, screen: this.screen, ratio: wanted.ratio, drawn: this.drawn, app: this.app });
       this.used.add(made.id);
-      show(photoUrl(made, ...wanted.size));
       this.run.trace({ stage: `Gemini: ${this.drawn ? "illustrate" : "photograph"} "${wanted.of.slice(0, 40)}"`, ms: performance.now() - start, detail: `nothing in the library suited; ${this.drawn ? "drawn" : "shot"} as ${wanted.subject}` });
+      return photoUrl(made, ...wanted.size);
     } catch (error) {
       // A picture is never worth failing a mock for; the painted frame stays.
       this.run.trace({ stage: `No ${this.medium} of "${wanted.of.slice(0, 40)}"`, ms: performance.now() - start, detail: error instanceof Error ? error.message : String(error) });
+      return undefined;
     }
   }
 

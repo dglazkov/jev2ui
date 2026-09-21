@@ -11,7 +11,8 @@
 // (patterns.ts); which of the writer's words is the headline is the graph's.
 
 import type { KitComponent } from "../../shared/kit.js";
-import { idOf, walk, type Atom, type Field, type Grammar, type Node } from "./format.js";
+import { sourcesOf } from "./fill.js";
+import { idOf, pathIn, walk, type Atom, type Field, type Grammar, type Node, type Source } from "./format.js";
 import { holdsIn, yieldOf, type Reading, type Value } from "./read.js";
 
 // --- What the writer is asked for ------------------------------------------------
@@ -43,7 +44,8 @@ export function schemaOf(node: Node, reading: Reading): Schema | null {
     if (field.list) return { type: "array", items: field.element ? scalar(field.element.type, field.element.description) : object(field.fields), ...(description ? { description } : {}), maxItems: field.list.max, minItems: field.list.min };
     return field.fields.length ? object(field.fields) : scalar(field.type, description);
   };
-  if (!written(node.fields).length) return null;
+  // A part that arrives whole is not written to a schema of the graph's: what fills it brings its own.
+  if (node.filled || !written(node.fields).length) return null;
   const whole = wholeOf(node, holds);
   const content = whole ? schema(whole) : object(node.fields);
   return { type: "object", properties: { [node.name]: content }, required: [node.name], propertyOrdering: [node.name] };
@@ -85,7 +87,7 @@ export function boundOf(node: Node, reading: Reading): Bound {
   const whole = wholeOf(node, holds);
   const bind = (fields: Field[], base: string | null): Bound => {
     const there = fields.filter((field) => field.role && holds(field.when));
-    const pathOf = (field: Field) => (typeof field.source === "object" ? field.source.from : base === null ? field.name : field === whole ? base : `${base}/${field.name}`);
+    const pathOf = (field: Field) => pathIn(field.source) ?? (base === null ? field.name : field === whole ? base : `${base}/${field.name}`);
     const all = (slot: string) => there.filter((field) => field.role === slot).map(pathOf);
     return {
       all,
@@ -106,7 +108,8 @@ export function knobsOf(grammar: Grammar, node: Node, reading: Reading): Record<
     const value = reading.values[idOf(child)];
     if (child.target && value !== undefined) knobs[child.target] = yieldOf(grammar, idOf(child), value);
   });
-  return knobs;
+  // What was set where the pattern is named is set whatever was answered.
+  return { ...knobs, ...node.fixed };
 }
 
 export function treeOf(catalog: Catalog, grammar: Grammar, node: Node, reading: Reading, look: Look): KitComponent[] {
@@ -130,7 +133,19 @@ export function partsOf(grammar: Grammar, reading: Reading): Node[] {
 export function checkBindings(grammar: Grammar, catalog: Grammar): { errors: string[]; warnings: string[] } {
   const errors: string[] = [];
   const warnings: string[] = [];
-  const patterns = new Map(catalog.nodes.map((pattern) => [pattern.name, pattern]));
+  const patterns = new Map(catalog.nodes.filter((node) => node.name !== "Sources").map((pattern) => [pattern.name, pattern]));
+  const sources = sourcesOf(catalog);
+  const sure = [...sources].filter(([, traits]) => traits.includes("terminal")).map(([name]) => name);
+  const checkChain = (chain: Source | undefined, where: string) => {
+    if (!chain?.length) return;
+    for (const step of chain) if (!step.name.startsWith("/") && !sources.has(step.name)) errors.push(`"${where}" comes from "${step.name}", which the catalog does not have`);
+    const last = chain.at(-1)!;
+    const traits = sources.get(last.name) ?? [];
+    if (traits.includes("set") || traits.includes("maker")) errors.push(`"${where}" ends in "${last.name}", which can come up empty: end the chain with ${sure.join(" or ")}`);
+    for (const step of chain) if (step.by && !sources.get(step.name)?.includes("set")) warnings.push(`"${where}": "by ${step.by}" says where in a set to look, and "${step.name}" is not a set`);
+  };
+  const checkChains = (fields: Field[], where: string) => fields.forEach((field) => (checkChain(field.source, `${where}${field.name}`), checkChains(field.fields, `${where}${field.name}.`)));
+  walk(grammar.nodes, (node) => (checkChain(node.filled, node.name), checkChains(node.fields, `${node.name}.`)));
   walk(grammar.nodes, (node) => {
     if (!node.block) return;
     if (!node.target) return void warnings.push(`nothing draws "${node.name}": it names no pattern`);
@@ -146,6 +161,11 @@ export function checkBindings(grammar: Grammar, catalog: Grammar): { errors: str
       for (const slot of slots) if (slot.required && !fields.some((f) => f.role === slot.name && !f.when)) errors.push(`"${node.name}" fills no "${slot.name}", and "${pattern.name}" cannot be drawn without one`);
     };
     check(node.fields, pattern.fields, `${node.name}.`);
+    for (const [knob, value] of Object.entries(node.fixed ?? {})) {
+      const takes = pattern.children.find((k) => k.name === knob)?.asking;
+      if (takes?.type !== "choice") errors.push(`"${node.name}" sets "${knob}", and "${pattern.name}" has no such knob`);
+      else if (!takes.options.some((o) => o.name === value)) errors.push(`"${node.name}" sets "${knob}" to "${value}", and it is one of ${takes.options.map((o) => o.name).join(", ")}`);
+    }
     walk(node.children, (child) => {
       if (!child.target) return;
       const knob = pattern.children.find((k) => k.name === child.target);

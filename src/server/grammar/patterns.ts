@@ -15,6 +15,7 @@
 
 import type { KitComponent } from "../../shared/kit.js";
 import { parseGrammar, type Field, type Grammar } from "./format.js";
+import { SOURCES } from "./fill.js";
 import type { Bound, Catalog, Pattern } from "./make.js";
 
 type C = KitComponent;
@@ -65,9 +66,11 @@ const PATTERNS: Pattern[] = [
   {
     name: "slot",
     card: "A box of a fixed shape for something no catalog has. What fills it arrives later, the way a picture does.",
-    slots: slots("- `use` required — which definition fills it\n- `data` — what the definition draws\n- `selection` — what the person picked in it\n- `failed` — that nothing could be made to fill it\n- `items` — a list from elsewhere on the screen, when it draws those"),
+    slots: slots("- `items` — a list from elsewhere, when what fills the slot draws those"),
     knobs: { ratio: RATIOS },
-    draw: (id, b, knobs) => [made({ id, component: "Custom", use: bind(b.one("use")), ratio: knobs.ratio, data: bind(b.one("data")), selection: bind(b.one("selection")), failed: bind(b.one("failed")), items: bind(b.one("items")) })],
+    // Which definition fills it, the data it draws, what the person picked in it and whether it had to close are the slot's own
+    // plumbing, under the part's name. A graph says only what fills the part (`filled from shelf else baked else closed`).
+    draw: (id, b, knobs) => [made({ id, component: "Custom", use: at(`/${id}/use`), ratio: knobs.ratio ?? "16:9", data: at(`/${id}/data`), selection: at(`/${id}/selection`), failed: at(`/${id}/failed`), items: bind(b.one("items")) })],
   },
   {
     name: "stats",
@@ -268,14 +271,26 @@ export function kitCatalog(): Grammar {
       "What the kit can draw, for a graph to name: a part says `→ collection` after its heading, its fields say `as headline`, and a question under it says `→ layout`. Each pattern below is what it is for, the slots a graph's fields can fill, and the knobs a graph's answers can turn. Written out from src/server/grammar/patterns.ts by `npm run grammar:export`.",
     ],
     options: [],
-    nodes: PATTERNS.map((pattern) => ({
+    nodes: [
+      ...PATTERNS.map((pattern) => ({
       name: pattern.name,
       block: false,
       traits: [],
       prose: [pattern.card],
       fields: pattern.slots,
       children: Object.entries(pattern.knobs).map(([knob, values]) => ({ name: knob, block: false, traits: [], prose: [], fields: [], asking: { type: "choice" as const, options: values.map((value) => ({ name: value, criteria: null })) }, children: [] })),
-    })),
+      })),
+      {
+        name: "Sources",
+        block: false,
+        traits: [],
+        prose: [
+          "Where a value can come from when it is not simply written. A graph chains them with `else`, on a field or, with `filled`, on a whole part, and they are tried in that order. A `set` can come up empty and a `maker` can fail, so a chain has to end in a `terminal`, or in something that is simply there.",
+        ],
+        fields: [],
+        children: SOURCES.map((source) => ({ name: source.name, block: false, traits: source.traits, prose: [source.card], fields: [], children: [] })),
+      },
+    ],
     rules: [],
     examples: [],
   };

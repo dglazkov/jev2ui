@@ -2,7 +2,7 @@
 
 > `email` describes one email that a product sends to one of the people who use it. Work out what that email is made of.
 
-A graph nobody wrote code for: the emails a product sends. It is here to find out whether the format only fits the screens it was taken from. Written by hand; its examples were labelled before it was first run (docs/grammar.md). Its parts are drawn by the kit's patterns ([kit](../kit.md)); nothing in the catalog draws a code.
+A graph nobody wrote code for: the emails a product sends. It is here to find out whether the format only fits the screens it was taken from. Written by hand; its examples were labelled before it was first run (docs/grammar.md). Its parts are drawn by the kit's patterns ([kit](../kit.md)). Nothing in the kit draws a one-time code, so that part is a slot, and what fills it is baked.
 
 ## header
 
@@ -50,7 +50,7 @@ The order of the parts belongs to the kind of email. What matters most comes fir
 + It is about something with a look, or it sets a mood: products, a place, an event, a feature shown off, a seasonal sale.
 - It is about an account, a payment, a code, an appointment or a record, and a picture would only be in the way.
 
-- `imageUrl` as picture, found
+- `imageUrl` as picture, from library by pictures_of else painted else placeholder
 
 ### prose → prose
 
@@ -61,15 +61,16 @@ The order of the parts belongs to the kind of email. What matters most comes fir
 
 - `body` as body — What the email says, in short paragraphs. Simple markdown is allowed.
 
-### code
+### code → slot with ratio 3:1
 
 > Does the email exist to hand the person a code or a number they will copy or type somewhere else?
 
 + A one-time passcode, a verification code, a voucher code, a booking reference to quote.
 - There is nothing to copy; the person reads, or presses a button.
 
-- `label` — What the code is for, in a few words.
-- `code` — The code itself, as the person will type it.
+→ The code is the whole point of the email and the person will type it somewhere else: set it very large, in spaced groups, with a line above it saying what it is for and a line below saying how long it lasts. They only read it; a button to copy it is welcome.
+
+filled from shelf else baked else closed
 
 ### items → collection
 
@@ -83,7 +84,7 @@ The order of the parts belongs to the kind of email. What matters most comes fir
   - `title` as headline — Its name.
   - `subtitle` as supporting — One short line about it.
   - `price` as meta, when item_price is yes — Its price or amount, with currency.
-  - `imageUrl` as picture, found
+  - `imageUrl` as picture, from library by pictures_of else painted else placeholder, when item_picture is yes
 
 #### item_picture → leading
 
@@ -140,6 +141,12 @@ The order of the parts belongs to the kind of email. What matters most comes fir
 - `cta` 1–1, as actions — The one button.
   - `label` as label — What the button says, in two or three words.
   - `variant` as variant, decided
+
+## pictures_of
+
+> If the email shows pictures, what are they pictures of?
+
+among [subjects](../subjects.md)
 
 ## tone
 

@@ -316,9 +316,17 @@ A part also says what it is made of, once (`` - `price` as meta, when item_price
 and names a pattern of a catalog (`### list → collection`; `grammar/kit.md` is the kit's twelve, written out
 from `patterns.ts`). From that one list of fields come both the schema a writer fills and the tree that is
 drawn, and tests hold each, for every part of 2000 random screens, to `partSchema` and to `BUILDERS`.
-`npm run probe:draw` draws any graph end to end, and draws the emails with no code about emails. Nothing the
-tool serves reads these files yet. The format, the results, two pictures and what resisted are in
-[docs/grammar.md](docs/grammar.md).
+`npm run probe:draw` draws any graph end to end, and draws the emails with no code about emails.
+
+Where a model other than Jev comes in is a chain in the file, tried in order, ending in something that cannot
+fail: `filled from shelf else baked else closed` for the custom part, `from library by item_subject else
+painted else placeholder` for a picture. The sources are the catalog's (a set Jev chooses from or says none of
+these, a maker, a terminal), the contract a maker works to is what the graph decided under the part, and what
+each answer means to a maker is a line under the option that opens with an arrow. A lint refuses a chain that
+can end in nothing. A runner that knows only how to try a chain is held to `bakeCustom` and `Pictures.find`,
+call for call, with the models stood in for; and the email graph's one-time code, which nothing in the kit
+draws, is baked through its chain. Nothing the tool serves reads these files yet. The format, the results,
+the pictures and what resisted are in [docs/grammar.md](docs/grammar.md).
 
 ## Rendering strategy: the mock is painted by a DESIGN.md
 
@@ -693,9 +701,9 @@ src/shared/kit.ts           the kit: component schemas of the A2UI fork, shared 
 src/server/mock/plan.ts     the grammar (archetypes, blocks, anatomy) and the questions that fill it
 src/server/mock/screen.ts   plan to component tree; and the content schema Gemini is asked to fill
 grammar/                    the graph as files: screen.md and paint.md (written out by npm run grammar:export), the sets they link to, kit.md (the catalog a graph's parts name), examples/email.md
-src/server/grammar/         format.ts reads, writes and checks a graph file; read.ts asks it and reads the answers; make.ts turns what a part is made of into a writer's schema and a tree; patterns.ts is the kit as a catalog; export.ts writes the tool's own files; screen-plan.ts renames a reading into a ScreenPlan
+src/server/grammar/         format.ts reads, writes and checks a graph file; read.ts asks it and reads the answers; make.ts turns what a part is made of into a writer's schema and a tree; fill.ts tries a chain of sources; patterns.ts is the kit as a catalog; export.ts writes the tool's own files; screen-plan.ts renames a reading into a ScreenPlan
 src/probe/grammar.ts        a graph file run on its own examples; screen.md held against readPlan
-src/probe/grammar-draw.ts   a graph file drawn: Jev reads, the file gives the tree and the schemas, Gemini writes, the kit renders (out/grammar/)
+src/probe/grammar-draw.ts   a graph file drawn: Jev reads, the file gives the tree, the schemas and the chains, Gemini writes, bakes and paints, the kit renders (out/grammar/)
 src/server/mock/refine.ts   per-instance decisions from the content, written into the data model
 src/server/mock/bake.ts     what the kit cannot draw: the baker's contract, the lint, the app's shelf
 src/web/kit/sandbox.ts      the frame a baked component runs in

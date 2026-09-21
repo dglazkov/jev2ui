@@ -56,7 +56,7 @@ Polaris: banners are for important, often time-sensitive status; use sparingly.
 + One visual subject leads: a place, dish, product, property, animal, trip, event, class, film, story, character or something being made. A content home or discovery feed can also lead with featured content or artwork before its supporting items.
 - The subject has no look: an order, an account, a transaction, a message, a setting, a set of figures. A plain results list or directory has no featured visual subject.
 
-- `imageUrl` as picture, found
+- `imageUrl` as picture, from library by hero_subject else painted else placeholder
 
 ### filters → filters
 
@@ -85,10 +85,8 @@ The one part the kit has no component for. What it is gets baked at run time; th
 + A map, a seating plan, a timer face, a dial, a game board, a floor plan, a piano keyboard, a colour wheel, a chart, a month calendar, a body diagram.
 - Everything on it can be shown with lists, cards, photographs, figures, text, form fields and buttons.
 
-- `use` as use, baked
-- `data` as data, baked
-- `selection` as selection, baked
-- `failed` as failed, baked
+filled from shelf else baked else closed
+
 - `items` as items, from /list/items, when custom_linked is yes
 
 #### custom_use
@@ -96,9 +94,13 @@ The one part the kit has no component for. What it is gets baked at run time; th
 > If the screen has something drawn specially for it, what does the person do with that thing?
 
 - **watch** — It shows something that changes on its own and the person keeps an eye on: a timer, a gauge, a tuner, a live position, a level.
+  → It shows something that changes on its own, and the person keeps an eye on it. Make it run: it moves, counts or updates by itself once started.
 - **pick** — The person picks one or more parts of it: a seat, a day, a table, a room, a place on a map.
+  → The person picks one or more parts of it. Tapping a part selects it, visibly, and tapping again deselects it. Report every change with kit.select.
 - **adjust** — The person drags, turns or plays it directly: a dial, a colour wheel, a keyboard, a board with pieces, a drawing surface.
+  → The person works it directly by dragging, turning or playing it, and it responds at once. Report the current value with kit.select whenever it changes.
 - **read** — It is a picture of data or of a place that the person only reads: a chart, a diagram, a route, a plan.
+  → The person only reads it. It may reveal a detail when a part is tapped or hovered, but nothing is chosen or changed.
 
 #### custom_size → ratio
 
@@ -158,7 +160,7 @@ The one part the kit has no component for. What it is gets baked at run time; th
   - `on` boolean, as on, when item_trailing is switch or checkbox — Whether it is currently on or ticked.
   - `tone` as tone, decided
   - `icon` as icon, decided
-  - `imageUrl` as picture, found
+  - `imageUrl` as picture, from library by item_subject else painted else placeholder
 
 #### list_layout → layout
 

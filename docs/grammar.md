@@ -12,7 +12,7 @@ It is a probe, side by side with the code it was taken from. Nothing the tool se
 npm run grammar:export                                  # writes grammar/*.md from the code
 npm run probe:grammar                                   # grammar/screen.md on its own examples, live, and against readPlan
 npm run probe:grammar -- grammar/examples/email.md      # any graph
-npm run probe:draw -- grammar/examples/email.md "Weekly digest of the five most-read design articles"   # any graph, drawn
+npm run probe:draw -- grammar/examples/email.md "Your one-time sign-in code"   # any graph, drawn; --paint lets pictures be made
 node --import tsx --test src/server/grammar/*.test.ts
 ```
 
@@ -106,7 +106,7 @@ for, and where each piece goes in whatever draws the part.
   - `price` as meta, when item_price is yes — Price…      there only when that answer is yes
   - `on` boolean, as on, when item_trailing is switch or checkbox — Whether it is on.
   - `tone` as tone, decided                               bound, but not written: Jev decides it once the words exist
-  - `imageUrl` as picture, found                          nor this: it is looked for in the photo library
+  - `imageUrl` as picture, from library by item_subject else painted else placeholder
 
 #### list_layout → layout                                 the answer turns the pattern's `layout` knob
 #### custom_size → ratio                                  …as what it yields: `tall` turns `ratio` to `3:4`
@@ -120,8 +120,35 @@ A part that is nothing but a list gives the list its own name (`facts` is 2–8 
 no question is always there (`## header`). A yes or a no can yield a name, for turning a knob that takes one:
 `+ \`thumbnail\` Products, articles with a lead image.`
 
+**What nobody writes comes from a chain**, tried in order, that ends in something that cannot fail. This is
+where a model other than Jev comes in, and where it is kept from holding anything up:
+
+```markdown
+### custom (never padding) → slot
+filled from shelf else baked else closed                  a whole part, when what draws it is a slot
+
+  - `imageUrl` as picture, from library by item_subject else painted else placeholder      one field
+
+#### custom_use
+- **watch** — It shows something that changes on its own: a timer, a gauge, a tuner.       for Jev
+  → Make it run: it moves, counts or updates by itself once started.                      for whoever makes it
+```
+
+The names are the catalog's **sources**, and what each is like is said there in a few words the lint reads: a
+`set` (the app's shelf, the photo library) is looked in, which means Jev is offered what is there and "none of
+these"; a `maker` (`baked`, `painted`; `written` is the one every plain field has without saying so) is a model
+that makes one; a `terminal` (`closed`, `placeholder`) needs no model. `by` says which answer names the shelf of
+a set to look on. The contract a maker works to is not a new thing to write: it is what the graph already
+decided under the part, and what each of those answers means to a maker is the line under the option that
+opens with an arrow; a part can have such a line of its own. Criteria are for Jev, arrows are for Gemini. A
+knob nothing asks about is set where the pattern is named: `### code → slot with ratio 3:1`.
+
+The lint, from the two files: a source the catalog lacks, `by` on what is not a set, and **a chain that ends in
+a set or a maker, which can come up empty**. So no graph that passes can leave a screen waiting on a model.
+
 **A catalog is a file of patterns**: what each is for (the sentence a Choice would offer), its slots, written as
-fields are, and its knobs with what they can be set to. `grammar/kit.md` is written out from `patterns.ts`.
+fields are, and its knobs with what they can be set to; and, under `## Sources`, of where values can come
+from. `grammar/kit.md` is written out from `patterns.ts` and `fill.ts`.
 `checkBindings(graph, catalog)` needs only the two files: a part drawn by a pattern the catalog lacks, a field
 sent to a slot that is not there, a required slot nothing fills, an answer that can yield what a knob cannot
 take; and a warning for a part that names no pattern, which nothing will draw.
@@ -194,14 +221,46 @@ it, the tree is up in about 260 ms, one Gemini writer per part fills it in about
 validate. A receipt whose prices sit in the meta slot because `item_price` is yes and whose totals add up to its
 lines; a digest whose thumbnails are there because a yes turned `leading` to `thumbnail`:
 
-<img src="grammar-email-receipt.png" width="300" alt="An order confirmation email drawn from the graph file"> <img src="grammar-email-digest.png" width="300" alt="A weekly digest email drawn from the graph file">
+<img src="grammar-email-receipt.png" width="300" alt="An order confirmation email drawn from the graph file">
 
-The pictures are placeholders and the total is not bold, for the reasons under "What resisted" below.
+The total is not bold, and at this step the pictures were placeholders, for the reasons under "What resisted".
 
 Writing it once found two places where the tool asked a writer for words the tree has no place for: a heading
 for the list of a feed (and a component for it that nothing pointed at), and a search placeholder where there
 is no search field. `partSchema` and `BUILDERS.list` no longer do either; three feeds and a dashboard were run
 through the real pipeline to see it.
+
+**Step 3: `else`.** The tool has two chains, and had them as control flow: `bakeCustom` (look on the app's
+shelf, else bake, else close the slot) and `Pictures.find` (look in the library, else have one made, else leave
+the frame). `screen.md` now says both, and says under `custom_use` and in `subjects.md` what each answer means to
+whoever makes the thing (the baker's `USES`, a subject's `shot`). `fill()` in `fill.ts` tries a chain and knows
+nothing else; what a source does stays the host's, and `bake.ts` and `pictures.ts` now have theirs by the names
+the file uses. The slot's own plumbing (`use`, `data`, `selection`, `failed`) left the graph for the pattern:
+a graph says what fills a part, not how a slot is wired. The tests hold that:
+
+- the custom chain read from `screen.md`, tried by `fill()`, does what `bakeCustom` does, call for call and
+  message for message, with the models stood in for, under eight scripts: nothing on the shelf; Jev takes what
+  is there and only its data is written; Jev says none of these; what is there cannot be filled; the first bake
+  refused and the second passing; both refused and the slot closing; made again at the developer's word; a
+  shelf of the wrong kind. With its steps in another order, or without its terminal, it does not;
+- an item's picture chain read from `screen.md` does what `Pictures.find` does, under five;
+- every chain in `screen.md` and `email.md` names what the catalog has and ends in a terminal, and a chain that
+  does not, a source nobody has, a `by` on a maker and a knob set to what it cannot be are each said.
+
+Both were then run through the real pipeline, since `bake.ts` and `pictures.ts` changed shape: a pomodoro timer
+baked and a list of dog walkers got its four portraits, valid.
+
+And the email graph got what it lacked. Its `code` part, which nothing in the kit draws, became
+`### code → slot with ratio 3:1`, `filled from shelf else baked else closed`, with two sentences after an arrow
+for a contract; its pictures became `from library by pictures_of else painted else placeholder`. Drawn live:
+the code baked in 7 s while the rest stood, to the letter of its arrow (large, in spaced groups, what it is for
+above, how long it lasts below, a button to copy it); of six pictures for a hiking newsletter, three came from
+the library and three were painted, the lead one among them.
+
+<img src="grammar-email-code.png" width="300" alt="A sign-in code email whose code part was baked through the chain in the graph file"> <img src="grammar-email-hikes.jpg" width="300" alt="A hiking newsletter whose pictures came through the chain: three from the library, three painted">
+
+Two of the three from the library are wrong (a sea cliff for an alpine lake, a beach for a group of rock towers). The chain did
+what it says; the mountain shelf and an offer of five is where that went wrong, and no file is going to fix it.
 
 ## What resisted
 
@@ -234,10 +293,10 @@ From the catalog half:
    always bound. What a pattern does with a slot it has no use for is the pattern's business, as it is when a
    grid is too tight for a second line.
 10. **A yes had to turn a knob that takes a name** (`item_picture → leading`), so a yes and a no can yield.
-11. **Five ways a field gets a value that nobody writes**, and in the file each is only a word: `decided` (Jev,
-    once the words exist: where `refine.ts` will attach), `found` (the photo library, else a made picture),
-    `baked` (the custom part), `computed` (the last row of a bill is its total) and `from /list/items` (another
-    part's data). The drawn emails have no pictures, no tones and no bold total for exactly this reason.
+11. **Ways a field gets a value that nobody writes.** Pictures and the custom part are chains now (step 3).
+    `decided` (Jev, once the words exist: where `refine.ts` will attach) and `computed` (the last row of a bill
+    is its total) are still only words, which is why the drawn emails have no tones and no bold total.
+    `from /list/items` is another part's data, and is simply there.
 12. **The frame is not in the catalog.** The app bar, the navigation, a profile's opening, a dialog, the sticky
     bar: `screen()` in `mock/screen.ts`. That is where a kind's traits, the header, `top_level`, `person` and
     `app_bar_action` land. `probe:draw` puts the parts on a bare page under the header.
@@ -250,8 +309,27 @@ From the catalog half:
 15. **Which writer waits for which** (a bill for its lines) is guessed in `probe:draw` and said nowhere.
 16. **A knob's values have no criteria.** The when-to-use of `cards` against `grid` is design-system knowledge,
     and belongs in the catalog for a graph's question to import, as options are imported from a set.
-17. **Nothing in the kit draws a one-time code.** The lint says so, the writer writes it anyway, and it is not
-    on the page. This is the hole an `else` is for.
+17. **Nothing in the kit draws a one-time code.** This was the hole an `else` is for, and step 3 filled it.
+
+From the chains:
+
+18. **What comes before a chain.** A subject read off the description may have been a guess (under 0.75), and
+    then the words are read before the library is looked in. That is a policy for a torn answer, it is the
+    host's, and the file cannot say it. `fresh`, too, is the runner's: made again, the sets are passed over.
+19. **The baker speaks of screens.** Its brief says "it is a … screen" and what the kit draws around it, and a
+    baked component's contract is typed as the screen graph's (`use`, `size`, `linked`). `probe:draw` hands it
+    the email as a screen, with the contract said in words. A brought graph's contract should be its own.
+20. **One slot, called custom.** The renderer reads `/custom/name` and writes `/custom/selection`. The email's
+    `code` draws, but a choice made in it would be written under another part's name.
+21. **What a picture is of** is the words nearest its field: the item's first two, else the header. That is
+    `itemWords` as a convention of `probe:draw`, said nowhere.
+22. **A source's insides are prose.** The baker's prompt, its five checks and its two tries, the library's offer
+    of five: the catalog says them in a sentence and in traits, and only `set`, `maker` and `terminal` are read
+    by anything. `slow` and `joins shelf` are true and unenforced.
+23. **The third chain is not on a field or a part.** When Jev finds nothing to do with a message, Gemini asks
+    the person (`talk.ts`). That is an `else` on a turn, and turns are not in any file yet.
+24. **`written` is a source too**, the first of every plain field, and its tier, its system prompt and which
+    writer waits for which are still the host's.
 
 Not attempted, and each is a piece of the graph that is still only code:
 
@@ -261,19 +339,20 @@ Not attempted, and each is a piece of the graph that is still only code:
 - **The design overruling the plan** (`applyDesign`) and **what stays when a screen is made again**
   (`keepPlan`). Both are layers over a reading: a DESIGN.md that says "no photographs" is a pin.
 - **The app map** (`src/server/ia/`).
-- **Fallbacks**: baking, the picture that has to be made, the reply when Jev found nothing to do.
+- **The reply when Jev found nothing to do** (`talk.ts`): the `else` of a turn.
 
 ## Next, in the order that seems right
 
-1. **`else`, for the closed sets that already have one.** `found` and `baked` are the two ends of it: the
-   library that ends in a made picture, the shelf that ends in baking. Both are "none of these → make one to a
-   contract → check → it joins the set → otherwise a terminal that needs no model", and a part that names no
-   pattern (the email's `code`) is the same hole. The contract of a custom part is already three questions in
-   `screen.md`; a picture subject's `shot` is already a piece of the other.
-2. **`decided`, which is `each`.** A field Jev decides once the words exist carries its own question and
-   options, asked per element: `refine.ts` as fields. It is what would give the drawn emails their tones.
-3. **The frame as a pattern**, so that traits have somewhere to go and a brought graph gets more than a page.
-4. **Let the tool read the files.** `readGrammar` + `planOf` for the plan, `schemaOf` + `treeOf` for the parts;
-   the differential tests are the safety. What differs is the trace a person reads and the ids of components,
-   and `grammar/*.md` would have to travel with the server bundle the way `library.json` does.
-5. **Calibration from examples**: fit the tiers for gev from a graph's own examples instead of reusing Jev's.
+1. **`decided`, which is `each`.** A field Jev decides once the words exist carries its own question and
+   options, asked per element: `refine.ts` as fields (`- \`tone\` as tone, decided` grows a question under it).
+   It is the last big piece of the screen graph that is only code, and what would give the drawn emails their
+   tones and their main button.
+2. **The frame as a pattern**, so that traits have somewhere to go and a brought graph gets more than a page.
+3. **Let the tool read the files.** `readGrammar` + `planOf` for the plan, `schemaOf` + `treeOf` for the parts,
+   `fill()` for what nobody writes; the differential tests are the safety. What differs is the trace a person
+   reads and the ids of components, and `grammar/*.md` would have to travel with the server bundle the way
+   `library.json` does.
+4. **A contract of the graph's own** for the baker and the shelf (19), and more than one slot (20): what it
+   takes for a brought graph's baked parts to be first-class.
+5. **Calibration from examples**, and with it the policy for a torn answer (18): fit the tiers for gev from a
+   graph's own examples, and say in the file what happens under them.

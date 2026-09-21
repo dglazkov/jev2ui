@@ -2,16 +2,21 @@
 //
 // Everything that is specific to what is being made comes from the file: what Jev is
 // asked, how the answers are read, what each part is made of, which of the catalog's
-// patterns draws it and what each writer is asked for. The code here knows none of it.
+// patterns draws it, what each writer is asked for, and where whatever nobody writes
+// comes from. The code here knows none of it.
 //
-//   npm run probe:draw -- grammar/examples/email.md "Order confirmation for two pairs of sneakers, with the totals"
+//   npm run probe:draw -- grammar/examples/email.md "Your one-time sign-in code"
+//   npm run probe:draw -- grammar/examples/email.md "Weekly digest of the five most-read design articles" --paint
 //
 // Jev reads the description (one request) and mixes a design for it (one more, as the
-// tool does); the tree is sent; one Gemini writer per written part fills it. What comes
-// out is out/grammar/<name>.html, which stands alone, and the messages beside it.
+// tool does); the tree is sent; one Gemini writer per written part fills it; then the
+// chains are tried: a part that is `filled from shelf else baked else closed` is baked,
+// a picture `from library by … else painted else placeholder` is looked for, and made
+// only with --paint, because a made picture costs something and joins the library.
+// What comes out is out/grammar/<name>.html, which stands alone, and what was sent beside it.
 //
 // What is not here, because the file cannot say it yet: what Jev decides once the words
-// exist (tones, which button is the main one), pictures, and anything `computed`.
+// exist (tones, which button is the main one), and anything `computed`.
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -19,28 +24,44 @@ import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { KIT_CATALOG_ID, type KitComponent } from "../shared/kit.js";
 import { loadDesign } from "../server/design-source.js";
-import { askJev, streamGeminiJson } from "../server/models.js";
+import { streamGeminiJson } from "../server/models.js";
+import { CUSTOM_SOURCES, sendCustom, type Filling } from "../server/mock/bake.js";
+import { Pictures } from "../server/mock/pictures.js";
+import { CUSTOM_SIZE, type ScreenPlan } from "../server/mock/plan.js";
+import { readMade } from "../server/photos/generate.js";
+import type { SubjectName } from "../server/photos/subjects.js";
+import { Run } from "../server/run.js";
 import { validateMessages } from "../server/validate.js";
-import { idOf, type Node } from "../server/grammar/format.js";
+import { fill, sourcesOf } from "../server/grammar/fill.js";
+import { idOf, type Field, type Node } from "../server/grammar/format.js";
 import { loadGrammar } from "../server/grammar/load.js";
-import { checkBindings, partsOf, schemaOf, treeOf } from "../server/grammar/make.js";
+import { checkBindings, knobsOf, partsOf, schemaOf, treeOf } from "../server/grammar/make.js";
 import { KIT_PATTERNS } from "../server/grammar/patterns.js";
-import { JEV, questionsOf, readGrammar, yieldOf } from "../server/grammar/read.js";
+import { JEV, holdsIn, questionsOf, readGrammar, yieldOf } from "../server/grammar/read.js";
 
-const [file, text] = process.argv.slice(2);
-if (!file || !text) throw new Error('usage: npm run probe:draw -- <graph.md> "<what to make>"');
+const args = process.argv.slice(2);
+const paint = args.includes("--paint");
+const [file, text] = args.filter((arg) => !arg.startsWith("--"));
+if (!file || !text) throw new Error('usage: npm run probe:draw -- <graph.md> "<what to make>" [--paint]');
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const grammar = loadGrammar(resolve(file));
+const catalog = loadGrammar("kit.md");
+const sources = sourcesOf(catalog);
 const key = grammar.stateKey ?? grammar.name;
-for (const problem of checkBindings(grammar, loadGrammar("kit.md")).warnings) console.log(`warning: ${problem}`);
+const checked = checkBindings(grammar, catalog);
+for (const problem of [...checked.errors, ...checked.warnings]) console.log(`lint: ${problem}`);
+if (checked.errors.length) process.exit(1);
 
+const run = new Run("mock");
+const surfaceId = "main";
 const started = performance.now();
+const since = () => `${String(Math.round(performance.now() - started)).padStart(6)} ms`;
 const designing = loadDesign({ brief: text }).loaded;
-const asked = await askJev({ [key]: text }, questionsOf(grammar));
+const asked = await run.askJev("Jev: read it", { [key]: text }, questionsOf(grammar));
 const reading = readGrammar(grammar, asked.answers, JEV);
 const parts = partsOf(grammar, reading);
-console.log(`${Math.round(asked.ms)} ms  Jev: a ${reading.kind}: ${reading.blocks.join(", ")}`);
-for (const d of reading.decisions) if (d.note) console.log(`         ${d.id} → ${d.answer}: ${d.note}`);
+console.log(`${since()}  Jev: a ${reading.kind}: ${reading.blocks.join(", ")}`);
+for (const d of reading.decisions) if (d.note) console.log(`           ${d.id} → ${d.answer}: ${d.note}`);
 
 // What was answered at the top of the file and turns no pattern's knob is for the writers to know.
 const settled: string[] = [];
@@ -48,6 +69,7 @@ for (const node of grammar.nodes) {
   const value = reading.values[idOf(node)];
   if (!node.question || value === undefined || node.asking?.type === "noul" || node.children.some((child) => child.block)) continue;
   const option = node.asking?.type === "choice" ? node.asking.options.find((o) => o.name === value) : undefined;
+  if (node.asking?.type === "choice" && node.asking.among) continue;
   settled.push(node.asking?.type === "score" ? `${node.target ?? node.name}: about ${Math.round(Number(yieldOf(grammar, idOf(node), value)))}` : `${node.name}: ${value}${option?.criteria ? ` (${option.criteria})` : ""}`);
 }
 
@@ -67,14 +89,17 @@ const components: KitComponent[] = [
     : []),
   ...parts.flatMap((node) => treeOf(KIT_PATTERNS, grammar, node, reading, look)),
 ];
-const send = (body: Record<string, unknown>) => ({ version: "v0.9", ...body });
-const messages: Array<Record<string, unknown>> = [send({ createSurface: { surfaceId: "main", catalogId: KIT_CATALOG_ID } }), send({ updateComponents: { surfaceId: "main", components } })];
-console.log(`${Math.round(performance.now() - started)} ms  the tree: ${components.length} components, before a word is written`);
+run.send({ createSurface: { surfaceId, catalogId: KIT_CATALOG_ID } });
+run.send({ updateComponents: { surfaceId, components } });
+console.log(`${since()}  the tree: ${components.length} components, before a word is written`);
+
+// --- What is written ---------------------------------------------------------------
 
 const SYSTEM = `You write the sample content for one part of a mock-up. A separate system has already decided what the mock-up is made of and how it is laid out; you supply only the words and figures, as JSON matching the schema.
 Write what the real thing would say to a typical person: specific, plausible names, numbers and dates, never placeholders or lorem ipsum.
 Other parts are written separately, so stay strictly within your part. Keep every string short. Do not describe the layout and do not use HTML.`;
-const written: Record<string, unknown> = {};
+const written: Record<string, any> = {};
+const show = (node: Node) => run.send({ updateDataModel: { surfaceId, path: `/${node.name}`, value: written[node.name] } });
 const write = async (node: Node, agreeWith?: unknown) => {
   const schema = schemaOf(node, reading);
   if (!schema) return;
@@ -85,18 +110,76 @@ const write = async (node: Node, agreeWith?: unknown) => {
     ...(agreeWith ? [`Already written, which your figures must agree with:\n${JSON.stringify(agreeWith)}`] : []),
     `Write the "${node.name}" part.`,
   ].join("\n\n");
-  const began = performance.now();
   const { text: raw } = await streamGeminiJson({ system: SYSTEM, prompt, schema });
   written[node.name] = JSON.parse(raw)[node.name];
-  messages.push(send({ updateDataModel: { surfaceId: "main", path: `/${node.name}`, value: written[node.name] } }));
-  console.log(`${String(Math.round(performance.now() - began)).padStart(5)} ms  Gemini wrote "${node.name}"${node.target ? "" : " (nothing draws it)"}`);
+  show(node);
+  console.log(`${since()}  written: "${node.name}"`);
 };
+
+// --- What is not written: the chains -------------------------------------------------
+
+/** A part that arrives whole. The contract is what the file says to a maker: about the part, and about each answer under it. */
+const fillPart = async (node: Node) => {
+  const told = [node.told, ...node.children.flatMap((child) => (child.asking?.type === "choice" ? [child.asking.options.find((o) => o.name === reading.values[idOf(child)])?.told] : []))].filter(Boolean);
+  const ratio = String(knobsOf(grammar, node, reading).ratio ?? "16:9");
+  const size = (Object.entries(CUSTOM_SIZE).find(([, s]) => s.ratio === ratio)?.[0] ?? "wide") as keyof typeof CUSTOM_SIZE;
+  // The baker is the tool's own and speaks of screens: it is handed the email as one, with the part's contract said in words.
+  const plan = { archetype: reading.kind, blocks: reading.blocks, custom: { use: String(reading.values[`${node.name}_use`] ?? "read"), size, linked: false } } as unknown as ScreenPlan;
+  const brief = `${text}\n\nThis is a ${grammar.name}, not an app screen. Your component is its "${node.name}" part. ${told.join(" ")}`;
+  const filled = await fill<Filling | "closed">(
+    node.filled!,
+    { shelf: async () => undefined, baked: () => CUSTOM_SOURCES.baked(run, brief, plan, { voice: "" }), closed: async () => "closed" as const },
+    sources,
+  );
+  sendCustom(run, surfaceId, !filled || filled.value === "closed" ? undefined : filled.value, `/${node.name}`);
+  console.log(`${since()}  "${node.name}" is ${filled?.from ?? "nothing"}${filled && filled.value !== "closed" ? `: "${filled.value.baked.name}", ${filled.value.baked.source.length} characters of source. ${filled.value.baked.card}` : ""}`);
+};
+
+const pictures = new Pictures(run, text, text);
+const words = (value: any, fields: Field[]) => fields.filter((f) => !f.source && !f.type && !f.list).slice(0, 2).map((f) => value?.[f.name]).filter((s) => typeof s === "string" && s.trim()).join(" · ");
+/** A picture that is looked for. What it is of is the words nearest it: the item it belongs to, or else the header. */
+const findPicture = async (chain: NonNullable<Field["source"]>, of: string, ratio: "16:9" | "1:1", size: [number, number]): Promise<string | undefined> => {
+  const by = chain.find((step) => step.by)?.by;
+  const wanted = await pictures.settle({ subject: String(by ? reading.values[by] : "venue") as SubjectName, p: by ? reading.p[by] : 1, of, ratio, size });
+  const filled = await fill<string | null>(chain, { library: () => pictures.library(wanted), painted: async () => (paint ? pictures.painted(wanted) : undefined), placeholder: async () => null }, sources);
+  console.log(`${since()}  a picture of "${of.slice(0, 44)}" (${wanted.subject}): ${filled?.from}${filled?.from === "placeholder" && !paint ? " (none in the library would do, and nothing is painted without --paint)" : ""}`);
+  const url = filled?.value ?? undefined;
+  // A made picture is served by the tool; a page that stands alone has to carry it.
+  const made = url?.startsWith("/api/photo/") ? readMade(url.split("/").pop()!) : undefined;
+  return made ? `data:${made.mime};base64,${made.bytes.toString("base64")}` : url;
+};
+/** A field whose value is looked for, and that is there at all for this reading: no thumbnails, no looking. */
+const looked = (field: Field) => !!field.source?.some((step) => sources.get(step.name)?.includes("set")) && (field.when ?? []).every((atom) => holdsIn(reading, atom));
+const fillPictures = async (node: Node) => {
+  for (const field of node.fields) {
+    if (looked(field)) {
+      const url = await findPicture(field.source!, words(written.header, header?.fields ?? []) || text, "16:9", [960, 540]);
+      if (url) (written[node.name] = { ...written[node.name], [field.name]: url }), show(node);
+    }
+    const inside = field.fields.find(looked);
+    // A part that is nothing but its list is that list; otherwise the list is one of the things in it.
+    const items: any[] | undefined = Array.isArray(written[node.name]) ? written[node.name] : written[node.name]?.[field.name];
+    if (!inside || !Array.isArray(items)) continue;
+    await Promise.all(
+      items.map(async (item) => {
+        const url = await findPicture(inside.source!, words(item, field.fields) || text, "1:1", [160, 160]);
+        if (url) (item[inside.name] = url), show(node);
+      }),
+    );
+  }
+};
+
 // Writers cannot see each other, so a bill would not add up: a part with a total waits for the things it is the total of.
 const items = parts.find((node) => node.target === "collection");
 const sums = parts.find((node) => node.fields.some((field) => field.notes.length));
-await Promise.all([...(header ? [header] : []), ...parts.filter((node) => node !== sums || !items)].map((node) => write(node)));
-if (sums && items) await write(sums, written[items.name]);
+const writing = Promise.all([...(header ? [header] : []), ...parts.filter((node) => node !== sums || !items)].map((node) => write(node))).then(() => (sums && items ? write(sums, written[items.name]) : undefined));
+// Baking takes seconds and nothing waits on it: it starts with the writers, and its slot shimmers meanwhile.
+const baking = Promise.all(parts.filter((node) => node.filled).map(fillPart));
+await writing;
+await Promise.all(parts.map(fillPictures));
+await baking;
 
+const messages = [...run.sent];
 const problems = validateMessages(messages as never);
 console.log(problems.length ? `INVALID:\n${problems.join("\n")}` : `valid: ${messages.length} messages, every component checked against the kit's schemas`);
 
@@ -112,8 +195,8 @@ const bundle = await build({
     {
       name: "css-inline",
       setup(b) {
-        b.onResolve({ filter: /\.css\?inline$/ }, (args) => ({ path: resolve(args.resolveDir, args.path.replace(/\?inline$/, "")), namespace: "css-inline" }));
-        b.onLoad({ filter: /.*/, namespace: "css-inline" }, (args) => ({ contents: readFileSync(args.path, "utf8"), loader: "text" }));
+        b.onResolve({ filter: /\.css\?inline$/ }, (found) => ({ path: resolve(found.resolveDir, found.path.replace(/\?inline$/, "")), namespace: "css-inline" }));
+        b.onLoad({ filter: /.*/, namespace: "css-inline" }, (found) => ({ contents: readFileSync(found.path, "utf8"), loader: "text" }));
       },
     },
   ],
@@ -132,7 +215,10 @@ body { margin: 0; background: #d9d9de; display: grid; place-items: start center;
 </style>
 <div class="mock"><kit-surface></kit-surface></div>
 <script>window.MESSAGES = ${JSON.stringify(messages).replace(/</g, "\\u003c")};</script>
-<script type="module">${bundle.outputFiles[0].text.replace(/<\/script/g, "<\\/script")}</script>
+<script type="module">
+${bundle.outputFiles[0].text.replace(/<\/script/g, "<\\/script")}
+document.querySelector("kit-surface").theme = ${JSON.stringify(theme).replace(/</g, "\\u003c")};
+</script>
 `;
 const out = resolve(root, "out/grammar");
 mkdirSync(out, { recursive: true });
@@ -140,3 +226,4 @@ const name = `${grammar.name}-${text.toLowerCase().replace(/[^a-z0-9]+/g, "-").s
 writeFileSync(`${out}/${name}.html`, html);
 writeFileSync(`${out}/${name}.json`, JSON.stringify({ reading: { kind: reading.kind, blocks: reading.blocks, values: reading.values }, written, messages }, null, 2));
 console.log(`\nout/grammar/${name}.html`);
+process.exit(0);
