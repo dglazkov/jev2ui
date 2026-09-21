@@ -30,6 +30,16 @@
 //
 // What cannot be said with nesting and tiers is a rule, one flat form, applied in
 // the order written:   - when form, no actions — a form's submit button is the call to action
+//
+// A part also says what it is made of, which is two things at once: what a writer
+// is asked for, and where each piece of it goes in whatever draws the part.
+//
+//   ### list → collection                                 drawn by the catalog's `collection`
+//   - `items` 3–8, as items — The items.                  a list of three to eight
+//     - `title` as headline — The item's name.            written, and bound to the pattern's `headline`
+//     - `price` as meta, when item_price — Price…         there only when that answer is yes
+//     - `tone` as tone, decided                           bound, but not written: Jev decides it later
+//   #### list_layout → layout                             the answer turns the pattern's `layout`
 
 export interface Shape {
   /** The parts a thing of this kind may have, in the order they come. */
@@ -55,10 +65,35 @@ export interface Level {
 }
 
 export type Asking =
-  | { type: "noul"; yes?: string; no?: string }
+  /** `yesValue` and `noValue` are what the answer yields, when a yes or a no has to turn something that takes a name. */
+  | { type: "noul"; yes?: string; no?: string; yesValue?: string; noValue?: string }
   /** `among` names a set kept in another file; `options` are that file's. */
   | { type: "choice"; options: Option[]; among?: { name: string; href: string } }
   | { type: "score"; levels: Level[] };
+
+/** Where a field's value comes from, when nobody writes it: Jev, once the words exist; the photo library; code; the baker; another part's data. */
+export type Source = "decided" | "found" | "computed" | "baked" | { from: string };
+
+/** One piece of what a part is made of: what the writer is asked for, and where it goes in what draws the part. */
+export interface Field {
+  name: string;
+  type?: "number" | "integer" | "boolean";
+  /** It is a list of this many. Its `fields` are what each element is made of; or `element`, when each is a single value. */
+  list?: { min: number; max: number };
+  element?: { type?: Field["type"]; description?: string };
+  /** The slot of the pattern it fills. In a catalog, a field is a slot and needs no role: its name is one. */
+  role?: string;
+  optional?: boolean;
+  /** Said of a slot in a catalog: the pattern cannot be drawn without it. */
+  required?: boolean;
+  source?: Source;
+  when?: Atom[];
+  /** What the writer is told about it. */
+  description?: string;
+  /** What else the writer is told, when something holds. */
+  notes: Array<{ when: Atom[]; text: string }>;
+  fields: Field[];
+}
 
 export interface Node {
   /** The heading: the id the answer comes back under, or the name of a part. */
@@ -72,10 +107,13 @@ export interface Node {
   prose: string[];
   question?: string;
   asking?: Asking;
+  /** What it is made of. A heading with fields and no question is always there: the header of a screen. */
+  fields: Field[];
   children: Node[];
 }
 
-export type Atom = { block: string; present: boolean } | { id: string; is: string; not: boolean };
+/** `is` has more than one value when any of them will do: `item_trailing is switch or checkbox`. */
+export type Atom = { block: string; present: boolean } | { id: string; is: string[]; not: boolean };
 export interface Rule {
   when: Atom[];
   then: Atom;
@@ -124,10 +162,34 @@ const SHAPE = /^\s+`([^`]*)`\s*(.*)$/;
 const RULE = /^- when (.+?), (.+?)(?:\s+—\s+(.*))?$/;
 const EXAMPLES = /^Examples(?:\s+\((\w+)\))?$/;
 const EXAMPLE = /^- (.+?)(?: → (.+))?$/;
+const FIELD = /^(\s*)- (?:`([^`]+)`|(each|when)\b)\s*(.*)$/;
+const YIELD = /^(?:`([^`]*)`\s+)?(.*)$/;
+
+const parseWhen = (text: string, line: number) => text.split(" and ").map((atom) => parseAtom(atom.trim(), line));
+
+/** What comes between a field's name and the dash: `number, 3–8, as meta, optional, decided, when item_price`. */
+function parseSpec(spec: string, line: number): Partial<Field> {
+  const out: Partial<Field> = {};
+  for (const word of spec.split(",").map((w) => w.trim()).filter(Boolean)) {
+    const bounds = /^(\d+)–(\d+)$/.exec(word);
+    const role = /^as (\w+)$/.exec(word);
+    const from = /^from (\S+)$/.exec(word);
+    if (word === "number" || word === "integer" || word === "boolean") out.type = word;
+    else if (bounds) out.list = { min: Number(bounds[1]), max: Number(bounds[2]) };
+    else if (role) out.role = role[1];
+    else if (word === "optional") out.optional = true;
+    else if (word === "required") out.required = true;
+    else if (word === "decided" || word === "found" || word === "computed" || word === "baked") out.source = word;
+    else if (from) out.source = { from: from[1] };
+    else if (word.startsWith("when ")) out.when = parseWhen(word.slice(5), line);
+    else throw new Error(`line ${line}: "${word}" says nothing about a field: a type, how many (3–8), "as" a slot, optional, where it comes from, or "when"`);
+  }
+  return out;
+}
 
 function parseAtom(text: string, line: number): Atom {
-  const is = /^(\w+) is (not )?(\S+)$/.exec(text);
-  if (is) return { id: is[1], is: is[3], not: !!is[2] };
+  const is = /^(\w+) is (not )?(\S+(?: or \S+)*)$/.exec(text);
+  if (is) return { id: is[1], is: is[3].split(" or "), not: !!is[2] };
   const block = /^(no )?(\w+)$/.exec(text);
   if (block) return { block: block[2], present: !block[1] };
   throw new Error(`line ${line}: "${text}" is not a condition: write a part ("list", "no list") or an answer ("list_layout is rows")`);
@@ -157,6 +219,8 @@ export function parseGrammar(markdown: string, load?: (href: string) => string):
   let paragraph: string[] = [];
   let quote: string[] = [];
   let lastOption: Option | undefined;
+  let fieldsOpen: Array<{ indent: number; field: Field }> = [];
+  let afterYes = false;
 
   const here = () => open.at(-1)?.node;
   const asking = <T extends Asking["type"]>(type: T, line: number): Extract<Asking, { type: T }> => {
@@ -189,7 +253,9 @@ export function parseGrammar(markdown: string, load?: (href: string) => string):
       return;
     }
     if (quote.length) flush();
-    if (!text.trim()) return flush();
+    if (!text.trim()) return void ((afterYes = false), flush());
+    const wasAfterYes = afterYes;
+    afterYes = false;
 
     const heading = HEADING.exec(text);
     if (heading) {
@@ -216,8 +282,10 @@ export function parseGrammar(markdown: string, load?: (href: string) => string):
         traits: title[2] ? title[2].split(",").map((t) => t.trim()).filter(Boolean) : [],
         ...(title[3] ? { target: title[3].trim() } : {}),
         prose: [],
+        fields: [],
         children: [],
       };
+      fieldsOpen = [];
       (parent?.children ?? grammar.nodes).push(node);
       open.push({ depth, node });
       return;
@@ -227,7 +295,7 @@ export function parseGrammar(markdown: string, load?: (href: string) => string):
       const rule = RULE.exec(text);
       if (!rule) return void paragraph.push(text.trim());
       flush();
-      grammar.rules.push({ when: rule[1].split(" and ").map((atom) => parseAtom(atom.trim(), line)), then: parseAtom(rule[2].trim(), line), ...(rule[3] ? { reason: rule[3] } : {}) });
+      grammar.rules.push({ when: parseWhen(rule[1], line), then: parseAtom(rule[2].trim(), line), ...(rule[3] ? { reason: rule[3] } : {}) });
       return;
     }
 
@@ -238,6 +306,33 @@ export function parseGrammar(markdown: string, load?: (href: string) => string):
       grammar.examples.push({ text: example[1].trim(), expect: (example[2] ?? "").split(",").map((atom) => atom.trim()).filter(Boolean).map((atom) => parseAtom(atom, line)) });
       return;
     }
+
+    // The `-` line straight after a `+` line is the other half of a yes-or-no, whatever it opens with.
+    const field = wasAfterYes ? null : FIELD.exec(raw);
+    if (field && (field[2] !== undefined || field[1].length > 0)) {
+      flush();
+      const node = here();
+      if (!node) throw new Error(`line ${line}: a field needs a heading to belong to`);
+      const indent = field[1].length;
+      while (fieldsOpen.length && fieldsOpen.at(-1)!.indent >= indent) fieldsOpen.pop();
+      const parent = fieldsOpen.at(-1)?.field;
+      const [spec, ...said] = field[4].split(/(?:^|\s+)—\s+/);
+      const description = said.join(" — ").trim();
+      if (field[3] === "when") {
+        if (!parent || !description) throw new Error(`line ${line}: "when … — …" is something more to tell the writer about the field above it`);
+        parent.notes.push({ when: parseWhen(spec.trim(), line), text: description });
+      } else if (field[3] === "each") {
+        if (!parent?.list) throw new Error(`line ${line}: "each" is one element of the list above it`);
+        const { type } = parseSpec(spec, line);
+        parent.element = { ...(type ? { type } : {}), ...(description ? { description } : {}) };
+      } else {
+        const made: Field = { name: field[2], ...parseSpec(spec, line), ...(description ? { description } : {}), notes: [], fields: [] };
+        (parent?.fields ?? node.fields).push(made);
+        fieldsOpen.push({ indent, field: made });
+      }
+      return;
+    }
+    fieldsOpen = [];
 
     const shape = SHAPE.exec(raw);
     if (shape && lastOption) return void (lastOption.shape = parseShape(shape[1], shape[2]));
@@ -266,12 +361,12 @@ export function parseGrammar(markdown: string, load?: (href: string) => string):
     if (level) {
       flush();
       asking("score", line).levels.push({ ...(level[1] !== undefined ? { value: level[1] } : {}), criteria: level[2] });
-    } else if (text.startsWith("+ ")) {
+    } else if (text.startsWith("+ ") || text.startsWith("- ")) {
       flush();
-      asking("noul", line).yes = text.slice(2).trim();
-    } else if (text.startsWith("- ")) {
-      flush();
-      asking("noul", line).no = text.slice(2).trim();
+      const [, value, criteria] = YIELD.exec(text.slice(2).trim())!;
+      const noul = asking("noul", line);
+      if (text.startsWith("+ ")) Object.assign(noul, { yes: criteria, ...(value !== undefined ? { yesValue: value } : {}) }), (afterYes = true);
+      else Object.assign(noul, { no: criteria, ...(value !== undefined ? { noValue: value } : {}) });
     } else paragraph.push(text.trim());
   });
   flush();
@@ -287,8 +382,8 @@ const oneLine = (text: string, what: string) => {
   return text;
 };
 
-function printAtom(atom: Atom): string {
-  return "block" in atom ? `${atom.present ? "" : "no "}${atom.block}` : `${atom.id} is ${atom.not ? "not " : ""}${atom.is}`;
+export function printAtom(atom: Atom): string {
+  return "block" in atom ? `${atom.present ? "" : "no "}${atom.block}` : `${atom.id} is ${atom.not ? "not " : ""}${atom.is.join(" or ")}`;
 }
 
 export const printRule = (rule: Rule) => `when ${rule.when.map(printAtom).join(" and ")}, ${printAtom(rule.then)}`;
@@ -328,6 +423,25 @@ function printOptions(options: Option[]): string[] {
   return out;
 }
 
+function printField(field: Field, pad = ""): string[] {
+  const spec = [
+    ...(field.type ? [field.type] : []),
+    ...(field.list ? [`${field.list.min}–${field.list.max}`] : []),
+    ...(field.role ? [`as ${field.role}`] : []),
+    ...(field.required ? ["required"] : []),
+    ...(field.optional ? ["optional"] : []),
+    ...(field.source ? [typeof field.source === "string" ? field.source : `from ${field.source.from}`] : []),
+    ...(field.when ? [`when ${field.when.map(printAtom).join(" and ")}`] : []),
+  ].join(", ");
+  const said = (text?: string) => (text ? ` — ${oneLine(text, field.name)}` : "");
+  return [
+    `${pad}- \`${field.name}\`${spec ? ` ${spec}` : ""}${said(field.description)}`,
+    ...field.notes.map((note) => `${pad}  - when ${note.when.map(printAtom).join(" and ")}${said(note.text)}`),
+    ...(field.element ? [`${pad}  - each${field.element.type ? ` ${field.element.type}` : ""}${said(field.element.description)}`] : []),
+    ...field.fields.flatMap((child) => printField(child, `${pad}  `)),
+  ];
+}
+
 function printNode(node: Node, depth: number): string[] {
   const out = [`${"#".repeat(depth)} ${node.name}${node.traits.length ? ` (${node.traits.join(", ")})` : ""}${node.target ? ` → ${node.target}` : ""}`, ""];
   for (const paragraph of node.prose) out.push(oneLine(paragraph, node.name), "");
@@ -335,8 +449,10 @@ function printNode(node: Node, depth: number): string[] {
   const asking = node.asking;
   if (asking?.type === "noul" && (asking.yes !== undefined || asking.no !== undefined)) {
     if (asking.no?.startsWith("**")) throw new Error(`"${node.name}": a line that opens with a bold name is an option`);
-    if (asking.yes !== undefined) out.push(`+ ${oneLine(asking.yes, node.name)}`);
-    if (asking.no !== undefined) out.push(`- ${oneLine(asking.no, node.name)}`);
+    for (const [text, value] of [[asking.yes, asking.yesValue], [asking.no, asking.noValue]]) if (value === undefined && text?.startsWith("`")) throw new Error(`"${node.name}": a yes or a no that opens with code reads as what it yields`);
+    if (asking.yes === undefined && asking.no?.startsWith("`")) throw new Error(`"${node.name}": a "-" line that opens with code, with no "+" line before it, reads as a field`);
+    if (asking.yes !== undefined) out.push(`+ ${asking.yesValue !== undefined ? `\`${asking.yesValue}\` ` : ""}${oneLine(asking.yes, node.name)}`);
+    if (asking.no !== undefined) out.push(`- ${asking.noValue !== undefined ? `\`${asking.noValue}\` ` : ""}${oneLine(asking.no, node.name)}`);
     out.push("");
   }
   if (asking?.type === "choice") {
@@ -350,6 +466,7 @@ function printNode(node: Node, depth: number): string[] {
     });
     out.push("");
   }
+  if (node.fields.length) out.push(...node.fields.flatMap((field) => printField(field)), "");
   for (const child of node.children) out.push(...printNode(child, depth + 1));
   return out;
 }
@@ -393,7 +510,7 @@ export function checkGrammar(grammar: Grammar): { errors: string[]; warnings: st
     if (byId.has(id)) errors.push(`"${id}" is asked twice`);
     byId.set(id, node);
     if (node.block) blocks.add(node.name);
-    if (!node.question) errors.push(`"${node.name}" has no question`);
+    if (!node.question && !node.fields.length) errors.push(`"${node.name}" has no question, and is made of nothing`);
     const asking = node.asking;
     if (asking?.type === "choice" && asking.options.length < 2) errors.push(`"${node.name}" needs at least two options${asking.among ? `: "${asking.among.href}" was not read` : ""}`);
     if (asking?.type === "score" && asking.levels.length < 2) errors.push(`"${node.name}" needs at least two levels`);
@@ -410,11 +527,24 @@ export function checkGrammar(grammar: Grammar): { errors: string[]; warnings: st
     if ("block" in atom) return void (blocks.has(atom.block) || errors.push(`a rule or an example names a part "${atom.block}" that nothing describes`));
     const asking = byId.get(atom.id)?.asking;
     if (!asking) return void errors.push(`a rule or an example names "${atom.id}", which is not asked`);
-    if (asking.type === "choice" && !asking.options.some((o) => o.name === atom.is)) errors.push(`a rule says "${atom.id} is ${atom.is}", which is not one of its options`);
-    if (asking.type === "noul" && atom.is !== "yes" && atom.is !== "no") errors.push(`a rule says "${atom.id} is ${atom.is}", and it can only be yes or no`);
+    for (const is of atom.is) {
+      if (asking.type === "choice" && !asking.options.some((o) => o.name === is)) errors.push(`"${atom.id} is ${is}" is said somewhere, and that is not one of its options`);
+      if (asking.type === "noul" && is !== "yes" && is !== "no") errors.push(`"${atom.id} is ${is}" is said somewhere, and it can only be yes or no`);
+    }
     if (asking.type === "score") errors.push(`a rule names "${atom.id}", which is a score; rules read parts, choices and yes-or-no answers`);
   };
-  for (const rule of grammar.rules) [...rule.when, rule.then].forEach(checkAtom);
+  for (const rule of grammar.rules) {
+    [...rule.when, rule.then].forEach(checkAtom);
+    if (!("block" in rule.then) && (rule.then.is.length > 1 || rule.then.not)) errors.push(`a rule ends in "${printAtom(rule.then)}", which does not say what it is to be`);
+  }
+  const checkFields = (fields: Field[]) => {
+    for (const field of fields) {
+      field.when?.forEach(checkAtom);
+      for (const note of field.notes) note.when.forEach(checkAtom);
+      checkFields(field.fields);
+    }
+  };
+  walk(grammar.nodes, (node) => checkFields(node.fields));
   for (const example of grammar.examples) example.expect.forEach(checkAtom);
   if (grammar.nodes.length && !grammar.examples.length) warnings.push("the file has no examples, so nothing says its questions are read as they were meant");
   return { errors, warnings };

@@ -2,7 +2,14 @@
 
 > `email` describes one email that a product sends to one of the people who use it. Work out what that email is made of.
 
-A graph nobody wrote code for: the emails a product sends. It is here to find out whether the format only fits the screens it was taken from. Written by hand; its examples were labelled before it was first run (docs/grammar.md).
+A graph nobody wrote code for: the emails a product sends. It is here to find out whether the format only fits the screens it was taken from. Written by hand; its examples were labelled before it was first run (docs/grammar.md). Its parts are drawn by the kit's patterns ([kit](../kit.md)); nothing in the catalog draws a code.
+
+## header
+
+Written for every email, whatever it is made of.
+
+- `title` — The subject line, as it shows in an inbox.
+- `subtitle` — The preheader: the one line an inbox shows after the subject.
 
 ## kind
 
@@ -25,26 +32,34 @@ The order of the parts belongs to the kind of email. What matters most comes fir
 - **reminder** — Something is coming up or was left undone: an appointment tomorrow, a trial about to end, a cart left behind, a task that is due.
   `warning? prose items? facts CTA` at least 2
 
-### warning (never padding)
+### warning (never padding) → banner
 
 > Does the email carry a notice the person must not miss, set apart from the rest?
 
 + A security notice, a deadline, a failed payment, an expiry: ignoring it costs the person something.
 - Nothing is at stake; the email informs, confirms or invites.
 
-### hero (never padding)
+- `title` as title — What happened or what is due, in a few words.
+- `text` as text — One sentence on what it means for the person.
+- `tone` as tone, decided
+
+### hero (never padding) → picture
 
 > Should a large picture lead this email?
 
 + It is about something with a look, or it sets a mood: products, a place, an event, a feature shown off, a seasonal sale.
 - It is about an account, a payment, a code, an appointment or a record, and a picture would only be in the way.
 
-### prose
+- `imageUrl` as picture, found
+
+### prose → prose
 
 > Does the email need a paragraph or more of running text?
 
 + An explanation, a story, a greeting with some warmth, the consequences of something, a message from a person.
 - A line or two is enough; the rest is details, items or a button.
+
+- `body` as body — What the email says, in short paragraphs. Simple markdown is allowed.
 
 ### code
 
@@ -53,19 +68,29 @@ The order of the parts belongs to the kind of email. What matters most comes fir
 + A one-time passcode, a verification code, a voucher code, a booking reference to quote.
 - There is nothing to copy; the person reads, or presses a button.
 
-### items
+- `label` — What the code is for, in a few words.
+- `code` — The code itself, as the person will type it.
+
+### items → collection
 
 > Does the email show several similar things?
 
 + Products ordered, articles to read, line items, recommendations, sessions booked, things left in a cart.
 - It is about one thing, or about the account.
 
-#### item_picture
+- `heading` as heading — A heading above them, in a few words.
+- `items` 2–6, as items — The things.
+  - `title` as headline — Its name.
+  - `subtitle` as supporting — One short line about it.
+  - `price` as meta, when item_price is yes — Its price or amount, with currency.
+  - `imageUrl` as picture, found
+
+#### item_picture → leading
 
 > If the email shows several similar things, would each one have its own picture?
 
-+ Products, articles with a lead image, places, films, recipes.
-- Line items on an invoice, transactions, tasks, sign-ins.
++ `thumbnail` Products, articles with a lead image, places, films, recipes.
+- `none` Line items on an invoice, transactions, tasks, sign-ins.
 
 #### item_price
 
@@ -74,12 +99,18 @@ The order of the parts belongs to the kind of email. What matters most comes fir
 + Things bought, booked or billed.
 - Things read, watched or done.
 
-### facts
+### facts → details
 
 > Is there a set of label-and-value details to show?
 
 + A total, a date and time, an address, an order number, a device and a place, a plan and what it costs.
 - There are no discrete details; it is all said in sentences.
+
+- `facts` 2–6, as rows — Label-and-value details.
+  - when facts_total is yes — The last one is the total.
+  - `label` as label — Short label.
+  - `value` as value — Short value.
+  - `strong` as strong, computed
 
 #### facts_total
 
@@ -88,19 +119,27 @@ The order of the parts belongs to the kind of email. What matters most comes fir
 + An order summary, an invoice, a bill, a refund.
 - Independent details that do not sum.
 
-### steps
+### steps → steps
 
 > Does the email tell the person what to do, in order?
 
 + Getting started in three steps, how to return an item, what to bring and when to arrive.
 - There is at most one thing to do, and a button does it.
 
-### cta
+- `steps` 2–5, as steps — What to do, in order.
+  - `title` as title — The step, as an instruction.
+  - `detail` as detail — One sentence more.
+
+### cta → actions
 
 > Does the email ask the person to press one main button?
 
 + Confirm, track the order, reset the password, read more, book, finish checking out, update the card.
 - The email is a record to keep; nothing needs doing.
+
+- `cta` 1–1, as actions — The one button.
+  - `label` as label — What the button says, in two or three words.
+  - `variant` as variant, decided
 
 ## tone
 

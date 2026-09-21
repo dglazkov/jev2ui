@@ -16,18 +16,23 @@ import { ICON_OPTIONS } from "../mock/icons.js";
 import { SUBJECT_OPTIONS } from "../mock/pictures.js";
 import { APP_BAR_ACTIONS, ARCHETYPES, BLOCKS, CUSTOM_SIZE, planQuestions, type Block } from "../mock/plan.js";
 import { PROMPTS } from "../../probe/custom.js";
-import { printGrammar, type Atom, type Example, type Grammar, type Node, type Option, type Rule, type Shape } from "./format.js";
+import { parseGrammar, printGrammar, type Atom, type Example, type Grammar, type Node, type Option, type Rule, type Shape } from "./format.js";
 import { GRAMMAR_DIR } from "./load.js";
+import { kitCatalog } from "./patterns.js";
 
 interface Extra {
   traits?: string[];
   target?: string;
+  /** What it is made of, as the file says it. */
+  made?: string;
   prose?: string[];
   /** What each option yields, by name; or what each level of a score is worth, in order. */
   values?: Record<string, string> | number[];
   among?: { name: string; href: string };
   shapes?: Record<string, Shape>;
 }
+
+const fieldsOf = (made: string) => parseGrammar(`## made\n${made}`).nodes[0].fields;
 
 function nodeOf(name: string, question: Question, extra: Extra = {}, block = false): { node: Node; context?: string } {
   const instructions = question.instructions as string | { context: string; question: string };
@@ -39,6 +44,7 @@ function nodeOf(name: string, question: Question, extra: Extra = {}, block = fal
     ...(extra.target ? { target: extra.target } : {}),
     prose: extra.prose ?? [],
     question: typeof instructions === "string" ? instructions : instructions.question,
+    fields: extra.made ? fieldsOf(extra.made) : [],
     children: [],
   };
   if (question.type === "noul") node.asking = { type: "noul", ...(question.criteria?.true != null ? { yes: String(question.criteria.true) } : {}), ...(question.criteria?.false != null ? { no: String(question.criteria.false) } : {}) };
@@ -97,22 +103,108 @@ const SHAPES: Record<string, Shape> = Object.fromEntries(
   ]),
 );
 
-const SCREEN_RULES: Rule[] = [
-  { when: [{ block: "form", present: true }], then: { block: "actions", present: false }, reason: "a form's submit button is the screen's call to action; a second set of buttons only competes with it" },
-  { when: [{ id: "archetype", is: "checkout", not: false }, { block: "form", present: false }], then: { block: "actions", present: true }, reason: "a checkout is where the person commits; with no form to submit, it needs a button to do it with" },
-  { when: [{ id: "archetype", is: "confirm", not: false }], then: { id: "top_level", is: "no", not: false }, reason: "a dialog is not a main screen" },
-  { when: [{ id: "archetype", is: "result", not: false }], then: { id: "top_level", is: "no", not: false }, reason: "how something went is not a main screen" },
-  { when: [{ id: "archetype", is: "confirm", not: false }], then: { id: "app_bar_action", is: "none", not: false }, reason: "a dialog has no top bar" },
-  { when: [{ id: "archetype", is: "detail", not: true }], then: { id: "person", is: "no", not: false }, reason: "only a page about one thing can be about one person" },
-  { when: [{ id: "item_leading", is: "thumbnail", not: true }], then: { id: "list_layout", is: "rows", not: false }, reason: "picture layouts are for things with a look; anything else is scanned as rows" },
-  { when: [{ block: "list", present: false }], then: { id: "custom_linked", is: "no", not: false }, reason: "with no list there are no items for it to draw" },
-];
+/** What readPlan does by hand after the thresholds, in the words the file uses. */
+const SCREEN_RULES: Rule[] = parseGrammar(`## Rules
+- when form, no actions — a form's submit button is the screen's call to action; a second set of buttons only competes with it
+- when archetype is checkout and no form, actions — a checkout is where the person commits; with no form to submit, it needs a button to do it with
+- when archetype is confirm, top_level is no — a dialog is not a main screen
+- when archetype is result, top_level is no — how something went is not a main screen
+- when archetype is confirm, app_bar_action is none — a dialog has no top bar
+- when archetype is not detail, person is no — only a page about one thing can be about one person
+- when item_leading is not thumbnail, list_layout is rows — picture layouts are for things with a look; anything else is scanned as rows
+- when no list, custom_linked is no — with no list there are no items for it to draw
+`).rules;
 
 /** The prompts of probe:custom, labelled by hand before they were ever run. Those that could be read either way claim nothing. */
 const SCREEN_EXAMPLES: Example[] = PROMPTS.map(([text, custom, use]) => ({
   text,
-  expect: custom === null ? [] : [{ block: "custom", present: custom }, ...(use ? [{ id: "custom_use", is: use, not: false } satisfies Atom] : [])],
+  expect: custom === null ? [] : [{ block: "custom", present: custom }, ...(use ? [{ id: "custom_use", is: [use], not: false } satisfies Atom] : [])],
 }));
+
+/**
+ * What each part is made of: what partSchema asks a writer for and what BUILDERS binds, said once. `as` names the slot of
+ * the pattern the part is drawn by (patterns.ts); a field with a source is bound but not written. Tests hold both halves.
+ */
+const MADE_OF: Record<Block, { pattern: string; made: string }> = {
+  banner: { pattern: "banner", made: "- `title` as title — What needs attention, in a few words.\n- `text` as text — One sentence of detail.\n- `tone` as tone, decided" },
+  hero: { pattern: "picture", made: "- `imageUrl` as picture, found" },
+  filters: {
+    pattern: "filters",
+    made: "- `searchPlaceholder` as search, when search is yes — Placeholder of the search field.\n- `chips` 3–6, as chips — Filter categories. The first is the one currently selected, usually 'All'.\n  - each — One or two words.",
+  },
+  custom: { pattern: "slot", made: "- `use` as use, baked\n- `data` as data, baked\n- `selection` as selection, baked\n- `failed` as failed, baked\n- `items` as items, from /list/items, when custom_linked is yes" },
+  stats: {
+    pattern: "stats",
+    made: [
+      "- `stats` 2–6, as stats — Headline numbers.",
+      "  - `label` as label — Short label.",
+      "  - `value` as value — The figure with its unit, e.g. '24.2 kWh'.",
+      "  - `delta` as delta, when stat_deltas is yes — Change against the previous period, signed, e.g. '+12%' or '-0.4 kW'.",
+      "  - `tone` as tone, decided, when stat_deltas is yes",
+    ].join("\n"),
+  },
+  list: {
+    pattern: "collection",
+    made: [
+      "- `heading` as heading, when archetype is not feed — Heading above the list.",
+      "- `actionLabel` as action, when item_trailing is button — One word for the button on every item, e.g. 'Book', 'Add', 'Play'.",
+      "- `items` 3–8, as items — The items.",
+      "  - `title` as headline — The item's name.",
+      "  - `subtitle` as supporting — A short secondary line: category, author, place, variant.",
+      "  - `description` as supporting, when item_description is yes — One sentence.",
+      "  - `price` as meta, when item_price is yes — Price or amount with currency, e.g. '$24.00'.",
+      "  - `rating` number, as rating, when item_rating is yes — Rating out of 5, one decimal.",
+      "  - `reviews` as count, when item_rating is yes — Number of reviews, e.g. '128'.",
+      "  - `status` as badge, when item_status is yes — One or two words: the item's current state.",
+      "  - `time` as meta, when item_time is yes — Short date, time or duration, e.g. 'Today 7:15 pm', '42 min'.",
+      "  - `progress` number, as progress, when item_progress is yes — Percent from 0 to 100.",
+      "  - `on` boolean, as on, when item_trailing is switch or checkbox — Whether it is currently on or ticked.",
+      "  - `tone` as tone, decided",
+      "  - `icon` as icon, decided",
+      "  - `imageUrl` as picture, found",
+    ].join("\n"),
+  },
+  groups: {
+    pattern: "groups",
+    made: [
+      "- `groups` 2–5, as groups — Groups of related settings. The last group holds account-level actions if there are any.",
+      "  - `title` as title — Group heading, one or two words.",
+      "  - `rows` 1–6, as rows — Rows in this group.",
+      "    - `label` as label — The setting or option.",
+      "    - `detail` as detail, optional — ONLY if the label needs explaining: one short line.",
+      "    - `value` as value, optional — ONLY for a setting with one current value picked from several: that value, e.g. 'English', 'High quality', '15 seconds'. Never for on/off settings.",
+      "    - `icon` as icon, decided",
+      "    - `control` as control, decided",
+      "    - `on` as on, decided",
+    ].join("\n"),
+  },
+  facts: {
+    pattern: "details",
+    made: "- `facts` 2–8, as rows — Label-value details.\n  - when facts_total is yes — The last one is the total.\n  - `label` as label — Short label.\n  - `value` as value — Short value.\n  - `strong` as strong, computed",
+  },
+  prose: { pattern: "prose", made: "- `body` as body — Body text. Simple markdown (bold, short bullet lists) is allowed." },
+  steps: { pattern: "steps", made: "- `steps` 2–8, as steps — Ordered steps.\n  - `title` as title — Imperative step title.\n  - `detail` as detail — One or two sentences." },
+  form: {
+    pattern: "form",
+    made: [
+      "- `heading` as heading — Heading above the fields.",
+      "- `submitLabel` as submit — Label of the submit button.",
+      "- `fields` 1–8, as fields — The input fields.",
+      "  - `label` as label — Field label.",
+      "  - `placeholder` as placeholder — Example of what a person would enter, e.g. 'Jane Appleseed', 'name@example.com'.",
+      "  - `options` 2–8, as options, optional — ONLY for fields where the person picks from three or more known choices. Never for yes/no fields.",
+      "    - each — Option label.",
+      "  - `min` number, as min, optional — ONLY for bounded numeric fields.",
+      "  - `max` number, as max, optional — ONLY for bounded numeric fields.",
+      "  - `kind` as kind, decided",
+    ].join("\n"),
+  },
+  actions: { pattern: "actions", made: "- `actions` 1–2, as actions — One or two buttons, most important first.\n  - `label` as label — Button label, one to three words.\n  - `variant` as variant, decided" },
+};
+
+/** What is written for every screen whatever it is made of, and what is written for a main screen: the frame's, not any part's. */
+const HEADER = "- `title` — Screen title, at most four words.\n- `subtitle` — One short supporting line.";
+const NAV = "- `items` 3–5 — The app's three to five main destinations.\n  - `label` — One word.\n  - `icon` decided\n- `active` integer — Index of the destination this screen belongs to.";
 
 const UNDER_BLOCK: Partial<Record<Block, string[]>> = {
   filters: ["search"],
@@ -125,12 +217,13 @@ const UNDER_BLOCK: Partial<Record<Block, string[]>> = {
 export function screenGrammar(): Grammar {
   const extras: Record<string, Extra> = {
     archetype: { shapes: SHAPES, prose: ["The order of the parts is not asked. It belongs to the kind of screen, where the best practice lives."] },
-    has_banner: { traits: ["never padding"], prose: ["Polaris: banners are for important, often time-sensitive status; use sparingly."] },
-    has_custom: { traits: ["never padding"], prose: ["The one part the kit has no component for. What it is gets baked at run time; the graph only knows that it is there, and what it is held to."] },
-    custom_size: { values: Object.fromEntries(Object.entries(CUSTOM_SIZE).map(([name, size]) => [name, size.ratio])) },
-    list_layout: { prose: ["Cards and grids are for browsing by look; rows are for scanning text (NN/g, Material)."] },
-    item_leading: { prose: ["Material 3 list item: the leading slot says what kind of thing each item is."] },
-    item_trailing: { prose: ["Material 3 list item trailing slot; HIG disclosure indicators; Material selection controls."] },
+    ...Object.fromEntries(BLOCKS.map((block) => [`has_${block}`, { target: MADE_OF[block].pattern, made: MADE_OF[block].made }])),
+    has_banner: { target: "banner", made: MADE_OF.banner.made, traits: ["never padding"], prose: ["Polaris: banners are for important, often time-sensitive status; use sparingly."] },
+    has_custom: { target: "slot", made: MADE_OF.custom.made, traits: ["never padding"], prose: ["The one part the kit has no component for. What it is gets baked at run time; the graph only knows that it is there, and what it is held to."] },
+    custom_size: { target: "ratio", values: Object.fromEntries(Object.entries(CUSTOM_SIZE).map(([name, size]) => [name, size.ratio])) },
+    list_layout: { target: "layout", prose: ["Cards and grids are for browsing by look; rows are for scanning text (NN/g, Material)."] },
+    item_leading: { target: "leading", prose: ["Material 3 list item: the leading slot says what kind of thing each item is."] },
+    item_trailing: { target: "trailing", prose: ["Material 3 list item trailing slot; HIG disclosure indicators; Material selection controls."] },
     app_bar_action: { values: Object.fromEntries(Object.entries(APP_BAR_ACTIONS).flatMap(([name, a]) => (a.icon ? [[name, a.icon]] : []))), prose: ["Material top app bar: at most a couple of actions, the most used one first. What an option yields is the name of its symbol."] },
     hero_subject: { among: { name: "subjects", href: "subjects.md" } },
     item_subject: { among: { name: "subjects", href: "subjects.md" } },
@@ -147,6 +240,9 @@ export function screenGrammar(): Grammar {
   );
   grammar.rules = SCREEN_RULES;
   grammar.examples = SCREEN_EXAMPLES;
+  const content = (name: string, prose: string, made: string): Node => ({ name, block: false, traits: [], prose: [prose], fields: fieldsOf(made), children: [] });
+  grammar.nodes.unshift(content("header", "Written for every screen, before anything about it is known. It is the frame's, which no part draws.", HEADER));
+  grammar.nodes.find((node) => node.name === "top_level")!.children.push(content("nav", "Written once for an app, on its first main screen; every main screen after that shows the same one.", NAV));
   return grammar;
 }
 
@@ -170,6 +266,7 @@ export function paintGrammar(): Grammar {
 
 export function files(): Record<string, string> {
   return {
+    "kit.md": printGrammar(kitCatalog()),
     "screen.md": printGrammar(screenGrammar()),
     "paint.md": printGrammar(paintGrammar()),
     "icons.md": printGrammar(setOf("icons", ["Material Symbols. The symbols Jev can choose from, wherever a screen, a row, an item or a destination wants one."], ICON_OPTIONS)),

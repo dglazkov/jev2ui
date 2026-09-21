@@ -18,7 +18,7 @@ export function knownSubjects(catalog: KnownDestination[] | undefined, destinati
 const at = (path: string) => ({ path });
 type C = KitComponent;
 
-const BUILDERS: Record<Block, (plan: ScreenPlan) => C[]> = {
+export const BUILDERS: Record<Block, (plan: ScreenPlan) => C[]> = {
   banner: () => [{ id: "banner", component: "Banner", title: at("/banner/title"), text: at("/banner/text"), tone: at("/banner/tone") }],
 
   hero: (plan) => [{ id: "hero", component: "Image", url: at("/hero/imageUrl"), icon: plan.symbol, ratio: "16:9" }],
@@ -54,10 +54,8 @@ const BUILDERS: Record<Block, (plan: ScreenPlan) => C[]> = {
     const pictured = layout !== "rows";
     // On a feed the list is the screen, and the bar has already named it.
     const headed = plan.archetype !== "feed";
-    const out: C[] = [
-      { id: "list", component: "Stack", gap: "sm", children: [...(headed ? ["list_heading"] : []), "list_items"] },
-      { id: "list_heading", component: "Text", role: "title", text: at("/list/heading") },
-    ];
+    const out: C[] = [{ id: "list", component: "Stack", gap: "sm", children: [...(headed ? ["list_heading"] : []), "list_items"] }];
+    if (headed) out.push({ id: "list_heading", component: "Text", role: "title", text: at("/list/heading") });
     const items = { path: "/list/items", componentId: pictured ? "item_card" : "item" };
     if (layout === "rows") out.push({ id: "list_items", component: "Group", children: items, flat: !plan.contained });
     if (layout === "cards") out.push({ id: "list_items", component: "Stack", gap: "md", children: items });
@@ -237,7 +235,8 @@ export function partSchema(part: Part, plan: ScreenPlan | null): unknown {
     header: () => obj({ title: str("Screen title, at most four words."), subtitle: str("One short supporting line.") }),
     nav: () => obj({ items: list(obj({ label: str("One word.") }), "The app's three to five main destinations.", 5, 3), active: { type: "integer", description: "Index of the destination this screen belongs to." } }),
     banner: () => obj({ title: str("What needs attention, in a few words."), text: str("One sentence of detail.") }),
-    filters: () => obj({ searchPlaceholder: str("Placeholder of the search field."), chips: list(str("One or two words."), "Filter categories. The first is the one currently selected, usually 'All'.", 6, 3) }),
+    // A writer is asked for what the tree has a place for, and nothing else: no placeholder without a search field, no heading on a feed.
+    filters: () => obj({ ...(plan?.search ? { searchPlaceholder: str("Placeholder of the search field.") } : {}), chips: list(str("One or two words."), "Filter categories. The first is the one currently selected, usually 'All'.", 6, 3) }),
     stats: () =>
       list(
         obj({ label: str("Short label."), value: str("The figure with its unit, e.g. '24.2 kWh'."), ...(plan?.statDeltas ? { delta: str("Change against the previous period, signed, e.g. '+12%' or '-0.4 kW'.") } : {}) }),
@@ -247,7 +246,7 @@ export function partSchema(part: Part, plan: ScreenPlan | null): unknown {
       ),
     list: () =>
       obj({
-        heading: str("Heading above the list."),
+        ...(plan?.archetype !== "feed" ? { heading: str("Heading above the list.") } : {}),
         ...(plan?.list.trailing === "button" ? { actionLabel: str("One word for the button on every item, e.g. 'Book', 'Add', 'Play'.") } : {}),
         items: list(itemSchema(plan!), "The items.", 8, 3),
       }),

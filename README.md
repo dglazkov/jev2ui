@@ -310,9 +310,15 @@ whoever answers. A file carries its own examples, labelled, and a lint warns of 
 the file, the request to Jev is deep-equal to `planQuestions()`, and a reader that knows nothing about screens
 makes the plan `readPlan` makes, over 3000 random sets of answers and, live, 30 of 30 prompts.
 `grammar/examples/email.md` is a graph nobody wrote code for (the emails a product sends), run by the same
-reader: every kind right on its first run, 10 of 12 examples whole. Nothing the tool serves reads these files
-yet, and a reading of a brought graph has nowhere to go until the catalog can be written down too. The format,
-the results and what resisted are in [docs/grammar.md](docs/grammar.md).
+reader: every kind right on its first run, 10 of 12 examples whole.
+
+A part also says what it is made of, once (`` - `price` as meta, when item_price is yes — Price or amount… ``),
+and names a pattern of a catalog (`### list → collection`; `grammar/kit.md` is the kit's twelve, written out
+from `patterns.ts`). From that one list of fields come both the schema a writer fills and the tree that is
+drawn, and tests hold each, for every part of 2000 random screens, to `partSchema` and to `BUILDERS`.
+`npm run probe:draw` draws any graph end to end, and draws the emails with no code about emails. Nothing the
+tool serves reads these files yet. The format, the results, two pictures and what resisted are in
+[docs/grammar.md](docs/grammar.md).
 
 ## Rendering strategy: the mock is painted by a DESIGN.md
 
@@ -488,6 +494,7 @@ npm run eval       # comparison table over the built-in prompts, all four pipeli
 npm run eval -- "Book a haircut" -v   # one prompt, printing decisions and messages
 npm run probe:grammar                 # the graph in grammar/screen.md, run on its own examples and held against readPlan
 npm run probe:grammar -- grammar/examples/email.md   # any graph file
+npm run probe:draw -- grammar/examples/email.md "Your one-time sign-in code"   # any graph file, drawn into out/grammar/
 ```
 
 `GEMINI_MODEL` (default `gemini-3.5-flash-lite`) and `JEV_MODEL` (default `jev-latest`) can be overridden
@@ -685,9 +692,10 @@ src/server/theme.ts         tokens and the reading, as the kit's --k-* variables
 src/shared/kit.ts           the kit: component schemas of the A2UI fork, shared by server and renderer
 src/server/mock/plan.ts     the grammar (archetypes, blocks, anatomy) and the questions that fill it
 src/server/mock/screen.ts   plan to component tree; and the content schema Gemini is asked to fill
-grammar/                    the graph as files: screen.md and paint.md (written out by npm run grammar:export), the sets they link to, examples/email.md
-src/server/grammar/         format.ts reads, writes and checks a graph file; read.ts asks it and reads the answers; export.ts writes the tool's own; screen-plan.ts renames a reading into a ScreenPlan
+grammar/                    the graph as files: screen.md and paint.md (written out by npm run grammar:export), the sets they link to, kit.md (the catalog a graph's parts name), examples/email.md
+src/server/grammar/         format.ts reads, writes and checks a graph file; read.ts asks it and reads the answers; make.ts turns what a part is made of into a writer's schema and a tree; patterns.ts is the kit as a catalog; export.ts writes the tool's own files; screen-plan.ts renames a reading into a ScreenPlan
 src/probe/grammar.ts        a graph file run on its own examples; screen.md held against readPlan
+src/probe/grammar-draw.ts   a graph file drawn: Jev reads, the file gives the tree and the schemas, Gemini writes, the kit renders (out/grammar/)
 src/server/mock/refine.ts   per-instance decisions from the content, written into the data model
 src/server/mock/bake.ts     what the kit cannot draw: the baker's contract, the lint, the app's shelf
 src/web/kit/sandbox.ts      the frame a baked component runs in

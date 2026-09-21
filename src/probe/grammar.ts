@@ -16,7 +16,7 @@
 import { resolve } from "node:path";
 import { askJev, JEV_MODEL } from "../server/models.js";
 import { readPlan } from "../server/mock/plan.js";
-import { checkGrammar, printRule, walk } from "../server/grammar/format.js";
+import { checkGrammar, printAtom, printRule, walk } from "../server/grammar/format.js";
 import { loadGrammar } from "../server/grammar/load.js";
 import { JEV, holdsIn, questionsOf, readGrammar, yieldOf, type Reading } from "../server/grammar/read.js";
 import { planOf } from "../server/grammar/screen-plan.js";
@@ -37,7 +37,6 @@ console.log();
 
 const dials: string[] = [];
 walk(grammar.nodes, (node) => void (node.asking?.type === "score" && node.asking.levels.every((l) => l.value !== undefined) && dials.push(node.name)));
-const say = (atom: Parameters<typeof holdsIn>[1]) => ("block" in atom ? `${atom.present ? "" : "no "}${atom.block}` : `${atom.id} is ${atom.not ? "not " : ""}${atom.is}`);
 const same = (a: unknown, b: unknown) => JSON.stringify(sorted(a)) === JSON.stringify(sorted(b));
 const readings = (g: typeof grammar, all: Array<Record<string, any>>) => all.map((answers) => readGrammar(g, answers, JEV)).map(({ kind, blocks, values }) => ({ kind, blocks, values }));
 
@@ -61,7 +60,7 @@ for (const example of grammar.examples) {
   for (const atom of missed) {
     const id = "block" in atom ? `has_${atom.block}` : atom.id;
     const was = "block" in atom ? (reading.p[id] === undefined ? `a ${reading.kind} has no such part` : `Jev said ${reading.p[id].toFixed(2)}`) : `read as ${reading.values[id]}; Jev said ${answers[id]?.choice ?? answers[id]?.noul?.toFixed(2)}`;
-    console.log(`           expected ${say(atom)}: ${was}`);
+    console.log(`           expected ${printAtom(atom)}: ${was}`);
   }
   if (verbose) for (const d of reading.decisions) if (d.note) console.log(`           ${d.id} → ${d.answer}: ${d.note}`);
   if (isScreen) {

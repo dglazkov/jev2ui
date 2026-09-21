@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { STOPS, dial, mixQuestions } from "../design-mix.js";
 import { ARCHETYPES, BLOCKS, planQuestions, readPlan } from "../mock/plan.js";
 import { files, screenGrammar } from "./export.js";
+import { answersTo, random } from "./fixtures.js";
 import { GRAMMAR_DIR, loadGrammar } from "./load.js";
 import { checkGrammar, parseGrammar, printGrammar, printRule } from "./format.js";
 import { JEV, questionsOf, readGrammar, yieldOf } from "./read.js";
@@ -49,24 +50,7 @@ test("the check says what Jev will stumble on", () => {
 
 // --- The reader, against readPlan ------------------------------------------------
 
-/** A small seeded generator, so a failure can be run again. */
-function random(seed: number) {
-  return () => ((seed = (seed * 1664525 + 1013904223) >>> 0), seed / 2 ** 32);
-}
-
-function answersFrom(rng: () => number): Record<string, any> {
-  return Object.fromEntries(
-    Object.entries(planQuestions()).map(([id, question]) => {
-      if (question.type !== "choice") return [id, { noul: rng() }];
-      // Sharpened, so that some answers are near certain and others torn, as Jev's are.
-      const weights = Object.keys(question.criteria).map(() => rng() ** 4);
-      const total = weights.reduce((a, b) => a + b, 0);
-      const probabilities = Object.fromEntries(Object.keys(question.criteria).map((name, i) => [name, weights[i] / total]));
-      const choice = Object.entries(probabilities).sort((a, b) => b[1] - a[1])[0][0];
-      return [id, { choice, probabilities }];
-    }),
-  );
-}
+const answersFrom = (rng: () => number) => answersTo(planQuestions(), rng);
 
 test("read from the file, a screen comes out as readPlan makes it: 3000 sets of answers, with and without what is settled beforehand", () => {
   const grammar = loadGrammar("screen.md");

@@ -4,6 +4,13 @@
 
 The graph of one screen of an apparition: what kind of screen it is, which parts it has, and what each part is made of. Written out from src/server/mock/plan.ts by `npm run grammar:export`; docs/grammar.md says how to read it.
 
+## header
+
+Written for every screen, before anything about it is known. It is the frame's, which no part draws.
+
+- `title` — Screen title, at most four words.
+- `subtitle` — One short supporting line.
+
 ## archetype
 
 The order of the parts is not asked. It belongs to the kind of screen, where the best practice lives.
@@ -29,7 +36,7 @@ The order of the parts is not asked. It belongs to the kind of screen, where the
 - **confirm** — One short decision about one thing, asked before it happens: confirm, delete, approve, allow, a dialog or alert.
   `prose facts? actions` at least 2, dialog
 
-### banner (never padding)
+### banner (never padding) → banner
 
 Polaris: banners are for important, often time-sensitive status; use sparingly.
 
@@ -38,19 +45,29 @@ Polaris: banners are for important, often time-sensitive status; use sparingly.
 + There is a warning, an outage, a deadline, an error, an offer about to expire, or a success to acknowledge.
 - Nothing unusual is going on; the screen is business as usual.
 
-### hero
+- `title` as title — What needs attention, in a few words.
+- `text` as text — One sentence of detail.
+- `tone` as tone, decided
+
+### hero → picture
 
 > Should a large picture lead this screen?
 
 + One visual subject leads: a place, dish, product, property, animal, trip, event, class, film, story, character or something being made. A content home or discovery feed can also lead with featured content or artwork before its supporting items.
 - The subject has no look: an order, an account, a transaction, a message, a setting, a set of figures. A plain results list or directory has no featured visual subject.
 
-### filters
+- `imageUrl` as picture, found
+
+### filters → filters
 
 > Will the person need to search or narrow down what is shown?
 
 + There are many items, more than fit on a screen, in recognisable categories.
 - There are only a few items, or nothing to narrow.
+
+- `searchPlaceholder` as search, when search is yes — Placeholder of the search field.
+- `chips` 3–6, as chips — Filter categories. The first is the one currently selected, usually 'All'.
+  - each — One or two words.
 
 #### search
 
@@ -59,7 +76,7 @@ Polaris: banners are for important, often time-sensitive status; use sparingly.
 + There are too many items to scan, or the person knows the name of what they want.
 - A handful of category filters is enough.
 
-### custom (never padding)
+### custom (never padding) → slot
 
 The one part the kit has no component for. What it is gets baked at run time; the graph only knows that it is there, and what it is held to.
 
@@ -67,6 +84,12 @@ The one part the kit has no component for. What it is gets baked at run time; th
 
 + A map, a seating plan, a timer face, a dial, a game board, a floor plan, a piano keyboard, a colour wheel, a chart, a month calendar, a body diagram.
 - Everything on it can be shown with lists, cards, photographs, figures, text, form fields and buttons.
+
+- `use` as use, baked
+- `data` as data, baked
+- `selection` as selection, baked
+- `failed` as failed, baked
+- `items` as items, from /list/items, when custom_linked is yes
 
 #### custom_use
 
@@ -77,7 +100,7 @@ The one part the kit has no component for. What it is gets baked at run time; th
 - **adjust** — The person drags, turns or plays it directly: a dial, a colour wheel, a keyboard, a board with pieces, a drawing surface.
 - **read** — It is a picture of data or of a place that the person only reads: a chart, a diagram, a route, a plan.
 
-#### custom_size
+#### custom_size → ratio
 
 > If the screen has something drawn specially for it, how much room does that thing need?
 
@@ -93,12 +116,18 @@ The one part the kit has no component for. What it is gets baked at run time; th
 + Pins for the places in the list, bars for the categories in the list, dots for the events in the list.
 - It shows one thing of its own, or the screen has no list of items.
 
-### stats
+### stats → stats
 
 > Are there a few headline numbers the person wants at a glance?
 
 + Key figures such as totals, counts, rates, balances, scores, durations or usage.
 - There are no headline numbers.
+
+- `stats` 2–6, as stats — Headline numbers.
+  - `label` as label — Short label.
+  - `value` as value — The figure with its unit, e.g. '24.2 kWh'.
+  - `delta` as delta, when stat_deltas is yes — Change against the previous period, signed, e.g. '+12%' or '-0.4 kW'.
+  - `tone` as tone, decided, when stat_deltas is yes
 
 #### stat_deltas
 
@@ -107,14 +136,31 @@ The one part the kit has no component for. What it is gets baked at run time; th
 + Usage, spending, revenue, health or performance figures compared with yesterday, last week or a target.
 - Fixed figures, such as counts or specifications, with nothing to compare against.
 
-### list
+### list → collection
 
 > Does the screen show several similar items?
 
 + Results, products, people, records, messages, line items, episodes, devices or any set of comparable things.
 - The screen is about one thing, or only about settings or input.
 
-#### list_layout
+- `heading` as heading, when archetype is not feed — Heading above the list.
+- `actionLabel` as action, when item_trailing is button — One word for the button on every item, e.g. 'Book', 'Add', 'Play'.
+- `items` 3–8, as items — The items.
+  - `title` as headline — The item's name.
+  - `subtitle` as supporting — A short secondary line: category, author, place, variant.
+  - `description` as supporting, when item_description is yes — One sentence.
+  - `price` as meta, when item_price is yes — Price or amount with currency, e.g. '$24.00'.
+  - `rating` number, as rating, when item_rating is yes — Rating out of 5, one decimal.
+  - `reviews` as count, when item_rating is yes — Number of reviews, e.g. '128'.
+  - `status` as badge, when item_status is yes — One or two words: the item's current state.
+  - `time` as meta, when item_time is yes — Short date, time or duration, e.g. 'Today 7:15 pm', '42 min'.
+  - `progress` number, as progress, when item_progress is yes — Percent from 0 to 100.
+  - `on` boolean, as on, when item_trailing is switch or checkbox — Whether it is currently on or ticked.
+  - `tone` as tone, decided
+  - `icon` as icon, decided
+  - `imageUrl` as picture, found
+
+#### list_layout → layout
 
 Cards and grids are for browsing by look; rows are for scanning text (NN/g, Material).
 
@@ -125,7 +171,7 @@ Cards and grids are for browsing by look; rows are for scanning text (NN/g, Mate
 - **grid** — A grid of small picture tiles: many visual items browsed casually, such as products, photos or albums.
 - **reel** — A sideways-scrolling row of picture cards: a short shelf of suggestions, such as films or featured items.
 
-#### item_leading
+#### item_leading → leading
 
 Material 3 list item: the leading slot says what kind of thing each item is.
 
@@ -137,7 +183,7 @@ Material 3 list item: the leading slot says what kind of thing each item is.
 - **number** — The items are ranked or ordered and their position matters.
 - **none** — Plain rows of text such as messages, notes or headlines.
 
-#### item_trailing
+#### item_trailing → trailing
 
 Material 3 list item trailing slot; HIG disclosure indicators; Material selection controls.
 
@@ -191,19 +237,35 @@ Material 3 list item trailing slot; HIG disclosure indicators; Material selectio
 + Downloads, courses, goals, budgets, batteries, storage, tasks part-way done.
 - Nothing about the item is part-way.
 
-### groups
+### groups → groups
 
 > Does the screen consist of rows of settings or options the person turns on, picks or opens?
 
 + Preferences, toggles, account options, menu entries.
 - Nothing on the screen is a setting or a menu entry.
 
-### facts
+- `groups` 2–5, as groups — Groups of related settings. The last group holds account-level actions if there are any.
+  - `title` as title — Group heading, one or two words.
+  - `rows` 1–6, as rows — Rows in this group.
+    - `label` as label — The setting or option.
+    - `detail` as detail, optional — ONLY if the label needs explaining: one short line.
+    - `value` as value, optional — ONLY for a setting with one current value picked from several: that value, e.g. 'English', 'High quality', '15 seconds'. Never for on/off settings.
+    - `icon` as icon, decided
+    - `control` as control, decided
+    - `on` as on, decided
+
+### facts → details
 
 > Is there a set of label-and-value details to show?
 
 + Specifications, order totals, dates, addresses, prices, attributes or a summary table.
 - There are no discrete label-and-value details.
+
+- `facts` 2–8, as rows — Label-value details.
+  - when facts_total is yes — The last one is the total.
+  - `label` as label — Short label.
+  - `value` as value — Short value.
+  - `strong` as strong, computed
 
 #### facts_total
 
@@ -212,33 +274,54 @@ Material 3 list item trailing slot; HIG disclosure indicators; Material selectio
 + An order summary, a bill, a receipt or a cost breakdown.
 - Independent details that do not sum.
 
-### prose
+### prose → prose
 
 > Does the screen need a paragraph or more of explanatory text?
 
 + A description, an article, an explanation, terms, or the consequences of a decision.
 - Titles and short labels are enough.
 
-### steps
+- `body` as body — Body text. Simple markdown (bold, short bullet lists) is allowed.
+
+### steps → steps
 
 > Does the screen show steps to follow in order?
 
 + A how-to, a recipe method, a procedure, a checklist, an itinerary.
 - Nothing needs to be followed in order.
 
-### form
+- `steps` 2–8, as steps — Ordered steps.
+  - `title` as title — Imperative step title.
+  - `detail` as detail — One or two sentences.
+
+### form → form
 
 > Does the person type in or pick values on this screen that are then submitted together?
 
 + Sign-up, booking, payment details, an address, a survey, creating or editing a record.
 - The person only reads, toggles settings or presses buttons.
 
-### actions
+- `heading` as heading — Heading above the fields.
+- `submitLabel` as submit — Label of the submit button.
+- `fields` 1–8, as fields — The input fields.
+  - `label` as label — Field label.
+  - `placeholder` as placeholder — Example of what a person would enter, e.g. 'Jane Appleseed', 'name@example.com'.
+  - `options` 2–8, as options, optional — ONLY for fields where the person picks from three or more known choices. Never for yes/no fields.
+    - each — Option label.
+  - `min` number, as min, optional — ONLY for bounded numeric fields.
+  - `max` number, as max, optional — ONLY for bounded numeric fields.
+  - `kind` as kind, decided
+
+### actions → actions
 
 > Does the screen end in one or two buttons that act on the whole screen?
 
 + Buy, book, confirm, cancel, start, share, save, contact.
 - The screen is for reading or browsing, or its only action is submitting its form.
+
+- `actions` 1–2, as actions — One or two buttons, most important first.
+  - `label` as label — Button label, one to three words.
+  - `variant` as variant, decided
 
 ## person
 
@@ -253,6 +336,15 @@ Material 3 list item trailing slot; HIG disclosure indicators; Material selectio
 
 + A home, feed, dashboard, inbox, search, library or profile screen.
 - A page reached by tapping into something: details, a settings page, a checkout, a form, a dialog.
+
+### nav
+
+Written once for an app, on its first main screen; every main screen after that shows the same one.
+
+- `items` 3–5 — The app's three to five main destinations.
+  - `label` — One word.
+  - `icon` decided
+- `active` integer — Index of the destination this screen belongs to.
 
 ## app_bar_action
 

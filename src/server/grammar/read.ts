@@ -140,8 +140,7 @@ export function readGrammar(grammar: Grammar, answers: Record<string, any>, cali
     if ("block" in atom) return blocks.includes(atom.block) === atom.present;
     const node = byId.get(atom.id);
     const value = node && valueOf(node);
-    const is = typeof value === "boolean" ? (value ? "yes" : "no") : String(value);
-    return (is === atom.is) !== atom.not;
+    return atom.is.includes(typeof value === "boolean" ? (value ? "yes" : "no") : String(value)) !== atom.not;
   };
   for (const rule of grammar.rules) {
     if (!rule.when.every(holds) || holds(rule.then)) continue;
@@ -154,8 +153,8 @@ export function readGrammar(grammar: Grammar, answers: Record<string, any>, cali
     } else {
       const node = byId.get(then.id);
       if (!node || then.not) continue;
-      overruled.set(then.id, node.asking?.type === "noul" ? then.is === "yes" : then.is);
-      decisions.set(then.id, { id: then.id, question: node.name, answer: then.is, p: 1, ...(rule.reason ? { note: rule.reason } : {}) });
+      overruled.set(then.id, node.asking?.type === "noul" ? then.is[0] === "yes" : then.is[0]);
+      decisions.set(then.id, { id: then.id, question: node.name, answer: then.is[0], p: 1, ...(rule.reason ? { note: rule.reason } : {}) });
     }
   }
 
@@ -175,7 +174,7 @@ export function readGrammar(grammar: Grammar, answers: Record<string, any>, cali
 export function holdsIn(reading: Reading, atom: Atom): boolean {
   if ("block" in atom) return reading.blocks.includes(atom.block) === atom.present;
   const value = reading.values[atom.id];
-  return ((typeof value === "boolean" ? (value ? "yes" : "no") : String(value)) === atom.is) !== atom.not;
+  return atom.is.includes(typeof value === "boolean" ? (value ? "yes" : "no") : String(value)) !== atom.not;
 }
 
 /** What an answer yields: an option's value when it has one, and for a dial, the value between the two levels the score fell between. */
@@ -184,6 +183,7 @@ export function yieldOf(grammar: Grammar, id: string, value: Value): string | nu
   walk(grammar.nodes, (node) => void (idOf(node) === id && (found = node)));
   const asking = found?.asking;
   if (asking?.type === "choice" && typeof value === "string") return asking.options.find((o) => o.name === value)?.value ?? value;
+  if (asking?.type === "noul" && typeof value === "boolean") return (value ? asking.yesValue : asking.noValue) ?? value;
   if (asking?.type === "score" && typeof value === "number" && asking.levels.every((l) => l.value !== undefined)) {
     const stops = asking.levels.map((l) => Number(l.value));
     const i = Math.min(stops.length - 2, Math.max(0, Math.floor(value)));

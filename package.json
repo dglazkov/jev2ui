@@ -22,7 +22,8 @@
     "observe:journeys": "tsx src/probe/journey-observer.ts",
     "probe:identity": "tsx src/probe/identity.ts",
     "grammar:export": "tsx src/server/grammar/export.ts",
-    "probe:grammar": "tsx src/probe/grammar.ts"
+    "probe:grammar": "tsx src/probe/grammar.ts",
+    "probe:draw": "tsx src/probe/grammar-draw.ts"
   },
   "repository": {
     "type": "git",
