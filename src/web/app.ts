@@ -195,7 +195,8 @@ export class App extends LitElement {
   private app = "";
   @state() private architecture?: Architecture;
   @state() private architectureError = "";
-  @state() private mapOpen = false;
+  /** Whether the stage shows the map of the app instead of the screen it is of. */
+  @state() private onMap = false;
   @state() private mapSelected = "first";
   private nav: Journey["nav"];
   private screens = new Map<string, Screen>();
@@ -512,7 +513,7 @@ export class App extends LitElement {
     this.architecture = undefined;
     this.architectureError = "";
     this.mapSelected = "first";
-    this.mapOpen = false;
+    this.onMap = false;
     this.seed = 0;
     this.change = {};
     this.nav = undefined;
@@ -905,6 +906,7 @@ export class App extends LitElement {
     this.architecture = app.architecture ? withCatalog(app.architecture) : undefined;
     this.architectureError = "";
     this.mapSelected = "first";
+    this.onMap = false;
     this.nav = app.nav;
     this.choice = app.design.choice === CUSTOM ? CUSTOM : AUTO;
     this.markdown = app.design.markdown;
@@ -1361,9 +1363,18 @@ export class App extends LitElement {
     const made = this.made;
     const wrong = Boolean((s && !s.valid) || here?.log.some((entry) => entry.kind === "note" && entry.tone === "bad"));
     const toggle = (menu: string) => (this.menu = this.menu === menu ? "" : menu);
+    // Only a screen that is a destination has a map to show; without one the preview always has the stage.
+    const mappable = Boolean(here?.destination) && (this.architecture?.map.nodes.length ?? 0) > 1;
+    const onMap = mappable && this.onMap;
     return html`<section class="stage">
       <div class="toolbar">
-        <div class="segmented" role="radiogroup" aria-label="Device">
+        ${mappable
+          ? html`<div class="segmented stage-pick" role="radiogroup" aria-label="Stage">
+              <button role="radio" aria-checked=${!onMap} title="Preview" @click=${() => (this.onMap = false)}>${icon("smartphone", "s")}<span>Preview</span></button>
+              <button role="radio" aria-checked=${onMap} title="App map" @click=${() => (this.onMap = true)}>${icon("account_tree", "s")}<span>Map</span></button>
+            </div>`
+          : nothing}
+        <div class="segmented" role="radiogroup" aria-label="Device" ?hidden=${onMap}>
           ${(Object.keys(DEVICES) as Device[]).map((d) => html`<button role="radio" aria-checked=${this.device === d} aria-label=${titled(d)} title=${titled(d)} @click=${() => (this.device = d)}>${icon(DEVICE_ICONS[d], "s")}</button>`)}
         </div>
         <nav class="flow" aria-label="Screens">
@@ -1372,7 +1383,6 @@ export class App extends LitElement {
             : nothing}
         </nav>
         <div class="acts">
-          ${here?.destination ? html`<button class="ib solid" aria-label="App map" title="App map" aria-expanded=${this.mapOpen} aria-controls="app-map-drawer" @click=${() => (this.mapOpen = !this.mapOpen)}>${icon("account_tree", "s")}</button>` : nothing}
           <button class="ib solid" ?disabled=${!here || here.running || !session.makes} @click=${() => this.regenerate()} title="Regenerate this screen" aria-label="Regenerate this screen">${icon("refresh", "s")}</button>
           <button class="ib solid ${wrong ? "wrong" : ""}" ?disabled=${!here} aria-expanded=${this.menu === "info"} @click=${() => toggle("info")} title="How this screen was generated" aria-label="How this screen was generated">${icon("info", "s")}</button>
           <button class="ib solid" ?disabled=${!painted && !theme} aria-expanded=${this.menu === "export"} @click=${() => toggle("export")} title="Export" aria-label="Export">${icon("download", "s")}</button>
@@ -1407,7 +1417,8 @@ export class App extends LitElement {
       ${stale && session.makes ? html`<p class="notice">${icon("info", "s")}<span>The current design uses a different layout for this screen.</span><button class="btn small" @click=${() => this.regenerate()}>Regenerate</button></p>` : nothing}
       ${this.resolving ? html`<p class="notice resolve-status" role="status">Finding “${this.resolving}”…</p>` : nothing}
       <div class="stage-body">
-      <div class="holder">
+      <!-- The map takes the stage, but the screens stay made: hidden, not thrown away and painted again. -->
+      <div class="holder" ?hidden=${onMap}>
         <!-- Drawn at its own size and then made to fit, so that what is seen is the whole device and not as much of it as there is room for. -->
         <div class="device ${this.device}" style="width:${DEVICES[this.device]}px;zoom:${this.fit}">
           <div class="screen" style=${styleMap({ ...frame, height: `${DEVICE_HEIGHTS[this.device]}px` })} @kit-tap=${(e: CustomEvent) => this.follow(e.detail)} @kit-custom-error=${(e: CustomEvent) => this.broke(e.detail)}>
@@ -1420,7 +1431,22 @@ export class App extends LitElement {
           </div>
         </div>
       </div>
-      ${here?.destination && this.mapOpen ? html`<app-map id="app-map-drawer" .architecture=${this.architecture} .titles=${Object.fromEntries(made.filter((s) => s.destination && s.title).map((s) => [s.destination!, s.title]))} .current=${here.destination} .selected=${this.mapSelected} .made=${made.filter((s) => !s.running && s.messages.length).flatMap((s) => s.destination ? [s.destination] : [])} .working=${made.filter((s) => s.running).flatMap((s) => s.destination ? [s.destination] : [])} .busy=${this.reading || Boolean(this.resolving)} .error=${this.architectureError} .issues=${here.routes?.findings ?? []} @map-close=${() => { this.mapOpen = false; this.querySelector<HTMLButtonElement>('[aria-label="App map"]')?.focus(); }} @map-select=${(e: CustomEvent<string>) => (this.mapSelected = e.detail)} @map-open=${(e: CustomEvent<string>) => this.visitDestination(e.detail)}></app-map>` : nothing}
+      ${onMap
+        ? html`<app-map
+            .architecture=${this.architecture}
+            .titles=${Object.fromEntries(made.filter((s) => s.destination && s.title).map((s) => [s.destination!, s.title]))}
+            .icons=${Object.fromEntries(made.filter((s) => s.destination && s.archetype).map((s) => [s.destination!, screenIcon(s.archetype)]))}
+            .current=${here?.destination ?? ""}
+            .selected=${this.mapSelected}
+            .made=${made.filter((s) => !s.running && s.messages.length).flatMap((s) => (s.destination ? [s.destination] : []))}
+            .working=${made.filter((s) => s.running).flatMap((s) => (s.destination ? [s.destination] : []))}
+            .busy=${this.reading || Boolean(this.resolving)}
+            .error=${this.architectureError}
+            .issues=${here?.routes?.findings ?? []}
+            @map-select=${(e: CustomEvent<string>) => (this.mapSelected = e.detail)}
+            @map-open=${(e: CustomEvent<string>) => { this.onMap = false; this.visitDestination(e.detail); }}
+          ></app-map>`
+        : nothing}
       </div>
     </section>`;
   }

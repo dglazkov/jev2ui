@@ -1,57 +1,241 @@
-import { LitElement, css, html, nothing, svg } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import type { Architecture } from "../shared/architecture.js";
+// The map of the app, as a view of the stage. What the planner makes is a graph, not a tree: the anchor map is
+// already a cycle (server/ia/live.ts), every main section has a return to home (server/ia/bootstrap.ts), and
+// identity resolution exists so several entry points reach one destination (server/ia/identity.ts). So destinations
+// sit in columns by their distance from home, every edge is drawn, and the selected destination's own edges are the
+// ones made legible. Selecting a destination only inspects it; opening it is a separate, explicit action.
 
-/** A view of the canonical map. Selecting a dot only inspects; opening is a separate, explicit action. */
+import { LitElement, html, nothing, svg } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
+import { architectureIcon, type Architecture } from "../shared/architecture.js";
+import type { AppMap, MapAction } from "../shared/ia-graph.js";
+import { icon } from "./chrome.js";
+
+interface Wire {
+  d: string;
+  kind: string;
+}
+
+/** Distance from home along the links a person follows forward; a return never shortens the way. */
+function columnsOf(map: AppMap): string[][] {
+  const links = (id: string, kinds: string[]) =>
+    (map.nodes.find((n) => n.id === id)?.actions ?? []).filter((a) => a.target && kinds.includes(a.kind)).map((a) => a.target!);
+  const depth = new Map<string, number>([[map.home, 0]]);
+  for (let frontier = [map.home], d = 1; frontier.length; d++) {
+    const next: string[] = [];
+    for (const id of frontier) for (const target of links(id, ["navigate"])) if (!depth.has(target)) { depth.set(target, d); next.push(target); }
+    frontier = next;
+  }
+  // A destination only a return reaches still has somewhere to sit: one column past whatever reaches it.
+  for (let settling = true; settling; ) {
+    settling = false;
+    for (const node of map.nodes) {
+      if (depth.has(node.id)) continue;
+      const reaching = map.nodes.filter((n) => n.actions.some((a) => a.target === node.id)).flatMap((n) => { const at = depth.get(n.id); return at === undefined ? [] : [at]; });
+      if (reaching.length) { depth.set(node.id, Math.min(...reaching) + 1); settling = true; }
+    }
+    if (!settling) for (const node of map.nodes) if (!depth.has(node.id)) depth.set(node.id, 0);
+  }
+  const columns: string[][] = [];
+  for (const node of map.nodes) (columns[depth.get(node.id)!] ??= []).push(node.id);
+  // Within a column, follow the destinations that lead here, so that edges cross as little as the graph allows.
+  const declared = new Map(map.nodes.map((node, i) => [node.id, i]));
+  const rows = new Map<string, number>();
+  for (const ids of columns) {
+    if (ids === columns[0]) { ids.forEach((id, row) => rows.set(id, row)); continue; }
+    const pull = (id: string) => {
+      const above = map.nodes.filter((n) => n.actions.some((a) => a.target === id && a.kind === "navigate")).flatMap((n) => { const row = rows.get(n.id); return row === undefined ? [] : [row]; });
+      return above.length ? above.reduce((sum, row) => sum + row, 0) / above.length : Number.MAX_SAFE_INTEGER;
+    };
+    ids.sort((a, b) => pull(a) - pull(b) || declared.get(a)! - declared.get(b)!);
+    ids.forEach((id, row) => rows.set(id, row));
+  }
+  return columns.filter((ids) => ids?.length);
+}
+
 @customElement("app-map")
-export class AppMapDrawer extends LitElement {
+export class AppMapView extends LitElement {
   @property({ attribute: false }) architecture?: Architecture;
   @property({ attribute: false }) made: string[] = [];
   @property({ attribute: false }) working: string[] = [];
   @property({ attribute: false }) titles: Record<string, string> = {};
+  /** What a made screen turned out to be, which says more than the responsibility the map planned. */
+  @property({ attribute: false }) icons: Record<string, string> = {};
   @property() current = "first";
   @property() selected = "first";
   @property() error = "";
   @property({ attribute: false }) issues: string[] = [];
   @property({ type: Boolean }) busy = false;
-  private slots = new Map<string, number>();
-  private seed?: Architecture["seed"];
-  private send(type: string, destination?: string) { this.dispatchEvent(new CustomEvent(type, { detail: destination, bubbles: true, composed: true })); }
-  static styles = css`
-    :host { display:flex; flex-direction:column; width:284px; height:100%; background:var(--paper); color:var(--ink); border-left:1px solid var(--line); box-sizing:border-box; font:13px/1.45 system-ui,sans-serif; }
-    * {box-sizing:border-box} button { font:inherit; color:inherit; cursor:pointer } button:focus-visible {outline:2px solid var(--accent); outline-offset:3px}
-    header {display:flex; align-items:center; padding:16px 18px 10px; gap:8px} h3 {font-size:14px; margin:0; flex:1} .close {border:0; background:none; font-size:22px; line-height:24px; width:28px; border-radius:6px} .close:hover {background:var(--wash)}
-    .summary {margin:0 18px 12px;color:var(--muted);font-size:12px} .scroll {overflow:auto; min-height:0; flex:1} .map-viewport {max-height:min(42vh,330px);overflow:auto} .field {position:relative; margin:0 12px; background:radial-gradient(var(--dots) 1px,transparent 1px);background-size:14px 14px; border-radius:12px}
-    svg {position:absolute; width:100%; height:100%; overflow:visible} path {fill:none;stroke:var(--line);stroke-width:1.5} path.active {stroke:var(--accent);opacity:.5}
-    .node {position:absolute; width:112px; height:65px; border:0; background:none; display:flex; flex-direction:column; align-items:center;gap:7px; border-radius:10px; animation:appear .18s ease-out; padding:8px 2px 4px; transition:background .15s}
-    .node:hover,.node[aria-pressed="true"] {background:var(--accent-wash)} .node span {max-width:108px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:500}
-    .dot {display:block; width:13px;height:13px;border:1.5px solid var(--faint);border-radius:50%;background:var(--paper)} .made .dot {background:var(--muted);border-color:var(--muted)} .current .dot {background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-wash)} .working .dot {animation:pulse 1s ease-in-out infinite}
-    .legend {display:flex;gap:16px;color:var(--muted);font-size:11px;padding:12px 18px 16px}.legend span{display:flex;gap:6px;align-items:center}.legend .dot{width:8px;height:8px}
-    .detail {padding:16px 18px;border-top:1px solid var(--line);background:var(--wash)} .eyebrow {color:var(--muted);font-size:11px;display:flex;justify-content:space-between} h4{font-size:17px;margin:8px 0} p{margin:8px 0;color:var(--muted)} .open{width:100%;margin:12px 0 4px;padding:9px;border:1px solid var(--accent);border-radius:8px;background:var(--accent);color:var(--paper);font-weight:600}.open:disabled{opacity:.45;cursor:default}
-    ul{list-style:none;margin:12px 0 0;padding:0}li{margin:7px 0;font-size:12px}.link{border:0;background:none;padding:2px 0;text-align:left;color:var(--accent)}small{color:var(--muted)} details{padding:12px 18px;border-top:1px solid var(--line)}summary{cursor:pointer;font-size:12px;color:var(--muted)}.error{padding:12px 18px;color:var(--warn)}.loading{padding:28px 18px}.loading b{display:block;color:var(--ink);margin-bottom:8px}
-    @keyframes appear{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}} @keyframes pulse{50%{opacity:.25}} @media(prefers-reduced-motion:reduce){.node,.working .dot{animation:none}}
-  `;
+  /** Drawn from where the cards actually are, so an edge cannot come adrift from its destination. */
+  @state() private wires: Wire[] = [];
+  private drawn = "";
+  private watching?: ResizeObserver;
+
+  // Light DOM: the map is made of the same chrome as the rest of the tool (web/app.css), not a second design.
+  protected createRenderRoot() {
+    return this;
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    void document.fonts?.ready.then(() => this.measure());
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.watching?.disconnect();
+  }
+
+  private send(type: string, destination: string) {
+    this.dispatchEvent(new CustomEvent(type, { detail: destination, bubbles: true, composed: true }));
+  }
+
+  private called(id: string) {
+    return this.titles[id] || this.architecture?.map.nodes.find((n) => n.id === id)?.label || id;
+  }
+
+  private glyph(id: string) {
+    const state = this.architecture!;
+    return id === state.map.home ? "home" : this.icons[id] ?? architectureIcon(state, id);
+  }
+
+  /** What a destination is right now, in the same words the conversation uses. A card has room for one mark. */
+  private standing(id: string, full = false) {
+    const state = this.architecture!;
+    const marks = [id === state.map.home ? "home" : "", id === "first" ? "first screen" : "", state.navigation?.includes(id) ? "nav" : ""].filter(Boolean);
+    const reached = state.map.nodes.filter((n) => n.actions.some((a) => a.target === id && a.kind === "navigate")).length;
+    if (reached > 1) marks.push(`from ${reached}`);
+    const made = id === this.current ? (full ? "Showing on canvas" : "Showing") : this.working.includes(id) ? "Generating…" : this.made.includes(id) ? "Made" : "Planned";
+    return [made, ...(full ? marks : marks.slice(0, 1))].join(" · ");
+  }
+
+  protected updated() {
+    this.measure();
+    const content = this.querySelector<HTMLElement>(".mapcontent");
+    if (!content) return;
+    this.watching ??= new ResizeObserver(() => this.measure());
+    this.watching.disconnect();
+    this.watching.observe(content);
+  }
+
+  private measure() {
+    const state = this.architecture, content = this.querySelector<HTMLElement>(".mapcontent");
+    if (!state || !content) return;
+    const origin = content.getBoundingClientRect();
+    const box = (id: string) => this.querySelector<HTMLElement>(`[data-node="${CSS.escape(id)}"]`)?.getBoundingClientRect();
+    const wires: Wire[] = [];
+    for (const node of state.map.nodes) {
+      for (const action of node.actions) {
+        if (!action.target || !["navigate", "back"].includes(action.kind)) continue;
+        const from = box(node.id), to = box(action.target);
+        if (!from || !to) continue;
+        const back = action.kind === "back";
+        const touches = action.target === this.selected || node.id === this.selected;
+        // A return is never an entry point: it stands out when it touches the selection, but keeps its own quiet line.
+        const kind = back ? (touches ? "back lit" : "back") : touches ? (action.target === this.selected ? "in" : "out") : "";
+        const ay = from.top + from.height / 2 - origin.top, by = to.top + to.height / 2 - origin.top;
+        if (Math.abs(from.left - to.left) < 4) {
+          // Two destinations the same distance from home: a detail and the screen that opens it.
+          const x = from.right - origin.left, bulge = 34 + Math.abs(ay - by) / 5;
+          wires.push({ kind, d: `M ${x} ${ay} C ${x + bulge} ${ay}, ${x + bulge} ${by}, ${x} ${by}` });
+          continue;
+        }
+        const x1 = (back ? from.left : from.right) - origin.left, x2 = (back ? to.right : to.left) - origin.left;
+        const y1 = ay + (back ? 10 : -3), y2 = by + (back ? 10 : -3);
+        const bend = Math.max(24, Math.abs(x2 - x1) / 2);
+        wires.push({ kind, d: back ? `M ${x1} ${y1} C ${x1 - bend} ${y1}, ${x2 + bend} ${y2}, ${x2} ${y2}` : `M ${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}` });
+      }
+    }
+    // Measuring happens after a paint, so only a real change is allowed to ask for another one.
+    const drawn = JSON.stringify(wires);
+    if (drawn === this.drawn) return;
+    this.drawn = drawn;
+    this.wires = wires;
+  }
+
   render() {
     const state = this.architecture;
-    if (this.seed?.brief !== state?.seed.brief) { this.slots.clear(); this.seed = state?.seed; }
-    const nodes = state?.map.nodes ?? [];
-    for (const node of nodes) if (!this.slots.has(node.id)) this.slots.set(node.id, this.slots.size);
-    const position = (id: string) => { const slot = this.slots.get(id) ?? 0; return { x: slot % 2 ? 194 : 64, y: Math.floor(slot / 2) * 78 + 26 }; };
-    const height = Math.max(160, Math.ceil(this.slots.size / 2) * 78 + 12);
-    const title = (id: string) => this.titles[id] || nodes.find((n) => n.id === id)?.label || id;
-    const chosen = nodes.find((n) => n.id === this.selected) ?? nodes.find((n) => n.id === this.current) ?? nodes[0];
-    const issues = [...(state?.findings.map((f) => f.detail) ?? []), ...this.issues];
-    return html`<header><h3>App map</h3><button class="close" aria-label="Collapse app map" @click=${() => this.send("map-close")}>›</button></header>
-      <p class="summary" aria-live="polite">${state ? `${this.made.length} of ${nodes.length} screens made · ${(state.status === "reviewing" && !state.catalog) ? "Reviewing journeys…" : "Revision " + state.revision}` : this.error ? "App map unavailable" : "Planning your app…"}</p>
-      <div class="scroll">${state ? html`<div class="map-viewport"><div class="field" style="height:${height}px">
-        <svg viewBox="0 0 260 ${height}" aria-hidden="true">${nodes.flatMap((node) => node.actions.filter((a) => a.target && a.kind !== "back").map((a) => { const from = position(node.id), to = position(a.target!); return svg`<path class=${node.id === chosen?.id || a.target === chosen?.id ? "active" : ""} d="M ${from.x} ${from.y} C ${from.x} ${(from.y + to.y) / 2}, ${to.x} ${(from.y + to.y) / 2}, ${to.x} ${to.y}"/>`; }))}</svg>
-        ${nodes.map((node) => { const at = position(node.id); return html`<button class="node ${this.made.includes(node.id) ? "made" : ""} ${node.id === this.current ? "current" : ""} ${this.working.includes(node.id) ? "working" : ""}" style="left:${at.x - 56}px;top:${at.y - 15}px" title=${title(node.id)} aria-pressed=${node.id === chosen?.id} aria-label=${`${title(node.id)}, ${node.id === this.current ? "current screen" : this.made.includes(node.id) ? "made" : "planned"}`} @click=${() => this.send("map-select", node.id)}><i class="dot"></i><span>${title(node.id)}</span></button>`; })}
-      </div></div><div class="legend"><span><i class="dot"></i>Planned</span><span class="made"><i class="dot"></i>Made</span><span class="current"><i class="dot"></i>Showing</span></div>
-      ${chosen ? html`<section class="detail"><div class="eyebrow"><span>${this.made.includes(chosen.id) ? "Made screen" : "Planned screen"}</span>${chosen.id === this.current ? html`<span>Showing now</span>` : nothing}</div><h4>${title(chosen.id)}</h4><p>${chosen.id === "first" ? state.seed.brief : chosen.purpose.split(". ")[0] + (chosen.purpose.includes(". ") ? "." : "")}</p>
-      <button class="open" ?disabled=${this.busy || (state.status === "reviewing" && !state.catalog) || chosen.id === this.current} @click=${() => this.send("map-open", chosen.id)}>${chosen.id === this.current ? "Showing on canvas" : this.working.includes(chosen.id) ? "View progress" : this.made.includes(chosen.id) ? "Open screen" : "Generate screen"}</button>
-      <ul>${chosen.actions.filter((a) => a.kind !== "remove" && (!state.catalog || a.target)).map((a) => html`<li>${a.target ? html`<button class="link" @click=${() => this.send("map-select", a.target!)}>${title(a.target!)} →</button>` : html`${a.label} <small>· ${a.kind === "complete" ? "completes here" : "stays here"}</small>`}</li>`)}</ul></section>` : nothing}
-      ${issues.length ? html`<details><summary>${issues.length} map ${issues.length === 1 ? "note" : "notes"}</summary>${issues.map((issue) => html`<p>${issue}</p>`)}</details>` : nothing}
-      ` : html`<p class="loading"><b>${this.error ? "Map planning did not finish" : "Finding the shape of your app"}</b>${this.error ? "Your generated screen is still on the canvas." : "Destinations appear here as the plan arrives."}</p>`}
-      ${this.error ? html`<p class="error" role="status">${this.error}</p>` : nothing}</div>`;
+    if (!state) {
+      return html`<div class="mapboard">
+        <p class="empty">
+          ${icon("account_tree")}<b>${this.error ? "Map planning did not finish" : "Finding the shape of your app"}</b>
+          ${this.error ? "Your generated screen is still on the canvas." : "Destinations appear here as the plan arrives."}
+          ${this.error ? html`<span class="wrong" role="status">${this.error}</span>` : nothing}
+        </p>
+      </div>`;
+    }
+    const nodes = state.map.nodes;
+    const chosen = nodes.find((n) => n.id === this.selected) ?? nodes.find((n) => n.id === this.current) ?? nodes[0]!;
+    const reviewing = state.status === "reviewing" && !state.catalog;
+    const into = nodes.flatMap((node) => node.actions.filter((a) => a.target === chosen.id && a.kind === "navigate").map((a) => ({ node, action: a })));
+    const notes = [...state.findings.map((f) => f.detail), ...this.issues];
+    return html`<div class="mapboard">
+      <div class="mapfield">
+        <div class="mapcontent">
+          <svg class="wires" aria-hidden="true">${this.wires.map((wire) => svg`<path class=${wire.kind} d=${wire.d}></path>`)}</svg>
+          <div class="layers">
+            ${columnsOf(state.map).map((ids) => html`<div>
+              ${ids.map((id) => html`<button class="mapcard ${this.made.includes(id) ? "made" : "planned"} ${this.working.includes(id) ? "working" : ""}"
+                data-node=${id} aria-current=${id === this.current} aria-pressed=${id === chosen.id}
+                aria-label=${`${this.called(id)}: ${this.standing(id, true)}`} @click=${() => this.send("map-select", id)}>
+                <span class="glyph">${icon(this.glyph(id), "s")}</span>
+                <span class="words"><b>${this.called(id)}</b><small>${this.standing(id)}</small></span>
+              </button>`)}
+            </div>`)}
+          </div>
+        </div>
+      </div>
+      ${this.wires.length
+        ? html`<div class="maplegend" aria-hidden="true">
+            <span><i class="in"></i>Leads here</span><span><i class="out"></i>Leads on</span>
+            <span><i class="back"></i>Returns</span><span><i></i>Other links</span>
+          </div>`
+        : nothing}
+      <aside class="mapside">
+        <header class="map-head"><h2>${this.called(chosen.id)}</h2></header>
+        <div class="mapscroll">
+          <p class="standing">${this.standing(chosen.id, true)}</p>
+          <p class="purpose">${chosen.id === "first" ? state.seed.brief : chosen.purpose.split(". ")[0] + (chosen.purpose.includes(". ") ? "." : "")}</p>
+          <button class="btn ${chosen.id === this.current ? "" : "primary"} open" ?disabled=${this.busy || reviewing || chosen.id === this.current} @click=${() => this.send("map-open", chosen.id)}>
+            ${icon("open_in_full", "xs")}${chosen.id === this.current ? "Showing on canvas" : this.working.includes(chosen.id) ? "View progress" : this.made.includes(chosen.id) ? "Open screen" : "Generate screen"}
+          </button>
+          ${into.length
+            ? html`<h3 class="groupname">Reached from <span>${into.length === 1 ? "1 screen" : `${into.length} screens`}</span></h3>
+                <ul class="edgelist">
+                  ${into.map(({ node, action }) => html`<li><button class="edge" @click=${() => this.send("map-select", node.id)}>
+                    ${icon("arrow_back", "xs")}<span class="words"><b>${this.called(node.id)}</b><small>“${action.label}”</small></span>
+                  </button></li>`)}
+                </ul>`
+            : nothing}
+          ${this.outward(chosen.actions, reviewing, state)}
+        </div>
+        <footer class="mapfoot">
+          <p aria-live="polite">${this.made.length} of ${nodes.length} screens made · ${reviewing ? "Reviewing journeys…" : `Revision ${state.revision}`}</p>
+          ${notes.length ? html`<details><summary>${notes.length} map ${notes.length === 1 ? "note" : "notes"}</summary>${notes.map((note) => html`<p>${note}</p>`)}</details>` : nothing}
+          ${this.error ? html`<p class="wrong" role="status">${this.error}</p>` : nothing}
+        </footer>
+      </aside>
+    </div>`;
+  }
+
+  /** Everything a destination's actions do: open another destination, return, stay, or finish here. */
+  private outward(actions: MapAction[], reviewing: boolean, state: Architecture) {
+    const shown = actions.filter((a) => a.kind !== "remove" && (!state.catalog || a.target || a.kind !== "navigate"));
+    if (!shown.length) return nothing;
+    return html`<h3 class="groupname">Leads to</h3>
+      <ul class="edgelist">
+        ${shown.map((action) => {
+          if (!action.target) {
+            return html`<li><span class="edge quiet">
+              ${icon(action.kind === "complete" ? "check_circle" : "radio_button_unchecked", "xs")}
+              <span class="words"><b>${action.label}</b><small>${action.kind === "complete" ? "Completes here" : "Stays here"}</small></span>
+            </span></li>`;
+          }
+          const back = action.kind === "back";
+          return html`<li><button class="edge ${back ? "quiet" : ""}" ?disabled=${reviewing} @click=${() => this.send("map-select", action.target!)}>
+            ${icon(back ? "undo" : "arrow_forward", "xs")}
+            <span class="words"><b>${back ? `Back to ${this.called(action.target)}` : this.called(action.target)}</b><small>${back ? "Returns" : `${this.made.includes(action.target) ? "Made" : "Planned"} · “${action.label}”`}</small></span>
+          </button></li>`;
+        })}
+      </ul>`;
   }
 }

@@ -1592,6 +1592,11 @@ input.runs:focus {
     padding: 0 9px;
   }
 
+  /* The stage's two choices keep their symbols; there is no room for their words. */
+  .stage-pick span:not(.i) {
+    display: none;
+  }
+
   .runs .meter {
     display: none;
   }
@@ -1632,10 +1637,409 @@ input.runs:focus {
   }
 }
 
-/* One right drawer for every preview device. The existing fitter owns the remaining canvas. */
-.stage-body { display:flex; flex:1; min-height:0; min-width:0; position:relative; container-type:inline-size; }
-.stage-body .holder { min-width:0; }
-.stage-body app-map { flex:0 0 284px; }
+/* The preview and the map take the same room, one at a time. The existing fitter owns the canvas. */
+.stage-body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  container-type: inline-size;
+}
+
+.stage-body .holder,
+.stage-body app-map {
+  min-width: 0;
+}
+
+/* --- The map of the app (app-map.ts) ------------------------------------------------------------ */
+
+/* What the planner makes is a graph: columns are distance from home, and one destination can be
+   reached from several. Every edge is drawn; the selected destination's own are the legible ones. */
+app-map {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.mapboard {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.mapfield {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+}
+
+/* The graph sits in the middle of whatever room the stage has, and scrolls when it outgrows it. */
+.mapcontent {
+  position: relative;
+  display: flex;
+  align-items: center;
+  /* `safe`, so that a graph too big for the stage still starts at its beginning. */
+  justify-content: safe center;
+  min-width: min-content;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.layers {
+  display: flex;
+  gap: 58px;
+  padding: 26px 30px;
+}
+
+.layers > div {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: center;
+}
+
+.mapcard {
+  position: relative;
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  width: 196px;
+  padding: 9px 11px;
+  text-align: left;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-m);
+  box-shadow: 0 1px 2px rgb(29 36 51 / 0.06);
+}
+
+.mapcard:hover {
+  border-color: var(--faint);
+}
+
+.mapcard.planned {
+  background: color-mix(in srgb, var(--paper) 55%, transparent);
+  border-style: dashed;
+}
+
+.mapcard[aria-current="true"] {
+  border-style: solid;
+  border-color: var(--ink);
+}
+
+.mapcard[aria-pressed="true"] {
+  border-style: solid;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-wash);
+}
+
+.mapcard .glyph {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: var(--muted);
+  background: var(--wash);
+  border-radius: 8px;
+}
+
+.mapcard[aria-current="true"] .glyph,
+.mapcard.working .glyph {
+  color: var(--accent);
+  background: var(--accent-wash);
+}
+
+.mapcard.working .glyph {
+  animation: breathe 0.8s ease-in-out infinite alternate;
+}
+
+.mapcard .words {
+  min-width: 0;
+}
+
+.mapcard b,
+.mapcard small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mapcard b {
+  font-size: 13px;
+}
+
+.mapcard.planned b {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.mapcard small {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.wires {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.wires path {
+  fill: none;
+  stroke: var(--faint);
+  stroke-width: 1.5;
+  opacity: 0.22;
+}
+
+.wires path.back {
+  stroke-dasharray: 3 4;
+}
+
+.wires path.lit {
+  opacity: 0.8;
+}
+
+.wires path.in {
+  stroke: var(--accent);
+  stroke-width: 2;
+  opacity: 1;
+}
+
+.wires path.out {
+  stroke: var(--ink);
+  opacity: 0.85;
+}
+
+.maplegend {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  display: flex;
+  gap: 14px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--paper) 80%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+}
+
+.maplegend span {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.maplegend i {
+  display: block;
+  width: 16px;
+  height: 0;
+  border-top: 1.5px solid var(--faint);
+  opacity: 0.35;
+}
+
+.maplegend i.in {
+  border-top-width: 2px;
+  border-color: var(--accent);
+  opacity: 1;
+}
+
+.maplegend i.out {
+  border-color: var(--ink);
+  opacity: 0.85;
+}
+
+.maplegend i.back {
+  border-top-style: dashed;
+}
+
+/* --- What is known about the destination that is selected ---------------------------------------- */
+
+/* A card over the canvas, made of what every other floating surface is made of (chrome.css, .pop).
+   It stays a flex item, so the graph is centred in the room that is left rather than under it. */
+.mapside {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-self: flex-start;
+  width: 290px;
+  max-height: calc(100% - 28px);
+  margin: 14px 14px 14px 0;
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-l);
+  box-shadow: var(--lift);
+}
+
+.mapside .map-head {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  align-items: center;
+  padding: 13px 14px 3px;
+}
+
+.mapside h2 {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mapscroll {
+  flex: 1;
+  min-height: 0;
+  padding: 0 14px 14px;
+  overflow-y: auto;
+}
+
+.mapscroll .standing {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.mapscroll .purpose {
+  margin: 6px 0 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mapscroll .open {
+  justify-content: center;
+  width: 100%;
+  padding: 0 12px;
+}
+
+.groupname {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  margin: 18px 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.groupname span {
+  font-weight: 400;
+  color: var(--faint);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.edgelist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.edge {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 6px 8px;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: var(--r-s);
+}
+
+button.edge:hover:not(:disabled) {
+  background: var(--wash);
+}
+
+.edge .i {
+  color: var(--faint);
+}
+
+.edge .words {
+  min-width: 0;
+}
+
+.edge b,
+.edge small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edge b {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.edge.quiet b {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.edge small {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.edge:disabled {
+  opacity: 0.55;
+}
+
+.mapfoot {
+  flex: none;
+  padding: 10px 14px 12px;
+  background: var(--wash);
+  border-top: 1px solid var(--line);
+}
+
+.mapfoot p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mapfoot summary {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.mapfoot details p {
+  margin-top: 6px;
+}
+
+.mapfoot .wrong {
+  margin-top: 6px;
+  color: var(--warn);
+}
+
+app-map .empty .wrong {
+  color: var(--warn);
+}
+
+/* A narrow stage keeps the graph whole and lets what is known about a destination sit over it. */
 @container (max-width: 650px) {
-  .stage-body app-map { position:absolute; right:0; top:0; bottom:0; z-index:4; width:min(284px, 100%); box-shadow:var(--lift); }
+  .mapside {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 4;
+    width: min(290px, calc(100% - 28px));
+    max-height: calc(100% - 28px);
+    margin: 0;
+  }
+
+  .maplegend {
+    display: none;
+  }
 }
