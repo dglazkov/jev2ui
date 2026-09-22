@@ -6,7 +6,7 @@ import type { ScreenPlan } from "../mock/plan.js";
 import { answersTo, random } from "./fixtures.js";
 import { idOf, parseGrammar, walk, type Field, type Grammar, type Node } from "./format.js";
 import { loadGrammar } from "./load.js";
-import { checkBindings, partsOf, schemaOf, treeOf, type Look } from "./make.js";
+import { checkBindings, frameOf, partsOf, schemaOf, treeOf, type Look } from "./make.js";
 import { KIT_PATTERNS } from "./patterns.js";
 import { JEV, questionsOf, readGrammar, type Reading } from "./read.js";
 import { planOf } from "./screen-plan.js";
@@ -95,6 +95,34 @@ test("what is drawn from a file is a tree the kit accepts, whatever was answered
         for (const ref of kitRefs({ component, ...props })) assert.ok(ids.has(ref), `${file}: ${id} points at "${ref}", which is not there`);
       }
     }
+  }
+});
+
+test("every idiom draws the grammar it reads: its catalog binds, and the frame it makes of any answers is a tree the kit accepts", () => {
+  for (const idiom of Object.values(IDIOMS)) {
+    const { grammar, catalog } = idiom.graph;
+    assert.deepEqual(checkBindings(grammar, catalog).errors, [], idiom.id);
+    const questions = questionsOf(grammar);
+    const rng = random(11);
+    const seen = new Set<string>();
+    for (let i = 0; i < 300; i++) {
+      const reading = readGrammar(grammar, answersTo(questions, rng), JEV);
+      const look = { contained: rng() < 0.5, icons: rng() < 0.5, symbol: "image" };
+      const parts = partsOf(grammar, reading).map((node) => treeOf(idiom.patterns, grammar, node, reading, look));
+      const frame = frameOf(idiom.patterns, grammar, reading, look, parts.map((tree, p) => ({ name: partsOf(grammar, reading)[p].name, root: tree[0].id })));
+      assert.ok(frame, `${idiom.id}: no frame`);
+      const components = [...frame, ...parts.flat()];
+      const ids = new Set(components.map((c) => c.id));
+      assert.equal(ids.size, components.length, `${idiom.id}: two components with one id`);
+      for (const { id, component, ...props } of components) {
+        const parsed = KIT[component].safeParse(props);
+        assert.ok(parsed.success, `${idiom.id}: ${id} (${component}) ${parsed.success ? "" : JSON.stringify(parsed.error.issues[0])}`);
+        for (const ref of kitRefs({ component, ...props })) assert.ok(ids.has(ref), `${idiom.id}: ${id} points at "${ref}", which is not there`);
+      }
+      seen.add(frame.map((c) => c.id).join(","));
+    }
+    // Every way the frame can come out was drawn: a dialog, a main screen, a pushed one, a person, an outcome.
+    assert.ok(seen.size >= 5, `${idiom.id}: only ${seen.size} shapes of frame`);
   }
 });
 

@@ -11,7 +11,8 @@
 // offered and the rest go below, that a grid is too tight for a second line.
 //
 // grammar/kit.md is written out from the declarations below, so that a graph can be
-// checked against the catalog by someone who has only the files.
+// checked against the catalog by someone who has only the files. Another idiom's
+// catalog (patterns-ios.ts) takes these patterns and draws the frame its own way.
 
 import type { KitComponent } from "../../shared/kit.js";
 import { parseGrammar, type Field, type Grammar } from "./format.js";
@@ -19,11 +20,11 @@ import { SOURCES } from "./fill.js";
 import type { Bound, Catalog, DrawnPart, Pattern } from "./make.js";
 
 type C = KitComponent;
-const at = (path: string) => ({ path });
+export const at = (path: string) => ({ path });
 /** A slot nobody filled is a prop that is not there. */
-const bind = (path: string | undefined) => (path === undefined ? undefined : at(path));
-const made = (component: Record<string, unknown>) => Object.fromEntries(Object.entries(component).filter(([, value]) => value !== undefined)) as C;
-const slots = (text: string): Field[] => parseGrammar(`## slots\n${text}`).nodes[0].fields;
+export const bind = (path: string | undefined) => (path === undefined ? undefined : at(path));
+export const made = (component: Record<string, unknown>) => Object.fromEntries(Object.entries(component).filter(([, value]) => value !== undefined)) as C;
+export const slots = (text: string): Field[] => parseGrammar(`## slots\n${text}`).nodes[0].fields;
 const need = (found: ReturnType<Bound["each"]>, pattern: string, slot: string) => {
   if (!found) throw new Error(`"${pattern}" cannot be drawn without "${slot}"`);
   return found;
@@ -34,9 +35,10 @@ const LEADINGS = ["avatar", "thumbnail", "icon", "number", "none"] as const;
 const TRAILINGS = ["chevron", "button", "switch", "checkbox", "none"] as const;
 const RATIOS = ["3:1", "16:9", "1:1", "3:4"] as const;
 
-const OPENINGS = ["title", "person", "outcome"] as const;
-const LEADINGS_OF_BAR = ["back", "close", "none"] as const;
-const YES_NO = ["yes", "no"] as const;
+/** The frame's knobs take these, whichever catalog draws the frame: they are the contract a grammar is written to. */
+export const OPENINGS = ["title", "person", "outcome"] as const;
+export const LEADINGS_OF_BAR = ["back", "close", "none"] as const;
+export const YES_NO = ["yes", "no"] as const;
 
 const PATTERNS: Pattern[] = [
   {
@@ -362,16 +364,23 @@ const PATTERNS: Pattern[] = [
 
 export const KIT_PATTERNS: Catalog = Object.fromEntries(PATTERNS.map((pattern) => [pattern.name, pattern]));
 
-/** The catalog as a file. A pattern is a heading: what it is for, its slots, and under it each knob with what it can be set to. */
+/** The kit's catalog as a file. */
 export function kitCatalog(): Grammar {
+  return catalogOf(
+    "kit",
+    "What the kit can draw, for a graph to name: a part says `→ collection` after its heading, its fields say `as headline`, and a question under it says `→ layout`. Each pattern below is what it is for, the slots a graph's fields can fill, and the knobs a graph's answers can turn. Written out from src/server/grammar/patterns.ts by `npm run grammar:export`.",
+    KIT_PATTERNS,
+  );
+}
+
+/** A catalog as a file. A pattern is a heading: what it is for, its slots, and under it each knob with what it can be set to; then the sources. */
+export function catalogOf(name: string, intro: string, catalog: Catalog): Grammar {
   return {
-    name: "kit",
-    prose: [
-      "What the kit can draw, for a graph to name: a part says `→ collection` after its heading, its fields say `as headline`, and a question under it says `→ layout`. Each pattern below is what it is for, the slots a graph's fields can fill, and the knobs a graph's answers can turn. Written out from src/server/grammar/patterns.ts by `npm run grammar:export`.",
-    ],
+    name,
+    prose: [intro],
     options: [],
     nodes: [
-      ...PATTERNS.map((pattern) => ({
+      ...Object.values(catalog).map((pattern) => ({
       name: pattern.name,
       block: false,
       traits: [],

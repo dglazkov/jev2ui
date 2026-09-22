@@ -1,0 +1,363 @@
+/*
+ * The iOS idiom's looks, layered over kit.css: the same components, painted the way
+ * the Human Interface Guidelines paint them. What the idiom fixes is said here once,
+ * as the `--k-*` variables the kit reads (type, radii, edges, spacing); what the
+ * design decides (hue, light or dark, greys, whether there are cards or pictures)
+ * still comes from the DESIGN.md through src/server/theme.ts. The frame it paints
+ * is the one src/server/grammar/patterns-ios.ts draws: a navigation bar, a large
+ * title on a main screen, a tab bar, an alert.
+ *
+ * `body` is for a baked component's frame (sandbox.ts), which has no kit-surface.
+ */
+
+kit-surface,
+body {
+  --k-display-font: -apple-system, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --k-headline-font: var(--k-display-font);
+  --k-title-font: -apple-system, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --k-body-font: var(--k-title-font);
+  --k-label-font: var(--k-title-font);
+  --k-caption-font: var(--k-title-font);
+  /* The type scale: large title, title 1, headline, body, footnote, caption. */
+  --k-display-size: 34px;
+  --k-display-weight: 700;
+  --k-display-line: 1.2;
+  --k-display-track: 0.4px;
+  --k-headline-size: 28px;
+  --k-headline-weight: 700;
+  --k-headline-line: 1.2;
+  --k-headline-track: 0.4px;
+  --k-title-size: 17px;
+  --k-title-weight: 600;
+  --k-title-line: 1.3;
+  --k-title-track: -0.4px;
+  --k-body-size: 17px;
+  --k-body-weight: 400;
+  --k-body-line: 1.3;
+  --k-label-size: 13px;
+  --k-label-weight: 400;
+  --k-label-line: 1.4;
+  --k-label-track: -0.1px;
+  --k-label-case: none;
+  --k-caption-size: 12px;
+  --k-caption-weight: 400;
+  /* Continuous corners, no edges drawn: grouped content is told apart by its background. */
+  --k-radius-sm: 6px;
+  --k-radius-md: 10px;
+  --k-radius-card: 10px;
+  --k-radius-button: 12px;
+  --k-radius-chip: 999px;
+  --k-radius-input: 10px;
+  --k-radius-search: 10px;
+  --k-card-border: 0;
+  --k-card-shadow: none;
+  --k-card-pad: 16px;
+  --k-button-border: 0;
+  --k-button-pad: 14px 20px;
+  --k-margin: 16px;
+  --k-space-xs: 4px;
+  --k-space-sm: 8px;
+  --k-space-md: 16px;
+  --k-space-lg: 24px;
+  --k-space-xl: 36px;
+}
+
+body {
+  font-family: var(--k-body-font);
+}
+
+/* --- Frame: navigation bar, large title, tab bar, sticky bar ---------------------- */
+
+.k-appbar {
+  position: relative;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0 8px;
+}
+
+/* The title sits in the middle of the bar whatever leads or acts, as it does on a pushed screen. */
+.k-appbar-title,
+.k-appbar-title.k-large {
+  position: absolute;
+  left: 50%;
+  max-width: 60%;
+  padding: 0;
+  margin: 0;
+  font: 600 17px / 1.2 var(--k-title-font);
+  letter-spacing: -0.4px;
+  white-space: nowrap;
+  translate: -50% 0;
+}
+
+.k-appbar .k-iconbtn {
+  width: auto;
+  min-width: 40px;
+  color: var(--k-ink);
+}
+
+/* A pushed screen leads with a chevron and the word, in the tint. */
+.k-appbar .k-iconbtn[aria-label="back"] {
+  display: inline-flex;
+  gap: 0;
+  align-items: center;
+  padding-right: 8px;
+  font: 400 17px / 1 var(--k-body-font);
+  letter-spacing: -0.4px;
+}
+
+.k-appbar .k-iconbtn[aria-label="back"] .k-icon {
+  font-size: 0;
+}
+
+.k-appbar .k-iconbtn[aria-label="back"] .k-icon::before {
+  font-size: 30px;
+  content: "chevron_left";
+}
+
+.k-appbar .k-iconbtn[aria-label="back"]::after {
+  content: "Back";
+}
+
+/* A sheet closes with a small grey circle, not a bare cross. */
+.k-appbar .k-iconbtn[aria-label="close"] {
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  margin: 7px 4px;
+  font-size: 16px;
+  color: var(--k-muted);
+  background: color-mix(in srgb, var(--k-text) 10%, transparent);
+}
+
+.k-appbar .k-iconbtn[aria-label="close"] .k-icon {
+  font-size: 18px;
+  font-variation-settings: "wght" 600;
+}
+
+/* Whatever acts sits at the trailing edge, even with nothing leading. */
+.k-appbar .k-appbar-title + .k-iconbtn,
+.k-appbar .k-iconbtn:not([aria-label="back"], [aria-label="close"]) {
+  margin-left: auto;
+}
+
+/* The large title of a main screen, under the bar. */
+.k-scroll-inner > .k-stack > .k-display {
+  padding-top: 0;
+  margin-bottom: calc(-1 * var(--k-space-sm));
+  letter-spacing: 0.4px;
+}
+
+.k-navbar {
+  min-height: 50px;
+  padding: 6px 4px 10px;
+  color: var(--k-muted);
+  background: color-mix(in srgb, var(--k-card) 88%, transparent);
+  border-top: 0.5px solid var(--k-border);
+  backdrop-filter: blur(20px);
+}
+
+.k-navbar a {
+  gap: 2px;
+  font: 500 10px / 1.2 var(--k-label-font);
+  letter-spacing: 0;
+}
+
+.k-navpill {
+  width: auto;
+  height: 28px;
+  font-size: 26px;
+  border-radius: 0;
+}
+
+.k-navbar .k-active,
+.k-navbar .k-active .k-navpill {
+  color: var(--k-ink);
+  background: none;
+}
+
+.k-sticky {
+  padding: var(--k-space-sm) var(--k-margin) var(--k-space-md);
+  background: color-mix(in srgb, var(--k-page) 88%, transparent);
+  border-top: 0;
+  backdrop-filter: blur(20px);
+}
+
+/* --- An alert: a small centred card, the title and the message, the buttons stacked under a hairline --- */
+
+.k-dialog .k-scroll {
+  background: rgb(0 0 0 / 0.4);
+}
+
+.k-dialog .k-scroll-inner {
+  max-width: 270px;
+  padding: 0;
+}
+
+.k-dialog .k-card {
+  padding: 0;
+  text-align: center;
+  background: color-mix(in srgb, var(--k-card) 94%, transparent);
+  border-radius: 14px;
+  backdrop-filter: blur(30px);
+}
+
+.k-dialog .k-card > .k-stack {
+  gap: 4px;
+  padding: 20px 16px 0;
+}
+
+.k-dialog .k-headline {
+  font: 600 17px / 1.3 var(--k-title-font);
+  letter-spacing: -0.4px;
+}
+
+.k-dialog .k-prose,
+.k-dialog .k-body {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.k-dialog .k-card > .k-stack > * {
+  align-self: stretch;
+}
+
+/* The buttons: side by side when there are two, each under the hairline and beside the next; the main one bold. */
+.k-dialog .k-cluster {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0;
+  margin: 16px -16px 0;
+  border-top: 0.5px solid var(--k-border);
+}
+
+.k-dialog .k-cluster > .k-button {
+  min-height: 44px;
+  padding: 0 8px;
+  font: 400 17px / 1.2 var(--k-body-font);
+  letter-spacing: -0.4px;
+  color: var(--k-ink);
+  background: none;
+  border-radius: 0;
+}
+
+.k-dialog .k-cluster > .k-button + .k-button {
+  border-left: 0.5px solid var(--k-border);
+}
+
+.k-dialog .k-cluster > .k-button.k-primary {
+  font-weight: 600;
+}
+
+.k-dialog .k-cluster > .k-button.k-danger {
+  color: var(--k-danger);
+}
+
+/* --- Inset grouped lists ------------------------------------------------------------- */
+
+.k-group-title {
+  margin: 0 0 6px;
+  padding-inline: var(--k-card-pad);
+  font: 400 13px / 1.3 var(--k-label-font);
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.k-group-rows > * + * {
+  margin-left: var(--k-card-pad);
+  padding-left: 0;
+  border-top: 0.5px solid var(--k-border);
+}
+
+.k-setting {
+  min-height: 44px;
+  padding-block: 6px;
+}
+
+.k-chevron {
+  font-size: 22px;
+  color: color-mix(in srgb, var(--k-text) 30%, transparent);
+}
+
+.k-divider {
+  border-top: 0.5px solid var(--k-border);
+}
+
+.k-item {
+  min-height: 44px;
+}
+
+/* --- Controls -------------------------------------------------------------------- */
+
+.k-button {
+  min-height: 50px;
+  font: 600 17px / 1.2 var(--k-label-font);
+  letter-spacing: -0.4px;
+}
+
+.k-button.k-small {
+  min-height: 34px;
+  font-size: 15px;
+}
+
+.k-button.k-text {
+  font-weight: 400;
+}
+
+.k-button .k-icon {
+  font-size: 20px;
+}
+
+/* The system switch: 51 by 31, and green whatever the tint. */
+.k-switch {
+  width: 51px;
+  height: 31px;
+  padding: 2px;
+  background: color-mix(in srgb, var(--k-text) 16%, var(--k-page));
+}
+
+.k-switch i {
+  width: 27px;
+  height: 27px;
+  box-shadow: 0 3px 8px rgb(0 0 0 / 0.15), 0 3px 1px rgb(0 0 0 / 0.06);
+}
+
+.k-switch.k-checked {
+  background: #34c759;
+}
+
+.k-search,
+.k-input {
+  min-height: 36px;
+  padding: 7px 8px;
+  background: color-mix(in srgb, var(--k-text) 12%, transparent);
+  border: 0;
+}
+
+.k-search {
+  gap: 4px;
+  font-size: 17px;
+  letter-spacing: -0.4px;
+}
+
+.k-input.k-long {
+  min-height: 96px;
+}
+
+.k-chip {
+  padding: 6px 12px;
+  font: 400 15px / 1.3 var(--k-label-font);
+  letter-spacing: -0.2px;
+  background: color-mix(in srgb, var(--k-text) 8%, transparent);
+  border: 0;
+}
+
+.k-chip.k-checked {
+  font-weight: 600;
+  color: var(--k-on-accent, #fff);
+  background: var(--k-accent);
+}
+
+.k-numeral {
+  font-family: var(--k-label-font);
+}

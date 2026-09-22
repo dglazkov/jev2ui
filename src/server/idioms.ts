@@ -17,6 +17,7 @@ import { IDIOMS as NAMED, idiomNamed as idOf, type IdiomId } from "../shared/idi
 import { loadGrammar } from "./grammar/load.js";
 import type { Catalog } from "./grammar/make.js";
 import { KIT_PATTERNS } from "./grammar/patterns.js";
+import { IOS_PATTERNS } from "./grammar/patterns-ios.js";
 import { Graph } from "./mock/graph.js";
 
 export interface Idiom {
@@ -34,12 +35,19 @@ export interface Idiom {
 /** Each idiom's files and code. The grammar and the catalog are names in grammar/, or paths under it. */
 const OF: Record<IdiomId, { grammar: string; catalog: string; patterns: Catalog }> = {
   kit: { grammar: "screen.md", catalog: "kit.md", patterns: KIT_PATTERNS },
+  // The same grammar: the frame's knobs are the contract, and iOS's catalog draws them its way.
+  ios: { grammar: "screen.md", catalog: "ios/catalog.md", patterns: IOS_PATTERNS },
 };
 
-/** Every idiom, read once. */
-export const IDIOMS: Record<IdiomId, Idiom> = Object.fromEntries(
-  (Object.keys(OF) as IdiomId[]).map((id) => [id, { id, name: NAMED[id].name, catalogId: NAMED[id].catalogId, graph: new Graph(loadGrammar(OF[id].grammar), loadGrammar(OF[id].catalog)), patterns: OF[id].patterns }]),
-) as Record<IdiomId, Idiom>;
+const read = new Map<IdiomId, Idiom>();
+const idiomOf = (id: IdiomId): Idiom => {
+  let made = read.get(id);
+  if (!made) read.set(id, (made = { id, name: NAMED[id].name, catalogId: NAMED[id].catalogId, graph: new Graph(loadGrammar(OF[id].grammar), loadGrammar(OF[id].catalog)), patterns: OF[id].patterns }));
+  return made;
+};
+
+/** Every idiom, each read once, the first time it is asked for: the files are written out by the same code that draws them (grammar/export.ts). */
+export const IDIOMS: Record<IdiomId, Idiom> = Object.defineProperties({} as Record<IdiomId, Idiom>, Object.fromEntries((Object.keys(OF) as IdiomId[]).map((id) => [id, { get: () => idiomOf(id), enumerable: true }])));
 
 const imagining = new AsyncLocalStorage<Idiom>();
 

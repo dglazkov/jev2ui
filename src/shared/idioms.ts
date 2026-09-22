@@ -2,11 +2,13 @@
 //
 // An idiom is a grammar that reads the description, a catalog that draws what it says and a stylesheet that paints
 // it (docs/grammar.md). The server has the grammar, the catalog and the code behind it (server/idioms.ts); the
-// browser has the stylesheets (web/kit/idioms.ts). What they share is the names, and the id the surface is created
-// with, which says which catalog its components are of.
+// browser has the stylesheets (web/kit/idioms.ts), in src/web/kit, layered in the order named: an idiom that draws
+// with the kit's components paints over the kit's sheet. What they share is the names, and the id the surface is
+// created with, which says whose catalog its components are drawn by.
 
 export const IDIOMS = {
-  kit: { name: "Kit", catalogId: "https://github.com/dglazkov/jev2ui/catalogs/kit/v1", stylesheet: "kit.css" },
+  kit: { name: "Kit", catalogId: "https://github.com/dglazkov/jev2ui/catalogs/kit/v1", stylesheets: ["kit.css"] },
+  ios: { name: "iOS", catalogId: "https://github.com/dglazkov/jev2ui/catalogs/ios/v1", stylesheets: ["kit.css", "ios.css"] },
 } as const;
 
 export type IdiomId = keyof typeof IDIOMS;

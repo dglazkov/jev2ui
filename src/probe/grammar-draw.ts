@@ -219,7 +219,7 @@ const html = `<!doctype html>
 <title>${grammar.name}: ${text.replace(/[<&]/g, "")}</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=block" />
 ${fonts}
-<style>${readFileSync(resolve(root, "src/web/kit", NAMED[idiom.id].stylesheet), "utf8")}
+<style>${NAMED[idiom.id].stylesheets.map((sheet) => readFileSync(resolve(root, "src/web/kit", sheet), "utf8")).join("\n")}
 body { margin: 0; background: #d9d9de; display: grid; place-items: start center; padding: 32px; }
 .mock { ${vars} color-scheme: ${theme.colorScheme}; font-family: ${theme.fontFamily}; background: var(--k-page); width: 420px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 40px rgb(0 0 0 / 0.18); }
 </style>

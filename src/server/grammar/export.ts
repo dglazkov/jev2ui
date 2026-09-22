@@ -1,15 +1,16 @@
 // The files that are still written out from code (docs/grammar.md).
 //
-//   npm run grammar:export      writes grammar/paint.md, kit.md, icons.md, subjects.md
+//   npm run grammar:export      writes grammar/paint.md, kit.md, ios/catalog.md, icons.md, subjects.md
 //
 // grammar/screen.md is the tool's own graph and is edited by hand: the tool reads it
-// (mock/graph.ts). These four are not: the paint questions are still asked by
-// design-mix.ts from its own tables, the catalog is what patterns.ts can draw, and
-// the two sets are lists of assets (Material Symbols, the shelves of the photo
-// library). They are taken from what is actually asked and drawn, so they cannot
+// (mock/graph.ts). These are not: the paint questions are still asked by
+// design-mix.ts from its own tables, a catalog is what its patterns can draw
+// (patterns.ts, patterns-ios.ts), and the two sets are lists of assets (Material
+// Symbols, the shelves of the photo library). They are taken from what is actually asked and drawn, so they cannot
 // drift from it, and a test holds the files to this (grammar.test.ts).
 
 import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { Question, Questions } from "@typesafe-ai/sdk";
 import { HUES, STOPS, mixQuestions } from "../design-mix.js";
@@ -19,6 +20,7 @@ import { SUBJECTS } from "../photos/subjects.js";
 import { parseGrammar, printGrammar, type Grammar, type Node, type Option, type Shape } from "./format.js";
 import { GRAMMAR_DIR } from "./load.js";
 import { kitCatalog } from "./patterns.js";
+import { iosCatalog } from "./patterns-ios.js";
 
 interface Extra {
   traits?: string[];
@@ -116,6 +118,7 @@ export function paintGrammar(): Grammar {
 export function files(): Record<string, string> {
   return {
     "kit.md": printGrammar(kitCatalog()),
+    "ios/catalog.md": printGrammar(iosCatalog()),
     "paint.md": printGrammar(paintGrammar()),
     "icons.md": printGrammar(setOf("icons", ["Material Symbols. The symbols Jev can choose from, wherever a screen, a row, an item or a destination wants one."], ICON_OPTIONS)),
     "subjects.md": printGrammar(
@@ -132,6 +135,7 @@ export function files(): Record<string, string> {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   mkdirSync(GRAMMAR_DIR, { recursive: true });
   for (const [name, text] of Object.entries(files())) {
+    mkdirSync(dirname(`${GRAMMAR_DIR}${name}`), { recursive: true });
     writeFileSync(`${GRAMMAR_DIR}${name}`, text);
     console.log(`grammar/${name}  ${text.split("\n").length} lines`);
   }

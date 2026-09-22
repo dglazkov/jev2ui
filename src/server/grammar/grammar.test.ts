@@ -14,7 +14,7 @@ import { readFileSync as read } from "node:fs";
 const { grammar: SCREEN, blocks: BLOCKS, kinds: KINDS } = IDIOMS.kit.graph;
 
 test("the files still written from code are what the code asks and draws: run `npm run grammar:export` after changing a question", () => {
-  assert.deepEqual(Object.keys(files()).sort(), ["icons.md", "kit.md", "paint.md", "subjects.md"]);
+  assert.deepEqual(Object.keys(files()).sort(), ["icons.md", "ios/catalog.md", "kit.md", "paint.md", "subjects.md"]);
   for (const [name, text] of Object.entries(files())) assert.equal(readFileSync(`${GRAMMAR_DIR}${name}`, "utf8"), text, `grammar/${name} is stale`);
 });
 
