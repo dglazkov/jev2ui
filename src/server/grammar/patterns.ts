@@ -309,6 +309,8 @@ const PATTERNS: Pattern[] = [
         made({ id: `${id}_row`, component: "KeyValue", label: bind(r.one("label")), value: bind(r.one("value")), strong: bind(r.one("strong")) }),
       ];
     },
+    // The row the others add up to is the last one written: a bill ends in its total.
+    computed: { strong: (rows) => rows.map((row, i) => (i === rows.length - 1 ? { ...row, strong: true } : row)) },
   },
   {
     name: "prose",

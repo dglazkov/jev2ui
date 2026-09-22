@@ -28,8 +28,8 @@ export type PipelineEvent =
   | { type: "routes"; at: number; destination: string; routes: ScreenRoutes }
   /** The design the mock is painted with. `markdown` is set when Jev mixed it, so the browser can show the file. */
   | { type: "design"; at: number; report: DesignReport; markdown?: string }
-  /** The plan the screen was built from: what it would take to build it again as it is (shared/turn.ts, `ScreenEdit`). */
-  | { type: "plan"; at: number; plan: Record<string, unknown> & { archetype: string; blocks: string[] } }
+  /** The reading the screen was built from: its kind, its parts and every answer as the graph read it; what it would take to build it again as it is (shared/turn.ts, `ScreenEdit`). */
+  | { type: "plan"; at: number; plan: { kind: string; blocks: string[]; values: Record<string, boolean | string | number>; p: Record<string, number> } }
   | { type: "a2ui"; message: A2uiMessage; at: number }
   | {
       type: "trace";

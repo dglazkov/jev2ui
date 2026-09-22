@@ -7,16 +7,30 @@
 // then the rules, in the order written.
 //
 // What "confident" means is not in the file. It is a fact about whoever answers.
+//
+// A question with the trait `given` is not asked: its answer is given by whoever
+// runs the graph (the design's facts: whether it has photographs), and the rules
+// read it like any other.
 
 import { choice, noul, score, type Questions } from "@typesafe-ai/sdk";
 import type { Decision } from "../../shared/events.js";
 import { idOf, laterIn, laterOf, walk, type Atom, type Grammar, type Node } from "./format.js";
 
+/** A question nobody is asked: its answer is given by whoever runs the graph. */
+export const isGiven = (node: Node) => node.traits.includes("given");
+
+/** The given questions of a graph, with what they are unless said otherwise: no, none, the first option. */
+export function givensOf(grammar: Grammar): Record<string, Value> {
+  const out: Record<string, Value> = {};
+  walk(grammar.nodes, (node) => void (isGiven(node) && defaultOf(node) !== undefined && (out[idOf(node)] = defaultOf(node)!)));
+  return out;
+}
+
 export function questionsOf(grammar: Grammar): Questions {
   const out: Questions = {};
   walk(grammar.nodes, (node) => {
-    // What is asked once the words exist is asked then (decide.ts), not now.
-    if (!node.question || !node.asking || laterOf(node)) return;
+    // What is asked once the words exist is asked then (decide.ts), not now; what is given is never asked.
+    if (!node.question || !node.asking || laterOf(node) || isGiven(node)) return;
     const instructions = grammar.context ? { context: grammar.context, question: node.question } : node.question;
     const asking = node.asking;
     if (asking.type === "noul") out[idOf(node)] = asking.yes === undefined && asking.no === undefined ? noul(instructions) : noul(instructions, { ...(asking.yes !== undefined ? { true: asking.yes } : {}), ...(asking.no !== undefined ? { false: asking.no } : {}) });
@@ -62,6 +76,9 @@ export interface Reading {
 }
 
 const NEVER_PADDING = "never padding";
+
+/** A reading before there is one: what is written whatever the thing turns out to be (the header) is asked for against it. */
+export const EMPTY: Reading = { kind: "", blocks: [], values: {}, p: {}, decisions: [] };
 
 /** An answer that does not apply still has to be something: no, or "none", or else the first option. */
 function defaultOf(node: Node): Value | undefined {
@@ -116,6 +133,7 @@ export function readGrammar(grammar: Grammar, answers: Record<string, any>, cali
   const said = (node: Node): Value | undefined => {
     const id = idOf(node);
     if (known.values && id in known.values) return known.values[id];
+    if (isGiven(node)) return defaultOf(node);
     const answer = answers[id];
     if (!answer) return defaultOf(node);
     if (node.asking?.type === "noul") return answer.noul >= (calibration.questions?.[id] ?? calibration.yes);
@@ -170,7 +188,7 @@ export function readGrammar(grammar: Grammar, answers: Record<string, any>, cali
     const answer = answers[id];
     if (answer && !(id in p)) p[id] = node.asking?.type === "noul" ? answer.noul : node.asking?.type === "choice" ? answer.probabilities[answer.choice] : answer.score;
     // What a person reads in the trace is the question as it was asked, and, where it was settled before asking, that it was.
-    if (!decisions.has(id) && node !== kinds && !node.block && applies(node) && value !== undefined) decisions.set(id, { id, question: node.question ?? node.name, ...(known.values && id in known.values ? { note: "settled beforehand" } : {}), answer: typeof value === "boolean" ? (value ? "yes" : "no") : String(value), p: p[id] ?? 1 });
+    if (!decisions.has(id) && node !== kinds && !node.block && applies(node) && value !== undefined) decisions.set(id, { id, question: node.question ?? node.name, ...(isGiven(node) ? { note: "given, not asked" } : known.values && id in known.values ? { note: "settled beforehand" } : {}), answer: typeof value === "boolean" ? (value ? "yes" : "no") : String(value), p: known.values && id in known.values ? 1 : (p[id] ?? 1) });
   });
   return { kind, blocks, values, p, decisions: [...decisions.values()] };
 }

@@ -2,17 +2,15 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { IDIOMS } from "../idioms.js";
 import { decide, decorate, type DecideOptions } from "./decide.js";
-import { answersTo, random } from "./fixtures.js";
+import { DESIGN_SAYS, answersTo, random } from "./fixtures.js";
 import { checkGrammar, parseGrammar, walk, type Field, type Grammar, type Node } from "./format.js";
 import { loadGrammar } from "./load.js";
 import { boundIn, partsOf, treeOf } from "./make.js";
 import { KIT_PATTERNS } from "./patterns.js";
 import { JEV, questionsOf, readGrammar, type Reading } from "./read.js";
-import { planOf } from "./screen-plan.js";
 
 const { graph } = IDIOMS.kit;
 const screen = graph.grammar;
-const readingOf = graph.readingOf.bind(graph);
 const named = (grammar: Grammar, name: string): Node => {
   let found: Node | undefined;
   walk(grammar.nodes, (node) => void (node.name === name && (found = node)));
@@ -30,8 +28,7 @@ test("a question is needed when the tree the file makes reads the field it decid
   const rng = random(13);
   const seen = { tones: 0, icons: 0, deltas: 0 };
   for (let n = 0; n < 1500; n++) {
-    const plan = planOf(screen, readGrammar(screen, answersTo(questionsOf(screen), rng), JEV));
-    const read = readingOf({ ...plan, icons: rng() < 0.5 });
+    const read = readGrammar(screen, answersTo(questionsOf(screen), rng), JEV, { values: { ...DESIGN_SAYS, symbols: rng() < 0.5 } });
     const look = { contained: true, icons: read.values.item_leading === "icon" || rng() < 0.5, symbol: "image" };
     for (const part of partsOf(screen, read)) {
       const bound = boundIn(treeOf(KIT_PATTERNS, screen, part, read, look));

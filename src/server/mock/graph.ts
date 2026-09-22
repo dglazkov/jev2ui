@@ -4,37 +4,32 @@
 // What a screen is made of is the grammar's: the questions Jev is asked, how the
 // answers are read, the parts and their fields, which pattern of the catalog draws
 // each, where what nobody writes comes from, and what is decided once the words
-// exist. The pipeline (pipeline.ts) asks the file and draws what it says. What is
-// here is the little that code still has to know by name: the kinds of screen and
-// their traits (for change.ts and talk.ts), the options a browser may send back
-// (plan.ts), and the way from a plan, which is what the browser holds, back to a
-// reading. Which idiom's graph a request reads is the request's to say (../idioms.ts).
+// exist. The pipeline (pipeline.ts) asks the file and draws what it says, and holds
+// nothing but the reading. What is here is the little that code still has to know
+// by name: the kinds of screen and their traits (for change.ts and talk.ts), and
+// what stays of a reading the browser sends back. Which idiom's graph a request
+// reads is the request's to say (../idioms.ts).
 
-import { walk, type Field, type Grammar, type Node, type Source } from "../grammar/format.js";
-import { schemaOf } from "../grammar/make.js";
+import { idOf, laterOf, walk, type Field, type Grammar, type Node, type Source } from "../grammar/format.js";
 import { sourcesOf } from "../grammar/fill.js";
-import { yieldOf, type Reading } from "../grammar/read.js";
-import type { Block, ScreenPlan } from "./plan.js";
+import { yieldOf, type Value } from "../grammar/read.js";
 
 export interface Kind {
-  order: Block[];
-  requires: Block[];
+  order: string[];
+  requires: string[];
   atLeast?: number;
   /** What the kind sets on the frame (`sticky actions`, `dialog`): the frame pattern reads these, not code. */
   traits: string[];
 }
 
-const EMPTY: Reading = { kind: "", blocks: [], values: {}, p: {}, decisions: [] };
-
 export class Graph {
   /** The catalog's sources with their traits, for trying a chain (grammar/fill.ts). */
   readonly sources: Map<string, string[]>;
   /** The parts a screen may have, in the order the file lists them. */
-  readonly blocks: Block[];
+  readonly blocks: string[];
   readonly kinds: Record<string, Kind>;
-  /** The parts of an item that are asked about one by one, in the order the file asks. */
-  readonly itemParts: ScreenPlan["list"]["parts"];
   private readonly nodes = new Map<string, Node>();
+  private readonly parentOf = new Map<Node, Node | undefined>();
 
   constructor(
     /** The grammar: grammar/screen.md, or one written like it. */
@@ -43,26 +38,25 @@ export class Graph {
     readonly catalog: Grammar,
   ) {
     this.sources = sourcesOf(catalog);
-    walk(grammar.nodes, (node) => void this.nodes.set(node.name, node));
+    walk(grammar.nodes, (node, parent) => (this.nodes.set(node.name, node), this.parentOf.set(node, parent)));
     // The question the kinds of screen are the options of, and the parts under it.
-    const kinds = [...this.nodes.values()].find((node) => node.asking?.type === "choice" && node.asking.options.some((o) => o.shape))!;
-    const kindOptions = kinds.asking?.type === "choice" ? kinds.asking.options : [];
-    this.blocks = kinds.children.filter((node) => node.block).map((node) => node.name as Block);
+    const kinds = [...this.nodes.values()].find((node) => node.asking?.type === "choice" && node.asking.options.some((o) => o.shape));
+    const kindOptions = kinds?.asking?.type === "choice" ? kinds.asking.options : [];
+    this.blocks = (kinds?.children ?? []).filter((node) => node.block).map((node) => node.name);
     this.kinds = Object.fromEntries(
       kindOptions.map((option) => {
         const shape = option.shape!;
         return [
           option.name,
           {
-            order: shape.parts.map((part) => part.block as Block),
-            requires: shape.parts.filter((part) => part.tier === "always").map((part) => part.block as Block),
+            order: shape.parts.map((part) => part.block),
+            requires: shape.parts.filter((part) => part.tier === "always").map((part) => part.block),
             ...(shape.atLeast ? { atLeast: shape.atLeast } : {}),
             traits: shape.traits,
           },
         ];
       }),
     );
-    this.itemParts = [...this.nodes.keys()].filter((id) => id.startsWith("item_") && this.nodes.get(id)!.asking?.type === "noul" && !this.nodes.get(id)!.traits.length).map((id) => id.slice(5)) as ScreenPlan["list"]["parts"];
   }
 
   /** The heading a thing is under: a part, a question, or what is always written (the header, the navigation). */
@@ -76,12 +70,6 @@ export class Graph {
   optionsOf(id: string): string[] {
     const asking = this.nodes.get(id)?.asking;
     return asking?.type === "choice" ? asking.options.map((o) => o.name) : [];
-  }
-
-  /** What a choice's options yield, as the file has them: the name, where an option yields nothing else. */
-  yieldsOf(id: string): string[] {
-    const asking = this.nodes.get(id)?.asking;
-    return asking?.type === "choice" ? asking.options.map((o) => o.value ?? o.name) : [];
   }
 
   /** What an option says to whoever makes the thing, after its arrow. */
@@ -100,50 +88,59 @@ export class Graph {
     return found?.source ?? [];
   }
 
-  /**
-   * A plan is what the browser holds and sends back, and what the design and the developer's word are applied to
-   * (plan.ts). What draws a part and what a writer is asked for read a reading, so a plan is read back into one: every
-   * value the file could have said, as the plan now has it.
-   */
-  readingOf(plan: ScreenPlan): Reading {
-    const appBar = this.nodes.get("app_bar_action")!.asking;
-    const action = appBar?.type === "choice" ? (appBar.options.find((o) => (o.value ?? o.name) === plan.appBarAction)?.name ?? "none") : "none";
-    const custom = plan.custom ?? { use: this.optionsOf("custom_use")[0], size: this.optionsOf("custom_size")[0], linked: false };
-    const values: Reading["values"] = {
-      archetype: plan.archetype,
-      ...Object.fromEntries(this.blocks.map((block) => [`has_${block}`, plan.blocks.includes(block)])),
-      top_level: plan.topLevel,
-      person: plan.person,
-      app_bar_action: action,
-      list_layout: plan.list.layout,
-      item_leading: plan.list.leading,
-      item_trailing: plan.list.trailing,
-      ...Object.fromEntries(this.itemParts.map((part) => [`item_${part}`, plan.list.parts.includes(part)])),
-      search: plan.search,
-      stat_deltas: plan.statDeltas,
-      facts_total: plan.factsTotal,
-      custom_use: custom.use,
-      custom_size: custom.size,
-      custom_linked: custom.linked,
-      screen_icon: plan.symbol === "image" ? "none" : plan.symbol,
-      hero_subject: plan.pictures.hero.subject,
-      item_subject: plan.pictures.items.subject,
-    };
-    return { kind: plan.archetype, blocks: [...plan.blocks], values, p: { hero_subject: plan.pictures.hero.p, item_subject: plan.pictures.items.p }, decisions: [] };
-  }
-
-  /** What a writer is asked for, for one part of a plan; or, before there is a plan, for what is written whatever it turns out to be. */
-  partSchema(part: string, plan: ScreenPlan | null): unknown {
-    return schemaOf(this.partNode(part), plan ? this.readingOf(plan) : EMPTY);
-  }
-
-  /** What one item of a list is made of, for a baked component that draws the list's items. */
-  itemSchema(plan: ScreenPlan): unknown {
-    return (this.partSchema("list", plan) as any).properties.list.properties.items.items;
-  }
-
   /** The ratio a custom part's box gets, as its size yields it. */
   ratioOf(size: string): string {
     return String(yieldOf(this.grammar, "custom_size", size));
+  }
+
+  /** The part a question is under, if it is under one. */
+  private partOf(node: Node): Node | undefined {
+    for (let up = this.parentOf.get(node); up; up = this.parentOf.get(up)) if (up.block) return up;
+    return undefined;
+  }
+
+  /**
+   * What stays of a reading the browser sent back, for the parts that stay: every answer that is one the file could have
+   * given, under a question at the top of the graph or under one of `blocks`. A browser that still holds a plan of the old
+   * shape (an app saved before readings travelled) is read as one.
+   */
+  keptOf(sent: Record<string, unknown>, blocks: string[]): Record<string, Value> {
+    const values = sent.values && typeof sent.values === "object" ? (sent.values as Record<string, unknown>) : "archetype" in sent ? this.valuesOfPlan(sent) : {};
+    const out: Record<string, Value> = {};
+    walk(this.grammar.nodes, (node) => {
+      const id = idOf(node);
+      const asking = node.asking;
+      if (!asking || laterOf(node) || node.block || !(id in values)) return;
+      const part = this.partOf(node);
+      if (part && !blocks.includes(part.name)) return;
+      const value = values[id];
+      const one = asking.type === "noul" ? typeof value === "boolean" : asking.type === "choice" ? typeof value === "string" && asking.options.some((o) => o.name === value) : typeof value === "number";
+      if (one) out[id] = value as Value;
+    });
+    return out;
+  }
+
+  /** The old shape, read back into the file's values: kept only for what was saved holding one. */
+  private valuesOfPlan(plan: Record<string, any>): Record<string, unknown> {
+    const appBar = this.nodes.get("app_bar_action")?.asking;
+    const action = appBar?.type === "choice" ? (appBar.options.find((o) => (o.value ?? o.name) === plan.appBarAction)?.name ?? "none") : "none";
+    const list = plan.list ?? {};
+    const parts: string[] = Array.isArray(list.parts) ? list.parts : [];
+    return {
+      top_level: plan.topLevel,
+      person: plan.person,
+      app_bar_action: action,
+      list_layout: list.layout,
+      item_leading: list.leading,
+      item_trailing: list.trailing,
+      ...Object.fromEntries(["description", "price", "rating", "status", "time", "progress"].map((part) => [`item_${part}`, parts.includes(part)])),
+      search: plan.search,
+      stat_deltas: plan.statDeltas,
+      facts_total: plan.factsTotal,
+      ...(plan.custom ? { custom_use: plan.custom.use, custom_size: plan.custom.size, custom_linked: plan.custom.linked } : {}),
+      screen_icon: plan.symbol === "image" ? "none" : plan.symbol,
+      hero_subject: plan.pictures?.hero?.subject,
+      item_subject: plan.pictures?.items?.subject,
+    };
   }
 }

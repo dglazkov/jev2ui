@@ -28,10 +28,10 @@ import type { KitComponent } from "../shared/kit.js";
 import { IDIOMS as NAMED, idiomNamed } from "../shared/idioms.js";
 import { loadDesign } from "../server/design-source.js";
 import { streamGeminiJson } from "../server/models.js";
-import { CUSTOM_SOURCES, sendCustom, type Filling } from "../server/mock/bake.js";
+import { CUSTOM_SOURCES, customOf, sendCustom, type Filling } from "../server/mock/bake.js";
+import { Graph } from "../server/mock/graph.js";
 import { Pictures } from "../server/mock/pictures.js";
 import { IDIOMS } from "../server/idioms.js";
-import type { ScreenPlan } from "../server/mock/plan.js";
 import { readMade } from "../server/photos/generate.js";
 import type { SubjectName } from "../server/photos/subjects.js";
 import { Run } from "../server/run.js";
@@ -41,7 +41,7 @@ import { idOf, type Field, type Node } from "../server/grammar/format.js";
 import { loadGrammar } from "../server/grammar/load.js";
 import { decide, decorate } from "../server/grammar/decide.js";
 import { boundIn, checkBindings, frameOf, knobsOf, partsOf, schemaOf, treeOf } from "../server/grammar/make.js";
-import { JEV, holdsIn, questionsOf, readGrammar, yieldOf } from "../server/grammar/read.js";
+import { JEV, givensOf, holdsIn, questionsOf, readGrammar, yieldOf } from "../server/grammar/read.js";
 
 const args = process.argv.slice(2);
 const paint = args.includes("--paint");
@@ -64,9 +64,10 @@ const run = new Run("mock");
 const surfaceId = "main";
 const started = performance.now();
 const since = () => `${String(Math.round(performance.now() - started)).padStart(6)} ms`;
-const designing = loadDesign({ brief: text }).loaded;
-const asked = await run.askJev("Jev: read it", { [key]: text }, questionsOf(grammar));
-const reading = readGrammar(grammar, asked.answers, JEV);
+const [asked, { report, read: designRead }] = await Promise.all([run.askJev("Jev: read it", { [key]: text }, questionsOf(grammar)), loadDesign({ brief: text }).loaded]);
+// What the design says is given to the graph, where the graph has a question for it (screen.md does; email.md does not).
+const givens = givensOf(grammar);
+const reading = readGrammar(grammar, asked.answers, JEV, { values: { ...givens, ...("photographs" in givens ? { photographs: designRead.imagery, symbols: designRead.icons, cards: designRead.contained } : {}) } });
 const parts = partsOf(grammar, reading);
 console.log(`${since()}  Jev: a ${reading.kind}: ${reading.blocks.join(", ")}`);
 for (const d of reading.decisions) if (d.note) console.log(`           ${d.id} → ${d.answer}: ${d.note}`);
@@ -81,8 +82,7 @@ for (const node of grammar.nodes) {
   settled.push(node.asking?.type === "score" ? `${node.target ?? node.name}: about ${Math.round(Number(yieldOf(grammar, idOf(node), value)))}` : `${node.name}: ${value}${option?.criteria ? ` (${option.criteria})` : ""}`);
 }
 
-const { report } = await designing;
-const look = { contained: true, icons: true, symbol: "image" };
+const look = { contained: designRead.contained, icons: designRead.icons, symbol: "image" };
 // The frame is the file's too: the pattern its kinds name, set by the kind's traits, filled by what is always written.
 const header = grammar.nodes.find((node) => node.name === "header" && !node.question);
 const trees = parts.map((node) => [node.name, treeOf(patterns, grammar, node, reading, look)] as const);
@@ -127,18 +127,14 @@ const write = async (node: Node, agreeWith?: unknown) => {
 
 // --- What is not written: the chains -------------------------------------------------
 
-/** A part that arrives whole. The contract is what the file says to a maker: about the part, and about each answer under it. */
+/** A part that arrives whole. The contract is what the file says to a maker: about the part, and about each answer under it (bake.ts, `customOf`). */
 const fillPart = async (node: Node) => {
-  const told = [node.told, ...node.children.flatMap((child) => (child.asking?.type === "choice" ? [child.asking.options.find((o) => o.name === reading.values[idOf(child)])?.told] : []))].filter(Boolean);
-  const ratio = String(knobsOf(grammar, node, reading).ratio ?? "16:9");
-  // The baker is the tool's, and takes a size by the tool's name for it: the one whose ratio this is.
-  const size = idiom.graph.optionsOf("custom_size").find((name) => idiom.graph.ratioOf(name) === ratio) ?? "wide";
+  const custom = customOf(new Graph(grammar, catalog), node, reading);
   // The baker is the tool's own and speaks of screens: it is handed the email as one, with the part's contract said in words.
-  const plan = { archetype: reading.kind, blocks: reading.blocks, custom: { use: String(reading.values[`${node.name}_use`] ?? "read"), size, linked: false } } as unknown as ScreenPlan;
-  const brief = `${text}\n\nThis is a ${grammar.name}, not an app screen. Your component is its "${node.name}" part. ${told.join(" ")}`;
+  const brief = `${text}\n\nThis is a ${grammar.name}, not an app screen. Your component is its "${node.name}" part.`;
   const filled = await fill<Filling | "closed">(
     node.filled!,
-    { shelf: async () => undefined, baked: () => CUSTOM_SOURCES.baked(run, brief, plan, { voice: "" }), closed: async () => "closed" as const },
+    { shelf: async () => undefined, baked: () => CUSTOM_SOURCES.baked(run, brief, custom, { voice: "" }), closed: async () => "closed" as const },
     sources,
   );
   sendCustom(run, surfaceId, !filled || filled.value === "closed" ? undefined : filled.value, `/${node.name}`);

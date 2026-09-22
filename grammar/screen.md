@@ -332,7 +332,7 @@ among [icons](icons.md)
   - when facts_total is yes — The last one is the total.
   - `label` as label — Short label.
   - `value` as value — Short value.
-  - `strong` as strong, computed
+  - `strong` as strong, computed, when facts_total is yes
 
 #### facts_total
 
@@ -468,6 +468,29 @@ among [subjects](subjects.md)
 
 among [icons](icons.md)
 
+## photographs (given)
+
+What the DESIGN.md says, given by the tool and not asked: a design can rule pictures, symbols or cards out, and the rules below say what that does to the screen.
+
+> Does the design show photographs?
+
++ It does, or says nothing about it.
+- Its prose says there are no photographs, or that its pictures are drawn.
+
+## symbols (given)
+
+> Does the design use symbols?
+
++ It does, or says nothing about it.
+- Its prose says there are no icons.
+
+## cards (given)
+
+> Does the design set content in cards?
+
++ It does, or says nothing about it.
+- Its prose says content flows on the page without cards.
+
 ## Rules
 
 - when form, no actions — a form's submit button is the screen's call to action; a second set of buttons only competes with it
@@ -477,7 +500,12 @@ among [icons](icons.md)
 - when archetype is confirm, app_bar_action is none — a dialog has no top bar
 - when archetype is not detail, person is no — only a page about one thing can be about one person
 - when person is yes, no hero — a profile opens with the person, and a lead photograph would compete with them
+- when photographs is no, no hero — the design has no photographs, so nothing leads with one
+- when photographs is no and item_leading is thumbnail, item_leading is icon — the design has no photographs, so items are led by a symbol instead
+- when symbols is no and item_leading is icon, item_leading is none — the design has no symbols either
+- when cards is no and list_layout is cards or reel, list_layout is rows — the design sets nothing in cards
 - when item_leading is not thumbnail, list_layout is rows — picture layouts are for things with a look; anything else is scanned as rows
+- when item_leading is avatar, item_subject is portrait — people are pictured as portraits, whatever the screen is about
 - when no list, custom_linked is no — with no list there are no items for it to draw
 - when row_control is value and no value, row_control is nav — a row can only show a value if one was written
 - when row_control is switch and value, row_control is value — a row that has a value is not a switch

@@ -25,7 +25,8 @@ type Holds = (atoms?: Atom[]) => boolean;
  * nothing else to write: `facts` is 2–8 rows, where `list` is a heading and its items. Both halves have to agree on
  * which it is, because it decides where the data is.
  */
-function wholeOf(node: Node, holds: Holds): Field | undefined {
+/** The list a part is nothing but: its only written root field, a list with the part's own name. */
+export function wholeOf(node: Node, holds: Holds): Field | undefined {
   const written = node.fields.filter((field) => !field.source && holds(field.when));
   return written.length === 1 && written[0].name === node.name && written[0].list ? written[0] : undefined;
 }
@@ -91,6 +92,8 @@ export interface Pattern {
   knobs: Record<string, Knob>;
   /** `parts` are given to a frame: the parts drawn already, in the order they come. */
   draw(id: string, bound: Bound, knobs: Record<string, Value>, look: Look, parts?: DrawnPart[]): KitComponent[];
+  /** What the pattern works out from what was written, by slot, for a field that says `computed`: the elements of the list the slot is in, with the slot filled. */
+  computed?: Record<string, (elements: any[]) => any[]>;
 }
 
 export type Catalog = Record<string, Pattern>;
@@ -159,6 +162,16 @@ export function contentNodes(grammar: Grammar): Node[] {
   return out;
 }
 
+/** Whether a node is in scope for a reading: every heading above it is a part the reading has or a yes-or-no it answered yes. */
+export function appliesIn(grammar: Grammar, node: Node, reading: Reading): boolean {
+  const parentOf = new Map<Node, Node | undefined>();
+  walk(grammar.nodes, (n, parent) => void parentOf.set(n, parent));
+  for (let up = parentOf.get(node); up; up = parentOf.get(up)) {
+    if (up.block ? !reading.blocks.includes(up.name) : up.asking?.type === "noul" && reading.values[idOf(up)] !== true) return false;
+  }
+  return true;
+}
+
 /**
  * The frame's knobs: what the answers at the top of the graph turn, then what the kinds' heading fixes for every kind,
  * then what the kind that was read says in its traits. Nothing under a part reaches the frame.
@@ -177,6 +190,12 @@ export function frameKnobsOf(grammar: Grammar, reading: Reading, knobs: Record<s
     if (knob in knobs) out[knob] = value;
   }
   return out;
+}
+
+/** The pattern the kinds' question names for the frame; nothing, for a graph that names none. */
+export function framePatternOf(catalog: Catalog, grammar: Grammar): Pattern | undefined {
+  const kinds = kindsOf(grammar);
+  return kinds?.target ? catalog[kinds.target] : undefined;
 }
 
 /** The frame around the parts, drawn by the pattern the kinds' question names; nothing, for a graph that names none. */

@@ -2,16 +2,14 @@
 // are drawn and what a writer is asked for are the file's (grammar/screen.md and
 // kit.md, through src/server/grammar).
 
-import type { Block, ScreenPlan } from "./plan.js";
 import type { KnownDestination } from "../../shared/identity.js";
+import type { Reading } from "../grammar/read.js";
 
 /** Only screens about individual subjects belong in a content collection. A made
  * home, index, settings page or workflow is navigation, not another content item. */
 export function knownSubjects(catalog: KnownDestination[] | undefined, destination: string) {
   return catalog?.filter((c) => c.id !== destination && c.rendered && ["detail", "guide"].includes(c.rendered.archetype)).map((c) => c.rendered!);
 }
-
-export type Part = "header" | "nav" | Exclude<Block, "hero" | "custom">;
 
 export const SYSTEM_PROMPT = `You write the sample content for one part of a mock-up of an app screen.
 A separate system has already decided the layout and the components; you supply only the words and figures, as JSON matching the schema.
@@ -29,11 +27,11 @@ export interface Setting {
   knownScreens?: Array<{ title: string; archetype: string; content: string }>;
 }
 
-export function partPrompt(description: string, part: Part, plan: ScreenPlan | null, setting: Setting, agreeWith?: unknown): string {
+export function partPrompt(description: string, part: string, reading: Pick<Reading, "kind" | "blocks"> | null, setting: Setting, agreeWith?: unknown, what = "screen"): string {
   const { voice } = setting;
   const journey = setting.app ? `The first screen designed for this app was: ${setting.app}\nThe person got to the screen you are writing for by ${setting.reachedBy}.\n` : "";
   const about = setting.about ? `What the previous screen already showed about this, which this screen must agree with and build on:\n${JSON.stringify(setting.about)}\n` : "";
-  const parts = plan ? `The screen is a ${plan.archetype} screen with these parts: header, ${plan.blocks.join(", ")}.\n` : "";
+  const parts = reading ? `The ${what} is a ${reading.kind} ${what} with these parts: header, ${reading.blocks.join(", ")}.\n` : "";
   // The Overview of a DESIGN.md describes the brand; the words should sound like it.
   // Voice goes first, as background, and the subject goes last, next to the instruction. The other way round, a small
   // model writes about the brand's metaphor (gummies, signal boxes) instead of about the app.

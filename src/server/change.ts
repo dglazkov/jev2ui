@@ -26,7 +26,8 @@ import { mixDesign, mixQuestions } from "./design-mix.js";
 import { loadDesign } from "./design-source.js";
 import { talk } from "./talk.js";
 import { idiom } from "./idioms.js";
-import type { Block } from "./mock/plan.js";
+/** The tool's own parts, as the chat names them; a grammar that has others is read by its parts' questions. */
+type Block = string;
 import { named, type Decision } from "../shared/events.js";
 import { addChange, receiptOf, type DialName, type PaintChange, type Pins, type ScreenAbout, type TurnKind, type TurnRequest, type TurnResponse } from "../shared/turn.js";
 
@@ -111,8 +112,8 @@ export const GATES = {
 } as const;
 export type Gate = keyof typeof GATES;
 
-/** Each block, as a person would speak of it: they do not know the grammar's names. */
-export const BLOCK_WORDS: Record<Block, string> = {
+/** Each of the tool's own blocks, as a person would speak of it: they do not know the grammar's names. */
+const BLOCK_WORDS: Record<Block, string> = {
   banner: "a notice at the top of the screen about something that needs attention: a warning, an alert, an offer, an announcement",
   hero: "the large picture that leads the screen",
   filters: "the search field and the filter chips for narrowing down what is shown",
@@ -127,6 +128,13 @@ export const BLOCK_WORDS: Record<Block, string> = {
   actions: "the buttons that act on the whole screen, usually at the bottom: the call to action, such as \"Buy now\", \"Book\", \"Continue\"",
 };
 
+/** A block as a person would speak of it: the words above for the tool's own; for a part of another grammar, what its question says a yes looks like, else its name. */
+export function blockWords(block: string): string {
+  if (block in BLOCK_WORDS) return BLOCK_WORDS[block];
+  const node = idiom().graph.grammar.nodes.flatMap((n) => [n, ...n.children]).find((n) => n.block && n.name === block);
+  return node?.asking?.type === "noul" && node.asking.yes ? `the ${block}: ${node.asking.yes.replace(/\.$/, "")}` : `the ${block}`;
+}
+
 const SCREEN_CONTEXT =
   "A developer is making an app with a design tool. `screen` is one screen of it, and `has` lists the parts that screen has now. They have typed `message` to the tool to have something changed. The message may be about this screen, about another screen, or about how the whole app looks.";
 const askScreen = (question: string) => ({ context: SCREEN_CONTEXT, question });
@@ -138,21 +146,22 @@ const askScreen = (question: string) => ({ context: SCREEN_CONTEXT, question });
 export function screenQuestions(allowed: Block[], has: string[]): Questions {
   const out: Questions = {};
   for (const block of allowed)
-    out[`block_${block}`] = choice(askScreen(`One possible part of this screen is ${BLOCK_WORDS[block]}. What does the message ask for, as to that part?`), {
+    out[`block_${block}`] = choice(askScreen(`One possible part of this screen is ${blockWords(block)}. What does the message ask for, as to that part?`), {
       add: "The message asks for this part, and the screen does not have it yet.",
       remove: "The message asks for this part to be taken off this screen: removed, hidden, or moved to a screen of its own.",
       keep: "The message does not ask to add or to remove this part. It says nothing of it, or is only about its wording or its look.",
     });
   for (const part of has)
-    out[`says_${part}`] = noul(askScreen(`Does the message ask to change what is written in ${part === "header" ? "the screen's title and subtitle" : BLOCK_WORDS[part as Block]}: its wording, length, tone, language, units, or which examples it shows?`), {
+    out[`says_${part}`] = noul(askScreen(`Does the message ask to change what is written in ${part === "header" ? "the screen's title and subtitle" : blockWords(part)}: its wording, length, tone, language, units, or which examples it shows?`), {
       true: "Yes: the message is about the words or data of that part, or about the words of the whole screen.",
       false: "No: the message is about something else, or about adding or removing parts, or about the look.",
     });
   return out;
 }
 
-/** What the grammar calls a block, in a word or two, for a receipt. */
-export const BLOCK_NAMES: Record<Block, string> = { banner: "notice", hero: "lead picture", filters: "search and filters", custom: "custom component", stats: "headline numbers", list: "list", groups: "grouped rows", facts: "details", prose: "text", steps: "steps", form: "form", actions: "buttons" };
+/** What the tool's grammar calls a block, in a word or two, for a receipt; another grammar's part goes by its name. */
+const BLOCK_NAMES: Record<Block, string> = { banner: "notice", hero: "lead picture", filters: "search and filters", custom: "custom component", stats: "headline numbers", list: "list", groups: "grouped rows", facts: "details", prose: "text", steps: "steps", form: "form", actions: "buttons" };
+export const blockName = (block: string) => BLOCK_NAMES[block] ?? block;
 
 export function changeQuestions(others: ScreenAbout[] = [], architecture = false): Questions {
   const out: Questions = { turn: choice(ask("What kind of change does the message ask for?"), TURNS) };
@@ -221,11 +230,11 @@ async function readScreen(screen: ScreenAbout, message: string): Promise<{ add: 
     if (asked === "keep" || p < 0.5 || (asked === "add") === has.includes(block)) continue;
     // What makes it this kind of screen stays: a feed without a list is not a feed.
     const must = asked === "remove" && shape.requires.includes(block);
-    decisions.push({ id: `block:${block}`, question: `${BLOCK_NAMES[block]}?`, answer: must ? "stays" : asked, p, ...(must ? { note: `asked to go, but a ${screen.archetype} screen always has one` } : {}) });
+    decisions.push({ id: `block:${block}`, question: `${blockName(block)}?`, answer: must ? "stays" : asked, p, ...(must ? { note: `asked to go, but a ${screen.archetype} screen always has one` } : {}) });
     if (!must) (asked === "add" ? add : remove).push(block);
   }
   const rewrite = parts.filter((part) => answers[`says_${part}`].noul >= 0.5 && !remove.includes(part as Block));
-  for (const part of rewrite) decisions.push({ id: `says:${part}`, question: `${part === "header" ? "title" : BLOCK_NAMES[part as Block]}: other words?`, answer: "asked for", p: answers[`says_${part}`].noul });
+  for (const part of rewrite) decisions.push({ id: `says:${part}`, question: `${part === "header" ? "title" : blockName(part)}: other words?`, answer: "asked for", p: answers[`says_${part}`].noul });
   return { add, remove, rewrite, decisions };
 }
 
@@ -323,7 +332,7 @@ export async function readTurn(request: TurnRequest): Promise<TurnResponse> {
     if (lines.length) design = { delta, change, receipt: lines, report, markdown: mixed! };
   }
 
-  const line = (block: string, from: string, to: string) => ({ what: block === "header" ? "title" : BLOCK_NAMES[block as Block], from, to });
+  const line = (block: string, from: string, to: string) => ({ what: block === "header" ? "title" : blockName(block), from, to });
   const screen = {
     id: target.id,
     add: of.add,

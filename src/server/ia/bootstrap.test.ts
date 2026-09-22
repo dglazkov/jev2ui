@@ -3,13 +3,12 @@ import assert from "node:assert/strict";
 import { initialArchitecture, initialNavigationQuestions } from "./bootstrap.js";
 import { architectureNav, ARCHITECTURE } from "../../shared/architecture.js";
 import { connectDestination } from "../../shared/catalog.js";
-import type { ScreenPlan } from "../mock/plan.js";
 
 const answer = (choice: string) => ({ choice, probabilities: { [choice]: 1 } });
 function initial(overrides: Record<string, string> = {}, topLevel = false) {
   const answers = Object.fromEntries(Object.keys(initialNavigationQuestions()).map((id) => [id, answer(overrides[id] ?? (id === "nav_home" ? "separate" : "omit"))]));
   // Screen-plan noul answers share the same response; navigation must only store its own choices.
-  return initialArchitecture("Settings screen for a podcast app", { archetype: "settings", topLevel } as ScreenPlan, { ...answers, has_groups: { noul: 1 } } as any);
+  return initialArchitecture("Settings screen for a podcast app", { archetype: "settings", topLevel }, { ...answers, has_groups: { noul: 1 } } as any);
 }
 
 test("initial navigation is immediately ready and reuses the requested preferences screen", () => {

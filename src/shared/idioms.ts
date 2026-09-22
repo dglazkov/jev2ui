@@ -9,6 +9,8 @@
 export const IDIOMS = {
   kit: { name: "Kit", catalogId: "https://github.com/dglazkov/jev2ui/catalogs/kit/v1", stylesheets: ["kit.css"] },
   ios: { name: "iOS", catalogId: "https://github.com/dglazkov/jev2ui/catalogs/ios/v1", stylesheets: ["kit.css", "ios.css"] },
+  // Not an app at all: the emails a product sends, a graph with no code behind it, drawn by the kit. It is here to prove the tool runs any grammar.
+  email: { name: "Email", catalogId: "https://github.com/dglazkov/jev2ui/catalogs/kit/v1", stylesheets: ["kit.css"] },
 } as const;
 
 export type IdiomId = keyof typeof IDIOMS;

@@ -7,7 +7,8 @@
 // model bakes what goes in it, to a contract:
 //
 //   Jev     that there is one, what the person does with it, the box it gets,
-//           whether it draws the list's own items (plan.ts)
+//           whether it draws the list's own items: what the graph decided under
+//           the part, in the words its options say to a maker (`customOf`)
 //   Gemini  a `render(root, state, kit)` function, the schema of the data it
 //           draws, that data for this screen, and a card saying when to use it
 //   code    checks the source (it parses, paints with the design's variables
@@ -33,9 +34,61 @@ import { BAKED, type Baked } from "../../shared/kit.js";
 import { BAKER_MODEL, bakeGeminiJson, streamGeminiJson } from "../models.js";
 import type { Run } from "../run.js";
 import { fill } from "../grammar/fill.js";
+import { idOf as nodeId, pathIn, type Node } from "../grammar/format.js";
+import { knobsOf, schemaOf } from "../grammar/make.js";
+import { holdsIn, type Reading } from "../grammar/read.js";
 import { idiom } from "../idioms.js";
-import type { ScreenPlan } from "./plan.js";
+import type { Graph } from "./graph.js";
 import type { Setting } from "./screen.js";
+
+/** A part that arrives whole, as the baker and the shelf need to know it: what the graph decided under it, and where it goes. */
+export interface Custom {
+  /** The part's name: the slot's path is `/<part>`, and its chain is the part's. */
+  part: string;
+  /** The contract as the shelf and the browser hold it (shared/kit.ts): what the person does with it, its box, whether it draws the list's items. */
+  contract: Baked["contract"];
+  /** What the graph decided under the part, in the words its options say to a maker; and what the part itself says. */
+  told: string[];
+  /** The shape of its box. */
+  ratio: string;
+  kind: string;
+  /** The other parts of the screen, which it must not repeat. */
+  others: string[];
+  /** What one of the items it draws is made of, when it draws another part's items. */
+  itemSchema?: unknown;
+  chain: NonNullable<Node["filled"]>;
+}
+
+const USES = ["watch", "pick", "adjust", "read"] as const;
+const SIZES = ["strip", "wide", "square", "tall"] as const;
+
+/**
+ * What a filled part is held to, read off the graph: the answer whose options speak to a maker is what the person does with
+ * it; the `ratio` knob is its box; a field taken from another part's data is what it draws. The shelf's contract names these
+ * in the tool's own words (shared/kit.ts), so a graph that says them otherwise is read to the nearest of them.
+ */
+export function customOf(graph: Graph, node: Node, reading: Reading): Custom {
+  const { grammar } = graph;
+  const answered = (child: Node) => reading.values[nodeId(child)];
+  const contractQuestion = node.children.find((child) => child.asking?.type === "choice" && child.asking.options.some((o) => o.told));
+  const told = [node.told, ...node.children.flatMap((child) => (child.asking?.type === "choice" ? [child.asking.options.find((o) => o.name === answered(child))?.told] : []))].filter((t): t is string => !!t);
+  const ratio = String(knobsOf(grammar, node, reading).ratio ?? "16:9");
+  const use = String(contractQuestion ? answered(contractQuestion) : "read");
+  const size = SIZES.find((name) => graph.optionsOf("custom_size").includes(name) && graph.ratioOf(name) === ratio) ?? "wide";
+  const drawn = node.fields.find((field) => pathIn(field.source) && (field.when ?? []).every((atom) => holdsIn(reading, atom)));
+  const path = drawn && pathIn(drawn.source)!.split("/").filter(Boolean);
+  const listSchema = path?.length === 2 ? (schemaOf(graph.partNode(path[0]), reading) as any)?.properties?.[path[0]]?.properties?.[path[1]]?.items : undefined;
+  return {
+    part: node.name,
+    contract: { use: (USES as readonly string[]).includes(use) ? (use as Custom["contract"]["use"]) : "read", size, linked: !!drawn },
+    told,
+    ratio,
+    kind: reading.kind,
+    others: reading.blocks.filter((block) => block !== node.name),
+    ...(listSchema ? { itemSchema: listSchema } : {}),
+    chain: node.filled ?? [],
+  };
+}
 
 /** More than an app has use for; a shelf is sent with every tap. */
 const LARGEST_SHELF = 12;
@@ -143,21 +196,18 @@ export function lint(source: string): string[] {
   return problems;
 }
 
-function brief(screen: string, plan: ScreenPlan, setting: Setting): string {
-  const { graph } = idiom();
-  const contract = plan.custom!;
-  const ratio = graph.ratioOf(contract.size);
-  const others = plan.blocks.filter((b) => b !== "custom");
+function brief(screen: string, custom: Custom, setting: Setting): string {
+  const { contract, ratio, others } = custom;
   return [
     setting.app ? `The app, as first described: ${setting.app}` : "",
     `The screen: ${screen}`,
     setting.reachedBy ? `The person got to this screen by ${setting.reachedBy}.` : "",
     setting.about ? `What the previous screen showed about this, which the data must agree with:\n${JSON.stringify(setting.about)}` : "",
-    `It is a ${plan.archetype} screen. Around your component the kit already draws: a top bar with the title${others.length ? `, ${others.join(", ")}` : ""}. Do not repeat them.`,
-    `What the person does with your component: ${graph.toldOf("custom_use", contract.use)}`,
+    `It is a ${custom.kind} screen. Around your component the kit already draws: a top bar with the title${others.length ? `, ${others.join(", ")}` : ""}. Do not repeat them.`,
+    `What the person does with your component: ${custom.told.join(" ")}`,
     `Your box: aspect ratio ${ratio} (width:height) on a phone. On a wide screen it is wider than that, never taller, so centre what you draw.`,
     contract.linked
-      ? `The component draws the same items the screen lists, so the two agree: read them from state.items, place or plot each one, and call kit.openItem(item) when one is opened. Each item matches this schema:\n${JSON.stringify(graph.itemSchema(plan))}\nItems carry no coordinates: derive a stable position for each from a hash of its title.`
+      ? `The component draws the same items the screen lists, so the two agree: read them from state.items, place or plot each one, and call kit.openItem(item) when one is opened. Each item matches this schema:\n${JSON.stringify(custom.itemSchema)}\nItems carry no coordinates: derive a stable position for each from a hash of its title.`
       : "",
     setting.architecture ?? "",
     setting.voice ? `The brand, for the component's character only (its metaphors are not the subject):\n${setting.voice}` : "",
@@ -166,8 +216,8 @@ function brief(screen: string, plan: ScreenPlan, setting: Setting): string {
     .join("\n\n");
 }
 
-async function bakeNew(run: Run, screen: string, plan: ScreenPlan, setting: Setting): Promise<{ baked: Baked; data: unknown } | undefined> {
-  const prompt = brief(screen, plan, setting);
+async function bakeNew(run: Run, screen: string, custom: Custom, setting: Setting): Promise<{ baked: Baked; data: unknown } | undefined> {
+  const prompt = brief(screen, custom, setting);
   let feedback = "";
   for (let attempt = 1; attempt <= 2; attempt++) {
     const generated = await calls.bake({ system: SYSTEM, prompt: prompt + feedback, schema: RESPONSE });
@@ -196,7 +246,7 @@ async function bakeNew(run: Run, screen: string, plan: ScreenPlan, setting: Sett
       tokens: { input: generated.inputTokens, output: generated.outputTokens },
     });
     if (!problems.length) {
-      const baked: Baked = { id: idOf(String(reply.source), reply.dataSchema), name: String(reply.name).slice(0, 80), card: String(reply.card).slice(0, 400), source: String(reply.source), dataSchema: reply.dataSchema, contract: plan.custom! };
+      const baked: Baked = { id: idOf(String(reply.source), reply.dataSchema), name: String(reply.name).slice(0, 80), card: String(reply.card).slice(0, 400), source: String(reply.source), dataSchema: reply.dataSchema, contract: custom.contract };
       return { baked, data: reply.data };
     }
     feedback = `\n\nYour previous attempt was rejected because ${problems.join("; and ")}. Write it again, whole, without that.`;
@@ -227,9 +277,9 @@ async function writeData(run: Run, screen: string, baked: Baked, setting: Settin
 }
 
 /** Which component on the app's shelf this screen needs, if any. One Choice; its options are the cards Gemini wrote. */
-async function fromShelf(run: Run, screen: string, plan: ScreenPlan, shelf: Baked[]): Promise<Baked | undefined> {
+async function fromShelf(run: Run, screen: string, custom: Custom, shelf: Baked[]): Promise<Baked | undefined> {
   // A component that draws the list's items needs a list to draw, and one that does not would ignore it.
-  const candidates = shelf.filter((b) => b.contract.linked === plan.custom!.linked);
+  const candidates = shelf.filter((b) => b.contract.linked === custom.contract.linked);
   if (!candidates.length) return undefined;
   const question = choice(
     { context: "A developer describes one screen of an app in `screen`. The screen needs something drawn specially for it.", question: "Which of these is the thing this screen needs?" },
@@ -259,15 +309,15 @@ export interface Filling {
  */
 export const CUSTOM_SOURCES = {
   /** Off the app's shelf, if Jev says one of them is the thing; then only its data is written. */
-  async shelf(run: Run, screen: string, plan: ScreenPlan, setting: Setting, shelf: Baked[]): Promise<Filling | undefined> {
-    const reused = shelf.length ? await fromShelf(run, screen, plan, shelf) : undefined;
+  async shelf(run: Run, screen: string, custom: Custom, setting: Setting, shelf: Baked[]): Promise<Filling | undefined> {
+    const reused = shelf.length ? await fromShelf(run, screen, custom, shelf) : undefined;
     if (!reused) return undefined;
     const data = await writeData(run, screen, reused, setting).catch(() => undefined);
     if (data !== undefined) return { baked: reused, data };
     run.trace({ stage: `“${reused.name}” doesn't match its schema. Generating a new component.`, ms: 0 });
     return undefined;
   },
-  baked: (run: Run, screen: string, plan: ScreenPlan, setting: Setting): Promise<Filling | undefined> => bakeNew(run, screen, plan, setting),
+  baked: (run: Run, screen: string, custom: Custom, setting: Setting): Promise<Filling | undefined> => bakeNew(run, screen, custom, setting),
 };
 
 /** What reaches the screen: the component whole and its data, or, when nothing could be had, word that the slot is to close. */
@@ -284,14 +334,13 @@ export function sendCustom(run: Run, surfaceId: string, filling: Filling | undef
  * the browser tells it. `fresh` bakes a new component even if the shelf has one that fits: the developer asked for
  * this screen to be made again.
  */
-export async function bakeCustom(run: Run, surfaceId: string, screen: string, plan: ScreenPlan, setting: Setting, shelf: Baked[], fresh = false): Promise<void> {
-  // The order is the file's: `filled from shelf else baked else closed` under the custom part of grammar/screen.md.
-  const { graph } = idiom();
+export async function bakeCustom(run: Run, surfaceId: string, screen: string, custom: Custom, setting: Setting, shelf: Baked[], fresh = false, sources = idiom().graph.sources): Promise<void> {
+  // The order is the file's: `filled from shelf else baked else closed` under the part.
   const filled = await fill<Filling | "closed">(
-    graph.chainOf("custom"),
-    { shelf: () => CUSTOM_SOURCES.shelf(run, screen, plan, setting, shelf), baked: () => CUSTOM_SOURCES.baked(run, screen, plan, setting), closed: async () => "closed" as const },
-    graph.sources,
+    custom.chain,
+    { shelf: () => CUSTOM_SOURCES.shelf(run, screen, custom, setting, shelf), baked: () => CUSTOM_SOURCES.baked(run, screen, custom, setting), closed: async () => "closed" as const },
+    sources,
     { fresh },
   );
-  sendCustom(run, surfaceId, !filled || filled.value === "closed" ? undefined : filled.value);
+  sendCustom(run, surfaceId, !filled || filled.value === "closed" ? undefined : filled.value, `/${custom.part}`);
 }

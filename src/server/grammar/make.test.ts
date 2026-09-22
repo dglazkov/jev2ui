@@ -2,18 +2,15 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { KIT, kitRefs, type KitComponent } from "../../shared/kit.js";
 import { IDIOMS } from "../idioms.js";
-import type { ScreenPlan } from "../mock/plan.js";
-import { answersTo, random } from "./fixtures.js";
+import { DESIGN_SAYS, answersTo, random } from "./fixtures.js";
 import { idOf, parseGrammar, walk, type Field, type Grammar, type Node } from "./format.js";
 import { loadGrammar } from "./load.js";
-import { checkBindings, frameOf, partsOf, schemaOf, treeOf, type Look } from "./make.js";
+import { checkBindings, frameOf, kindsOf, partsOf, schemaOf, treeOf, type Look } from "./make.js";
 import { KIT_PATTERNS } from "./patterns.js";
 import { JEV, questionsOf, readGrammar, type Reading } from "./read.js";
-import { planOf } from "./screen-plan.js";
 
 const { graph } = IDIOMS.kit;
 const screen = graph.grammar;
-const readingOf = graph.readingOf.bind(graph);
 const kit = loadGrammar("kit.md");
 const named = (grammar: Grammar, name: string): Node => {
   let found: Node | undefined;
@@ -38,10 +35,12 @@ function nest(components: KitComponent[], root: string): unknown {
 function* cases(count: number, grammar = screen): Generator<{ reading: Reading; look: Look }> {
   const rng = random(42);
   for (let i = 0; i < count; i++) {
-    const plan: ScreenPlan = planOf(grammar, readGrammar(grammar, answersTo(questionsOf(grammar), rng), JEV));
+    const answers = answersTo(questionsOf(grammar), rng);
     const contained = rng() < 0.5;
     const icons = rng() < 0.5;
-    yield { reading: readingOf({ ...plan, contained, icons }), look: { contained, icons, symbol: plan.symbol } };
+    const reading = readGrammar(grammar, answers, JEV, { values: { ...DESIGN_SAYS, symbols: icons, cards: contained } });
+    const symbol = reading.values.screen_icon === "none" ? "image" : String(reading.values.screen_icon);
+    yield { reading, look: { contained, icons, symbol } };
   }
 }
 
@@ -121,8 +120,9 @@ test("every idiom draws the grammar it reads: its catalog binds, and the frame i
       }
       seen.add(frame.map((c) => c.id).join(","));
     }
-    // Every way the frame can come out was drawn: a dialog, a main screen, a pushed one, a person, an outcome.
-    assert.ok(seen.size >= 5, `${idiom.id}: only ${seen.size} shapes of frame`);
+    // Every way the frame can come out was drawn: a dialog, a main screen, a pushed one, a person, an outcome; an email's frame has one way.
+    const varied = kindsOf(grammar)?.asking?.type === "choice" && kindsOf(grammar)!.asking!.options.some((o) => o.shape?.traits.length);
+    assert.ok(seen.size >= (varied ? 5 : 1), `${idiom.id}: only ${seen.size} shapes of frame`);
   }
 });
 

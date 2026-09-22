@@ -4,11 +4,10 @@ import { readFileSync } from "node:fs";
 import { STOPS, dial, mixQuestions } from "../design-mix.js";
 import { IDIOMS } from "../idioms.js";
 import { files } from "./export.js";
-import { answersTo, random } from "./fixtures.js";
+import { answersTo, designSays, random } from "./fixtures.js";
 import { GRAMMAR_DIR, loadGrammar } from "./load.js";
 import { checkGrammar, laterIn, parseGrammar, printGrammar, printRule } from "./format.js";
 import { JEV, questionsOf, readGrammar, yieldOf } from "./read.js";
-import { planOf } from "./screen-plan.js";
 import { readFileSync as read } from "node:fs";
 
 const { grammar: SCREEN, blocks: BLOCKS, kinds: KINDS } = IDIOMS.kit.graph;
@@ -66,11 +65,13 @@ const answersFrom = (rng: () => number) => answersTo(questionsOf(SCREEN), rng);
 test("nothing in the file is there for show: without any one rule, trait or probed threshold, some screen comes out differently", () => {
   const grammar = loadGrammar("screen.md");
   const cases = Array.from({ length: 1500 }, (_, i) => answersFrom(random(i + 1)));
-  const plans = (g: typeof grammar, calibration = JEV) => JSON.stringify(cases.map((answers) => planOf(g, readGrammar(g, answers, calibration))));
+  // Under designs that rule things out a third of the time each, so that the rules about the design have something to do.
+  const given = cases.map((_, i) => designSays(random(9000 + i)));
+  const plans = (g: typeof grammar, calibration = JEV) => JSON.stringify(cases.map((answers, i) => { const { kind, blocks, values } = readGrammar(g, answers, calibration, { values: given[i] }); return { kind, blocks, values }; }));
   const whole = plans(grammar);
   // The rules about what is decided once the words exist have a test of their own (decide.test.ts).
   const first = grammar.rules.filter((rule) => !laterIn(grammar, rule));
-  assert.equal(first.length, 9);
+  assert.equal(first.length, 14);
   void read;
   for (const rule of first) assert.notEqual(plans({ ...grammar, rules: grammar.rules.filter((r) => r !== rule) }), whole, printRule(rule));
   const untraited = parseGrammar(printGrammar(grammar).replaceAll(" (never padding)", ""), (href) => readFileSync(`${GRAMMAR_DIR}${href}`, "utf8"));

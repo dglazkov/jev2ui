@@ -12,19 +12,16 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
 import { IDIOMS } from "../idioms.js";
-import { applyDesign, type ScreenPlan } from "../mock/plan.js";
 import { decide, decorate } from "./decide.js";
-import { answersTo, random } from "./fixtures.js";
-import { boundIn, frameOf, partsOf, schemaOf, treeOf } from "./make.js";
+import { DESIGN_SAYS, answersTo, random } from "./fixtures.js";
+import { boundIn, contentNodes, frameOf, partsOf, schemaOf, treeOf } from "./make.js";
 import { JEV, questionsOf, readGrammar } from "./read.js";
-import { planOf } from "./screen-plan.js";
 
 /** What depends on the grammar alone (plans, what is decided) is recorded under its name; what a catalog draws of it (parts), under each idiom's. */
 const FIXTURE = new URL("./fixtures/screen.json", import.meta.url);
 const fixtureOf = (idiom: string) => new URL(`./fixtures/${idiom}.json`, import.meta.url);
 const { graph } = IDIOMS.kit;
 const { grammar: SCREEN, kinds: KINDS } = graph;
-const readingOf = graph.readingOf.bind(graph);
 const partNode = graph.partNode.bind(graph);
 const questions = questionsOf(SCREEN);
 const kinds = Object.keys(KINDS);
@@ -36,20 +33,19 @@ const many = (rng: () => number, min: number, max: number) => Array.from({ lengt
 
 function made() {
   const out: Record<string, unknown> = {};
-  // Plans: what a reading of the file comes to, with and without what is settled beforehand.
+  // Readings: what a reading of the file comes to, with and without what is settled beforehand; the design says nothing.
   out.plans = Array.from({ length: 200 }, (_, i) => {
     const rng = random(1000 + i);
     const answers = answersTo(questions, rng);
     const among = rng() < 0.3 ? some(rng, kinds) : undefined;
     const known = { ...(among?.length ? { among } : {}), ...(rng() < 0.3 ? { blocks: some(rng, blocks) } : {}), ...(rng() < 0.4 ? { values: { top_level: rng() < 0.5 } } : {}) };
-    const reading = readGrammar(SCREEN, answers, JEV, known);
-    return { seed: 1000 + i, known, plan: planOf(SCREEN, reading), notes: reading.decisions.filter((d) => d.note).map((d) => `${d.id}: ${d.note}`) };
+    const { kind, blocks: has, values, decisions } = readGrammar(SCREEN, answers, JEV, { ...known, values: { ...DESIGN_SAYS, ...(known.values ?? {}) } });
+    return { seed: 1000 + i, known, reading: { kind, blocks: has, values }, notes: decisions.filter((d) => d.note).map((d) => `${d.id}: ${d.note}`) };
   });
   // What is decided once the words exist, for words nobody wrote.
   out.decided = Array.from({ length: 40 }, (_, i) => {
     const rng = random(3000 + i);
-    const plan = planOf(SCREEN, readGrammar(SCREEN, answersTo(questions, rng), JEV));
-    const reading = readingOf(plan);
+    const reading = readGrammar(SCREEN, answersTo(questions, rng), JEV, { values: DESIGN_SAYS });
     const content: Record<string, unknown> = {
       groups: many(rng, 1, 3).map(() => ({ title: pick(rng, WORDS), rows: many(rng, 1, 5).map(() => ({ label: pick(rng, WORDS), ...(rng() < 0.5 ? { value: pick(rng, WORDS) } : {}) })) })),
       list: { heading: "Things", items: many(rng, 3, 6).map(() => ({ title: pick(rng, WORDS), subtitle: "A line", ...(rng() < 0.5 ? { status: "Delayed" } : {}) })) },
@@ -81,14 +77,17 @@ function drawn(idiom: (typeof IDIOMS)[keyof typeof IDIOMS]) {
   const of = questionsOf(grammar);
   return Array.from({ length: 16 }, (_, i) => {
     const rng = random(2000 + i);
-    const reading = readGrammar(grammar, answersTo(of, rng), JEV);
+    const answers = answersTo(of, rng);
     const look = { imagery: rng() < 0.7, icons: rng() < 0.7, contained: rng() < 0.7 };
-    const plan = applyDesign(planOf(grammar, reading), look).plan;
-    const back = idiom.graph.readingOf(plan);
-    const parts = Object.fromEntries(partsOf(grammar, back).map((node) => [node.name, { schema: schemaOf(node, back), tree: treeOf(idiom.patterns, grammar, node, back, { contained: plan.contained, icons: plan.icons, symbol: plan.symbol }) }]));
-    const drawing = { contained: plan.contained, icons: plan.icons, symbol: plan.symbol };
-    const frame = frameOf(idiom.patterns, grammar, back, drawing, Object.entries(parts).map(([name, part]) => ({ name, root: part.tree[0].id })))!;
-    return { seed: 2000 + i, look, plan, parts, header: schemaOf(idiom.graph.partNode("header"), back), nav: schemaOf(idiom.graph.partNode("nav"), back), screen: [...frame, ...Object.values(parts).flatMap((p) => p.tree)] };
+    // The design's facts are given to the graph, whose rules say what they take off the screen.
+    const reading = readGrammar(grammar, answers, JEV, { values: { photographs: look.imagery, symbols: look.icons, cards: look.contained } });
+    const symbol = reading.values.screen_icon === "none" ? "image" : String(reading.values.screen_icon);
+    const drawing = { contained: look.contained, icons: look.icons, symbol };
+    const parts = Object.fromEntries(partsOf(grammar, reading).map((node) => [node.name, { schema: schemaOf(node, reading), tree: treeOf(idiom.patterns, grammar, node, reading, drawing) }]));
+    const frame = frameOf(idiom.patterns, grammar, reading, drawing, Object.entries(parts).map(([name, part]) => ({ name, root: part.tree[0].id })))!;
+    const { kind, blocks: has, values } = reading;
+    const content = Object.fromEntries(contentNodes(grammar).map((node) => [node.name, schemaOf(node, reading)]));
+    return { seed: 2000 + i, look, reading: { kind, blocks: has, values }, parts, content, screen: [...frame, ...Object.values(parts).flatMap((p) => p.tree)] };
   });
 }
 
@@ -127,10 +126,9 @@ test("every part of the file is drawn by something and every question of it is a
   const seen = new Set<string>();
   for (let i = 0; i < 300; i++) {
     const rng = random(i);
-    const reading = readGrammar(SCREEN, answersTo(questions, rng), JEV);
-    const plan: ScreenPlan = planOf(SCREEN, reading);
-    for (const node of partsOf(SCREEN, readingOf(plan))) {
-      const tree = treeOf(IDIOMS.kit.patterns, SCREEN, node, readingOf(plan), { contained: true, icons: true, symbol: "image" });
+    const reading = readGrammar(SCREEN, answersTo(questions, rng), JEV, { values: DESIGN_SAYS });
+    for (const node of partsOf(SCREEN, reading)) {
+      const tree = treeOf(IDIOMS.kit.patterns, SCREEN, node, reading, { contained: true, icons: true, symbol: "image" });
       if (tree.length) drawn.add(node.name);
       for (const path of boundIn(tree)) seen.add(`${node.name}:${path}`);
     }

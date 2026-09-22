@@ -37,6 +37,7 @@ const OF: Record<IdiomId, { grammar: string; catalog: string; patterns: Catalog 
   kit: { grammar: "screen.md", catalog: "kit.md", patterns: KIT_PATTERNS },
   // The same grammar: the frame's knobs are the contract, and iOS's catalog draws them its way.
   ios: { grammar: "screen.md", catalog: "ios/catalog.md", patterns: IOS_PATTERNS },
+  email: { grammar: "examples/email.md", catalog: "kit.md", patterns: KIT_PATTERNS },
 };
 
 const read = new Map<IdiomId, Idiom>();

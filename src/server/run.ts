@@ -95,7 +95,7 @@ export class Run {
   }
 
   /** The plan the screen is built from, for whoever may want it built again as it is. */
-  plan(plan: Record<string, unknown> & { archetype: string; blocks: string[] }) {
+  plan(plan: Extract<PipelineEvent, { type: "plan" }>["plan"]) {
     this.push({ type: "plan", at: this.at, plan });
   }
 

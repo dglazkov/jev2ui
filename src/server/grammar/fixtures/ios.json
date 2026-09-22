@@ -7,39 +7,51 @@
     "icons": true,
     "contained": false
    },
-   "plan": {
-    "archetype": "checkout",
+   "reading": {
+    "kind": "checkout",
     "blocks": [
      "facts",
      "form"
     ],
-    "topLevel": true,
-    "person": false,
-    "appBarAction": "add",
-    "list": {
-     "layout": "rows",
-     "leading": "none",
-     "trailing": "none",
-     "parts": []
-    },
-    "search": false,
-    "statDeltas": false,
-    "factsTotal": true,
-    "symbol": "sports_soccer",
-    "pictures": {
-     "hero": {
-      "subject": "landmark",
-      "p": 0.09349700458765736
-     },
-     "items": {
-      "subject": "farm_animal",
-      "p": 0.21481115585970836
-     }
-    },
-    "imagery": true,
-    "illustrated": false,
-    "icons": true,
-    "contained": false
+    "values": {
+     "archetype": "checkout",
+     "has_banner": false,
+     "has_hero": false,
+     "has_filters": false,
+     "search": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_facts": true,
+     "facts_total": true,
+     "has_prose": false,
+     "has_steps": false,
+     "has_form": true,
+     "has_actions": false,
+     "person": false,
+     "top_level": true,
+     "app_bar_action": "add",
+     "hero_subject": "landmark",
+     "item_subject": "farm_animal",
+     "screen_icon": "sports_soccer",
+     "photographs": true,
+     "symbols": true,
+     "cards": false
+    }
    },
    "parts": {
     "facts": {
@@ -258,86 +270,88 @@
      ]
     }
    },
-   "header": {
-    "type": "object",
-    "properties": {
-     "header": {
-      "type": "object",
-      "properties": {
-       "title": {
-        "type": "string",
-        "description": "Screen title, at most four words."
-       },
-       "subtitle": {
-        "type": "string",
-        "description": "One short supporting line."
-       }
-      },
-      "required": [
-       "title",
-       "subtitle"
-      ],
-      "propertyOrdering": [
-       "title",
-       "subtitle"
-      ]
-     }
-    },
-    "required": [
-     "header"
-    ],
-    "propertyOrdering": [
-     "header"
-    ]
-   },
-   "nav": {
-    "type": "object",
-    "properties": {
-     "nav": {
-      "type": "object",
-      "properties": {
-       "items": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "One word."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
         },
-        "description": "The app's three to five main destinations.",
-        "maxItems": 5,
-        "minItems": 3
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
        },
-       "active": {
-        "type": "integer",
-        "description": "Index of the destination this screen belongs to."
-       }
-      },
-      "required": [
-       "items",
-       "active"
-      ],
-      "propertyOrdering": [
-       "items",
-       "active"
-      ]
-     }
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
     },
-    "required": [
-     "nav"
-    ],
-    "propertyOrdering": [
-     "nav"
-    ]
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's three to five main destinations.",
+         "maxItems": 5,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the destination this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
    },
    "screen": [
     {
@@ -492,39 +506,51 @@
     "icons": false,
     "contained": true
    },
-   "plan": {
-    "archetype": "confirm",
+   "reading": {
+    "kind": "confirm",
     "blocks": [
      "prose",
      "actions"
     ],
-    "topLevel": false,
-    "person": false,
-    "appBarAction": null,
-    "list": {
-     "layout": "rows",
-     "leading": "none",
-     "trailing": "none",
-     "parts": []
-    },
-    "search": false,
-    "statDeltas": false,
-    "factsTotal": false,
-    "symbol": "thermostat",
-    "pictures": {
-     "hero": {
-      "subject": "city",
-      "p": 0.13432510533979716
-     },
-     "items": {
-      "subject": "bird",
-      "p": 0.1118629439232411
-     }
-    },
-    "imagery": true,
-    "illustrated": false,
-    "icons": false,
-    "contained": true
+    "values": {
+     "archetype": "confirm",
+     "has_banner": false,
+     "has_hero": false,
+     "has_filters": false,
+     "search": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_facts": false,
+     "facts_total": false,
+     "has_prose": true,
+     "has_steps": false,
+     "has_form": false,
+     "has_actions": true,
+     "person": false,
+     "top_level": false,
+     "app_bar_action": "none",
+     "hero_subject": "city",
+     "item_subject": "bird",
+     "screen_icon": "thermostat",
+     "photographs": true,
+     "symbols": false,
+     "cards": true
+    }
    },
    "parts": {
     "prose": {
@@ -623,86 +649,88 @@
      ]
     }
    },
-   "header": {
-    "type": "object",
-    "properties": {
-     "header": {
-      "type": "object",
-      "properties": {
-       "title": {
-        "type": "string",
-        "description": "Screen title, at most four words."
-       },
-       "subtitle": {
-        "type": "string",
-        "description": "One short supporting line."
-       }
-      },
-      "required": [
-       "title",
-       "subtitle"
-      ],
-      "propertyOrdering": [
-       "title",
-       "subtitle"
-      ]
-     }
-    },
-    "required": [
-     "header"
-    ],
-    "propertyOrdering": [
-     "header"
-    ]
-   },
-   "nav": {
-    "type": "object",
-    "properties": {
-     "nav": {
-      "type": "object",
-      "properties": {
-       "items": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "One word."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
         },
-        "description": "The app's three to five main destinations.",
-        "maxItems": 5,
-        "minItems": 3
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
        },
-       "active": {
-        "type": "integer",
-        "description": "Index of the destination this screen belongs to."
-       }
-      },
-      "required": [
-       "items",
-       "active"
-      ],
-      "propertyOrdering": [
-       "items",
-       "active"
-      ]
-     }
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
     },
-    "required": [
-     "nav"
-    ],
-    "propertyOrdering": [
-     "nav"
-    ]
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's three to five main destinations.",
+         "maxItems": 5,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the destination this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
    },
    "screen": [
     {
@@ -772,39 +800,51 @@
     "icons": false,
     "contained": true
    },
-   "plan": {
-    "archetype": "result",
+   "reading": {
+    "kind": "result",
     "blocks": [
      "prose",
      "actions"
     ],
-    "topLevel": false,
-    "person": false,
-    "appBarAction": "settings",
-    "list": {
-     "layout": "rows",
-     "leading": "none",
-     "trailing": "none",
-     "parts": []
-    },
-    "search": false,
-    "statDeltas": false,
-    "factsTotal": false,
-    "symbol": "tv",
-    "pictures": {
-     "hero": {
-      "subject": "gadget",
-      "p": 0.1271867276699907
-     },
-     "items": {
-      "subject": "work",
-      "p": 0.10962272195352846
-     }
-    },
-    "imagery": false,
-    "illustrated": false,
-    "icons": false,
-    "contained": true
+    "values": {
+     "archetype": "result",
+     "has_banner": false,
+     "has_hero": false,
+     "has_filters": false,
+     "search": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_facts": false,
+     "facts_total": false,
+     "has_prose": true,
+     "has_steps": false,
+     "has_form": false,
+     "has_actions": true,
+     "person": false,
+     "top_level": false,
+     "app_bar_action": "settings",
+     "hero_subject": "gadget",
+     "item_subject": "work",
+     "screen_icon": "tv",
+     "photographs": false,
+     "symbols": false,
+     "cards": true
+    }
    },
    "parts": {
     "prose": {
@@ -903,86 +943,88 @@
      ]
     }
    },
-   "header": {
-    "type": "object",
-    "properties": {
-     "header": {
-      "type": "object",
-      "properties": {
-       "title": {
-        "type": "string",
-        "description": "Screen title, at most four words."
-       },
-       "subtitle": {
-        "type": "string",
-        "description": "One short supporting line."
-       }
-      },
-      "required": [
-       "title",
-       "subtitle"
-      ],
-      "propertyOrdering": [
-       "title",
-       "subtitle"
-      ]
-     }
-    },
-    "required": [
-     "header"
-    ],
-    "propertyOrdering": [
-     "header"
-    ]
-   },
-   "nav": {
-    "type": "object",
-    "properties": {
-     "nav": {
-      "type": "object",
-      "properties": {
-       "items": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "One word."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
         },
-        "description": "The app's three to five main destinations.",
-        "maxItems": 5,
-        "minItems": 3
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
        },
-       "active": {
-        "type": "integer",
-        "description": "Index of the destination this screen belongs to."
-       }
-      },
-      "required": [
-       "items",
-       "active"
-      ],
-      "propertyOrdering": [
-       "items",
-       "active"
-      ]
-     }
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
     },
-    "required": [
-     "nav"
-    ],
-    "propertyOrdering": [
-     "nav"
-    ]
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's three to five main destinations.",
+         "maxItems": 5,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the destination this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
    },
    "screen": [
     {
@@ -1073,39 +1115,51 @@
     "icons": true,
     "contained": true
    },
-   "plan": {
-    "archetype": "result",
+   "reading": {
+    "kind": "result",
     "blocks": [
      "prose",
      "actions"
     ],
-    "topLevel": false,
-    "person": false,
-    "appBarAction": "share",
-    "list": {
-     "layout": "rows",
-     "leading": "none",
-     "trailing": "none",
-     "parts": []
-    },
-    "search": false,
-    "statDeltas": false,
-    "factsTotal": false,
-    "symbol": "key",
-    "pictures": {
-     "hero": {
-      "subject": "portrait",
-      "p": 0.11302198533361546
-     },
-     "items": {
-      "subject": "gadget",
-      "p": 0.11140206360896339
-     }
-    },
-    "imagery": true,
-    "illustrated": false,
-    "icons": true,
-    "contained": true
+    "values": {
+     "archetype": "result",
+     "has_banner": false,
+     "has_hero": false,
+     "has_filters": false,
+     "search": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_facts": false,
+     "facts_total": false,
+     "has_prose": true,
+     "has_steps": false,
+     "has_form": false,
+     "has_actions": true,
+     "person": false,
+     "top_level": false,
+     "app_bar_action": "share",
+     "hero_subject": "portrait",
+     "item_subject": "gadget",
+     "screen_icon": "key",
+     "photographs": true,
+     "symbols": true,
+     "cards": true
+    }
    },
    "parts": {
     "prose": {
@@ -1204,86 +1258,88 @@
      ]
     }
    },
-   "header": {
-    "type": "object",
-    "properties": {
-     "header": {
-      "type": "object",
-      "properties": {
-       "title": {
-        "type": "string",
-        "description": "Screen title, at most four words."
-       },
-       "subtitle": {
-        "type": "string",
-        "description": "One short supporting line."
-       }
-      },
-      "required": [
-       "title",
-       "subtitle"
-      ],
-      "propertyOrdering": [
-       "title",
-       "subtitle"
-      ]
-     }
-    },
-    "required": [
-     "header"
-    ],
-    "propertyOrdering": [
-     "header"
-    ]
-   },
-   "nav": {
-    "type": "object",
-    "properties": {
-     "nav": {
-      "type": "object",
-      "properties": {
-       "items": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "One word."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
         },
-        "description": "The app's three to five main destinations.",
-        "maxItems": 5,
-        "minItems": 3
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
        },
-       "active": {
-        "type": "integer",
-        "description": "Index of the destination this screen belongs to."
-       }
-      },
-      "required": [
-       "items",
-       "active"
-      ],
-      "propertyOrdering": [
-       "items",
-       "active"
-      ]
-     }
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
     },
-    "required": [
-     "nav"
-    ],
-    "propertyOrdering": [
-     "nav"
-    ]
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's three to five main destinations.",
+         "maxItems": 5,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the destination this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
    },
    "screen": [
     {
@@ -1382,39 +1438,51 @@
     "icons": true,
     "contained": true
    },
-   "plan": {
-    "archetype": "result",
+   "reading": {
+    "kind": "result",
     "blocks": [
      "prose",
      "facts"
     ],
-    "topLevel": false,
-    "person": false,
-    "appBarAction": "more_vert",
-    "list": {
-     "layout": "rows",
-     "leading": "none",
-     "trailing": "none",
-     "parts": []
-    },
-    "search": false,
-    "statDeltas": false,
-    "factsTotal": true,
-    "symbol": "savings",
-    "pictures": {
-     "hero": {
-      "subject": "work",
-      "p": 0.0725844696843225
-     },
-     "items": {
-      "subject": "water",
-      "p": 0.08558334108981683
-     }
-    },
-    "imagery": true,
-    "illustrated": false,
-    "icons": true,
-    "contained": true
+    "values": {
+     "archetype": "result",
+     "has_banner": false,
+     "has_hero": false,
+     "has_filters": false,
+     "search": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_facts": true,
+     "facts_total": true,
+     "has_prose": true,
+     "has_steps": false,
+     "has_form": false,
+     "has_actions": false,
+     "person": false,
+     "top_level": false,
+     "app_bar_action": "more",
+     "hero_subject": "work",
+     "item_subject": "water",
+     "screen_icon": "savings",
+     "photographs": true,
+     "symbols": true,
+     "cards": true
+    }
    },
    "parts": {
     "prose": {
@@ -1526,86 +1594,88 @@
      ]
     }
    },
-   "header": {
-    "type": "object",
-    "properties": {
-     "header": {
-      "type": "object",
-      "properties": {
-       "title": {
-        "type": "string",
-        "description": "Screen title, at most four words."
-       },
-       "subtitle": {
-        "type": "string",
-        "description": "One short supporting line."
-       }
-      },
-      "required": [
-       "title",
-       "subtitle"
-      ],
-      "propertyOrdering": [
-       "title",
-       "subtitle"
-      ]
-     }
-    },
-    "required": [
-     "header"
-    ],
-    "propertyOrdering": [
-     "header"
-    ]
-   },
-   "nav": {
-    "type": "object",
-    "properties": {
-     "nav": {
-      "type": "object",
-      "properties": {
-       "items": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "One word."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
         },
-        "description": "The app's three to five main destinations.",
-        "maxItems": 5,
-        "minItems": 3
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
        },
-       "active": {
-        "type": "integer",
-        "description": "Index of the destination this screen belongs to."
-       }
-      },
-      "required": [
-       "items",
-       "active"
-      ],
-      "propertyOrdering": [
-       "items",
-       "active"
-      ]
-     }
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
     },
-    "required": [
-     "nav"
-    ],
-    "propertyOrdering": [
-     "nav"
-    ]
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's three to five main destinations.",
+         "maxItems": 5,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the destination this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
    },
    "screen": [
     {
@@ -1711,40 +1781,52 @@
     "icons": true,
     "contained": true
    },
-   "plan": {
-    "archetype": "dashboard",
+   "reading": {
+    "kind": "dashboard",
     "blocks": [
      "banner",
      "stats",
      "facts"
     ],
-    "topLevel": true,
-    "person": false,
-    "appBarAction": "edit",
-    "list": {
-     "layout": "rows",
-     "leading": "none",
-     "trailing": "none",
-     "parts": []
-    },
-    "search": false,
-    "statDeltas": true,
-    "factsTotal": true,
-    "symbol": "savings",
-    "pictures": {
-     "hero": {
-      "subject": "story",
-      "p": 0.13169957073244273
-     },
-     "items": {
-      "subject": "stay",
-      "p": 0.14951331717614572
-     }
-    },
-    "imagery": false,
-    "illustrated": false,
-    "icons": true,
-    "contained": true
+    "values": {
+     "archetype": "dashboard",
+     "has_banner": true,
+     "has_hero": false,
+     "has_filters": false,
+     "search": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": true,
+     "stat_deltas": true,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_facts": true,
+     "facts_total": true,
+     "has_prose": false,
+     "has_steps": false,
+     "has_form": false,
+     "has_actions": false,
+     "person": false,
+     "top_level": true,
+     "app_bar_action": "edit",
+     "hero_subject": "story",
+     "item_subject": "stay",
+     "screen_icon": "savings",
+     "photographs": false,
+     "symbols": true,
+     "cards": true
+    }
    },
    "parts": {
     "banner": {
@@ -1941,86 +2023,88 @@
      ]
     }
    },
-   "header": {
-    "type": "object",
-    "properties": {
-     "header": {
-      "type": "object",
-      "properties": {
-       "title": {
-        "type": "string",
-        "description": "Screen title, at most four words."
-       },
-       "subtitle": {
-        "type": "string",
-        "description": "One short supporting line."
-       }
-      },
-      "required": [
-       "title",
-       "subtitle"
-      ],
-      "propertyOrdering": [
-       "title",
-       "subtitle"
-      ]
-     }
-    },
-    "required": [
-     "header"
-    ],
-    "propertyOrdering": [
-     "header"
-    ]
-   },
-   "nav": {
-    "type": "object",
-    "properties": {
-     "nav": {
-      "type": "object",
-      "properties": {
-       "items": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "One word."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
         },
-        "description": "The app's three to five main destinations.",
-        "maxItems": 5,
-        "minItems": 3
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
        },
-       "active": {
-        "type": "integer",
-        "description": "Index of the destination this screen belongs to."
-       }
-      },
-      "required": [
-       "items",
-       "active"
-      ],
-      "propertyOrdering": [
-       "items",
-       "active"
-      ]
-     }
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
     },
-    "required": [
-     "nav"
-    ],
-    "propertyOrdering": [
-     "nav"
-    ]
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's three to five main destinations.",
+         "maxItems": 5,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the destination this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
    },
    "screen": [
     {
@@ -2147,39 +2231,51 @@
     "icons": true,
     "contained": true
    },
-   "plan": {
-    "archetype": "settings",
+   "reading": {
+    "kind": "settings",
     "blocks": [
      "groups",
      "actions"
     ],
-    "topLevel": false,
-    "person": false,
-    "appBarAction": "notifications",
-    "list": {
-     "layout": "rows",
-     "leading": "none",
-     "trailing": "none",
-     "parts": []
-    },
-    "search": false,
-    "statDeltas": false,
-    "factsTotal": false,
-    "symbol": "newspaper",
-    "pictures": {
-     "hero": {
-      "subject": "story",
-      "p": 0.09364870415348624
-     },
-     "items": {
-      "subject": "plant",
-      "p": 0.07516145487182077
-     }
-    },
-    "imagery": false,
-    "illustrated": false,
-    "icons": true,
-    "contained": true
+    "values": {
+     "archetype": "settings",
+     "has_banner": false,
+     "has_hero": false,
+     "has_filters": false,
+     "search": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": true,
+     "has_facts": false,
+     "facts_total": false,
+     "has_prose": false,
+     "has_steps": false,
+     "has_form": false,
+     "has_actions": true,
+     "person": false,
+     "top_level": false,
+     "app_bar_action": "notifications",
+     "hero_subject": "story",
+     "item_subject": "plant",
+     "screen_icon": "newspaper",
+     "photographs": false,
+     "symbols": true,
+     "cards": true
+    }
    },
    "parts": {
     "groups": {
@@ -2352,86 +2448,88 @@
      ]
     }
    },
-   "header": {
-    "type": "object",
-    "properties": {
-     "header": {
-      "type": "object",
-      "properties": {
-       "title": {
-        "type": "string",
-        "description": "Screen title, at most four words."
-       },
-       "subtitle": {
-        "type": "string",
-        "description": "One short supporting line."
-       }
-      },
-      "required": [
-       "title",
-       "subtitle"
-      ],
-      "propertyOrdering": [
-       "title",
-       "subtitle"
-      ]
-     }
-    },
-    "required": [
-     "header"
-    ],
-    "propertyOrdering": [
-     "header"
-    ]
-   },
-   "nav": {
-    "type": "object",
-    "properties": {
-     "nav": {
-      "type": "object",
-      "properties": {
-       "items": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "One word."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
         },
-        "description": "The app's three to five main destinations.",
-        "maxItems": 5,
-        "minItems": 3
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
        },
-       "active": {
-        "type": "integer",
-        "description": "Index of the destination this screen belongs to."
-       }
-      },
-      "required": [
-       "items",
-       "active"
-      ],
-      "propertyOrdering": [
-       "items",
-       "active"
-      ]
-     }
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
     },
-    "required": [
-     "nav"
-    ],
-    "propertyOrdering": [
-     "nav"
-    ]
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's three to five main destinations.",
+         "maxItems": 5,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the destination this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
    },
    "screen": [
     {
@@ -2533,45 +2631,52 @@
     "icons": true,
     "contained": true
    },
-   "plan": {
-    "archetype": "dashboard",
+   "reading": {
+    "kind": "dashboard",
     "blocks": [
      "banner",
      "custom",
      "stats"
     ],
-    "topLevel": false,
-    "person": false,
-    "appBarAction": "notifications",
-    "list": {
-     "layout": "rows",
-     "leading": "none",
-     "trailing": "none",
-     "parts": []
-    },
-    "custom": {
-     "use": "watch",
-     "size": "strip",
-     "linked": false
-    },
-    "search": false,
-    "statDeltas": true,
-    "factsTotal": false,
-    "symbol": "support_agent",
-    "pictures": {
-     "hero": {
-      "subject": "art",
-      "p": 0.10543477140992241
-     },
-     "items": {
-      "subject": "play",
-      "p": 0.10705765972564828
-     }
-    },
-    "imagery": false,
-    "illustrated": false,
-    "icons": true,
-    "contained": true
+    "values": {
+     "archetype": "dashboard",
+     "has_banner": true,
+     "has_hero": false,
+     "has_filters": false,
+     "search": false,
+     "has_custom": true,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": true,
+     "stat_deltas": true,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_facts": false,
+     "facts_total": false,
+     "has_prose": false,
+     "has_steps": false,
+     "has_form": false,
+     "has_actions": false,
+     "person": false,
+     "top_level": false,
+     "app_bar_action": "notifications",
+     "hero_subject": "art",
+     "item_subject": "play",
+     "screen_icon": "support_agent",
+     "photographs": false,
+     "symbols": true,
+     "cards": true
+    }
    },
    "parts": {
     "banner": {
@@ -2720,86 +2825,88 @@
      ]
     }
    },
-   "header": {
-    "type": "object",
-    "properties": {
-     "header": {
-      "type": "object",
-      "properties": {
-       "title": {
-        "type": "string",
-        "description": "Screen title, at most four words."
-       },
-       "subtitle": {
-        "type": "string",
-        "description": "One short supporting line."
-       }
-      },
-      "required": [
-       "title",
-       "subtitle"
-      ],
-      "propertyOrdering": [
-       "title",
-       "subtitle"
-      ]
-     }
-    },
-    "required": [
-     "header"
-    ],
-    "propertyOrdering": [
-     "header"
-    ]
-   },
-   "nav": {
-    "type": "object",
-    "properties": {
-     "nav": {
-      "type": "object",
-      "properties": {
-       "items": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "One word."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
         },
-        "description": "The app's three to five main destinations.",
-        "maxItems": 5,
-        "minItems": 3
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
        },
-       "active": {
-        "type": "integer",
-        "description": "Index of the destination this screen belongs to."
-       }
-      },
-      "required": [
-       "items",
-       "active"
-      ],
-      "propertyOrdering": [
-       "items",
-       "active"
-      ]
-     }
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
     },
-    "required": [
-     "nav"
-    ],
-    "propertyOrdering": [
-     "nav"
-    ]
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's three to five main destinations.",
+         "maxItems": 5,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the destination this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
    },
    "screen": [
     {
@@ -2894,44 +3001,51 @@
     "icons": true,
     "contained": true
    },
-   "plan": {
-    "archetype": "form",
+   "reading": {
+    "kind": "form",
     "blocks": [
      "custom",
      "form"
     ],
-    "topLevel": true,
-    "person": false,
-    "appBarAction": "more_vert",
-    "list": {
-     "layout": "rows",
-     "leading": "none",
-     "trailing": "none",
-     "parts": []
-    },
-    "custom": {
-     "use": "pick",
-     "size": "tall",
-     "linked": false
-    },
-    "search": false,
-    "statDeltas": false,
-    "factsTotal": false,
-    "symbol": "kitchen",
-    "pictures": {
-     "hero": {
-      "subject": "water",
-      "p": 0.09914198613972662
-     },
-     "items": {
-      "subject": "wildlife",
-      "p": 0.08715546417689975
-     }
-    },
-    "imagery": true,
-    "illustrated": false,
-    "icons": true,
-    "contained": true
+    "values": {
+     "archetype": "form",
+     "has_banner": false,
+     "has_hero": false,
+     "has_filters": false,
+     "search": false,
+     "has_custom": true,
+     "custom_use": "pick",
+     "custom_size": "tall",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_facts": false,
+     "facts_total": false,
+     "has_prose": false,
+     "has_steps": false,
+     "has_form": true,
+     "has_actions": false,
+     "person": false,
+     "top_level": true,
+     "app_bar_action": "more",
+     "hero_subject": "water",
+     "item_subject": "wildlife",
+     "screen_icon": "kitchen",
+     "photographs": true,
+     "symbols": true,
+     "cards": true
+    }
    },
    "parts": {
     "custom": {
@@ -3102,86 +3216,88 @@
      ]
     }
    },
-   "header": {
-    "type": "object",
-    "properties": {
-     "header": {
-      "type": "object",
-      "properties": {
-       "title": {
-        "type": "string",
-        "description": "Screen title, at most four words."
-       },
-       "subtitle": {
-        "type": "string",
-        "description": "One short supporting line."
-       }
-      },
-      "required": [
-       "title",
-       "subtitle"
-      ],
-      "propertyOrdering": [
-       "title",
-       "subtitle"
-      ]
-     }
-    },
-    "required": [
-     "header"
-    ],
-    "propertyOrdering": [
-     "header"
-    ]
-   },
-   "nav": {
-    "type": "object",
-    "properties": {
-     "nav": {
-      "type": "object",
-      "properties": {
-       "items": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "One word."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
         },
-        "description": "The app's three to five main destinations.",
-        "maxItems": 5,
-        "minItems": 3
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
        },
-       "active": {
-        "type": "integer",
-        "description": "Index of the destination this screen belongs to."
-       }
-      },
-      "required": [
-       "items",
-       "active"
-      ],
-      "propertyOrdering": [
-       "items",
-       "active"
-      ]
-     }
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
     },
-    "required": [
-     "nav"
-    ],
-    "propertyOrdering": [
-     "nav"
-    ]
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's three to five main destinations.",
+         "maxItems": 5,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the destination this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
    },
    "screen": [
     {
@@ -3325,49 +3441,53 @@
     "icons": false,
     "contained": false
    },
-   "plan": {
-    "archetype": "checkout",
+   "reading": {
+    "kind": "checkout",
     "blocks": [
      "custom",
      "list",
      "facts",
      "actions"
     ],
-    "topLevel": false,
-    "person": false,
-    "appBarAction": "more_vert",
-    "list": {
-     "layout": "rows",
-     "leading": "number",
-     "trailing": "button",
-     "parts": [
-      "status",
-      "progress"
-     ]
-    },
-    "custom": {
-     "use": "read",
-     "size": "square",
-     "linked": false
-    },
-    "search": false,
-    "statDeltas": false,
-    "factsTotal": false,
-    "symbol": "family_restroom",
-    "pictures": {
-     "hero": {
-      "subject": "dog",
-      "p": 0.10720183796596387
-     },
-     "items": {
-      "subject": "mountain",
-      "p": 0.10118497447711346
-     }
-    },
-    "imagery": true,
-    "illustrated": false,
-    "icons": false,
-    "contained": false
+    "values": {
+     "archetype": "checkout",
+     "has_banner": false,
+     "has_hero": false,
+     "has_filters": false,
+     "search": false,
+     "has_custom": true,
+     "custom_use": "read",
+     "custom_size": "square",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": true,
+     "list_layout": "rows",
+     "item_leading": "number",
+     "item_trailing": "button",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": true,
+     "item_time": false,
+     "item_progress": true,
+     "has_groups": false,
+     "has_facts": true,
+     "facts_total": false,
+     "has_prose": false,
+     "has_steps": false,
+     "has_form": false,
+     "has_actions": true,
+     "person": false,
+     "top_level": false,
+     "app_bar_action": "more",
+     "hero_subject": "dog",
+     "item_subject": "mountain",
+     "screen_icon": "family_restroom",
+     "photographs": true,
+     "symbols": false,
+     "cards": false
+    }
    },
    "parts": {
     "custom": {
@@ -3621,9 +3741,6 @@
        },
        "value": {
         "path": "value"
-       },
-       "strong": {
-        "path": "strong"
        }
       }
      ]
@@ -3686,86 +3803,88 @@
      ]
     }
    },
-   "header": {
-    "type": "object",
-    "properties": {
-     "header": {
-      "type": "object",
-      "properties": {
-       "title": {
-        "type": "string",
-        "description": "Screen title, at most four words."
-       },
-       "subtitle": {
-        "type": "string",
-        "description": "One short supporting line."
-       }
-      },
-      "required": [
-       "title",
-       "subtitle"
-      ],
-      "propertyOrdering": [
-       "title",
-       "subtitle"
-      ]
-     }
-    },
-    "required": [
-     "header"
-    ],
-    "propertyOrdering": [
-     "header"
-    ]
-   },
-   "nav": {
-    "type": "object",
-    "properties": {
-     "nav": {
-      "type": "object",
-      "properties": {
-       "items": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "One word."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
         },
-        "description": "The app's three to five main destinations.",
-        "maxItems": 5,
-        "minItems": 3
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
        },
-       "active": {
-        "type": "integer",
-        "description": "Index of the destination this screen belongs to."
-       }
-      },
-      "required": [
-       "items",
-       "active"
-      ],
-      "propertyOrdering": [
-       "items",
-       "active"
-      ]
-     }
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
     },
-    "required": [
-     "nav"
-    ],
-    "propertyOrdering": [
-     "nav"
-    ]
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's three to five main destinations.",
+         "maxItems": 5,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the destination this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
    },
    "screen": [
     {
@@ -3939,9 +4058,6 @@
      },
      "value": {
       "path": "value"
-     },
-     "strong": {
-      "path": "strong"
      }
     },
     {
@@ -3974,43 +4090,51 @@
     "icons": false,
     "contained": true
    },
-   "plan": {
-    "archetype": "feed",
+   "reading": {
+    "kind": "feed",
     "blocks": [
      "filters",
      "list"
     ],
-    "topLevel": true,
-    "person": false,
-    "appBarAction": "share",
-    "list": {
-     "layout": "rows",
-     "leading": "number",
-     "trailing": "checkbox",
-     "parts": [
-      "description",
-      "price",
-      "progress"
-     ]
-    },
-    "search": false,
-    "statDeltas": false,
-    "factsTotal": false,
-    "symbol": "print",
-    "pictures": {
-     "hero": {
-      "subject": "venue",
-      "p": 0.17942280513581998
-     },
-     "items": {
-      "subject": "beach",
-      "p": 0.06515388203596041
-     }
-    },
-    "imagery": true,
-    "illustrated": false,
-    "icons": false,
-    "contained": true
+    "values": {
+     "archetype": "feed",
+     "has_banner": false,
+     "has_hero": false,
+     "has_filters": true,
+     "search": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": true,
+     "list_layout": "rows",
+     "item_leading": "number",
+     "item_trailing": "checkbox",
+     "item_description": true,
+     "item_price": true,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": true,
+     "has_groups": false,
+     "has_facts": false,
+     "facts_total": false,
+     "has_prose": false,
+     "has_steps": false,
+     "has_form": false,
+     "has_actions": false,
+     "person": false,
+     "top_level": true,
+     "app_bar_action": "share",
+     "hero_subject": "venue",
+     "item_subject": "beach",
+     "screen_icon": "print",
+     "photographs": true,
+     "symbols": false,
+     "cards": true
+    }
    },
    "parts": {
     "filters": {
@@ -4207,86 +4331,88 @@
      ]
     }
    },
-   "header": {
-    "type": "object",
-    "properties": {
-     "header": {
-      "type": "object",
-      "properties": {
-       "title": {
-        "type": "string",
-        "description": "Screen title, at most four words."
-       },
-       "subtitle": {
-        "type": "string",
-        "description": "One short supporting line."
-       }
-      },
-      "required": [
-       "title",
-       "subtitle"
-      ],
-      "propertyOrdering": [
-       "title",
-       "subtitle"
-      ]
-     }
-    },
-    "required": [
-     "header"
-    ],
-    "propertyOrdering": [
-     "header"
-    ]
-   },
-   "nav": {
-    "type": "object",
-    "properties": {
-     "nav": {
-      "type": "object",
-      "properties": {
-       "items": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "One word."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
         },
-        "description": "The app's three to five main destinations.",
-        "maxItems": 5,
-        "minItems": 3
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
        },
-       "active": {
-        "type": "integer",
-        "description": "Index of the destination this screen belongs to."
-       }
-      },
-      "required": [
-       "items",
-       "active"
-      ],
-      "propertyOrdering": [
-       "items",
-       "active"
-      ]
-     }
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
     },
-    "required": [
-     "nav"
-    ],
-    "propertyOrdering": [
-     "nav"
-    ]
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's three to five main destinations.",
+         "maxItems": 5,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the destination this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
    },
    "screen": [
     {
@@ -4422,44 +4548,51 @@
     "icons": false,
     "contained": false
    },
-   "plan": {
-    "archetype": "form",
+   "reading": {
+    "kind": "form",
     "blocks": [
      "custom",
      "form"
     ],
-    "topLevel": false,
-    "person": false,
-    "appBarAction": "notifications",
-    "list": {
-     "layout": "rows",
-     "leading": "none",
-     "trailing": "none",
-     "parts": []
-    },
-    "custom": {
-     "use": "pick",
-     "size": "tall",
-     "linked": false
-    },
-    "search": false,
-    "statDeltas": false,
-    "factsTotal": false,
-    "symbol": "wb_sunny",
-    "pictures": {
-     "hero": {
-      "subject": "transit",
-      "p": 0.08777031504972141
-     },
-     "items": {
-      "subject": "home",
-      "p": 0.13347335559556842
-     }
-    },
-    "imagery": true,
-    "illustrated": false,
-    "icons": false,
-    "contained": false
+    "values": {
+     "archetype": "form",
+     "has_banner": false,
+     "has_hero": false,
+     "has_filters": false,
+     "search": false,
+     "has_custom": true,
+     "custom_use": "pick",
+     "custom_size": "tall",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_facts": false,
+     "facts_total": false,
+     "has_prose": false,
+     "has_steps": false,
+     "has_form": true,
+     "has_actions": false,
+     "person": false,
+     "top_level": false,
+     "app_bar_action": "notifications",
+     "hero_subject": "transit",
+     "item_subject": "home",
+     "screen_icon": "wb_sunny",
+     "photographs": true,
+     "symbols": false,
+     "cards": false
+    }
    },
    "parts": {
     "custom": {
@@ -4630,86 +4763,88 @@
      ]
     }
    },
-   "header": {
-    "type": "object",
-    "properties": {
-     "header": {
-      "type": "object",
-      "properties": {
-       "title": {
-        "type": "string",
-        "description": "Screen title, at most four words."
-       },
-       "subtitle": {
-        "type": "string",
-        "description": "One short supporting line."
-       }
-      },
-      "required": [
-       "title",
-       "subtitle"
-      ],
-      "propertyOrdering": [
-       "title",
-       "subtitle"
-      ]
-     }
-    },
-    "required": [
-     "header"
-    ],
-    "propertyOrdering": [
-     "header"
-    ]
-   },
-   "nav": {
-    "type": "object",
-    "properties": {
-     "nav": {
-      "type": "object",
-      "properties": {
-       "items": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "One word."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
         },
-        "description": "The app's three to five main destinations.",
-        "maxItems": 5,
-        "minItems": 3
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
        },
-       "active": {
-        "type": "integer",
-        "description": "Index of the destination this screen belongs to."
-       }
-      },
-      "required": [
-       "items",
-       "active"
-      ],
-      "propertyOrdering": [
-       "items",
-       "active"
-      ]
-     }
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
     },
-    "required": [
-     "nav"
-    ],
-    "propertyOrdering": [
-     "nav"
-    ]
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's three to five main destinations.",
+         "maxItems": 5,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the destination this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
    },
    "screen": [
     {
@@ -4832,44 +4967,51 @@
     "icons": false,
     "contained": false
    },
-   "plan": {
-    "archetype": "form",
+   "reading": {
+    "kind": "form",
     "blocks": [
      "custom",
      "form"
     ],
-    "topLevel": true,
-    "person": false,
-    "appBarAction": "more_vert",
-    "list": {
-     "layout": "rows",
-     "leading": "none",
-     "trailing": "none",
-     "parts": []
-    },
-    "custom": {
-     "use": "read",
-     "size": "wide",
-     "linked": false
-    },
-    "search": false,
-    "statDeltas": false,
-    "factsTotal": false,
-    "symbol": "local_shipping",
-    "pictures": {
-     "hero": {
-      "subject": "vehicle",
-      "p": 0.12433394407096636
-     },
-     "items": {
-      "subject": "produce",
-      "p": 0.08063964616013122
-     }
-    },
-    "imagery": true,
-    "illustrated": false,
-    "icons": false,
-    "contained": false
+    "values": {
+     "archetype": "form",
+     "has_banner": false,
+     "has_hero": false,
+     "has_filters": false,
+     "search": false,
+     "has_custom": true,
+     "custom_use": "read",
+     "custom_size": "wide",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_facts": false,
+     "facts_total": false,
+     "has_prose": false,
+     "has_steps": false,
+     "has_form": true,
+     "has_actions": false,
+     "person": false,
+     "top_level": true,
+     "app_bar_action": "more",
+     "hero_subject": "vehicle",
+     "item_subject": "produce",
+     "screen_icon": "local_shipping",
+     "photographs": true,
+     "symbols": false,
+     "cards": false
+    }
    },
    "parts": {
     "custom": {
@@ -5040,86 +5182,88 @@
      ]
     }
    },
-   "header": {
-    "type": "object",
-    "properties": {
-     "header": {
-      "type": "object",
-      "properties": {
-       "title": {
-        "type": "string",
-        "description": "Screen title, at most four words."
-       },
-       "subtitle": {
-        "type": "string",
-        "description": "One short supporting line."
-       }
-      },
-      "required": [
-       "title",
-       "subtitle"
-      ],
-      "propertyOrdering": [
-       "title",
-       "subtitle"
-      ]
-     }
-    },
-    "required": [
-     "header"
-    ],
-    "propertyOrdering": [
-     "header"
-    ]
-   },
-   "nav": {
-    "type": "object",
-    "properties": {
-     "nav": {
-      "type": "object",
-      "properties": {
-       "items": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "One word."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
         },
-        "description": "The app's three to five main destinations.",
-        "maxItems": 5,
-        "minItems": 3
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
        },
-       "active": {
-        "type": "integer",
-        "description": "Index of the destination this screen belongs to."
-       }
-      },
-      "required": [
-       "items",
-       "active"
-      ],
-      "propertyOrdering": [
-       "items",
-       "active"
-      ]
-     }
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
     },
-    "required": [
-     "nav"
-    ],
-    "propertyOrdering": [
-     "nav"
-    ]
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's three to five main destinations.",
+         "maxItems": 5,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the destination this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
    },
    "screen": [
     {
@@ -5260,44 +5404,52 @@
     "icons": true,
     "contained": true
    },
-   "plan": {
-    "archetype": "dashboard",
+   "reading": {
+    "kind": "dashboard",
     "blocks": [
      "stats",
      "facts",
      "list"
     ],
-    "topLevel": true,
-    "person": false,
-    "appBarAction": "share",
-    "list": {
-     "layout": "rows",
-     "leading": "icon",
-     "trailing": "switch",
-     "parts": [
-      "description",
-      "price",
-      "rating"
-     ]
-    },
-    "search": false,
-    "statDeltas": false,
-    "factsTotal": true,
-    "symbol": "monitor_heart",
-    "pictures": {
-     "hero": {
-      "subject": "flower",
-      "p": 0.10209319516557412
-     },
-     "items": {
-      "subject": "farm_animal",
-      "p": 0.10826194490526919
-     }
-    },
-    "imagery": false,
-    "illustrated": false,
-    "icons": true,
-    "contained": true
+    "values": {
+     "archetype": "dashboard",
+     "has_banner": false,
+     "has_hero": false,
+     "has_filters": false,
+     "search": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": true,
+     "stat_deltas": false,
+     "has_list": true,
+     "list_layout": "rows",
+     "item_leading": "icon",
+     "item_trailing": "switch",
+     "item_description": true,
+     "item_price": true,
+     "item_rating": true,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_facts": true,
+     "facts_total": true,
+     "has_prose": false,
+     "has_steps": false,
+     "has_form": false,
+     "has_actions": false,
+     "person": false,
+     "top_level": true,
+     "app_bar_action": "share",
+     "hero_subject": "flower",
+     "item_subject": "farm_animal",
+     "screen_icon": "monitor_heart",
+     "photographs": false,
+     "symbols": true,
+     "cards": true
+    }
    },
    "parts": {
     "stats": {
@@ -5608,86 +5760,88 @@
      ]
     }
    },
-   "header": {
-    "type": "object",
-    "properties": {
-     "header": {
-      "type": "object",
-      "properties": {
-       "title": {
-        "type": "string",
-        "description": "Screen title, at most four words."
-       },
-       "subtitle": {
-        "type": "string",
-        "description": "One short supporting line."
-       }
-      },
-      "required": [
-       "title",
-       "subtitle"
-      ],
-      "propertyOrdering": [
-       "title",
-       "subtitle"
-      ]
-     }
-    },
-    "required": [
-     "header"
-    ],
-    "propertyOrdering": [
-     "header"
-    ]
-   },
-   "nav": {
-    "type": "object",
-    "properties": {
-     "nav": {
-      "type": "object",
-      "properties": {
-       "items": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "One word."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
         },
-        "description": "The app's three to five main destinations.",
-        "maxItems": 5,
-        "minItems": 3
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
        },
-       "active": {
-        "type": "integer",
-        "description": "Index of the destination this screen belongs to."
-       }
-      },
-      "required": [
-       "items",
-       "active"
-      ],
-      "propertyOrdering": [
-       "items",
-       "active"
-      ]
-     }
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
     },
-    "required": [
-     "nav"
-    ],
-    "propertyOrdering": [
-     "nav"
-    ]
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's three to five main destinations.",
+         "maxItems": 5,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the destination this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
    },
    "screen": [
     {
@@ -5881,45 +6035,52 @@
     "icons": true,
     "contained": true
    },
-   "plan": {
-    "archetype": "form",
+   "reading": {
+    "kind": "form",
     "blocks": [
      "prose",
      "custom",
      "form"
     ],
-    "topLevel": true,
-    "person": false,
-    "appBarAction": "notifications",
-    "list": {
-     "layout": "rows",
-     "leading": "none",
-     "trailing": "none",
-     "parts": []
-    },
-    "custom": {
-     "use": "read",
-     "size": "strip",
-     "linked": false
-    },
-    "search": false,
-    "statDeltas": false,
-    "factsTotal": false,
-    "symbol": "call",
-    "pictures": {
-     "hero": {
-      "subject": "dessert",
-      "p": 0.13086449392471444
-     },
-     "items": {
-      "subject": "portrait",
-      "p": 0.1328921590711492
-     }
-    },
-    "imagery": false,
-    "illustrated": false,
-    "icons": true,
-    "contained": true
+    "values": {
+     "archetype": "form",
+     "has_banner": false,
+     "has_hero": false,
+     "has_filters": false,
+     "search": false,
+     "has_custom": true,
+     "custom_use": "read",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_facts": false,
+     "facts_total": false,
+     "has_prose": true,
+     "has_steps": false,
+     "has_form": true,
+     "has_actions": false,
+     "person": false,
+     "top_level": true,
+     "app_bar_action": "notifications",
+     "hero_subject": "dessert",
+     "item_subject": "portrait",
+     "screen_icon": "call",
+     "photographs": false,
+     "symbols": true,
+     "cards": true
+    }
    },
    "parts": {
     "prose": {
@@ -6128,86 +6289,88 @@
      ]
     }
    },
-   "header": {
-    "type": "object",
-    "properties": {
-     "header": {
-      "type": "object",
-      "properties": {
-       "title": {
-        "type": "string",
-        "description": "Screen title, at most four words."
-       },
-       "subtitle": {
-        "type": "string",
-        "description": "One short supporting line."
-       }
-      },
-      "required": [
-       "title",
-       "subtitle"
-      ],
-      "propertyOrdering": [
-       "title",
-       "subtitle"
-      ]
-     }
-    },
-    "required": [
-     "header"
-    ],
-    "propertyOrdering": [
-     "header"
-    ]
-   },
-   "nav": {
-    "type": "object",
-    "properties": {
-     "nav": {
-      "type": "object",
-      "properties": {
-       "items": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "One word."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
         },
-        "description": "The app's three to five main destinations.",
-        "maxItems": 5,
-        "minItems": 3
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
        },
-       "active": {
-        "type": "integer",
-        "description": "Index of the destination this screen belongs to."
-       }
-      },
-      "required": [
-       "items",
-       "active"
-      ],
-      "propertyOrdering": [
-       "items",
-       "active"
-      ]
-     }
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
     },
-    "required": [
-     "nav"
-    ],
-    "propertyOrdering": [
-     "nav"
-    ]
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's three to five main destinations.",
+         "maxItems": 5,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the destination this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
    },
    "screen": [
     {
@@ -6360,45 +6523,52 @@
     "icons": true,
     "contained": true
    },
-   "plan": {
-    "archetype": "guide",
+   "reading": {
+    "kind": "guide",
     "blocks": [
      "prose",
      "custom",
      "steps"
     ],
-    "topLevel": false,
-    "person": false,
-    "appBarAction": "more_vert",
-    "list": {
-     "layout": "rows",
-     "leading": "none",
-     "trailing": "none",
-     "parts": []
-    },
-    "custom": {
-     "use": "adjust",
-     "size": "square",
-     "linked": false
-    },
-    "search": false,
-    "statDeltas": false,
-    "factsTotal": false,
-    "symbol": "article",
-    "pictures": {
-     "hero": {
-      "subject": "beach",
-      "p": 0.10411927031822242
-     },
-     "items": {
-      "subject": "sky",
-      "p": 0.10563115792414769
-     }
-    },
-    "imagery": false,
-    "illustrated": false,
-    "icons": true,
-    "contained": true
+    "values": {
+     "archetype": "guide",
+     "has_banner": false,
+     "has_hero": false,
+     "has_filters": false,
+     "search": false,
+     "has_custom": true,
+     "custom_use": "adjust",
+     "custom_size": "square",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_facts": false,
+     "facts_total": false,
+     "has_prose": true,
+     "has_steps": true,
+     "has_form": false,
+     "has_actions": false,
+     "person": false,
+     "top_level": false,
+     "app_bar_action": "more",
+     "hero_subject": "beach",
+     "item_subject": "sky",
+     "screen_icon": "article",
+     "photographs": false,
+     "symbols": true,
+     "cards": true
+    }
    },
    "parts": {
     "prose": {
@@ -6523,86 +6693,88 @@
      ]
     }
    },
-   "header": {
-    "type": "object",
-    "properties": {
-     "header": {
-      "type": "object",
-      "properties": {
-       "title": {
-        "type": "string",
-        "description": "Screen title, at most four words."
-       },
-       "subtitle": {
-        "type": "string",
-        "description": "One short supporting line."
-       }
-      },
-      "required": [
-       "title",
-       "subtitle"
-      ],
-      "propertyOrdering": [
-       "title",
-       "subtitle"
-      ]
-     }
-    },
-    "required": [
-     "header"
-    ],
-    "propertyOrdering": [
-     "header"
-    ]
-   },
-   "nav": {
-    "type": "object",
-    "properties": {
-     "nav": {
-      "type": "object",
-      "properties": {
-       "items": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "One word."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
         },
-        "description": "The app's three to five main destinations.",
-        "maxItems": 5,
-        "minItems": 3
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
        },
-       "active": {
-        "type": "integer",
-        "description": "Index of the destination this screen belongs to."
-       }
-      },
-      "required": [
-       "items",
-       "active"
-      ],
-      "propertyOrdering": [
-       "items",
-       "active"
-      ]
-     }
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
     },
-    "required": [
-     "nav"
-    ],
-    "propertyOrdering": [
-     "nav"
-    ]
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's three to five main destinations.",
+         "maxItems": 5,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the destination this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
    },
    "screen": [
     {

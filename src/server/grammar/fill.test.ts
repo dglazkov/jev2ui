@@ -1,9 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { Baked } from "../../shared/kit.js";
-import { bakeCustom, calls as bakeCalls } from "../mock/bake.js";
+import { bakeCustom, customOf, calls as bakeCalls } from "../mock/bake.js";
 import { Pictures, calls as pictureCalls, type Wanted } from "../mock/pictures.js";
-import type { ScreenPlan } from "../mock/plan.js";
 import type { Run } from "../run.js";
 import { fill, sourcesOf } from "./fill.js";
 import { IDIOMS } from "../idioms.js";
@@ -47,7 +46,8 @@ test("a chain is tried in order, the first source that has something wins, and w
 const GOOD = { name: "Timer ring", card: "The person watches a countdown.", dataSchema: '{"type":"object"}', data: '{"minutes":25}', source: "function render(root, state, kit) { root.textContent = 'ring'; }" };
 const BAD = { ...GOOD, source: "function render(root) { root.style.color = '#ff0000'; fetch('x'); }" };
 const onShelf: Baked = { id: "0123456789abcdef", name: "Seating plan", card: "The person chooses seats in a venue.", source: GOOD.source, dataSchema: { type: "object" }, contract: { use: "watch", size: "square", linked: false } };
-const plan = { archetype: "dashboard", blocks: ["custom", "stats"], custom: { use: "watch", size: "square", linked: false } } as unknown as ScreenPlan;
+// A dashboard with a custom part the person watches, in a square box, drawing nothing of the list's: as the graph reads it.
+const plan = customOf(graph, graph.partNode("custom"), { kind: "dashboard", blocks: ["custom", "stats"], values: { custom_use: "watch", custom_size: "square", custom_linked: false }, p: {}, decisions: [] });
 
 interface Script {
   shelf: Baked[];

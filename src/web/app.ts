@@ -20,7 +20,7 @@ import "./settings.js";
 import { paintIn, stylesOf } from "./kit/idioms.js";
 import { IDIOMS, IDIOM_IDS, idiomNamed, type IdiomId } from "../shared/idioms.js";
 import type { KitSurface } from "./kit/surface.js";
-import { named, type A2uiMessage, type Decision, type Endpoint, type RunStats } from "../shared/events.js";
+import { named, type A2uiMessage, type Decision, type Endpoint, type PipelineEvent, type RunStats } from "../shared/events.js";
 import type { DesignReport, Theme } from "../shared/design.js";
 import type { Journey, Via } from "../shared/journey.js";
 import type { Baked } from "../shared/kit.js";
@@ -84,7 +84,7 @@ const CUSTOM = "custom";
 const STORED_DESIGN = "jev2ui.design.md";
 /** The idiom the last app was imagined in: what the next one starts in. */
 const STORED_IDIOM = "jev2ui.idiom";
-const IDIOM_SYMBOLS: Record<IdiomId, string> = { kit: "widgets", ios: "phone_iphone" };
+const IDIOM_SYMBOLS: Record<IdiomId, string> = { kit: "widgets", ios: "phone_iphone", email: "mail" };
 /** Every device is this tall at most; a phone is always. */
 const DEVICE_HEIGHTS: Record<Device, number> = { phone: 780, tablet: 1024, desktop: 760 };
 
@@ -113,8 +113,8 @@ interface Screen {
   firstPaintMs?: number;
   running: boolean;
   builtWith?: string;
-  /** The plan it was built from: its kind, its parts, their anatomy. What it takes to make it again with one part changed. */
-  plan?: Record<string, unknown> & { archetype: string; blocks: string[] };
+  /** The reading the screen was built from, as the server sent it: sent back for the parts that stay when it is generated again. */
+  plan?: Extract<PipelineEvent, { type: "plan" }>["plan"];
   /** What it was made from, so that it can be made again; `notes` are what has been said about it since, and `edit` what was settled by saying it. */
   request: { prompt: string; journey?: Journey; fresh?: boolean; notes?: string[]; edit?: { plan: Record<string, unknown>; blocks: string[] } };
 }
@@ -836,6 +836,7 @@ export class App extends LitElement {
             break;
           case "plan":
             screen.plan = event.plan;
+            screen.archetype = event.plan.kind;
             break;
           case "a2ui": {
             screen.messages.push(event.message);
@@ -858,7 +859,6 @@ export class App extends LitElement {
           }
           case "trace":
             screen.log = [...screen.log, { kind: "stage", decisions: [], ...event }];
-            if (event.stage === "Jev: plan the screen") screen.archetype = event.decisions?.find((d) => d.id === "archetype")?.answer ?? "";
             break;
           case "invalid":
             for (const text of event.errors) note("bad", text, event.at);

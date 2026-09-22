@@ -6,7 +6,6 @@ import { withCatalog } from "../../shared/catalog.js";
 import { validateAnswers, type Answers } from "./decisions.js";
 import { anchorMap, plannedSeed } from "./live.js";
 import { WHOLE_CANDIDATES } from "./roles.js";
-import type { ScreenPlan } from "../mock/plan.js";
 
 const candidates = WHOLE_CANDIDATES.filter((c) => ["w_collection", "w_operate", "w_monitor", "w_history", "w_conversation", "w_preferences", "w_help"].includes(c.id));
 const context = "Choose only the initial main navigation for the app implied by `screen`. Do not plan the whole app or its future journeys. These choices are suggestions, not a closed set of allowed destinations. Detail pages, individual settings, editors and outcomes will be discovered when their links are clicked. Include a section only when this product needs it. Reuse the requested first screen only for exactly the same subject, scope and task; an individual setting is not the app-wide preferences overview.";
@@ -27,7 +26,8 @@ export function initialNavigationQuestions(): Questions {
 }
 
 /** Assemble registered destinations synchronously from answers already returned with the screen plan. */
-export function initialArchitecture(brief: string, plan: ScreenPlan, answers: Answers): Architecture {
+/** `plan` is what the IA reads of the screen's reading: its kind, whether it is a main screen, what its custom part is for. */
+export function initialArchitecture(brief: string, plan: { archetype: string; topLevel: boolean; custom?: { use: string } }, answers: Answers): Architecture {
   const questions = initialNavigationQuestions();
   validateAnswers(answers, questions);
   const seed = plannedSeed(brief, plan), map = anchorMap(seed);

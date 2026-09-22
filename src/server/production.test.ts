@@ -6,7 +6,6 @@ import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { createServer } from "node:net";
 import { createServer as createHttpServer } from "node:http";
 import { initialArchitecture, initialNavigationQuestions } from "./ia/bootstrap.js";
-import type { ScreenPlan } from "./mock/plan.js";
 import { SAVED_APP } from "../shared/saved.js";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -79,7 +78,7 @@ test("the production bundle loads the link resolver through its HTTP route", { t
     const choice = id === "nav_home" ? "first" : "omit";
     return [id, { choice, probabilities: { [choice]: 1 } }];
   }));
-  let state = initialArchitecture("Home", { archetype: "feed", topLevel: true } as ScreenPlan, answers);
+  let state = initialArchitecture("Home", { archetype: "feed", topLevel: true }, answers);
   const resolveLink = async (label: string) => {
     const response = await fetch(`http://127.0.0.1:${port}/api/resolve`, {
       method: "POST", headers: { "Content-Type": "application/json", "X-System-One": "gev" },
