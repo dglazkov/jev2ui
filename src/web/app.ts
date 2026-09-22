@@ -18,7 +18,7 @@ import { repeat } from "lit/directives/repeat.js";
 import "./kit/surface.js";
 import "./settings.js";
 import { paintIn, stylesOf } from "./kit/idioms.js";
-import { IDIOMS, IDIOM_IDS, idiomNamed, type IdiomId } from "../shared/idioms.js";
+import { IDIOMS, OFFERED, idiomNamed, type IdiomId } from "../shared/idioms.js";
 import type { KitSurface } from "./kit/surface.js";
 import { named, type A2uiMessage, type Decision, type Endpoint, type PipelineEvent, type RunStats } from "../shared/events.js";
 import type { DesignReport, Theme } from "../shared/design.js";
@@ -181,7 +181,7 @@ export class App extends LitElement {
   private fitting: ResizeObserver | undefined;
 
   /** The idiom this app is imagined in: which grammar reads it, which catalog draws it and which stylesheet paints it (shared/idioms.ts). */
-  @state() private idiom: IdiomId = idiomNamed(localStorage.getItem(STORED_IDIOM));
+  @state() private idiom: IdiomId = OFFERED.includes(idiomNamed(localStorage.getItem(STORED_IDIOM))) ? idiomNamed(localStorage.getItem(STORED_IDIOM)) : "kit";
   @state() private choice: string = AUTO;
   @state() private markdown = "";
   @state() private report: DesignReport | undefined;
@@ -1138,7 +1138,7 @@ export class App extends LitElement {
             : nothing}
         </header>
         <div class="segmented wide" role="radiogroup" aria-label="Idiom">
-          ${IDIOM_IDS.map((id) => html`<button role="radio" aria-checked=${this.idiom === id} @click=${() => this.imagineIn(id)}>${icon(IDIOM_SYMBOLS[id], "s")}${IDIOMS[id].name}</button>`)}
+          ${[...OFFERED, ...(OFFERED.includes(this.idiom) ? [] : [this.idiom])].map((id) => html`<button role="radio" aria-checked=${this.idiom === id} @click=${() => this.imagineIn(id)}>${icon(IDIOM_SYMBOLS[id], "s")}${IDIOMS[id].name}</button>`)}
         </div>
         <p class="hint">${this.idiom === "kit" ? "Screens use the tool's own components, laid out and painted by the design." : `Screens are laid out and painted the way ${IDIOMS[this.idiom].name} does it, in the design's palette.`}</p>
         <div class="segmented wide" role="radiogroup" aria-label="Design system">

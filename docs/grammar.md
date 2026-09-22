@@ -462,7 +462,7 @@ it stood for is read off the grammar by what its fields and questions say:
 The tests hold that: what the old plan would have been, made of the new reading through the old `planOf`, is what was
 recorded, for 195 of 200 readings, the five others being the portrait rule; every recorded tree is what it was but
 for one, a details part without a total whose `strong` is no longer bound; what is decided once the words exist is
-byte for byte what it was; and `examples/email.md` is now an idiom of the tool's (`Email`, in the panel), which is
+byte for byte what it was; and `examples/email.md` is now an idiom of the tool's (`email`, by header and probe; not offered in the panel, since it is no way to imagine an app), which is
 the check that cannot be faked: a grammar with no phone, no kinds of screen and no plan, run by the served tool.
 
 Live, through the served app: a checkout whose bill adds up and ends bold; a profile with its portrait; a walker's

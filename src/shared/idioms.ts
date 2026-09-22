@@ -7,15 +7,19 @@
 // created with, which says whose catalog its components are drawn by.
 
 export const IDIOMS = {
-  kit: { name: "Kit", catalogId: "https://github.com/dglazkov/jev2ui/catalogs/kit/v1", stylesheets: ["kit.css"] },
-  ios: { name: "iOS", catalogId: "https://github.com/dglazkov/jev2ui/catalogs/ios/v1", stylesheets: ["kit.css", "ios.css"] },
-  // Not an app at all: the emails a product sends, a graph with no code behind it, drawn by the kit. It is here to prove the tool runs any grammar.
-  email: { name: "Email", catalogId: "https://github.com/dglazkov/jev2ui/catalogs/kit/v1", stylesheets: ["kit.css"] },
+  kit: { name: "Kit", catalogId: "https://github.com/dglazkov/jev2ui/catalogs/kit/v1", stylesheets: ["kit.css"], offered: true },
+  ios: { name: "iOS", catalogId: "https://github.com/dglazkov/jev2ui/catalogs/ios/v1", stylesheets: ["kit.css", "ios.css"], offered: true },
+  // Not an app at all: the emails a product sends, a graph with no code behind it, drawn by the kit. It is here to prove the
+  // tool runs any grammar, reached by the header and the probes, and not offered to a person imagining an app.
+  email: { name: "Email", catalogId: "https://github.com/dglazkov/jev2ui/catalogs/kit/v1", stylesheets: ["kit.css"], offered: false },
 } as const;
 
 export type IdiomId = keyof typeof IDIOMS;
 
 export const IDIOM_IDS = Object.keys(IDIOMS) as IdiomId[];
+
+/** The idioms a person is offered to imagine an app in. */
+export const OFFERED = IDIOM_IDS.filter((id) => IDIOMS[id].offered);
 
 /** What a browser said it wants, as an idiom: the kit's unless it plainly named another. */
 export const idiomNamed = (said: unknown): IdiomId => (typeof said === "string" && said in IDIOMS ? (said as IdiomId) : "kit");

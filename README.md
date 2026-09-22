@@ -346,8 +346,8 @@ stylesheet are an **idiom**, and an app is imagined in one: the tool's own; iOS 
 graph of its own written from the Human Interface Guidelines, whose kinds are how a screen is presented — a tab's
 root, a pushed screen, a sheet with Cancel and Done, an alert, an action sheet, a full-screen cover — drawn by
 `grammar/ios/catalog.md`, `src/server/grammar/patterns-ios.ts` and `src/web/kit/ios.css` over the same
-components); or Email (`grammar/examples/email.md`), a graph with no screens at all, which is there to prove the
-point. The
+components); or, by header only, Email (`grammar/examples/email.md`), a graph with no screens at all, which is there to prove
+the point and is not offered in the panel. The
 choice is made per app in the design panel, travels in an `X-Idiom` header, and is saved with the app
 (`src/server/idioms.ts`, `src/shared/idioms.ts`). To write a grammar,
 see [docs/writing-a-grammar.md](docs/writing-a-grammar.md). `paint.md` is still written out from `design-mix.ts`, which has not made the
