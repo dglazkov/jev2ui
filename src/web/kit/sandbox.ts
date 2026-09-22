@@ -1,8 +1,9 @@
 // Where baked components run (src/server/mock/bake.ts). The source is a model's,
 // so it gets a frame of its own: scripts allowed, but no origin, no network and
-// no way to reach the page. It is handed the kit's stylesheet, so its buttons
-// and badges are the kit's, and the design's variables, so it is painted by the
-// same DESIGN.md as everything around it. Both directions are messages:
+// no way to reach the page. It is handed the idiom's stylesheets, so its buttons
+// and badges are the kit's painted as the page paints them, and the design's
+// variables, so it is painted by the same DESIGN.md as everything around it.
+// Both directions are messages:
 //
 //   in    { theme }   the `--k-*` variables; sent again when the design changes,
 //                     so a remix repaints a running timer without restarting it
@@ -90,22 +91,25 @@ function host() {
   window.addEventListener("DOMContentLoaded", () => post({ type: "ready" }));
 }
 
-const documents = new Map<string, string>();
+/** By stylesheet, then by definition. */
+const documents = new Map<string, Map<string, string>>();
 
-/** The frame's document. The same string every time for one definition, so that re-rendering never reloads the frame. */
-export function sandboxDocument(definition: Definition): string {
-  let html = documents.get(definition.id);
+/** The frame's document. The same string every time for one definition and one stylesheet, so that re-rendering never reloads the frame. */
+export function sandboxDocument(definition: Definition, styles = kitCss): string {
+  let made = documents.get(styles);
+  if (!made) documents.set(styles, (made = new Map()));
+  let html = made.get(definition.id);
   if (!html) {
     const inline = (code: string) => code.replace(/<\/(script)/gi, "<\\/$1");
     html = `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${CSP}">
 <link rel="stylesheet" href="${SYMBOLS}">
-<style>${kitCss}</style>
+<style>${styles}</style>
 <style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}kit-surface{display:block;height:100%}#root{position:relative;box-sizing:border-box;width:100%;height:100%;overflow:hidden}</style>
 </head><body><kit-surface><div id="root"></div></kit-surface>
 <script>(${inline(host.toString())})()</script>
 <script>${inline(definition.source)}</script>
 </body></html>`;
-    documents.set(definition.id, html);
+    made.set(definition.id, html);
   }
   return html;
 }

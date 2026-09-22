@@ -5,6 +5,7 @@
 
 import { html, nothing, type ReactiveControllerHost, type TemplateResult } from "lit";
 import type { Endpoint, PipelineEvent } from "../shared/events.js";
+import type { IdiomId } from "../shared/idioms.js";
 import { face, icon, mark } from "./chrome.js";
 
 type Auth = import("firebase/auth").Auth;
@@ -27,6 +28,8 @@ class Session {
   endpoints: Endpoint[] = ["jev"];
   /** Which of them this browser asks to answer System One; jev until the person says otherwise. */
   private wanted: Endpoint = localStorage.getItem(STORED_ENDPOINT) === "gev" ? "gev" : "jev";
+  /** The idiom the app that is showing is imagined in (app.ts says; server/idioms.ts reads it off every request). */
+  idiom: IdiomId = "kit";
 
   private auth: Auth | undefined;
   private hosts = new Set<ReactiveControllerHost>();
@@ -101,10 +104,10 @@ class Session {
     if (this.auth) await (await import("firebase/auth")).signOut(this.auth);
   }
 
-  /** `fetch`, saying who is asking and which endpoint is to answer; and noting what the answer says is left of today's runs. */
+  /** `fetch`, saying who is asking, which endpoint is to answer and which idiom to imagine in; and noting what the answer says is left of today's runs. */
   async fetch(path: string, init: RequestInit = {}): Promise<Response> {
     const token = await this.auth?.currentUser?.getIdToken();
-    const response = await fetch(path, { ...init, headers: { ...init.headers, "X-System-One": this.endpoint, ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+    const response = await fetch(path, { ...init, headers: { ...init.headers, "X-System-One": this.endpoint, "X-Idiom": this.idiom, ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
     const left = response.headers.get("X-Runs-Left");
     if (left !== null) this.set({ runs: { left, daily: response.headers.get("X-Runs-Daily") ?? "" } });
     return response;

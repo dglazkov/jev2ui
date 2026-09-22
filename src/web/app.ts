@@ -17,7 +17,8 @@ import { styleMap } from "lit/directives/style-map.js";
 import { repeat } from "lit/directives/repeat.js";
 import "./kit/surface.js";
 import "./settings.js";
-import "./kit/kit.css";
+import { paintIn, stylesOf } from "./kit/idioms.js";
+import { IDIOMS, IDIOM_IDS, idiomNamed, type IdiomId } from "../shared/idioms.js";
 import type { KitSurface } from "./kit/surface.js";
 import { named, type A2uiMessage, type Decision, type Endpoint, type RunStats } from "../shared/events.js";
 import type { DesignReport, Theme } from "../shared/design.js";
@@ -81,6 +82,9 @@ interface Snack {
 const AUTO = "auto";
 const CUSTOM = "custom";
 const STORED_DESIGN = "jev2ui.design.md";
+/** The idiom the last app was imagined in: what the next one starts in. */
+const STORED_IDIOM = "jev2ui.idiom";
+const IDIOM_SYMBOLS: Record<IdiomId, string> = { kit: "widgets", ios: "phone_iphone" };
 /** Every device is this tall at most; a phone is always. */
 const DEVICE_HEIGHTS: Record<Device, number> = { phone: 780, tablet: 1024, desktop: 760 };
 
@@ -176,6 +180,8 @@ export class App extends LitElement {
   @state() private fit = 1;
   private fitting: ResizeObserver | undefined;
 
+  /** The idiom this app is imagined in: which grammar reads it, which catalog draws it and which stylesheet paints it (shared/idioms.ts). */
+  @state() private idiom: IdiomId = idiomNamed(localStorage.getItem(STORED_IDIOM));
   @state() private choice: string = AUTO;
   @state() private markdown = "";
   @state() private report: DesignReport | undefined;
@@ -311,8 +317,12 @@ export class App extends LitElement {
   protected updated() {
     const byId = new Map(this.made.map((screen) => [String(screen.id), screen]));
     const navigationIcons = Object.fromEntries(this.architecture?.map.nodes.map((node) => [node.id, architectureIcon(this.architecture!, node.id)]) ?? []);
+    // The page is painted in the app's idiom, and every request says which it is.
+    paintIn(this.idiom);
+    session.idiom = this.idiom;
     for (const surface of this.querySelectorAll<KitSurface>("kit-surface")) {
       surface.theme = this.report?.theme;
+      surface.stylesheet = stylesOf(this.idiom);
       surface.navigationIcons = navigationIcons;
       surface.sync(byId.get(surface.dataset.screen!)?.messages ?? []);
     }
@@ -543,6 +553,17 @@ export class App extends LitElement {
     if (choice === CUSTOM) this.markdown = localStorage.getItem(STORED_DESIGN) ?? this.markdown;
     if (choice === AUTO ? this.app : this.markdown.trim()) void this.loadDesign(this.designSource, turn);
     else if (turn) turn.outcome = "changed";
+  }
+
+  /** Imagines the app in another idiom from here on: the screens already made keep their layout until they are made again, and are painted the new way meanwhile. */
+  private imagineIn(idiom: IdiomId) {
+    if (idiom === this.idiom) return;
+    const turn = this.app ? this.begin("button", `Switched to the ${IDIOMS[idiom].name} idiom`) : undefined;
+    this.idiom = idiom;
+    localStorage.setItem(STORED_IDIOM, idiom);
+    if (turn) turn.outcome = "changed";
+    this.movedOn();
+    if (this.made.length) this.tell("Screens generated before this keep their layout until you regenerate them.");
   }
 
   /** Another draw from what Jev thinks suits the brief. The screens stay, and so does whatever the person asked for; the rest of the paint changes. */
@@ -894,6 +915,7 @@ export class App extends LitElement {
       app: this.app,
       ...(this.nav ? { nav: this.nav } : {}),
       design: { choice: this.choice, markdown: this.markdown, seed: this.seed, change: this.change as Record<string, unknown>, ...(this.report ? { report: this.report as unknown as Record<string, unknown> } : {}) },
+      idiom: this.idiom,
       screens: kept.map(({ running, key, ...screen }) => ({ ...screen, keys: [...this.screens].filter(([, other]) => other.id === screen.id).map(([k]) => k) })) as unknown as SavedApp["screens"],
       stack: stack.length ? stack : [kept[0].id],
       turns: turns.slice(-400).map(({ before, screen, ...turn }) => ({ ...turn, ...(screen && ids.has(screen) ? { screen } : {}), decisions: turn.decisions.slice(0, 80) as unknown as Array<Record<string, unknown>> })),
@@ -908,6 +930,7 @@ export class App extends LitElement {
     this.mapSelected = "first";
     this.onMap = false;
     this.nav = app.nav;
+    this.idiom = idiomNamed(app.idiom);
     this.choice = app.design.choice === CUSTOM ? CUSTOM : AUTO;
     this.markdown = app.design.markdown;
     this.seed = app.design.seed;
@@ -1114,6 +1137,10 @@ export class App extends LitElement {
             ? html`<button class="btn small" ?disabled=${!this.app || this.designBusy} @click=${() => this.remix()} title="Generate a different design from the same ratings. The changes that you asked for are kept.">${icon("casino", "s")}Remix</button>`
             : nothing}
         </header>
+        <div class="segmented wide" role="radiogroup" aria-label="Idiom">
+          ${IDIOM_IDS.map((id) => html`<button role="radio" aria-checked=${this.idiom === id} @click=${() => this.imagineIn(id)}>${icon(IDIOM_SYMBOLS[id], "s")}${IDIOMS[id].name}</button>`)}
+        </div>
+        <p class="hint">${this.idiom === "kit" ? "Screens use the tool's own components, laid out and painted by the design." : `Screens are laid out and painted the way ${IDIOMS[this.idiom].name} does it, in the design's palette.`}</p>
         <div class="segmented wide" role="radiogroup" aria-label="Design system">
           ${options.map((o) => html`<button role="radio" aria-checked=${this.choice === o.id} @click=${() => this.choose(o.id)}>${icon(o.symbol, "s")}${o.name}</button>`)}
         </div>

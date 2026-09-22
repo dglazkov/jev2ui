@@ -274,6 +274,24 @@ body {
   padding-block: 6px;
 }
 
+/* The label keeps its words; a value too long for the row is cut with an ellipsis, as iOS cuts it. */
+.k-setting .k-item-main {
+  flex: 1 0 auto;
+  max-width: 60%;
+}
+
+.k-setting .k-item-trailing {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.k-setting .k-item-trailing > .k-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .k-chevron {
   font-size: 22px;
   color: color-mix(in srgb, var(--k-text) 30%, transparent);

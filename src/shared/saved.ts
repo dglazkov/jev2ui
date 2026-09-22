@@ -6,6 +6,7 @@
 // that has moved on makes another. Where the person was standing in it is not what it is: `stack` is kept, not hashed. Whether others may open it is beside the app, and its owner's to change.
 
 import { ARCHITECTURE, ROUTES } from "./architecture.js";
+import { IDIOM_IDS, type IdiomId } from "./idioms.js";
 import { z } from "zod";
 
 const MESSAGE = z.record(z.unknown());
@@ -59,6 +60,8 @@ export const SAVED_APP = z.object({
   app: z.string().min(1).max(4000),
   nav: z.object({ items: z.array(z.object({ label: z.string(), icon: z.string().optional() })) }).optional(),
   design: z.object({ choice: z.string().max(20), markdown: z.string().max(1 << 20), seed: z.number(), change: z.record(z.unknown()).optional(), report: z.record(z.unknown()).optional() }),
+  /** The idiom the app was imagined in (shared/idioms.ts); one saved before there was a choice is the kit's. */
+  idiom: z.enum(IDIOM_IDS as [IdiomId, ...IdiomId[]]).optional(),
   turns: z.array(SAVED_TURN).max(400).optional(),
   screens: z.array(SAVED_SCREEN).min(1).max(80),
   /** The ids of the screens that were showing, the way back first. */

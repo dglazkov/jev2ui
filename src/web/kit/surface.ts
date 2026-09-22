@@ -1,15 +1,17 @@
 import { orderedNavigation } from "../../shared/navigation.js";
 // Renderer for the kit catalog (src/shared/kit.ts). One light-DOM element: the
 // component list and the data model go in as messages, plain HTML comes out,
-// styled by kit.css through the `--k-*` variables a DESIGN.md is turned into.
+// styled by the idiom's stylesheets (idioms.ts) through the `--k-*` variables a
+// DESIGN.md is turned into.
 
 import { LitElement, html, nothing, type TemplateResult } from "lit";
-import { customElement } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { keyed } from "lit/directives/keyed.js";
 import "./picture.js";
 import { sandboxDocument, themeMessage, type Definition } from "./sandbox.js";
+import { stylesOf } from "./idioms.js";
 import type { Theme } from "../../shared/design.js";
 
 type Component = { id: string; component: string } & Record<string, any>;
@@ -47,6 +49,8 @@ const initials = (name: string) =>
 export class KitSurface extends LitElement {
   /** Host-supplied icons also repair placeholders in previously generated navigation. */
   navigationIcons: Readonly<Record<string, string>> = {};
+  /** The idiom's stylesheets, as the page has them: a baked component's frame is handed the same. */
+  @property({ attribute: false }) stylesheet = stylesOf("kit");
   private components = new Map<string, Component>();
   /** The part of the catalog that arrived with the screen: custom components, by id. */
   private definitions = new Map<string, Definition>();
@@ -451,7 +455,7 @@ export class KitSurface extends LitElement {
     const box = slot.height ? { height: `${slot.height}px`, "max-height": "none" } : { "aspect-ratio": String(c.ratio).replace(":", " / ") };
     if (slot.error) return html`<div class="k-custom k-custom-broken" style=${styleMap(box)}>${this.icon("heart_broken")}<span class="k-text k-caption k-tone-muted">${slot.error}</span></div>`;
     return html`<div class="k-custom ${definition && slot.ready ? "" : "k-custom-baking"}" style=${styleMap(box)}>
-      ${definition ? html`<iframe class="k-custom-frame" data-slot=${c.id} sandbox="allow-scripts" title=${definition.name} .srcdoc=${sandboxDocument(definition)}></iframe>` : nothing}
+      ${definition ? html`<iframe class="k-custom-frame" data-slot=${c.id} sandbox="allow-scripts" title=${definition.name} .srcdoc=${sandboxDocument(definition, this.stylesheet)}></iframe>` : nothing}
     </div>`;
   }
 
