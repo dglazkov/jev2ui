@@ -156,6 +156,8 @@ export function decide(grammar: Grammar, part: Node, content: unknown, options: 
         return { value: answer.score, p: answer.score };
       };
 
+      // In the trace, a decision about an element is labelled by the element as Jev read it ("Auto-download: switch"); one about the part, by its question.
+      const label = (node: Node, row: { element: any }) => (located ? String(simple(row.element, fields)) : (node.question ?? node.name));
       // What was answered, element by element (a question about the part as a whole has the same answer for each).
       const rows = (located ? elements : [{ element: content as any, i: 0 }]).map(({ element, i }) => ({
         element,
@@ -205,7 +207,7 @@ export function decide(grammar: Grammar, part: Node, content: unknown, options: 
         // Said in the question's own answers, it is an answer; otherwise it is what the answer is to yield.
         if (raw) (row.values.set(node.name, { value: asking.type === "choice" ? then.is[0] : then.is[0] === "yes", p: 1 }), row.yields.delete(node.name));
         else row.yields.set(node.name, then.is[0]);
-        decisions.push({ id: located ? `${node.name}_${row.i}` : node.name, question: node.name, answer: then.is[0], p: 1, ...(rule.reason ? { note: rule.reason } : {}) });
+        decisions.push({ id: located ? `${node.name}_${row.i}` : node.name, question: label(node, row), answer: then.is[0], p: 1, ...(rule.reason ? { note: rule.reason } : {}) });
       };
       for (const row of rows) for (const rule of rules) apply(rule, row);
 
@@ -219,7 +221,7 @@ export function decide(grammar: Grammar, part: Node, content: unknown, options: 
         for (const row of rows) {
           const { value, p } = row.values.get(node.name)!;
           const id = located ? `${node.name}_${row.i}` : node.name;
-          if (!decisions.some((d) => d.id === id)) decisions.push({ id, question: node.name, answer: said(yieldOf(node, row) ?? value), p });
+          if (!decisions.some((d) => d.id === id)) decisions.push({ id, question: label(node, row), answer: said(yieldOf(node, row) ?? value), p });
         }
       }
       return { decorations: decorations.filter((d) => Object.keys(d.values).length), decisions };

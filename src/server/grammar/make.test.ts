@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { KIT, kitRefs, type KitComponent } from "../../shared/kit.js";
-import { planQuestions, readPlan, type Block, type ScreenPlan } from "../mock/plan.js";
-import { BUILDERS, partSchema, type Part } from "../mock/screen.js";
+import { SCREEN as TOOL, readingOf } from "../mock/graph.js";
+import type { ScreenPlan } from "../mock/plan.js";
 import { answersTo, random } from "./fixtures.js";
 import { idOf, parseGrammar, walk, type Field, type Grammar, type Node } from "./format.js";
 import { loadGrammar } from "./load.js";
@@ -11,7 +11,7 @@ import { KIT_PATTERNS } from "./patterns.js";
 import { JEV, questionsOf, readGrammar, type Reading } from "./read.js";
 import { planOf } from "./screen-plan.js";
 
-const screen = loadGrammar("screen.md");
+const screen = TOOL;
 const kit = loadGrammar("kit.md");
 const named = (grammar: Grammar, name: string): Node => {
   let found: Node | undefined;
@@ -32,44 +32,20 @@ function nest(components: KitComponent[], root: string): unknown {
   return go(root);
 }
 
-/** Readings of screens nobody asked for, with the plan the tool makes of the same answers, under a look the design might have. */
-function* cases(count: number, grammar = screen): Generator<{ reading: Reading; plan: ScreenPlan; look: Look }> {
+/** Readings of screens nobody asked for, under a look the design might have. */
+function* cases(count: number, grammar = screen): Generator<{ reading: Reading; look: Look }> {
   const rng = random(42);
   for (let i = 0; i < count; i++) {
-    const answers = answersTo(planQuestions(), rng);
-    const reading = readGrammar(grammar, answers, JEV);
-    const plan = { ...readPlan(answers).plan, contained: rng() < 0.5, icons: rng() < 0.5 };
-    yield { reading, plan, look: { contained: plan.contained, icons: plan.icons, symbol: plan.symbol } };
+    const plan: ScreenPlan = planOf(grammar, readGrammar(grammar, answersTo(questionsOf(grammar), rng), JEV));
+    const contained = rng() < 0.5;
+    const icons = rng() < 0.5;
+    yield { reading: readingOf({ ...plan, contained, icons }), look: { contained, icons, symbol: plan.symbol } };
   }
 }
 
-test("what a part is made of, in the file, is the schema partSchema asks a writer to fill: every part of 2000 screens", () => {
-  for (const { reading, plan } of cases(2000)) {
-    assert.deepEqual(planOf(screen, reading), { ...plan, contained: true, icons: true });
-    for (const part of ["header", "nav", ...plan.blocks] as Array<Part | "hero" | "custom">) {
-      const made = schemaOf(named(screen, part), reading);
-      if (part === "hero" || part === "custom") assert.equal(made, null, `${part} is not written`);
-      else assert.deepEqual(made, partSchema(part, plan), `${part} of a ${plan.archetype}`);
-    }
-  }
-});
-
-test("and it is the tree BUILDERS makes, drawn by a pattern that never saw a plan: every part of 2000 screens", () => {
-  const seen = new Set<string>();
-  for (const { reading, plan, look } of cases(2000)) {
-    for (const node of partsOf(screen, reading)) {
-      const block = node.name as Block;
-      assert.deepEqual(nest(treeOf(KIT_PATTERNS, screen, node, reading, look), block), nest(BUILDERS[block](plan), block), `${block} of a ${plan.archetype}: ${JSON.stringify(plan.list)}`);
-      seen.add(block === "list" ? `list ${plan.list.layout} ${plan.list.leading} ${plan.list.trailing}` : block);
-    }
-  }
-  // Every part was drawn, and the list in every layout.
-  for (const block of Object.keys(BUILDERS)) assert.ok([...seen].some((s) => s === block || s.startsWith(`${block} `)), block);
-  for (const layout of ["rows", "cards", "grid", "reel"]) assert.ok([...seen].some((s) => s.startsWith(`list ${layout}`)), layout);
-});
-
 test("nothing a field says is for show: without any one `when`, `as` or source, some schema or some tree comes out differently", () => {
-  const sample = [...cases(400)];
+  // A feed with filters and no search field is one screen in a hundred; enough are drawn for every gate to be tried.
+  const sample = [...cases(1500)];
   const all = (grammar: Grammar) =>
     JSON.stringify(sample.map(({ reading, look }) => partsOf(grammar, reading).map((node) => [schemaOf(node, reading), nest(treeOf(KIT_PATTERNS, grammar, node, reading, look), node.name)])));
   const whole = all(screen);

@@ -2,9 +2,18 @@
 
 import type { Questions } from "@typesafe-ai/sdk";
 
-/** A small seeded generator, so a failure can be run again. */
+/** A small seeded generator, so a failure can be run again. The seed is mixed first: neighbouring seeds must not open with neighbouring numbers. */
 export function random(seed: number) {
-  return () => ((seed = (seed * 1664525 + 1013904223) >>> 0), seed / 2 ** 32);
+  let state = seed >>> 0;
+  return () => {
+    // splitmix32
+    state = (state + 0x9e3779b9) >>> 0;
+    let z = state;
+    z = Math.imul(z ^ (z >>> 16), 0x21f0aaad);
+    z = Math.imul(z ^ (z >>> 15), 0x735a2d97);
+    z = (z ^ (z >>> 15)) >>> 0;
+    return z / 2 ** 32;
+  };
 }
 
 /** An answer to every question: some near certain and others torn, as Jev's are. */

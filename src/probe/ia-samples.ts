@@ -3,7 +3,8 @@ import { resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { PROMPTS } from "./custom.js";
 import { askJev, JEV_MODEL, endpoints } from "../server/models.js";
-import { planQuestions } from "../server/mock/plan.js";
+import { SCREEN } from "../server/mock/graph.js";
+import { questionsOf } from "../server/grammar/read.js";
 import { recordIA } from "./ia-recording.js";
 import { proposedApp as contentApp } from "./ia-proposal.js";
 import { proposedApp as neutralApp } from "./ia-neutral.js";
@@ -28,7 +29,7 @@ const hashes: Record<string, string> = {};
 for (const source of sources) { const text = await readFile(source, "utf8"); hashes[source] = createHash("sha256").update(text).digest("hex"); await writeFile(resolve(directory, `${variant}-${source.replaceAll("/", "_")}`), text); }
 suite.variants[variant] = { status: "running", started: new Date().toISOString(), endpoint, hashes, generationCalls: 0 };
 await save(); console.log(`Suite ${suiteId} · ${variant} · ${PROMPTS.length} prompts\nObserver: http://127.0.0.1:5174/samples#${suiteId}`);
-const all = planQuestions();
+const all = questionsOf(SCREEN);
 const planQs = Object.fromEntries(Object.entries(all).filter(([id]) => ["archetype", "has_custom", "custom_use"].includes(id)));
 async function sample(index: number) {
   const row = suite.rows[index], start = performance.now();

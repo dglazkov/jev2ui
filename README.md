@@ -47,7 +47,8 @@ the address, so Back works and a link can name it.
 
 ## How a mock is built: Jev fills a tree
 
-Jev cannot draw a tree, but it can choose, and a tree is a nest of choices (`src/server/mock/plan.ts`):
+Jev cannot draw a tree, but it can choose, and a tree is a nest of choices. The nest is a file,
+[grammar/screen.md](grammar/screen.md), and the tool reads it (the section below on the graph says how):
 
 ```
 archetype         which canonical layout this is: feed, dashboard, detail, guide, settings, form, checkout, confirm.
@@ -64,7 +65,7 @@ archetype         which canonical layout this is: feed, dashboard, detail, guide
 The first three levels depend only on the prompt, so they are one Jev request of 30 questions, and the
 whole tree is on screen at around 200 ms, shimmering where words will go. Order is never asked: it belongs to the
 archetype, which is where best practice lives. The fourth level is asked as each group, list or field completes
-in Gemini's stream (`refine.ts`). Those answers are written into the *data model* beside the words they are
+in Gemini's stream (`src/server/grammar/decide.ts`). Those answers are written into the *data model* beside the words they are
 about (`/groups/1/rows/2/control = "switch"`) and the tree binds to them, so a template stays a template however
 much its instances differ.
 
@@ -74,8 +75,8 @@ because Jev reads a situation far better than it judges a design
 ([docs/jtbd-probe.md](docs/jtbd-probe.md)). Material says a switch is for one setting that is on or off and
 takes effect at once, and the HIG says a disclosure indicator marks a row that opens another page; so the
 question is "what kind of row is this?", and on a podcast settings screen Jev answers `Skip forward` → value,
-`Auto-download` → switch, `Log out` → danger, each at p ≈ 1.00. Other rules live in code, where they cannot be
-got wrong: a feed always has its list and a settings page its groups, whatever Jev says; a navigation bar only on top-level screens and a back arrow on the rest (Material); one primary
+`Auto-download` → switch, `Log out` → danger, each at p ≈ 1.00. Other rules are in the same file, as rules
+with their reasons, where they cannot be got wrong: a feed always has its list and a settings page its groups, whatever Jev says; a navigation bar only on top-level screens and a back arrow on the rest (Material); one primary
 action per screen, red if it destroys something; no second set of buttons competing with a form's submit;
 picture layouts only for things with a look; rows in a group all lead with a symbol or none do; a bill's totals
 are written after its line items and shown them, so that it adds up.
@@ -298,19 +299,19 @@ untouched (no bake, ~2 s).
 ### The graph, written down: can anyone bring their own?
 
 A DESIGN.md made paint portable. What decides structure (the questions, how they nest, what code does with
-the answers) is tables and rules in `plan.ts`, and nobody can bring their own of that. `grammar/` is a probe
-of whether they could: the same graph as a markdown file, in which each of Jev's primitives is a kind of
+the answers) used to be tables and rules in `plan.ts`, and nobody could bring their own of that. Now it is a
+markdown file the tool reads, `grammar/screen.md`, in which each of Jev's primitives is a kind of
 list (`+`/`-` lines are a Noul, bold-name bullets a Choice, a numbered rubric a Score, and with a value at
 every level, a dial), headings nest the way decisions do, a kind of screen is one line
 (`` `banner? custom? list facts form? actions?` at least 2 ``: order, always, expected, extra), what is left
 is a rule with its reason (`when form, no actions — …`), and there are no thresholds, because those belong to
 whoever answers. A file carries its own examples, labelled, and a lint warns of what Jev is known to stumble on.
 
-`grammar/screen.md` and `grammar/paint.md` are written out from the code and held to it by tests: read from
-the file, the request to Jev is deep-equal to `planQuestions()`, and a reader that knows nothing about screens
-makes the plan `readPlan` makes, over 3000 random sets of answers and, live, 30 of 30 prompts.
-`grammar/examples/email.md` is a graph nobody wrote code for (the emails a product sends), run by the same
-reader: every kind right on its first run, 10 of 12 examples whole.
+The readers (`src/server/grammar/`) know nothing about screens. They were built beside the hand-written code
+and held equal to it, question for question and plan for plan, over thousands of random answers and live;
+then the hand-written code was deleted, and what it made of a recorded set of answers is what the file must
+still make (`regression.test.ts`). `grammar/examples/email.md` is a graph nobody wrote code for (the emails
+a product sends), run by the same readers: every kind right on its first run, 10 of 12 examples whole.
 
 A part also says what it is made of, once (`` - `price` as meta, when item_price is yes — Price or amount… ``),
 and names a pattern of a catalog (`### list → collection`; `grammar/kit.md` is the kit's twelve, written out
@@ -331,9 +332,11 @@ What Jev decides once the words exist (`refine.ts`) is in the file too: a questi
 heading says what it is asked of (`(of each row in rows)`, `(once written)`, `(among each action in
 actions)`), a field that says which question decides it, rules about the elements, and two words for what is
 about all of them at once (`all or none`, `one where …`). A question is asked only if something drawn reads
-the field it decides. `decide()` is held to six of refine.ts's seven functions (the kind of a form's field is the
-seventh): the same requests to Jev, and from the same answers the same data. Nothing the tool serves reads these files yet. The format, the results,
-the pictures and what resisted are in [docs/grammar.md](docs/grammar.md).
+the field it decides. The kind of a form's field is the one decision still made by code
+older than the kit (`design.ts`), and the file's lint says so. The tool reads `grammar/screen.md` and
+`grammar/kit.md` on every run (`src/server/mock/graph.ts`): editing a criterion, a rule, a part's fields or a
+chain changes what it makes. `paint.md` is still written out from `design-mix.ts`, which has not made the
+move. The format, the results, the pictures and what resisted are in [docs/grammar.md](docs/grammar.md).
 
 ## Rendering strategy: the mock is painted by a DESIGN.md
 
@@ -705,18 +708,19 @@ src/server/design-mix.ts    no DESIGN.md: Jev's Scores become OKLCH colours, rad
 src/server/design-source.ts a supplied or mixed design, worked out once and reused
 src/server/theme.ts         tokens and the reading, as the kit's --k-* variables
 src/shared/kit.ts           the kit: component schemas of the A2UI fork, shared by server and renderer
-src/server/mock/plan.ts     the grammar (archetypes, blocks, anatomy) and the questions that fill it
-src/server/mock/screen.ts   plan to component tree; and the content schema Gemini is asked to fill
-grammar/                    the graph as files: screen.md and paint.md (written out by npm run grammar:export), the sets they link to, kit.md (the catalog a graph's parts name), examples/email.md
+src/server/mock/plan.ts     the shape of a plan, what is taken of one a browser sent back, and what a design overrules
+src/server/mock/screen.ts   the frame (app bar, navigation, a profile's opening, a dialog, the sticky bar) around the parts the file drew; what the writers are told
+grammar/                    the tool's graph, screen.md, which it reads; kit.md (the catalog its parts name), paint.md, icons.md and subjects.md, written out from code by npm run grammar:export; examples/email.md
+src/server/mock/graph.ts    the tool's graph read once, and what code still knows by name: the kinds of screen and their traits, a plan read back into a reading
 src/server/grammar/         format.ts reads, writes and checks a graph file; read.ts asks it and reads the answers; make.ts turns what a part is made of into a writer's schema and a tree; fill.ts tries a chain of sources; decide.ts asks what is decided once the words exist; patterns.ts is the kit as a catalog; export.ts writes the tool's own files; screen-plan.ts renames a reading into a ScreenPlan
 src/probe/grammar.ts        a graph file run on its own examples; screen.md held against readPlan
 src/probe/grammar-draw.ts   a graph file drawn: Jev reads, the file gives the tree, the schemas and the chains, Gemini writes, bakes and paints, the kit renders (out/grammar/)
-src/server/mock/refine.ts   per-instance decisions from the content, written into the data model
+src/server/mock/refine.ts   the one decision about written words the file does not say yet: which control a form's field gets
 src/server/mock/bake.ts     what the kit cannot draw: the baker's contract, the lint, the app's shelf
 src/web/kit/sandbox.ts      the frame a baked component runs in
 src/server/mock/link.ts     from a tap to the description of the screen it leads to
 src/shared/journey.ts       what the browser tells the server about how the person got here
-src/server/mock/icons.ts    the symbols Jev chooses among
+src/server/mock/icons.ts    the Material Symbols grammar/icons.md is written out from
 src/server/mock/pipeline.ts the mock pipeline
 src/web/kit/                the kit's renderer and stylesheet
 src/server/job-profile.ts   questions about the person, and the profile read from the answers

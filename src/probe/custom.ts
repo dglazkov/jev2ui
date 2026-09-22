@@ -9,7 +9,8 @@
 //   npm run probe:custom -- -v      plus the contract Jev sets for each
 
 import { askJev, JEV_MODEL } from "../server/models.js";
-import { planQuestions } from "../server/mock/plan.js";
+import { SCREEN } from "../server/mock/graph.js";
+import { questionsOf } from "../server/grammar/read.js";
 
 /** true: the kit cannot draw it. false: it can. null: either reading is fine. */
 export const PROMPTS: Array<[string, boolean | null, string?]> = [
@@ -48,7 +49,7 @@ export const PROMPTS: Array<[string, boolean | null, string?]> = [
 async function main() {
 const verbose = process.argv.includes("-v");
 console.log(`Jev: ${JEV_MODEL}\n`);
-const all = planQuestions();
+const all = questionsOf(SCREEN);
 const questions = Object.fromEntries(Object.entries(all).filter(([id]) => id === "archetype" || id.startsWith("custom") || id === "has_custom"));
 
 let right = 0;

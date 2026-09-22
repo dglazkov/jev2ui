@@ -1,17 +1,22 @@
 // The mock pipeline: describe a screen, get a mock.
 //
-//   t=0    Jev plans the tree (archetype, blocks, anatomy: one request)   }
-//          Jev reads the DESIGN.md, or mixes one                          } in parallel
-//          Gemini starts the header, in the brand's voice                 }
-//   plan   the design overrules the plan where they disagree; the whole tree
-//          is sent, bound to data paths; one writer per block starts
+// What a screen is made of is a file, grammar/screen.md, and what draws it is
+// another, grammar/kit.md (docs/grammar.md). This is the run of it:
+//
+//   t=0    Jev is asked the file's questions (one request)                   }
+//          Jev reads the DESIGN.md, or mixes one                             } in parallel
+//          Gemini starts the header, in the brand's voice                    }
+//   plan   the answers are read as the file says; the design overrules the
+//          plan where they disagree; each part is drawn by the pattern the
+//          file names, bound to data paths, and the whole tree is sent; one
+//          writer per part starts, asked for what the part's fields say
 //   words  stream into the data model; text that has not arrived shimmers
-//   bake   a screen that needs something the kit cannot draw has a slot for it;
-//          Gemini bakes what goes there, or Jev finds it on the app's shelf
-//   refine as each group, list or form field completes, Jev reads it and its
-//          answers (control, symbol, tone, primary) join the data beside it
-//   photos as each pictured item completes, Jev picks its photograph from the
-//          library; if none suits, the image model makes one (pictures.ts)
+//   fill   what nobody writes comes from the chain the file gives it: the
+//          custom part from the app's shelf, else baked, else the slot closes
+//          (bake.ts); a picture from the library, else painted (pictures.ts)
+//   decide as each part completes, Jev is asked what the file says is decided
+//          once the words exist (a row's control, a status's tone, the main
+//          button), and the answers join the data beside the words
 //
 // Gemini never sees a component and Jev never writes a word, so the tree is
 // valid by construction, and it is on screen before the first word is. The one
@@ -31,11 +36,17 @@ import type { PipelineEvent } from "../../shared/events.js";
 import type { Journey } from "../../shared/journey.js";
 import { bakeCustom, shelfFrom } from "./bake.js";
 import { destination, destinationIntent, homeTask } from "./link.js";
-import { BLOCKS, applyDesign, keepPlan, planQuestions, readPlan, type Block, type ScreenPlan } from "./plan.js";
+import { applyDesign, keepPlan, type Block, type ScreenPlan } from "./plan.js";
 import type { ScreenEdit } from "../../shared/turn.js";
 import { Pictures, itemWords } from "./pictures.js";
-import { SYSTEM_PROMPT, partPrompt, partSchema, screen, knownSubjects, type Part, type Setting } from "./screen.js";
-import { refineActions, refineBanner, refineField, refineGroup, refineItems, refineNav, refineStats, type Decoration } from "./refine.js";
+import { SYSTEM_PROMPT, partPrompt, screen, knownSubjects, type Part, type Setting } from "./screen.js";
+import { refineField } from "./refine.js";
+import { BLOCKS, KINDS, SCREEN, chainOf, partNode, partSchema, readingOf } from "./graph.js";
+import { decide, type Decoration } from "../grammar/decide.js";
+import { boundIn, treeOf } from "../grammar/make.js";
+import { KIT_PATTERNS } from "../grammar/patterns.js";
+import { JEV, questionsOf, readGrammar } from "../grammar/read.js";
+import { planOf } from "../grammar/screen-plan.js";
 
 /** Jev's per-instance answers, kept apart from Gemini's words and merged into them on the way out. */
 class Decorations {
@@ -116,12 +127,12 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
         part,
       );
     /** Calls `each` once for every element that is complete: all but the last while streaming, all of them at the end. */
-    const asTheyComplete = (each: (item: any, i: number) => void) => {
+    const asTheyComplete = (each: (item: any, i: number, all: any[]) => void) => {
       let seen = 0;
       return (items: any, complete: boolean) => {
         const streamed: any[] = Array.isArray(items) ? items : [];
         const ready = complete ? streamed.length : streamed.length - 1;
-        for (; seen < ready; seen++) each(streamed[seen], seen);
+        for (; seen < ready; seen++) each(streamed[seen], seen, streamed);
       };
     };
     const once = (then: (value: any) => void) => {
@@ -133,6 +144,42 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
       };
     };
 
+    /** What is drawn of each part, and so which of its fields Jev has any reason to be asked about. */
+    const drawn = new Map<string, Set<string>>();
+    /**
+     * What the file says is decided once a part's words exist, asked of them. One request per part, or per element of an
+     * outer list (the rows of one group); `only` picks the request that is about the element that has just completed.
+     */
+    const later = (part: Part, value: unknown, only?: (outer: number | undefined) => boolean) => {
+      const node = partNode(part);
+      // The navigation bar draws its symbols itself, so nothing binds them: the frame is not a pattern yet (docs/grammar.md).
+      const bound = part === "nav" ? new Set(plan!.icons ? ["icon"] : []) : (drawn.get(part) ?? new Set<string>());
+      const chosen = typeof to?.about?.value === "string" ? to.about.value : undefined;
+      const same = (x: unknown, y: unknown) => String(x).trim().toLowerCase() === String(y).trim().toLowerCase();
+      const asked = decide(SCREEN, node, value, {
+        description: prompt,
+        reading: readingOf(plan!),
+        calibration: JEV,
+        needed: (path) => bound.has(path),
+        // Exactly one option of a picker is chosen: the value the person saw on the row they tapped, if that is how they got here.
+        known: (field, element) => field.name === "on" && !!chosen && same(element?.label, chosen),
+      });
+      for (const one of asked) {
+        if (only && !only(one.outer)) continue;
+        const about = one.outer !== undefined && Array.isArray(value) ? `rows of "${value[one.outer]?.title}"` : `read the ${part}`;
+        refine(
+          part,
+          (async () => {
+            if (!Object.keys(one.questions).length) return one.read({}).decorations;
+            const answered = await run.askJev(`Jev: ${about}`, one.state, one.questions);
+            const { decorations, decisions } = one.read(answered.answers);
+            run.trace({ stage: answered.stage, ms: answered.ms, decisions, tokens: { input: answered.inputTokens, output: 0 } });
+            return decorations;
+          })(),
+        );
+      }
+    };
+
     const fields = asTheyComplete((field, i) => refine("form", refineField(run, prompt, i, field)));
     // A photograph joins its item like any other of Jev's answers, and joins it again if a better one had to be made.
     const photographs = asTheyComplete((item, i) => {
@@ -142,18 +189,17 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
       const big = plan!.list.layout !== "rows";
       const shown = (url: string) => (decorations.add("list", [{ at: ["items", i], values: { imageUrl: url } }]), streams.refresh("list"));
       const size: [number, number] = people || !big ? [160, 160] : [640, 480];
-      streams.spawn(pictures.find(people ? { subject: "portrait", of: itemWords(item), ratio: "1:1", size } : { ...plan!.pictures.items, of: itemWords(item), ratio: "4:3", size }, shown));
+      streams.spawn(pictures.find(people ? { subject: "portrait", of: itemWords(item), ratio: "1:1", size } : { ...plan!.pictures.items, of: itemWords(item), ratio: "4:3", size }, shown, chainOf("list", "imageUrl")));
     });
-    const tones = once((list) => {
-      const want = { tones: plan!.list.parts.includes("status") || plan!.list.parts.includes("progress"), icons: plan!.list.leading === "icon" && plan!.list.layout === "rows" };
-      refine("list", refineItems(run, prompt, list.items ?? [], want));
-    });
+    // A refinement re-sends the part, which calls its hook again: everything asked once the words exist is asked once.
+    const tones = once((list) => later("list", list));
     const hooks: Partial<Record<Part, PartHooks>> = {
-      banner: { onValue: once((banner) => refine("banner", refineBanner(run, prompt, banner))) },
-      stats: { onValue: once((stats) => plan!.statDeltas && refine("stats", refineStats(run, prompt, stats))) },
-      groups: { onValue: asTheyComplete((group, g) => refine("groups", refineGroup(run, prompt, g, group, plan!.icons, typeof to?.about?.value === "string" ? to.about.value : undefined))) },
-      nav: { onValue: once((nav) => plan!.icons && refine("nav", refineNav(run, prompt, nav.items ?? []))) },
-      actions: { onValue: once((actions) => actions.length && refine("actions", refineActions(run, prompt, actions))) },
+      banner: { onValue: once((banner) => later("banner", banner)) },
+      stats: { onValue: once((stats) => later("stats", stats)) },
+      // A group's rows are read as each group completes, so that no group waits for the rest.
+      groups: { onValue: asTheyComplete((_, g, groups) => later("groups", groups, (outer) => outer === g)) },
+      nav: { onValue: once((nav) => later("nav", nav)) },
+      actions: { onValue: once((actions) => later("actions", actions)) },
       form: { onValue: (form, complete) => fields(form?.fields, complete) },
       list: { onValue: (list, complete) => (photographs(list?.items, complete), tones(list, complete)) },
       facts: {
@@ -184,9 +230,19 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
     const state = to ? { first_screen: journey!.app, reached_by: to.reachedBy, screen: screenTask } : { screen: screenTask };
     const startingApp = architectureRequest && "create" in architectureRequest;
     const navigationQuestions = startingApp ? initialNavigationQuestions() : {};
-    const planned = await run.askJev("Jev: plan the screen", state, { ...planQuestions(), ...navigationQuestions });
+    const planned = await run.askJev("Jev: plan the screen", state, { ...questionsOf(SCREEN), ...navigationQuestions });
     const was = typeof edit?.plan.archetype === "string" ? [edit.plan.archetype] : undefined;
-    const read = readPlan(planned.answers, { ...(existing?.state.navigation?.includes(destinationId) && (destinationId !== "first" || existing.state.map.home === "first") ? { topLevel: true } : catalogEntry && to ? { topLevel: to.topLevel, among: to.among } : target ? (destinationId === "first" ? {} : { topLevel: destinationId === "home" }) : to ? { topLevel: to.topLevel, among: to.among } : {}), ...(settled ? { blocks: settled, ...(was ? { among: was } : {}) } : {}) });
+    // What is settled before Jev is asked: by how the person got here, or by what the developer said.
+    const arrived: { topLevel?: boolean; among?: string[] } = existing?.state.navigation?.includes(destinationId) && (destinationId !== "first" || existing.state.map.home === "first") ? { topLevel: true } : catalogEntry && to ? { topLevel: to.topLevel, among: to.among } : target ? (destinationId === "first" ? {} : { topLevel: destinationId === "home" }) : to ? { topLevel: to.topLevel, among: to.among } : {};
+    const reading = readGrammar(SCREEN, planned.answers, JEV, {
+      ...(settled ? { blocks: settled, ...(was ? { among: was } : {}) } : arrived.among ? { among: arrived.among } : {}),
+      ...(arrived.topLevel !== undefined ? { values: { top_level: arrived.topLevel } } : {}),
+    });
+    const kind = KINDS[reading.kind];
+    // Only a dialog shows it: Material and HIG both lead an alert with a symbol of what it is about.
+    const symbol = String(reading.values.screen_icon);
+    const read = { plan: planOf(SCREEN, reading), screenIcon: (kind.dialog || kind.outcome) && symbol !== "none" ? symbol : null, decisions: reading.decisions };
+    if (read.screenIcon !== null || kind.dialog) read.decisions.push({ id: "screen_icon", question: "symbol", answer: read.screenIcon ?? "none", p: reading.p.screen_icon ?? 1 });
     for (const id of Object.keys(navigationQuestions)) read.decisions.push({ id, question: id === "nav_home" ? "initial home destination" : `initial navigation: ${id.slice(4)}`, answer: planned.answers[id].choice, p: planned.answers[id].probabilities[planned.answers[id].choice] });
     run.trace({ stage: planned.stage, ms: planned.ms, decisions: read.decisions, tokens: { input: planned.inputTokens, output: 0 } });
 
@@ -217,14 +273,18 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
     pictures.drawn = plan.illustrated;
     if (designed.overruled.length) run.trace({ stage: `${design.name} overrules the plan: ${designed.overruled.join(", ")}`, ms: 0 });
 
+    // Each part is drawn by the pattern the file names for it, from what the file says it is made of, as the plan now stands.
+    const asRead = readingOf(plan);
+    const parts = plan.blocks.map((block) => [block, treeOf(KIT_PATTERNS, SCREEN, partNode(block), asRead, { contained: plan.contained, icons: plan.icons, symbol: plan.symbol })] as const);
+    for (const [block, tree] of parts) drawn.set(block, boundIn(tree));
     run.send({ createSurface: { surfaceId, catalogId: KIT_CATALOG_ID } });
-    run.send({ updateComponents: { surfaceId, components: screen(plan, read.screenIcon) } });
+    run.send({ updateComponents: { surfaceId, components: screen(plan, read.screenIcon, parts.flatMap(([, tree]) => tree)) } });
     // The lead picture is of what the header names. The description will not do: it lists what is on the screen, and a picture of that is a picture of a phone.
     if (plan.blocks.includes("hero")) {
       const shown = (url: string) => run.send({ updateDataModel: { surfaceId, path: "/hero", value: { imageUrl: url } } });
       if (kept.hero) run.send({ updateDataModel: { surfaceId, path: "/hero", value: kept.hero } });
       else if (typeof carried === "string") shown(resized(carried, 960, 540));
-      else streams.spawn((async () => pictures.find({ ...plan.pictures.hero, of: itemWords(await header) || prompt, ratio: "16:9", size: [960, 540] }, shown))());
+      else streams.spawn((async () => pictures.find({ ...plan.pictures.hero, of: itemWords(await header) || prompt, ratio: "16:9", size: [960, 540] }, shown, chainOf("hero", "imageUrl")))());
     }
 
     // A profile opens with the person's portrait: the one from the list they were tapped in, if that is how the person got here.
@@ -232,7 +292,7 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
       const shown = (url: string) => run.send({ updateDataModel: { surfaceId, path: "/person", value: { imageUrl: url } } });
       if (kept.person) run.send({ updateDataModel: { surfaceId, path: "/person", value: kept.person } });
       else if (typeof carried === "string") shown(resized(carried, 320, 320));
-      else streams.spawn((async () => pictures.find({ subject: "portrait", of: itemWords(await header) || prompt, ratio: "1:1", size: [320, 320] }, shown))());
+      else streams.spawn((async () => pictures.find({ subject: "portrait", of: itemWords(await header) || prompt, ratio: "1:1", size: [320, 320] }, shown, chainOf("hero", "imageUrl")))());
     }
 
     // The app's navigation is established once; every main screen after that shows the same one.
@@ -242,8 +302,8 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
       run.send({ updateDataModel: { surfaceId, path: "/nav", value: { items: nav.items, active: Math.max(0, active) } } });
     }
     // Navigation is already available from the screen plan. No extra model round trip.
-    const parts: Part[] = ["header", ...(plan.topLevel && !nav && !architectureRequest ? (["nav"] as Part[]) : []), ...plan.blocks.filter((b): b is Exclude<typeof b, "hero" | "custom"> => b !== "hero" && b !== "custom")];
-    streams.open(new Set<string>(parts));
+    const written: Part[] = ["header", ...(plan.topLevel && !nav && !architectureRequest ? (["nav"] as Part[]) : []), ...plan.blocks.filter((b): b is Exclude<typeof b, "hero" | "custom"> => b !== "hero" && b !== "custom")];
+    streams.open(new Set<string>(written));
     const draft = architecture;
     if (draft) {
       const node = draft.map.nodes.find((n) => n.id === destinationId)!;
@@ -252,12 +312,12 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
     }
     // Baking takes seconds, not milliseconds. It starts now and the slot shimmers, like a picture that has not loaded.
     if (plan.custom) streams.spawn(bakeCustom(run, surfaceId, prompt, plan, { ...setting, voice: setting.voice || (mixed ? parseDesign(mixed).voice : "") }, shelfFrom(journey?.shelf), fresh));
-    const staying = parts.filter((part) => kept[part] !== undefined);
+    const staying = written.filter((part) => kept[part] !== undefined);
     for (const part of staying) run.send({ updateDataModel: { surfaceId, path: `/${part}`, value: kept[part] } });
     if (staying.length) run.trace({ stage: `Unchanged: ${staying.join(", ")}`, ms: 0, detail: "nobody asked for these to change, so nothing wrote them again" });
     // Writers cannot see each other, so a bill would not add up. Totals wait for the line items and are shown them.
     const billed = plan.factsTotal && plan.blocks.includes("list") && kept.facts === undefined && kept.list === undefined;
-    for (const part of parts) {
+    for (const part of written) {
       if (streams.has(part) || kept[part] !== undefined || (billed && part === "facts")) continue;
       const written = write(part);
       if (billed && part === "list") streams.spawn(written.then((list) => void (list && write("facts", list.items))));

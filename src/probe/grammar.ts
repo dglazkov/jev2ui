@@ -9,22 +9,18 @@
 //   npm run probe:grammar -- grammar/examples/email.md    any graph
 //   npm run probe:grammar -- -v                           plus what was overruled, and why
 //
-// For screen.md the answers are also read by readPlan, as the tool does: the two
-// plans should be the same plan. Then, without asking anything more, each rule is
-// taken out of the file in turn, to see how many of the readings it was holding up.
+// Then, without asking anything more, each rule is taken out of the file in turn,
+// to see how many of the readings it was holding up.
 
 import { resolve } from "node:path";
 import { askJev, JEV_MODEL } from "../server/models.js";
-import { readPlan } from "../server/mock/plan.js";
 import { checkGrammar, printAtom, printRule, walk } from "../server/grammar/format.js";
 import { loadGrammar } from "../server/grammar/load.js";
 import { JEV, holdsIn, questionsOf, readGrammar, yieldOf, type Reading } from "../server/grammar/read.js";
-import { planOf } from "../server/grammar/screen-plan.js";
 
 const verbose = process.argv.includes("-v");
 const file = process.argv.slice(2).find((arg) => !arg.startsWith("-"));
 const grammar = loadGrammar(file ? resolve(file) : "screen.md");
-const isScreen = !file || /(^|\/)grammar\/screen\.md$/.test(file);
 const questions = questionsOf(grammar);
 const key = grammar.stateKey ?? grammar.name;
 
@@ -45,7 +41,6 @@ let claims = 0;
 let held = 0;
 let whole = 0;
 let labelled = 0;
-let agree = 0;
 for (const example of grammar.examples) {
   const { answers, ms } = await askJev({ [key]: example.text }, questions);
   asked.push(answers);
@@ -63,21 +58,8 @@ for (const example of grammar.examples) {
     console.log(`           expected ${printAtom(atom)}: ${was}`);
   }
   if (verbose) for (const d of reading.decisions) if (d.note) console.log(`           ${d.id} → ${d.answer}: ${d.note}`);
-  if (isScreen) {
-    const byHand = readPlan(answers).plan;
-    const byFile = planOf(grammar, reading);
-    if (same(byHand, byFile)) agree++;
-    else {
-      // Only where they differ, and what Jev said there, so that a rare one can be understood from the log.
-      const differing = Object.keys({ ...byHand, ...byFile }).filter((k) => !same((byHand as any)[k], (byFile as any)[k]));
-      console.log(`           readPlan differs in ${differing.join(", ")}`);
-      for (const k of differing) console.log(`             ${k}: by hand ${JSON.stringify((byHand as any)[k])}; by file ${JSON.stringify((byFile as any)[k])}`);
-      if (differing.includes("symbol")) console.log(`             screen_icon: choice ${answers.screen_icon.choice}; top of the ranking ${Object.entries(answers.screen_icon.probabilities as Record<string, number>).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([n, p]) => `${n} ${p.toFixed(4)}`).join(", ")}`);
-    }
-  }
 }
 console.log(`\n${whole}/${labelled} labelled examples came out as labelled; ${held}/${claims} of what they claim`);
-if (isScreen) console.log(`${agree}/${grammar.examples.length} plans are the plan readPlan makes of the same answers`);
 
 console.log("\nEach rule taken out of the file in turn, and how many of those readings change:");
 const before = readings(grammar, asked);

@@ -25,7 +25,8 @@ import { askJev, endpoint, ranked } from "./models.js";
 import { mixDesign, mixQuestions } from "./design-mix.js";
 import { loadDesign } from "./design-source.js";
 import { talk } from "./talk.js";
-import { ARCHETYPES, type Block } from "./mock/plan.js";
+import { KINDS } from "./mock/graph.js";
+import type { Block } from "./mock/plan.js";
 import { named, type Decision } from "../shared/events.js";
 import { addChange, receiptOf, type DialName, type PaintChange, type Pins, type ScreenAbout, type TurnKind, type TurnRequest, type TurnResponse } from "../shared/turn.js";
 
@@ -206,7 +207,7 @@ export async function readChange(state: Record<string, unknown>, others: ScreenA
 
 /** What a message asks of one screen's parts. Nothing, for a screen whose parts the browser does not know. */
 async function readScreen(screen: ScreenAbout, message: string): Promise<{ add: Block[]; remove: Block[]; rewrite: string[]; decisions: Decision[] }> {
-  const shape = ARCHETYPES[screen.archetype];
+  const shape = KINDS[screen.archetype];
   if (!shape || !screen.blocks) return { add: [], remove: [], rewrite: [], decisions: [] };
   const has = screen.blocks.filter((block): block is Block => shape.order.includes(block as Block));
   // A lead picture and a custom component have no words of their own to write again.
@@ -219,7 +220,7 @@ async function readScreen(screen: ScreenAbout, message: string): Promise<{ add: 
     const [[asked, p]] = ranked(answers[`block_${block}`]);
     if (asked === "keep" || p < 0.5 || (asked === "add") === has.includes(block)) continue;
     // What makes it this kind of screen stays: a feed without a list is not a feed.
-    const must = asked === "remove" && shape.requires?.includes(block);
+    const must = asked === "remove" && shape.requires.includes(block);
     decisions.push({ id: `block:${block}`, question: `${BLOCK_NAMES[block]}?`, answer: must ? "stays" : asked, p, ...(must ? { note: `asked to go, but a ${screen.archetype} screen always has one` } : {}) });
     if (!must) (asked === "add" ? add : remove).push(block);
   }

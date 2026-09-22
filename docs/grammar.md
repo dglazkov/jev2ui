@@ -6,14 +6,17 @@ A DESIGN.md made paint portable: anyone can bring their own. What decides the *s
 terse file that holds a decision graph, that anyone can read, and that a reader which knows nothing about
 screens can run.
 
-It is a probe, side by side with the code it was taken from. Nothing the tool serves reads these files yet.
+**Since step 5, the tool reads the file.** `grammar/screen.md` is edited by hand and is what the served app
+makes screens from; the hand-written tables it was taken from are gone. The other files under `grammar/` are
+still written out from code, for the reasons given under "What is still code".
 
 ```sh
-npm run grammar:export                                  # writes grammar/*.md from the code
+npm run grammar:export                                  # writes kit.md, paint.md, icons.md, subjects.md from the code
 npm run probe:grammar                                   # grammar/screen.md on its own examples, live, and against readPlan
 npm run probe:grammar -- grammar/examples/email.md      # any graph
 npm run probe:draw -- grammar/examples/email.md "Your one-time sign-in code"   # any graph, drawn; --paint lets pictures be made
 node --import tsx --test src/server/grammar/*.test.ts
+RECORD=1 node --import tsx --test src/server/grammar/regression.test.ts   # after a change to screen.md that is meant
 ```
 
 There are two kinds of file. A **graph** (`screen.md`, `paint.md`, `examples/email.md`) is somebody's decisions:
@@ -322,6 +325,33 @@ one), and `probe:draw` asks them as each part is written. A failed payment, draw
 
 <img src="grammar-email-alert.png" width="300" alt="A failed-payment email: the banner's tone and the main button were decided once the words existed">
 
+**Step 5: the tool reads the file.** `runMock` (`mock/pipeline.ts`) now asks `questionsOf(screen.md)`, reads
+the answers with `readGrammar`, draws each part with `treeOf` and the kit's patterns, asks each writer for
+`schemaOf` its part, fills what nobody writes through the file's chains, and asks what is decided once the
+words exist with `decide()`. `plan.ts` kept the shape of a plan, what is taken of one a browser sent back, and
+`applyDesign`; `screen.ts` kept the frame; `refine.ts` kept the form field; `BUILDERS`, `partSchema`,
+`readPlan`, `planQuestions`, the question tables and six of `refine.ts`'s seven functions were deleted. What
+code still knows by name is in `mock/graph.ts`: the kinds and their traits (for the frame, `change.ts` and
+`talk.ts`), the options a browser may send back, and `readingOf(plan)`, the way from a plan back to a reading,
+because the design and the developer's word are applied to a plan and the drawing reads a reading.
+
+The safety: before the deletion, the readers were still held equal to the hand-written code (all 29 differential
+tests, re-run under a better seeded generator, since the old one never produced a feed), and what they make of
+600 recorded sets of answers (200 plans, 16 screens' trees and schemas, 40 screens' later decisions) was
+written down (`fixtures/screen.json`, 730 KB). `regression.test.ts` holds the file and the readers to that
+recording; a change to `screen.md` that is meant is recorded again with `RECORD=1`. The bundle carries
+`grammar/` beside `main.js` (`build:server`), and the production smoke test starts it.
+
+Live, after the switch: nine screens of every kind, the edit path (a recipe made again with a button
+added, its prose, facts and steps kept word for word), and the tap-through path (a walker tapped from a feed:
+a detail page about one person, with their portrait carried). All valid; trees at 180–330 ms; a checkout's
+totals bold on the last line, its items toned, a "Delete account" button red, a timer baked in 13 s.
+
+One mistake on the way, which cost something: the list's later question was hooked without the `once` the old
+code had, and since a refinement re-sends the part, which calls the hook again, the tool asked Jev about the
+same list every 60 ms for the ten minutes a test run sat on a checkout screen, and again for a minute while
+it was found: roughly nine thousand Jev requests. Fixed with the `once`, and a comment says why it is there.
+
 ## What resisted
 
 What the export could not say, or could only say by growing the format:
@@ -391,6 +421,24 @@ From the chains:
 24. **`written` is a source too**, the first of every plain field, and its tier, its system prompt and which
     writer waits for which are still the host's.
 
+From the tool reading the file:
+
+33. **A plan and a reading are two shapes of one thing.** The browser holds a `ScreenPlan` and sends it back;
+    the design and the developer's word are applied to it (`applyDesign`, `keepPlan`); the drawing and the
+    writers read a reading. So `readingOf(plan)` exists, and the two must agree on every field. A brought graph
+    would have no plan type, and would want the design and the edit applied to the reading instead.
+34. **The trace changed.** Decisions are labelled by the file's question text and ids (`item_leading`,
+    `row_control_0`), where the hand-written code had short labels ("each item is…", a row's label). The trace
+    panel and Gemini's answers to questions read them; whether either is worse for it is not measured.
+35. **The navigation bar draws its own symbols**, so nothing binds them and "is it needed" cannot be found from
+    the tree: the pipeline says `plan.icons` by hand for the nav, and the frame is still not a pattern.
+36. **The four other files are still exported from code**: `paint.md` because `design-mix.ts` has not made the
+    move (its dials are read by functions and one dial's stops depend on another answer, 5); `kit.md` because
+    the catalog *is* code that draws; `icons.md` and `subjects.md` because they are lists of assets. And
+    `screen.md` still links to `subjects.md` for what a picture can be of, which `photos/subjects.ts` owns.
+37. **The regression fixture is blunt.** It says something changed and where, not whether the change is good; the
+    file's own examples (`probe:grammar`) are the check that reads meaning, and they need Jev.
+
 From what is decided once the words exist:
 
 25. **Two things are about all the elements at once**, and needed words of their own: `all or none`, `one
@@ -429,15 +477,10 @@ Not attempted, and each is a piece of the graph that is still only code:
 
 ## Next, in the order that seems right
 
-1. **Let the tool read the files.** Everything `runMock` does for a screen now has a generic twin held to it:
-   `readGrammar` + `planOf` for the plan, `schemaOf` + `treeOf` for the parts, `fill()` for what nobody writes,
-   `decide()` for what is decided later. What differs is the trace a person reads, the ids of components and
-   the names answers come back under (28), and `grammar/*.md` would have to travel with the server bundle the
-   way `library.json` does. This is the step after which editing `screen.md` changes the tool.
-2. **The frame as a pattern**, so that traits have somewhere to go and a brought graph gets more than a page.
-   It can come before or after 1; a brought graph needs it, the tool's own does not.
-3. **A contract of the graph's own** for the baker and the shelf (19), and more than one slot (20): what it
-   takes for a brought graph's baked parts to be first-class.
+1. **The frame as a pattern**, so that traits have somewhere to go, the nav's symbols are bound like any
+   other's (35), and a brought graph gets more than a page.
+2. **The design and the edit as layers over a reading** (33), so that a brought graph is not tied to
+   `ScreenPlan`, and `paint.md` read by the tool (36), which wants the two things paint resisted (5).
+3. **A contract of the graph's own** for the baker and the shelf (19), and more than one slot (20).
 4. **Form fields** (26): an option that is on offer only when something was written, and a count.
-5. **Calibration from examples**, and with it the policy for a torn answer (18): fit the tiers for gev from a
-   graph's own examples, and say in the file what happens under them.
+5. **Calibration from examples**, and with it the policy for a torn answer (18).

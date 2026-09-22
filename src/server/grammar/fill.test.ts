@@ -1,16 +1,17 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { Baked } from "../../shared/kit.js";
-import { CUSTOM_SOURCES, bakeCustom, calls as bakeCalls, sendCustom, type Filling } from "../mock/bake.js";
+import { bakeCustom, calls as bakeCalls } from "../mock/bake.js";
 import { Pictures, calls as pictureCalls, type Wanted } from "../mock/pictures.js";
 import type { ScreenPlan } from "../mock/plan.js";
 import type { Run } from "../run.js";
 import { fill, sourcesOf } from "./fill.js";
+import { SCREEN as TOOL, chainOf } from "../mock/graph.js";
 import { checkGrammar, parseGrammar, walk, type Field, type Grammar, type Node, type Source } from "./format.js";
 import { loadGrammar } from "./load.js";
 import { checkBindings } from "./make.js";
 
-const screen = loadGrammar("screen.md");
+const screen = TOOL;
 const kit = loadGrammar("kit.md");
 const sources = sourcesOf(kit);
 const named = (grammar: Grammar, name: string): Node => {
@@ -97,47 +98,21 @@ const SCRIPTS: Record<string, Script> = {
   "a shelf of things that draw the list, for a part that does not": { shelf: [{ ...onShelf, contract: { ...onShelf.contract, linked: true } }], bakes: [GOOD] },
 };
 
-test("the custom part's chain, read from screen.md and tried by a runner that knows nothing about baking, does what bakeCustom does", async () => {
-  const chain = named(screen, "custom").filled!;
-  assert.deepEqual(chain.map((step) => step.name), ["shelf", "baked", "closed"]);
+test("the custom part is filled as the file says, from the shelf else baked else closed, under eight scripts", async () => {
+  assert.deepEqual(chainOf("custom").map((step) => step.name), ["shelf", "baked", "closed"]);
   const setting = { voice: "" };
-  for (const [name, script] of Object.entries(SCRIPTS)) {
-    const byHand = await under(script, (run) => bakeCustom(run, "main", "Pomodoro timer", plan, setting, script.shelf, script.fresh));
-    const byFile = await under(script, async (run) => {
-      const filled = await fill<Filling | "closed">(
-        chain,
-        {
-          shelf: () => CUSTOM_SOURCES.shelf(run, "Pomodoro timer", plan, setting, script.shelf),
-          baked: () => CUSTOM_SOURCES.baked(run, "Pomodoro timer", plan, setting),
-          closed: async () => "closed",
-        },
-        sources,
-        { fresh: script.fresh },
-      );
-      assert.ok(filled, "the chain ends in a terminal, so it ends in something");
-      sendCustom(run, "main", filled.value === "closed" ? undefined : filled.value);
-    });
-    assert.deepEqual(byFile, byHand, name);
-    assert.ok(byHand.some((line) => line.startsWith("send")), name);
-  }
-  // The scripts are not all one story.
   const told = async (name: string) => (await under(SCRIPTS[name], (run) => bakeCustom(run, "main", "Pomodoro timer", plan, setting, SCRIPTS[name].shelf, SCRIPTS[name].fresh))).map((line) => line.split(" ")[0]).join(" ");
+  assert.equal(await told("nothing on the shelf, and the bake passes"), "bake trace send send");
   assert.equal(await told("Jev takes what is on the shelf, and only its data is written"), "jev trace write trace send send");
+  assert.equal(await told("Jev says none of these"), "jev trace bake trace send send");
+  assert.equal(await told("what is on the shelf cannot be filled, so one is baked"), "jev trace write trace bake trace send send");
+  assert.equal(await told("the first bake is refused and the second passes"), "bake trace bake trace send send");
   assert.equal(await told("both bakes are refused, and the slot closes"), "bake trace bake trace send");
   assert.equal(await told("made again at the developer's word: the shelf is not looked on"), "bake trace send send");
-});
-
-test("and with its steps in another order, or without its terminal, it does not", async () => {
-  const chain = named(screen, "custom").filled!;
-  const setting = { voice: "" };
-  const script = SCRIPTS["Jev takes what is on the shelf, and only its data is written"];
-  const byHand = await under(script, (run) => bakeCustom(run, "main", "Pomodoro timer", plan, setting, script.shelf));
-  for (const other of [[chain[1], chain[0], chain[2]], [chain[1], chain[2]]]) {
-    const byFile = await under(script, async (run) => {
-      const filled = await fill<Filling | "closed">(other, { shelf: () => CUSTOM_SOURCES.shelf(run, "Pomodoro timer", plan, setting, script.shelf), baked: () => CUSTOM_SOURCES.baked(run, "Pomodoro timer", plan, setting), closed: async () => "closed" }, sources);
-      sendCustom(run, "main", !filled || filled.value === "closed" ? undefined : filled.value);
-    });
-    assert.notDeepEqual(byFile, byHand);
+  assert.equal(await told("a shelf of things that draw the list, for a part that does not"), "bake trace send send");
+  for (const [name, script] of Object.entries(SCRIPTS)) {
+    const log = await under(script, (run) => bakeCustom(run, "main", "Pomodoro timer", plan, setting, script.shelf, script.fresh));
+    assert.equal(log.at(-1)!.includes('"failed":true'), name.includes("closes"), name);
   }
 });
 
@@ -184,25 +159,18 @@ const SHOOTS: Record<string, Shoot> = {
   "the subject was a guess, so the words are read first": { jev: "photo_1", makes: "a picture", p: 0.4 },
 };
 
-test("an item's picture chain, read from screen.md, does what Pictures.find does", async () => {
+test("a picture is looked for as the file says, in the library else painted else the frame stays, under five", async () => {
   const chain = fieldOf(named(screen, "list"), "imageUrl").source!;
   assert.deepEqual(chain, [{ name: "library", from: true, by: "item_subject" }, { name: "painted" }, { name: "placeholder" }]);
   assert.deepEqual(fieldOf(named(screen, "hero"), "imageUrl").source!.map((step) => step.by ?? step.name), ["hero_subject", "painted", "placeholder"]);
-  for (const [name, shoot] of Object.entries(SHOOTS)) {
-    const byHand = await shooting(shoot, (pictures, wanted, show) => pictures.find(wanted, show));
-    const byFile = await shooting(shoot, async (pictures, wanted, show) => {
-      // Reading the words when the subject was a guess is the host's, and comes before any source: the file has no way to say it yet.
-      const settled = await pictures.settle(wanted);
-      const filled = await fill<string | null>(chain, { library: () => pictures.library(settled), painted: () => pictures.painted(settled), placeholder: async () => null }, sources);
-      if (filled?.value) show(filled.value);
-    });
-    assert.deepEqual(byFile, byHand, name);
-  }
-  const told = async (name: string) => (await shooting(SHOOTS[name], (pictures, wanted, show) => pictures.find(wanted, show))).map((line) => line.split(" ")[0]).join(" ");
+  const told = async (name: string, order = chain) => (await shooting(SHOOTS[name], (pictures, wanted, show) => pictures.find(wanted, show, order))).map((line) => line.split(" ")[0]).join(" ");
   assert.equal(await told("Jev takes a photograph from the library"), "jev trace show");
   assert.equal(await told("none of these, so one is made"), "jev trace paint trace show");
+  assert.equal(await told("none of these, and the image model fails: the frame stays"), "jev trace paint trace");
   assert.equal(await told("none of these, where no pictures are made"), "jev trace");
   assert.equal(await told("the subject was a guess, so the words are read first"), "jev trace jev trace show");
+  // With the chain the other way round, a picture is painted before the library is looked in.
+  assert.equal(await told("Jev takes a photograph from the library", [chain[1], chain[0], chain[2]]), "paint trace show");
 });
 
 // --- What a lint can say about chains, from the files alone --------------------------

@@ -1,7 +1,5 @@
-// The symbols Jev can choose from, wherever a screen, a row, an item or a destination wants one.
-
-import { choice } from "@typesafe-ai/sdk";
-import { ranked } from "../models.js";
+// The symbols Jev can choose from, wherever a screen, a row, an item or a destination wants one: grammar/icons.md is
+// written out from this list (src/server/grammar/export.ts), and grammar/screen.md chooses among it.
 
 /** Material Symbols. No catalogue limits the set now, so it covers what apps are actually about. */
 export const ICONS = [
@@ -21,10 +19,3 @@ export const ICONS = [
   "description", "folder", "attach_file", "link", "history", "sync", "backup", "security", "fingerprint", "verified_user", "privacy_tip", "policy", "accessibility", "translate",
 ] as const;
 export const ICON_OPTIONS = Object.fromEntries([...ICONS.map((name) => [name, null]), ["none", "No symbol in the set relates to it."]]);
-
-export const iconQuestion = (what: string) => choice(`Which symbol best stands for ${what}?`, ICON_OPTIONS);
-export const readIcon = (answer: any) => {
-  const [name] = ranked(answer)[0];
-  return name === "none" ? undefined : name;
-};
-

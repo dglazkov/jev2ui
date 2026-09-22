@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && npm run build:server",
-    "build:server": "esbuild src/server/main.ts --bundle --platform=node --format=esm --external:@google/design.md --banner:js=\"import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);\" --outfile=dist-server/main.js --log-level=warning && cp src/server/photos/library.json dist-server/library.json",
+    "build:server": "esbuild src/server/main.ts --bundle --platform=node --format=esm --external:@google/design.md --banner:js=\"import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);\" --outfile=dist-server/main.js --log-level=warning && cp src/server/photos/library.json dist-server/library.json && rm -rf dist-server/grammar && cp -R grammar dist-server/grammar",
     "start": "node dist-server/main.js",
     "typecheck": "tsc",
     "eval": "tsx src/eval.ts",

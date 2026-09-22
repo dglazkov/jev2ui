@@ -29,7 +29,8 @@ import { loadDesign } from "../server/design-source.js";
 import { streamGeminiJson } from "../server/models.js";
 import { CUSTOM_SOURCES, sendCustom, type Filling } from "../server/mock/bake.js";
 import { Pictures } from "../server/mock/pictures.js";
-import { CUSTOM_SIZE, type ScreenPlan } from "../server/mock/plan.js";
+import { optionsOf, ratioOf } from "../server/mock/graph.js";
+import type { ScreenPlan } from "../server/mock/plan.js";
 import { readMade } from "../server/photos/generate.js";
 import type { SubjectName } from "../server/photos/subjects.js";
 import { Run } from "../server/run.js";
@@ -134,7 +135,8 @@ const write = async (node: Node, agreeWith?: unknown) => {
 const fillPart = async (node: Node) => {
   const told = [node.told, ...node.children.flatMap((child) => (child.asking?.type === "choice" ? [child.asking.options.find((o) => o.name === reading.values[idOf(child)])?.told] : []))].filter(Boolean);
   const ratio = String(knobsOf(grammar, node, reading).ratio ?? "16:9");
-  const size = (Object.entries(CUSTOM_SIZE).find(([, s]) => s.ratio === ratio)?.[0] ?? "wide") as keyof typeof CUSTOM_SIZE;
+  // The baker is the tool's, and takes a size by the tool's name for it: the one whose ratio this is.
+  const size = optionsOf("custom_size").find((name) => ratioOf(name) === ratio) ?? "wide";
   // The baker is the tool's own and speaks of screens: it is handed the email as one, with the part's contract said in words.
   const plan = { archetype: reading.kind, blocks: reading.blocks, custom: { use: String(reading.values[`${node.name}_use`] ?? "read"), size, linked: false } } as unknown as ScreenPlan;
   const brief = `${text}\n\nThis is a ${grammar.name}, not an app screen. Your component is its "${node.name}" part. ${told.join(" ")}`;

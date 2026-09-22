@@ -89,7 +89,7 @@ export function readGrammar(grammar: Grammar, answers: Record<string, any>, cali
     const [name, sure] = ranking.find(([option]) => !known.among || known.among.includes(option)) ?? ranking[0];
     kind = name;
     p[id] = sure;
-    decisions.set(id, { id, question: kinds.name, answer: kind, p: sure, ...(kind !== ranking[0][0] ? { note: `read as "${ranking[0][0]}", which is ruled out here` } : {}) });
+    decisions.set(id, { id, question: kinds.question ?? kinds.name, answer: kind, p: sure, ...(kind !== ranking[0][0] ? { note: `read as "${ranking[0][0]}", which is ruled out here` } : {}) });
     const shape = kinds.asking.options.find((o) => o.name === kind)?.shape;
     order = shape?.parts.map((part) => part.block) ?? [];
     const odds = (block: string): number => answers[`has_${block}`].noul;
@@ -157,7 +157,7 @@ export function readGrammar(grammar: Grammar, answers: Record<string, any>, cali
       const node = byId.get(then.id);
       if (!node || then.not) continue;
       overruled.set(then.id, node.asking?.type === "noul" ? then.is[0] === "yes" : then.is[0]);
-      decisions.set(then.id, { id: then.id, question: node.name, answer: then.is[0], p: 1, ...(rule.reason ? { note: rule.reason } : {}) });
+      decisions.set(then.id, { id: then.id, question: node.question ?? node.name, answer: then.is[0], p: 1, ...(rule.reason ? { note: rule.reason } : {}) });
     }
   }
 
@@ -169,7 +169,8 @@ export function readGrammar(grammar: Grammar, answers: Record<string, any>, cali
     if (value !== undefined) values[id] = value;
     const answer = answers[id];
     if (answer && !(id in p)) p[id] = node.asking?.type === "noul" ? answer.noul : node.asking?.type === "choice" ? answer.probabilities[answer.choice] : answer.score;
-    if (!decisions.has(id) && node !== kinds && !node.block && applies(node) && value !== undefined) decisions.set(id, { id, question: node.name, answer: typeof value === "boolean" ? (value ? "yes" : "no") : String(value), p: p[id] ?? 1 });
+    // What a person reads in the trace is the question as it was asked, and, where it was settled before asking, that it was.
+    if (!decisions.has(id) && node !== kinds && !node.block && applies(node) && value !== undefined) decisions.set(id, { id, question: node.question ?? node.name, ...(known.values && id in known.values ? { note: "settled beforehand" } : {}), answer: typeof value === "boolean" ? (value ? "yes" : "no") : String(value), p: p[id] ?? 1 });
   });
   return { kind, blocks, values, p, decisions: [...decisions.values()] };
 }

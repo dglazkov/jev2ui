@@ -32,8 +32,10 @@ import { choice } from "@typesafe-ai/sdk";
 import { BAKED, type Baked } from "../../shared/kit.js";
 import { BAKER_MODEL, bakeGeminiJson, streamGeminiJson } from "../models.js";
 import type { Run } from "../run.js";
-import { CUSTOM_SIZE, type CustomContract, type ScreenPlan } from "./plan.js";
-import { itemSchema, type Setting } from "./screen.js";
+import { fill } from "../grammar/fill.js";
+import { chainOf, itemSchema, ratioOf, SOURCES, toldOf } from "./graph.js";
+import type { ScreenPlan } from "./plan.js";
+import type { Setting } from "./screen.js";
 
 /** More than an app has use for; a shelf is sent with every tap. */
 const LARGEST_SHELF = 12;
@@ -54,14 +56,6 @@ export function shelfFrom(sent: unknown): Baked[] {
 
 /** The models this file calls, where a test can stand in for them. */
 export const calls = { bake: bakeGeminiJson, write: streamGeminiJson };
-
-/** What each answer about the component means to whoever bakes it (grammar/screen.md has them under `custom_use`, after the arrow). */
-export const USES: Record<CustomContract["use"], string> = {
-  watch: "It shows something that changes on its own, and the person keeps an eye on it. Make it run: it moves, counts or updates by itself once started.",
-  pick: "The person picks one or more parts of it. Tapping a part selects it, visibly, and tapping again deselects it. Report every change with kit.select.",
-  adjust: "The person works it directly by dragging, turning or playing it, and it responds at once. Report the current value with kit.select whenever it changes.",
-  read: "The person only reads it. It may reveal a detail when a part is tapped or hovered, but nothing is chosen or changed.",
-};
 
 const SYSTEM = `You build one custom UI component for a mock-up of an app screen.
 The rest of the screen (top bar, lists, figures, text, buttons) is already built from a component kit. You build only the one thing that kit cannot draw, and it must look like it belongs to the same screen.
@@ -151,7 +145,7 @@ export function lint(source: string): string[] {
 
 function brief(screen: string, plan: ScreenPlan, setting: Setting): string {
   const contract = plan.custom!;
-  const { ratio } = CUSTOM_SIZE[contract.size];
+  const ratio = ratioOf(contract.size);
   const others = plan.blocks.filter((b) => b !== "custom");
   return [
     setting.app ? `The app, as first described: ${setting.app}` : "",
@@ -159,7 +153,7 @@ function brief(screen: string, plan: ScreenPlan, setting: Setting): string {
     setting.reachedBy ? `The person got to this screen by ${setting.reachedBy}.` : "",
     setting.about ? `What the previous screen showed about this, which the data must agree with:\n${JSON.stringify(setting.about)}` : "",
     `It is a ${plan.archetype} screen. Around your component the kit already draws: a top bar with the title${others.length ? `, ${others.join(", ")}` : ""}. Do not repeat them.`,
-    `What the person does with your component: ${USES[contract.use]}`,
+    `What the person does with your component: ${toldOf("custom_use", contract.use)}`,
     `Your box: aspect ratio ${ratio} (width:height) on a phone. On a wide screen it is wider than that, never taller, so centre what you draw.`,
     contract.linked
       ? `The component draws the same items the screen lists, so the two agree: read them from state.items, place or plot each one, and call kit.openItem(item) when one is opened. Each item matches this schema:\n${JSON.stringify(itemSchema(plan))}\nItems carry no coordinates: derive a stable position for each from a hash of its title.`
@@ -290,6 +284,12 @@ export function sendCustom(run: Run, surfaceId: string, filling: Filling | undef
  * this screen to be made again.
  */
 export async function bakeCustom(run: Run, surfaceId: string, screen: string, plan: ScreenPlan, setting: Setting, shelf: Baked[], fresh = false): Promise<void> {
-  const reused = fresh ? undefined : await CUSTOM_SOURCES.shelf(run, screen, plan, setting, shelf);
-  sendCustom(run, surfaceId, reused ?? (await CUSTOM_SOURCES.baked(run, screen, plan, setting)));
+  // The order is the file's: `filled from shelf else baked else closed` under the custom part of grammar/screen.md.
+  const filled = await fill<Filling | "closed">(
+    chainOf("custom"),
+    { shelf: () => CUSTOM_SOURCES.shelf(run, screen, plan, setting, shelf), baked: () => CUSTOM_SOURCES.baked(run, screen, plan, setting), closed: async () => "closed" as const },
+    SOURCES,
+    { fresh },
+  );
+  sendCustom(run, surfaceId, !filled || filled.value === "closed" ? undefined : filled.value);
 }

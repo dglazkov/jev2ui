@@ -12,7 +12,7 @@
 
 import { streamGeminiJson } from "./models.js";
 import { DIALS, ELEVATION, HUES, PHOTO_LOOK, TYPE } from "./design-mix.js";
-import { ARCHETYPES, BLOCKS } from "./mock/plan.js";
+import { BLOCKS, KINDS } from "./mock/graph.js";
 import type { Option, TurnKind, TurnRequest } from "../shared/turn.js";
 
 const ends = (key: keyof typeof DIALS) => `from "${DIALS[key].levels[0]}" to "${DIALS[key].levels[4]}"`;
@@ -33,7 +33,7 @@ ${criteria(ELEVATION)}
   - pictures or none; and how they look, one of:
 ${criteria(PHOTO_LOOK)}
 - The screen that is showing can be made again with a change in mind. That can add or drop a section (the sections are: ${BLOCKS.join(", ")}), lay its items out another way (rows, cards, a grid, a reel), or change what the words say, their length, tone, language or units.
-- Another screen can be added to the app (the kinds of screen are: ${Object.keys(ARCHETYPES).join(", ")}).
+- Another screen can be added to the app (the kinds of screen are: ${Object.keys(KINDS).join(", ")}).
 - A different app can be started.
 
 What it cannot do: move a thing to another place, or change the order sections come in. The order belongs to the kind of screen, as the design systems the components come from prescribe. It cannot change one element's size or colour on its own either; the look is the whole app's.`;

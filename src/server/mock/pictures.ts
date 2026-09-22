@@ -5,7 +5,10 @@
 // library has it next time.
 
 import { choice } from "@typesafe-ai/sdk";
+import { fill } from "../grammar/fill.js";
+import type { Source } from "../grammar/format.js";
 import { ranked } from "../models.js";
+import { SOURCES } from "./graph.js";
 import { makesPhotos, makePhoto, type Brief } from "../photos/generate.js";
 import { photoUrl, shortlist, type Photo } from "../photos/library.js";
 import { SUBJECTS, type SubjectName } from "../photos/subjects.js";
@@ -50,11 +53,14 @@ export class Pictures {
     private readonly app: string,
   ) {}
 
-  /** Calls `show` with a photograph from the library if one suits, and with a made one if none did. */
-  async find(wanted: Wanted, show: (url: string) => void): Promise<void> {
+  /**
+   * Calls `show` with a picture, if the chain ends in one. `chain` is where the file says a picture comes from
+   * (`from library by item_subject else painted else placeholder`); the order is its.
+   */
+  async find(wanted: Wanted, show: (url: string) => void, chain: Source): Promise<void> {
     wanted = await this.settle(wanted);
-    const url = (await this.library(wanted)) ?? (await this.painted(wanted));
-    if (url) show(url);
+    const filled = await fill<string | null>(chain, { library: () => this.library(wanted), painted: () => this.painted(wanted), placeholder: async () => null }, SOURCES);
+    if (filled?.value) show(filled.value);
   }
 
   /** A subject read off the description, before there were words, may have been a guess. If it was, the words are read instead. */

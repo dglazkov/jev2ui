@@ -2,32 +2,32 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { STOPS, dial, mixQuestions } from "../design-mix.js";
-import { ARCHETYPES, BLOCKS, planQuestions, readPlan } from "../mock/plan.js";
-import { files, screenGrammar } from "./export.js";
+import { BLOCKS, KINDS, SCREEN } from "../mock/graph.js";
+import { files } from "./export.js";
 import { answersTo, random } from "./fixtures.js";
 import { GRAMMAR_DIR, loadGrammar } from "./load.js";
 import { checkGrammar, laterIn, parseGrammar, printGrammar, printRule } from "./format.js";
 import { JEV, questionsOf, readGrammar, yieldOf } from "./read.js";
 import { planOf } from "./screen-plan.js";
+import { readFileSync as read } from "node:fs";
 
-test("the files are what the code asks: run `npm run grammar:export` after changing a question", () => {
+test("the files still written from code are what the code asks and draws: run `npm run grammar:export` after changing a question", () => {
+  assert.deepEqual(Object.keys(files()).sort(), ["icons.md", "kit.md", "paint.md", "subjects.md"]);
   for (const [name, text] of Object.entries(files())) assert.equal(readFileSync(`${GRAMMAR_DIR}${name}`, "utf8"), text, `grammar/${name} is stale`);
 });
 
-test("a file read and written again is the same file", () => {
-  for (const [name, text] of Object.entries(files())) assert.equal(printGrammar(parseGrammar(text)), text, name);
+test("a file read and written again is the same file, screen.md and email.md included", () => {
+  for (const name of [...Object.keys(files()), "screen.md", "examples/email.md"]) {
+    const text = readFileSync(`${GRAMMAR_DIR}${name}`, "utf8");
+    assert.equal(printGrammar(parseGrammar(text)), text, name);
+  }
 });
 
-test("what is read from screen.md is what was written, to the last trait", () => {
-  const written = screenGrammar();
-  const read = parseGrammar(printGrammar(written));
-  // A set kept in another file is only named here; its options are read through the link.
-  const bare = JSON.parse(JSON.stringify(written), (key, value) => (value?.among ? { ...value, options: value.overrides ?? [] } : value));
-  assert.deepEqual(JSON.parse(JSON.stringify(read)), bare);
-});
-
-test("screen.md asks Jev exactly what planQuestions asks", () => {
-  assert.deepEqual(questionsOf(loadGrammar("screen.md")), planQuestions());
+test("the tool's graph is the file: what the code knows by name is what the file says", () => {
+  assert.deepEqual(BLOCKS, ["banner", "hero", "filters", "custom", "stats", "list", "groups", "facts", "prose", "steps", "form", "actions"]);
+  assert.deepEqual(Object.keys(KINDS), ["feed", "dashboard", "detail", "guide", "settings", "form", "checkout", "result", "confirm"]);
+  assert.deepEqual(KINDS.checkout, { order: ["banner", "custom", "list", "facts", "form", "actions"], requires: [], atLeast: 2, stickyActions: true, dialog: false, outcome: false });
+  assert.deepEqual(KINDS.confirm.dialog && KINDS.result.outcome && KINDS.feed.requires, ["list"]);
 });
 
 test("paint.md asks Jev exactly what mixQuestions asks", () => {
@@ -59,21 +59,7 @@ test("the check says what Jev will stumble on", () => {
 
 // --- The reader, against readPlan ------------------------------------------------
 
-const answersFrom = (rng: () => number) => answersTo(planQuestions(), rng);
-
-test("read from the file, a screen comes out as readPlan makes it: 3000 sets of answers, with and without what is settled beforehand", () => {
-  const grammar = loadGrammar("screen.md");
-  const rng = random(20260921);
-  const some = <T>(all: readonly T[]) => all.filter(() => rng() < 0.4);
-  for (let i = 0; i < 3000; i++) {
-    const answers = answersFrom(rng);
-    const among = rng() < 0.3 ? some(Object.keys(ARCHETYPES)) : undefined;
-    const known = { ...(among?.length ? { among } : {}), ...(rng() < 0.3 ? { blocks: some(BLOCKS) } : {}), ...(rng() < 0.4 ? { topLevel: rng() < 0.5 } : {}) };
-    const expected = readPlan(answers, known).plan;
-    const reading = readGrammar(grammar, answers, JEV, { among: known.among, blocks: known.blocks, ...(known.topLevel !== undefined ? { values: { top_level: known.topLevel } } : {}) });
-    assert.deepEqual(planOf(grammar, reading), expected, `case ${i}: ${JSON.stringify(known)}`);
-  }
-});
+const answersFrom = (rng: () => number) => answersTo(questionsOf(SCREEN), rng);
 
 test("nothing in the file is there for show: without any one rule, trait or probed threshold, some screen comes out differently", () => {
   const grammar = loadGrammar("screen.md");
@@ -83,6 +69,7 @@ test("nothing in the file is there for show: without any one rule, trait or prob
   // The rules about what is decided once the words exist have a test of their own (decide.test.ts).
   const first = grammar.rules.filter((rule) => !laterIn(grammar, rule));
   assert.equal(first.length, 8);
+  void read;
   for (const rule of first) assert.notEqual(plans({ ...grammar, rules: grammar.rules.filter((r) => r !== rule) }), whole, printRule(rule));
   const untraited = parseGrammar(printGrammar(grammar).replaceAll(" (never padding)", ""), (href) => readFileSync(`${GRAMMAR_DIR}${href}`, "utf8"));
   assert.notEqual(plans(untraited), whole, "never padding");
