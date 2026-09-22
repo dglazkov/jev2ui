@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { SCREEN as TOOL, readingOf } from "../mock/graph.js";
+import { IDIOMS } from "../idioms.js";
 import { decide, decorate, type DecideOptions } from "./decide.js";
 import { answersTo, random } from "./fixtures.js";
 import { checkGrammar, parseGrammar, walk, type Field, type Grammar, type Node } from "./format.js";
@@ -10,7 +10,9 @@ import { KIT_PATTERNS } from "./patterns.js";
 import { JEV, questionsOf, readGrammar, type Reading } from "./read.js";
 import { planOf } from "./screen-plan.js";
 
-const screen = TOOL;
+const { graph } = IDIOMS.kit;
+const screen = graph.grammar;
+const readingOf = graph.readingOf.bind(graph);
 const named = (grammar: Grammar, name: string): Node => {
   let found: Node | undefined;
   walk(grammar.nodes, (node) => void (node.name === name && (found = node)));

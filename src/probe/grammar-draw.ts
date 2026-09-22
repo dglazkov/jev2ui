@@ -24,33 +24,37 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
-import { KIT_CATALOG_ID, type KitComponent } from "../shared/kit.js";
+import type { KitComponent } from "../shared/kit.js";
+import { IDIOMS as NAMED, idiomNamed } from "../shared/idioms.js";
 import { loadDesign } from "../server/design-source.js";
 import { streamGeminiJson } from "../server/models.js";
 import { CUSTOM_SOURCES, sendCustom, type Filling } from "../server/mock/bake.js";
 import { Pictures } from "../server/mock/pictures.js";
-import { optionsOf, ratioOf } from "../server/mock/graph.js";
+import { IDIOMS } from "../server/idioms.js";
 import type { ScreenPlan } from "../server/mock/plan.js";
 import { readMade } from "../server/photos/generate.js";
 import type { SubjectName } from "../server/photos/subjects.js";
 import { Run } from "../server/run.js";
 import { validateMessages } from "../server/validate.js";
-import { fill, sourcesOf } from "../server/grammar/fill.js";
+import { fill } from "../server/grammar/fill.js";
 import { idOf, type Field, type Node } from "../server/grammar/format.js";
 import { loadGrammar } from "../server/grammar/load.js";
 import { decide, decorate } from "../server/grammar/decide.js";
 import { boundIn, checkBindings, frameOf, knobsOf, partsOf, schemaOf, treeOf } from "../server/grammar/make.js";
-import { KIT_PATTERNS } from "../server/grammar/patterns.js";
 import { JEV, holdsIn, questionsOf, readGrammar, yieldOf } from "../server/grammar/read.js";
 
 const args = process.argv.slice(2);
 const paint = args.includes("--paint");
-const [file, text] = args.filter((arg) => !arg.startsWith("--"));
-if (!file || !text) throw new Error('usage: npm run probe:draw -- <graph.md> "<what to make>" [--paint]');
+// Which catalog draws it: an idiom's, by name (shared/idioms.ts); the kit's unless said.
+const said = args[args.indexOf("--catalog") + 1];
+const [file, text] = args.filter((arg, i) => !arg.startsWith("--") && args[i - 1] !== "--catalog");
+if (!file || !text) throw new Error('usage: npm run probe:draw -- <graph.md> "<what to make>" [--catalog <idiom>] [--paint]');
+if (args.includes("--catalog") && idiomNamed(said) !== said) throw new Error(`no idiom is called "${said}"; the idioms are ${Object.keys(NAMED).join(", ")}`);
+const idiom = IDIOMS[idiomNamed(said)];
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const grammar = loadGrammar(resolve(file));
-const catalog = loadGrammar("kit.md");
-const sources = sourcesOf(catalog);
+const { catalog, sources } = idiom.graph;
+const { patterns, catalogId } = idiom;
 const key = grammar.stateKey ?? grammar.name;
 const checked = checkBindings(grammar, catalog);
 for (const problem of [...checked.errors, ...checked.warnings]) console.log(`lint: ${problem}`);
@@ -81,11 +85,11 @@ const { report } = await designing;
 const look = { contained: true, icons: true, symbol: "image" };
 // The frame is the file's too: the pattern its kinds name, set by the kind's traits, filled by what is always written.
 const header = grammar.nodes.find((node) => node.name === "header" && !node.question);
-const trees = parts.map((node) => [node.name, treeOf(KIT_PATTERNS, grammar, node, reading, look)] as const);
-const frame = frameOf(KIT_PATTERNS, grammar, reading, look, trees.map(([name, tree]) => ({ name, root: tree[0].id })));
+const trees = parts.map((node) => [node.name, treeOf(patterns, grammar, node, reading, look)] as const);
+const frame = frameOf(patterns, grammar, reading, look, trees.map(([name, tree]) => ({ name, root: tree[0].id })));
 if (!frame) throw new Error(`${file} names no frame for its kinds: say "→ page" after the heading of the kinds`);
 const components: KitComponent[] = [...frame, ...trees.flatMap(([, tree]) => tree)];
-run.send({ createSurface: { surfaceId, catalogId: KIT_CATALOG_ID } });
+run.send({ createSurface: { surfaceId, catalogId } });
 run.send({ updateComponents: { surfaceId, components } });
 console.log(`${since()}  the tree: ${components.length} components, before a word is written`);
 
@@ -111,7 +115,7 @@ const write = async (node: Node, agreeWith?: unknown) => {
   show(node);
   console.log(`${since()}  written: "${node.name}"`);
   // What is decided once the words exist, and only of what is drawn.
-  const bound = boundIn(treeOf(KIT_PATTERNS, grammar, node, reading, look));
+  const bound = boundIn(treeOf(patterns, grammar, node, reading, look));
   for (const asking of decide(grammar, node, written[node.name], { description: text, reading, calibration: JEV, needed: (path) => bound.has(path) })) {
     const answers = Object.keys(asking.questions).length ? (await run.askJev(`Jev: read "${node.name}"`, asking.state, asking.questions)).answers : {};
     const { decorations, decisions } = asking.read(answers);
@@ -128,7 +132,7 @@ const fillPart = async (node: Node) => {
   const told = [node.told, ...node.children.flatMap((child) => (child.asking?.type === "choice" ? [child.asking.options.find((o) => o.name === reading.values[idOf(child)])?.told] : []))].filter(Boolean);
   const ratio = String(knobsOf(grammar, node, reading).ratio ?? "16:9");
   // The baker is the tool's, and takes a size by the tool's name for it: the one whose ratio this is.
-  const size = optionsOf("custom_size").find((name) => ratioOf(name) === ratio) ?? "wide";
+  const size = idiom.graph.optionsOf("custom_size").find((name) => idiom.graph.ratioOf(name) === ratio) ?? "wide";
   // The baker is the tool's own and speaks of screens: it is handed the email as one, with the part's contract said in words.
   const plan = { archetype: reading.kind, blocks: reading.blocks, custom: { use: String(reading.values[`${node.name}_use`] ?? "read"), size, linked: false } } as unknown as ScreenPlan;
   const brief = `${text}\n\nThis is a ${grammar.name}, not an app screen. Your component is its "${node.name}" part. ${told.join(" ")}`;
@@ -215,7 +219,7 @@ const html = `<!doctype html>
 <title>${grammar.name}: ${text.replace(/[<&]/g, "")}</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=block" />
 ${fonts}
-<style>${readFileSync(resolve(root, "src/web/kit/kit.css"), "utf8")}
+<style>${readFileSync(resolve(root, "src/web/kit", NAMED[idiom.id].stylesheet), "utf8")}
 body { margin: 0; background: #d9d9de; display: grid; place-items: start center; padding: 32px; }
 .mock { ${vars} color-scheme: ${theme.colorScheme}; font-family: ${theme.fontFamily}; background: var(--k-page); width: 420px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 40px rgb(0 0 0 / 0.18); }
 </style>

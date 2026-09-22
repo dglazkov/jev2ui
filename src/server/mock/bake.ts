@@ -33,7 +33,7 @@ import { BAKED, type Baked } from "../../shared/kit.js";
 import { BAKER_MODEL, bakeGeminiJson, streamGeminiJson } from "../models.js";
 import type { Run } from "../run.js";
 import { fill } from "../grammar/fill.js";
-import { chainOf, itemSchema, ratioOf, SOURCES, toldOf } from "./graph.js";
+import { idiom } from "../idioms.js";
 import type { ScreenPlan } from "./plan.js";
 import type { Setting } from "./screen.js";
 
@@ -144,8 +144,9 @@ export function lint(source: string): string[] {
 }
 
 function brief(screen: string, plan: ScreenPlan, setting: Setting): string {
+  const { graph } = idiom();
   const contract = plan.custom!;
-  const ratio = ratioOf(contract.size);
+  const ratio = graph.ratioOf(contract.size);
   const others = plan.blocks.filter((b) => b !== "custom");
   return [
     setting.app ? `The app, as first described: ${setting.app}` : "",
@@ -153,10 +154,10 @@ function brief(screen: string, plan: ScreenPlan, setting: Setting): string {
     setting.reachedBy ? `The person got to this screen by ${setting.reachedBy}.` : "",
     setting.about ? `What the previous screen showed about this, which the data must agree with:\n${JSON.stringify(setting.about)}` : "",
     `It is a ${plan.archetype} screen. Around your component the kit already draws: a top bar with the title${others.length ? `, ${others.join(", ")}` : ""}. Do not repeat them.`,
-    `What the person does with your component: ${toldOf("custom_use", contract.use)}`,
+    `What the person does with your component: ${graph.toldOf("custom_use", contract.use)}`,
     `Your box: aspect ratio ${ratio} (width:height) on a phone. On a wide screen it is wider than that, never taller, so centre what you draw.`,
     contract.linked
-      ? `The component draws the same items the screen lists, so the two agree: read them from state.items, place or plot each one, and call kit.openItem(item) when one is opened. Each item matches this schema:\n${JSON.stringify(itemSchema(plan))}\nItems carry no coordinates: derive a stable position for each from a hash of its title.`
+      ? `The component draws the same items the screen lists, so the two agree: read them from state.items, place or plot each one, and call kit.openItem(item) when one is opened. Each item matches this schema:\n${JSON.stringify(graph.itemSchema(plan))}\nItems carry no coordinates: derive a stable position for each from a hash of its title.`
       : "",
     setting.architecture ?? "",
     setting.voice ? `The brand, for the component's character only (its metaphors are not the subject):\n${setting.voice}` : "",
@@ -285,10 +286,11 @@ export function sendCustom(run: Run, surfaceId: string, filling: Filling | undef
  */
 export async function bakeCustom(run: Run, surfaceId: string, screen: string, plan: ScreenPlan, setting: Setting, shelf: Baked[], fresh = false): Promise<void> {
   // The order is the file's: `filled from shelf else baked else closed` under the custom part of grammar/screen.md.
+  const { graph } = idiom();
   const filled = await fill<Filling | "closed">(
-    chainOf("custom"),
+    graph.chainOf("custom"),
     { shelf: () => CUSTOM_SOURCES.shelf(run, screen, plan, setting, shelf), baked: () => CUSTOM_SOURCES.baked(run, screen, plan, setting), closed: async () => "closed" as const },
-    SOURCES,
+    graph.sources,
     { fresh },
   );
   sendCustom(run, surfaceId, !filled || filled.value === "closed" ? undefined : filled.value);

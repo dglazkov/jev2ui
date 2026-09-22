@@ -6,12 +6,14 @@ import { Pictures, calls as pictureCalls, type Wanted } from "../mock/pictures.j
 import type { ScreenPlan } from "../mock/plan.js";
 import type { Run } from "../run.js";
 import { fill, sourcesOf } from "./fill.js";
-import { SCREEN as TOOL, chainOf } from "../mock/graph.js";
+import { IDIOMS } from "../idioms.js";
 import { checkGrammar, parseGrammar, walk, type Field, type Grammar, type Node, type Source } from "./format.js";
 import { loadGrammar } from "./load.js";
 import { checkBindings } from "./make.js";
 
-const screen = TOOL;
+const { graph } = IDIOMS.kit;
+const screen = graph.grammar;
+const chainOf = graph.chainOf.bind(graph);
 const kit = loadGrammar("kit.md");
 const sources = sourcesOf(kit);
 const named = (grammar: Grammar, name: string): Node => {

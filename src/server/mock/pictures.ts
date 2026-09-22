@@ -8,7 +8,7 @@ import { choice } from "@typesafe-ai/sdk";
 import { fill } from "../grammar/fill.js";
 import type { Source } from "../grammar/format.js";
 import { ranked } from "../models.js";
-import { SOURCES } from "./graph.js";
+import { idiom } from "../idioms.js";
 import { makesPhotos, makePhoto, type Brief } from "../photos/generate.js";
 import { photoUrl, shortlist, type Photo } from "../photos/library.js";
 import { SUBJECTS, type SubjectName } from "../photos/subjects.js";
@@ -59,7 +59,7 @@ export class Pictures {
    */
   async find(wanted: Wanted, show: (url: string) => void, chain: Source): Promise<void> {
     wanted = await this.settle(wanted);
-    const filled = await fill<string | null>(chain, { library: () => this.library(wanted), painted: () => this.painted(wanted), placeholder: async () => null }, SOURCES);
+    const filled = await fill<string | null>(chain, { library: () => this.library(wanted), painted: () => this.painted(wanted), placeholder: async () => null }, idiom().graph.sources);
     if (filled?.value) show(filled.value);
   }
 

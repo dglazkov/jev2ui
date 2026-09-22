@@ -2,8 +2,9 @@
 // Where sign-in is on (auth.ts), each wants to know who is asking and that the
 // list lets them make things, and a run is taken from their allowance for the day.
 //
-// Which endpoint answers System One (jev or gev, models.ts) is the person's to say, in a header on every request:
-// everything the request sets going is answered by that one.
+// Which endpoint answers System One (jev or gev, models.ts) and which idiom the app is imagined in (idioms.ts) are
+// the person's to say, in a header each on every request: everything the request sets going is answered by that
+// endpoint and imagined in that idiom.
 //
 // Two servers mount this. In development it is the Vite dev server
 // (vite.config.ts), which loads the pipelines through Vite so that edits to
@@ -246,21 +247,24 @@ export function api(load: Load) {
       await accessList(url, req, res, asking);
       return true;
     }
-    await models.answeredBy(models.endpointNamed(req.headers["x-system-one"]), async () => {
-      if (url.pathname === "/api/design") {
-        await allowance(res, asking);
-        await design(load, req, res);
-      } else if (url.pathname === "/api/resolve") {
-        if (req.method !== "POST") { res.statusCode = 405; res.end("Use POST."); return; }
-        try {
-          const { resolveNavigation } = await load("ia/navigation");
-          json(await resolveNavigation(await readJson(req)));
-        } catch (error) { res.statusCode = 400; res.end((error as Error).message); }
-      } else if (url.pathname === "/api/turn") {
-        await allowance(res, asking);
-        await turn(load, req, res);
-      } else await generate(load, url, req, res, asking);
-    });
+    const idioms = await load("idioms");
+    await idioms.imaginedIn(idioms.idiomNamed(req.headers["x-idiom"]), () =>
+      models.answeredBy(models.endpointNamed(req.headers["x-system-one"]), async () => {
+        if (url.pathname === "/api/design") {
+          await allowance(res, asking);
+          await design(load, req, res);
+        } else if (url.pathname === "/api/resolve") {
+          if (req.method !== "POST") { res.statusCode = 405; res.end("Use POST."); return; }
+          try {
+            const { resolveNavigation } = await load("ia/navigation");
+            json(await resolveNavigation(await readJson(req)));
+          } catch (error) { res.statusCode = 400; res.end((error as Error).message); }
+        } else if (url.pathname === "/api/turn") {
+          await allowance(res, asking);
+          await turn(load, req, res);
+        } else await generate(load, url, req, res, asking);
+      }),
+    );
     return true;
   };
 }

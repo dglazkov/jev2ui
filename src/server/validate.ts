@@ -1,6 +1,7 @@
 import { A2uiMessageSchema } from "@a2ui/web_core/v0_9";
 import { BASIC_COMPONENTS } from "@a2ui/web_core/v0_9/basic_catalog";
-import { DEFINE_COMPONENT, KIT, KIT_CATALOG_ID, kitRefs } from "../shared/kit.js";
+import { DEFINE_COMPONENT, KIT, kitRefs } from "../shared/kit.js";
+import { isKitCatalog } from "../shared/idioms.js";
 import type { A2uiMessage } from "../shared/events.js";
 
 type Schema = { safeParse(value: unknown): { success: true } | { success: false; error: { issues: Array<{ path: PropertyKey[]; message: string }> } } };
@@ -27,8 +28,8 @@ function basicRefs(c: Record<string, any>): string[] {
 export function validateMessages(messages: A2uiMessage[]): string[] {
   const errors: string[] = [];
   const defined = new Map<string, Record<string, any>>();
-  // The surface says which catalog it speaks: A2UI's basic one, or the kit (the envelope is the same).
-  const kit = messages.some((m) => (m as any).createSurface?.catalogId === KIT_CATALOG_ID);
+  // The surface says which catalog it speaks: A2UI's basic one, or an idiom's, whose components are the kit's (the envelope is the same).
+  const kit = messages.some((m) => isKitCatalog((m as any).createSurface?.catalogId));
   const SCHEMAS = kit ? KIT_SCHEMAS : BASIC;
   const childRefs = kit ? kitRefs : basicRefs;
 

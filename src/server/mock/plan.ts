@@ -7,7 +7,7 @@
 // what a design overrules.
 
 import type { SubjectName } from "../photos/subjects.js";
-import { ITEM_PARTS, optionsOf, SCREEN } from "./graph.js";
+import type { Graph } from "./graph.js";
 
 export type Block = "banner" | "hero" | "filters" | "custom" | "stats" | "list" | "groups" | "facts" | "prose" | "steps" | "form" | "actions";
 export type Leading = "avatar" | "thumbnail" | "icon" | "number" | "none";
@@ -64,24 +64,20 @@ export interface ScreenPlan {
   contained: boolean;
 }
 
-const one = (id: string, value: unknown) => typeof value === "string" && optionsOf(id).includes(value);
-const yields = (id: string) => {
-  const asking = SCREEN.nodes.find((node) => node.name === id)?.asking;
-  return asking?.type === "choice" ? asking.options.map((o) => o.value ?? o.name) : [];
-};
-
-export function keepPlan(fresh: ScreenPlan, sent: Record<string, unknown>, blocks: Block[]): ScreenPlan {
+/** What stays of a plan the browser sent back, checked against what the graph could have said. */
+export function keepPlan(graph: Graph, fresh: ScreenPlan, sent: Record<string, unknown>, blocks: Block[]): ScreenPlan {
+  const one = (id: string, value: unknown) => typeof value === "string" && graph.optionsOf(id).includes(value);
   const was = sent as Partial<ScreenPlan>;
   const stays = (block: Block) => blocks.includes(block) && Array.isArray(was.blocks) && was.blocks.includes(block);
   const list = was.list;
-  const listOk = list && one("list_layout", list.layout) && one("item_leading", list.leading) && one("item_trailing", list.trailing) && Array.isArray(list.parts) && list.parts.every((part) => (ITEM_PARTS as string[]).includes(part));
+  const listOk = list && one("list_layout", list.layout) && one("item_leading", list.leading) && one("item_trailing", list.trailing) && Array.isArray(list.parts) && list.parts.every((part) => (graph.itemParts as string[]).includes(part));
   const subject = (s: unknown): s is PictureSubject => !!s && one("hero_subject", (s as PictureSubject).subject);
   return {
     ...fresh,
     blocks,
     ...(typeof was.topLevel === "boolean" ? { topLevel: was.topLevel } : {}),
     ...(typeof was.person === "boolean" ? { person: was.person } : {}),
-    ...(typeof was.appBarAction === "string" || was.appBarAction === null ? { appBarAction: was.appBarAction === null || yields("app_bar_action").includes(was.appBarAction) ? was.appBarAction : fresh.appBarAction } : {}),
+    ...(typeof was.appBarAction === "string" || was.appBarAction === null ? { appBarAction: was.appBarAction === null || graph.yieldsOf("app_bar_action").includes(was.appBarAction) ? was.appBarAction : fresh.appBarAction } : {}),
     ...(stays("list") && listOk ? { list: { layout: list.layout, leading: list.leading, trailing: list.trailing, parts: [...list.parts] } } : {}),
     ...(stays("filters") && typeof was.search === "boolean" ? { search: was.search } : {}),
     ...(stays("stats") && typeof was.statDeltas === "boolean" ? { statDeltas: was.statDeltas } : {}),

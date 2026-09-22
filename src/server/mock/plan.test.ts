@@ -1,11 +1,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { SCREEN, partNode, readingOf } from "./graph.js";
+import { IDIOMS } from "../idioms.js";
 import { applyDesign } from "./plan.js";
 import { frameOf, treeOf } from "../grammar/make.js";
 import { KIT_PATTERNS } from "../grammar/patterns.js";
 import { JEV, questionsOf, readGrammar } from "../grammar/read.js";
 import { planOf } from "../grammar/screen-plan.js";
+
+const { graph } = IDIOMS.kit;
+const SCREEN = graph.grammar;
+const readingOf = graph.readingOf.bind(graph);
+const partNode = graph.partNode.bind(graph);
 
 function feedAnswers(hero: number) {
   return Object.fromEntries(

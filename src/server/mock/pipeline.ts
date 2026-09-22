@@ -1,7 +1,8 @@
 // The mock pipeline: describe a screen, get a mock.
 //
 // What a screen is made of is a file, grammar/screen.md, and what draws it is
-// another, grammar/kit.md (docs/grammar.md). This is the run of it:
+// another, grammar/kit.md (docs/grammar.md); which pair, and so which idiom the
+// screen is imagined in, is the request's (../idioms.ts). This is the run of it:
 //
 //   t=0    Jev is asked the file's questions (one request)                   }
 //          Jev reads the DESIGN.md, or mixes one                             } in parallel
@@ -31,7 +32,7 @@ import { loadDesign, type DesignSource } from "../design-source.js";
 import { parseDesign } from "../design-md.js";
 import { resized } from "../photos/library.js";
 import { Run, SURFACE_ID } from "../run.js";
-import { KIT_CATALOG_ID } from "../../shared/kit.js";
+import { idiom } from "../idioms.js";
 import type { PipelineEvent } from "../../shared/events.js";
 import type { Journey } from "../../shared/journey.js";
 import { bakeCustom, shelfFrom } from "./bake.js";
@@ -41,10 +42,8 @@ import type { ScreenEdit } from "../../shared/turn.js";
 import { Pictures, itemWords } from "./pictures.js";
 import { SYSTEM_PROMPT, partPrompt, knownSubjects, type Part, type Setting } from "./screen.js";
 import { refineField } from "./refine.js";
-import { BLOCKS, SCREEN, chainOf, partNode, partSchema, readingOf } from "./graph.js";
 import { decide, type Decoration } from "../grammar/decide.js";
 import { boundIn, frameOf, treeOf } from "../grammar/make.js";
-import { KIT_PATTERNS } from "../grammar/patterns.js";
 import { JEV, questionsOf, readGrammar } from "../grammar/read.js";
 import { planOf } from "../grammar/screen-plan.js";
 
@@ -78,6 +77,9 @@ class Decorations {
  * the words that stay. A part whose words stay has no writer, no refinement and no photograph looked for: it is sent as it was.
  */
 export function runMock(described: string, source?: DesignSource, journey?: Journey, fresh = false, notes: string[] = [], edit?: ScreenEdit, architectureRequest?: ArchitectureRequest): AsyncGenerator<PipelineEvent> {
+  // The idiom the request is imagined in: its grammar is what is asked and read, its patterns draw the answers.
+  const { graph, patterns, catalogId } = idiom();
+  const { grammar } = graph;
   const markdown = source && "markdown" in source ? source.markdown : undefined;
   const run = new Run("mock");
   const surfaceId = SURFACE_ID;
@@ -103,7 +105,7 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
   const prompt = [destinationPrompt ?? to?.screen ?? described, ...(notes.length ? [`The developer has seen this screen and asked for these changes, which come before anything above that they contradict:\n${notes.map((note) => `- ${note}`).join("\n")}`] : [])].join("\n\n");
 
   const kept: Record<string, any> = edit?.kept ?? {};
-  const settled = edit?.blocks.filter((block): block is Block => (BLOCKS as readonly string[]).includes(block));
+  const settled = edit?.blocks.filter((block): block is Block => (graph.blocks as readonly string[]).includes(block));
 
   return run.drive(async () => {
     const streams = new ContentStreams(run, surfaceId);
@@ -151,13 +153,13 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
      * outer list (the rows of one group); `only` picks the request that is about the element that has just completed.
      */
     const later = (part: Part, value: unknown, only?: (outer: number | undefined) => boolean) => {
-      const node = partNode(part);
+      const node = graph.partNode(part);
       const bound = drawn.get(part) ?? new Set<string>();
       const chosen = typeof to?.about?.value === "string" ? to.about.value : undefined;
       const same = (x: unknown, y: unknown) => String(x).trim().toLowerCase() === String(y).trim().toLowerCase();
-      const asked = decide(SCREEN, node, value, {
+      const asked = decide(grammar, node, value, {
         description: prompt,
-        reading: readingOf(plan!),
+        reading: graph.readingOf(plan!),
         calibration: JEV,
         needed: (path) => bound.has(path),
         // Exactly one option of a picker is chosen: the value the person saw on the row they tapped, if that is how they got here.
@@ -188,7 +190,7 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
       const big = plan!.list.layout !== "rows";
       const shown = (url: string) => (decorations.add("list", [{ at: ["items", i], values: { imageUrl: url } }]), streams.refresh("list"));
       const size: [number, number] = people || !big ? [160, 160] : [640, 480];
-      streams.spawn(pictures.find(people ? { subject: "portrait", of: itemWords(item), ratio: "1:1", size } : { ...plan!.pictures.items, of: itemWords(item), ratio: "4:3", size }, shown, chainOf("list", "imageUrl")));
+      streams.spawn(pictures.find(people ? { subject: "portrait", of: itemWords(item), ratio: "1:1", size } : { ...plan!.pictures.items, of: itemWords(item), ratio: "4:3", size }, shown, graph.chainOf("list", "imageUrl")));
     });
     // A refinement re-sends the part, which calls its hook again: everything asked once the words exist is asked once.
     const tones = once((list) => later("list", list));
@@ -216,7 +218,7 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
       const own = hooks[part];
       return streams.write(
         part,
-        { system: SYSTEM_PROMPT, prompt: partPrompt(prompt, part, plan ?? null, setting, agreeWith), schema: partSchema(part, plan ?? null) },
+        { system: SYSTEM_PROMPT, prompt: partPrompt(prompt, part, plan ?? null, setting, agreeWith), schema: graph.partSchema(part, plan ?? null) },
         { ...own, decorate: (value, complete) => decorations.apply(part, own?.decorate ? own.decorate(value, complete) : value) },
       );
     };
@@ -229,15 +231,15 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
     const state = to ? { first_screen: journey!.app, reached_by: to.reachedBy, screen: screenTask } : { screen: screenTask };
     const startingApp = architectureRequest && "create" in architectureRequest;
     const navigationQuestions = startingApp ? initialNavigationQuestions() : {};
-    const planned = await run.askJev("Jev: plan the screen", state, { ...questionsOf(SCREEN), ...navigationQuestions });
+    const planned = await run.askJev("Jev: plan the screen", state, { ...questionsOf(grammar), ...navigationQuestions });
     const was = typeof edit?.plan.archetype === "string" ? [edit.plan.archetype] : undefined;
     // What is settled before Jev is asked: by how the person got here, or by what the developer said.
     const arrived: { topLevel?: boolean; among?: string[] } = existing?.state.navigation?.includes(destinationId) && (destinationId !== "first" || existing.state.map.home === "first") ? { topLevel: true } : catalogEntry && to ? { topLevel: to.topLevel, among: to.among } : target ? (destinationId === "first" ? {} : { topLevel: destinationId === "home" }) : to ? { topLevel: to.topLevel, among: to.among } : {};
-    const reading = readGrammar(SCREEN, planned.answers, JEV, {
+    const reading = readGrammar(grammar, planned.answers, JEV, {
       ...(settled ? { blocks: settled, ...(was ? { among: was } : {}) } : arrived.among ? { among: arrived.among } : {}),
       ...(arrived.topLevel !== undefined ? { values: { top_level: arrived.topLevel } } : {}),
     });
-    const read = { plan: planOf(SCREEN, reading), decisions: reading.decisions };
+    const read = { plan: planOf(grammar, reading), decisions: reading.decisions };
     for (const id of Object.keys(navigationQuestions)) read.decisions.push({ id, question: id === "nav_home" ? "initial home destination" : `initial navigation: ${id.slice(4)}`, answer: planned.answers[id].choice, p: planned.answers[id].probabilities[planned.answers[id].choice] });
     run.trace({ stage: planned.stage, ms: planned.ms, decisions: read.decisions, tokens: { input: planned.inputTokens, output: 0 } });
 
@@ -262,7 +264,7 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
       tokens: { input: designing.fresh ? look.jevInputTokens : 0, output: 0 },
     });
     // What stays of the screen keeps the plan it had; what is new takes the plan just made.
-    const designed = applyDesign(edit && settled ? keepPlan(read.plan, edit.plan, read.plan.blocks) : read.plan, look);
+    const designed = applyDesign(edit && settled ? keepPlan(graph, read.plan, edit.plan, read.plan.blocks) : read.plan, look);
     plan = designed.plan;
     run.plan(plan as unknown as Record<string, unknown> & { archetype: string; blocks: string[] });
     pictures.drawn = plan.illustrated;
@@ -270,21 +272,21 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
 
     // Each part is drawn by the pattern the file names for it, from what the file says it is made of, as the plan now
     // stands; then the frame, by the pattern the kinds name, set by the kind's traits and the answers at the top of the file.
-    const asRead = readingOf(plan);
+    const asRead = graph.readingOf(plan);
     const drawing = { contained: plan.contained, icons: plan.icons, symbol: plan.symbol };
-    const parts = plan.blocks.map((block) => [block, treeOf(KIT_PATTERNS, SCREEN, partNode(block), asRead, drawing)] as const);
+    const parts = plan.blocks.map((block) => [block, treeOf(patterns, grammar, graph.partNode(block), asRead, drawing)] as const);
     for (const [block, tree] of parts) drawn.set(block, boundIn(tree));
-    const frame = frameOf(KIT_PATTERNS, SCREEN, asRead, drawing, parts.map(([name, tree]) => ({ name, root: tree[0].id })));
-    if (!frame) throw new Error("grammar/screen.md names no frame for its kinds");
+    const frame = frameOf(patterns, grammar, asRead, drawing, parts.map(([name, tree]) => ({ name, root: tree[0].id })));
+    if (!frame) throw new Error(`the "${grammar.name}" grammar names no frame for its kinds`);
     drawn.set("nav", boundIn(frame));
-    run.send({ createSurface: { surfaceId, catalogId: KIT_CATALOG_ID } });
+    run.send({ createSurface: { surfaceId, catalogId } });
     run.send({ updateComponents: { surfaceId, components: [...frame, ...parts.flatMap(([, tree]) => tree)] } });
     // The lead picture is of what the header names. The description will not do: it lists what is on the screen, and a picture of that is a picture of a phone.
     if (plan.blocks.includes("hero")) {
       const shown = (url: string) => run.send({ updateDataModel: { surfaceId, path: "/hero", value: { imageUrl: url } } });
       if (kept.hero) run.send({ updateDataModel: { surfaceId, path: "/hero", value: kept.hero } });
       else if (typeof carried === "string") shown(resized(carried, 960, 540));
-      else streams.spawn((async () => pictures.find({ ...plan.pictures.hero, of: itemWords(await header) || prompt, ratio: "16:9", size: [960, 540] }, shown, chainOf("hero", "imageUrl")))());
+      else streams.spawn((async () => pictures.find({ ...plan.pictures.hero, of: itemWords(await header) || prompt, ratio: "16:9", size: [960, 540] }, shown, graph.chainOf("hero", "imageUrl")))());
     }
 
     // A profile opens with the person's portrait: the one from the list they were tapped in, if that is how the person got
@@ -292,7 +294,7 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
     if (plan.person && plan.imagery && kept.header === undefined) {
       const shown = (url: string) => (decorations.add("header", [{ at: [], values: { imageUrl: url } }]), streams.refresh("header"));
       if (typeof carried === "string") shown(resized(carried, 320, 320));
-      else streams.spawn((async () => pictures.find({ subject: "portrait", of: itemWords(await header) || prompt, ratio: "1:1", size: [320, 320] }, shown, chainOf("header", "imageUrl")))());
+      else streams.spawn((async () => pictures.find({ subject: "portrait", of: itemWords(await header) || prompt, ratio: "1:1", size: [320, 320] }, shown, graph.chainOf("header", "imageUrl")))());
     }
 
     // The app's navigation is established once; every main screen after that shows the same one.

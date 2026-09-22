@@ -12,13 +12,14 @@
 
 import { streamGeminiJson } from "./models.js";
 import { DIALS, ELEVATION, HUES, PHOTO_LOOK, TYPE } from "./design-mix.js";
-import { BLOCKS, KINDS } from "./mock/graph.js";
+import { idiom } from "./idioms.js";
 import type { Option, TurnKind, TurnRequest } from "../shared/turn.js";
 
 const ends = (key: keyof typeof DIALS) => `from "${DIALS[key].levels[0]}" to "${DIALS[key].levels[4]}"`;
 const criteria = (options: Record<string, { criteria: string }>) => Object.values(options).map((o) => `    - ${o.criteria}`).join("\n");
 
-const CAN = `What the tool can change, and nothing else:
+/** What the tool can do, said for the idiom the app is imagined in: its sections and its kinds of screen are the grammar's. */
+const can = ({ graph }: ReturnType<typeof idiom>) => `What the tool can change, and nothing else:
 - The look of the whole app, at once and for nothing:
   - the accent colour: its hue (${Object.keys(HUES).join(", ")}); how vivid, ${ends("vivid")}; how light, ${ends("light")}
   - a light interface or a dark one
@@ -32,15 +33,15 @@ ${criteria(ELEVATION)}
   - content in cards, or flowing on the page without them
   - pictures or none; and how they look, one of:
 ${criteria(PHOTO_LOOK)}
-- The screen that is showing can be made again with a change in mind. That can add or drop a section (the sections are: ${BLOCKS.join(", ")}), lay its items out another way (rows, cards, a grid, a reel), or change what the words say, their length, tone, language or units.
-- Another screen can be added to the app (the kinds of screen are: ${Object.keys(KINDS).join(", ")}).
+- The screen that is showing can be made again with a change in mind. That can add or drop a section (the sections are: ${graph.blocks.join(", ")}), lay its items out another way (rows, cards, a grid, a reel), or change what the words say, their length, tone, language or units.
+- Another screen can be added to the app (the kinds of screen are: ${Object.keys(graph.kinds).join(", ")}).
 - A different app can be started.
 
 What it cannot do: move a thing to another place, or change the order sections come in. The order belongs to the kind of screen, as the design systems the components come from prescribe. It cannot change one element's size or colour on its own either; the look is the whole app's.`;
 
-const SYSTEM = `You are the voice of a design tool that makes mock screens of apps. A developer typed a message to it, and the tool could not act on the message. You write what the tool says back.
+const system = () => `You are the voice of a design tool that makes mock screens of apps. A developer typed a message to it, and the tool could not act on the message. You write what the tool says back.
 
-${CAN}
+${can(idiom())}
 
 Rules:
 - "text" is one or two short, plain sentences, spoken to the developer as a colleague would. No greeting, no apology, no enthusiasm, no orders. Never say anything was changed: nothing was. When you need to know what they meant, ask it as a question ("Which part feels flat: the colours, the lettering, or how tight it is?").
@@ -74,7 +75,7 @@ export async function talk(request: TurnRequest & { look: string; kind: TurnKind
     `The developer's message: "${message}"`,
     WHY[kind] ?? WHY.look,
   ].join("\n\n");
-  const { text: raw } = await streamGeminiJson({ system: SYSTEM, prompt, schema: SCHEMA });
+  const { text: raw } = await streamGeminiJson({ system: system(), prompt, schema: SCHEMA });
   const said = JSON.parse(raw) as { text?: string; options?: Option[] };
   const offered = (said.options ?? []).filter((o) => o?.label && o?.instruction && o.instruction.trim().toLowerCase() !== message.trim().toLowerCase()).slice(0, 3);
   const kept = await Promise.all(offered.map(async (option) => ((await leads(option.instruction).catch(() => false)) ? option : null)));

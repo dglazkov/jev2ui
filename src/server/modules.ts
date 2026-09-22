@@ -7,6 +7,7 @@ export const MODULES = {
   "design-source": () => import("./design-source.js"),
   hybrid: () => import("./hybrid.js"),
   "ia/navigation": () => import("./ia/navigation.js"),
+  idioms: () => import("./idioms.js"),
   jobs: () => import("./jobs.js"),
   "mock/pipeline": () => import("./mock/pipeline.js"),
   models: () => import("./models.js"),

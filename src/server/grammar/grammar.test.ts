@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { STOPS, dial, mixQuestions } from "../design-mix.js";
-import { BLOCKS, KINDS, SCREEN } from "../mock/graph.js";
+import { IDIOMS } from "../idioms.js";
 import { files } from "./export.js";
 import { answersTo, random } from "./fixtures.js";
 import { GRAMMAR_DIR, loadGrammar } from "./load.js";
@@ -10,6 +10,8 @@ import { checkGrammar, laterIn, parseGrammar, printGrammar, printRule } from "./
 import { JEV, questionsOf, readGrammar, yieldOf } from "./read.js";
 import { planOf } from "./screen-plan.js";
 import { readFileSync as read } from "node:fs";
+
+const { grammar: SCREEN, blocks: BLOCKS, kinds: KINDS } = IDIOMS.kit.graph;
 
 test("the files still written from code are what the code asks and draws: run `npm run grammar:export` after changing a question", () => {
   assert.deepEqual(Object.keys(files()).sort(), ["icons.md", "kit.md", "paint.md", "subjects.md"]);

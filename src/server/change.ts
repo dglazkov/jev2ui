@@ -25,7 +25,7 @@ import { askJev, endpoint, ranked } from "./models.js";
 import { mixDesign, mixQuestions } from "./design-mix.js";
 import { loadDesign } from "./design-source.js";
 import { talk } from "./talk.js";
-import { KINDS } from "./mock/graph.js";
+import { idiom } from "./idioms.js";
 import type { Block } from "./mock/plan.js";
 import { named, type Decision } from "../shared/events.js";
 import { addChange, receiptOf, type DialName, type PaintChange, type Pins, type ScreenAbout, type TurnKind, type TurnRequest, type TurnResponse } from "../shared/turn.js";
@@ -207,7 +207,7 @@ export async function readChange(state: Record<string, unknown>, others: ScreenA
 
 /** What a message asks of one screen's parts. Nothing, for a screen whose parts the browser does not know. */
 async function readScreen(screen: ScreenAbout, message: string): Promise<{ add: Block[]; remove: Block[]; rewrite: string[]; decisions: Decision[] }> {
-  const shape = KINDS[screen.archetype];
+  const shape = idiom().graph.kinds[screen.archetype];
   if (!shape || !screen.blocks) return { add: [], remove: [], rewrite: [], decisions: [] };
   const has = screen.blocks.filter((block): block is Block => shape.order.includes(block as Block));
   // A lead picture and a custom component have no words of their own to write again.

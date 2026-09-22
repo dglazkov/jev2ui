@@ -28,8 +28,10 @@
 // and the renderer (src/web/kit) draws them.
 
 import { z } from "zod";
+import { IDIOMS } from "./idioms.js";
 
-export const KIT_CATALOG_ID = "https://github.com/dglazkov/jev2ui/catalogs/kit/v1";
+/** The id a surface is created with when the kit's own idiom draws it. Another idiom's catalog has its own (idioms.ts). */
+export const KIT_CATALOG_ID = IDIOMS.kit.catalogId;
 
 const bound = z.object({ path: z.string() }).strict();
 const str = z.union([z.string(), bound]);

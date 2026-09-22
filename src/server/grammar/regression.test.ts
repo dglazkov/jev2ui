@@ -11,7 +11,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
-import { KINDS, SCREEN, partNode, readingOf } from "../mock/graph.js";
+import { IDIOMS } from "../idioms.js";
 import { applyDesign, type ScreenPlan } from "../mock/plan.js";
 import { decide, decorate } from "./decide.js";
 import { answersTo, random } from "./fixtures.js";
@@ -21,6 +21,10 @@ import { JEV, questionsOf, readGrammar } from "./read.js";
 import { planOf } from "./screen-plan.js";
 
 const FIXTURE = new URL("./fixtures/screen.json", import.meta.url);
+const { graph } = IDIOMS.kit;
+const { grammar: SCREEN, kinds: KINDS } = graph;
+const readingOf = graph.readingOf.bind(graph);
+const partNode = graph.partNode.bind(graph);
 const questions = questionsOf(SCREEN);
 const kinds = Object.keys(KINDS);
 const blocks = SCREEN.nodes.find((n) => n.name === "archetype")!.children.filter((n) => n.block).map((n) => n.name);
