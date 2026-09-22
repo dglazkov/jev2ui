@@ -338,7 +338,8 @@ bar of destinations, a sticky call to action, a dialog), named by the kinds' que
 named by what they mean, not by any widget, so that another catalog can draw them its own way. The kind of a
 form's field is the one decision still made by code older than the kit (`design.ts`), and the file's lint says
 so. The tool reads `grammar/screen.md` and `grammar/kit.md` on every run (`src/server/mock/graph.ts`): editing a
-criterion, a rule, a part's fields, a chain or a kind's frame changes what it makes. `paint.md` is still written out from `design-mix.ts`, which has not made the
+criterion, a rule, a part's fields, a chain or a kind's frame changes what it makes. To write one,
+see [docs/writing-a-grammar.md](docs/writing-a-grammar.md). `paint.md` is still written out from `design-mix.ts`, which has not made the
 move. The format, the results, the pictures and what resisted are in [docs/grammar.md](docs/grammar.md).
 
 ## Rendering strategy: the mock is painted by a DESIGN.md

@@ -6,7 +6,8 @@ A DESIGN.md made paint portable: anyone can bring their own. What decides the *s
 terse file that holds a decision graph, that anyone can read, and that a reader which knows nothing about
 screens can run.
 
-**Since step 5, the tool reads the file.** `grammar/screen.md` is edited by hand and is what the served app
+To write a grammar, start with [writing-a-grammar.md](writing-a-grammar.md); this note is the why and the
+open problems. **Since step 5, the tool reads the file.** `grammar/screen.md` is edited by hand and is what the served app
 makes screens from; the hand-written tables it was taken from are gone. The other files under `grammar/` are
 still written out from code, for the reasons given under "What is still code".
 
