@@ -18,7 +18,7 @@ test("the files still written from code are what the code asks and draws: run `n
 });
 
 test("a file read and written again is the same file, screen.md and email.md included", () => {
-  for (const name of [...Object.keys(files()), "screen.md", "examples/email.md"]) {
+  for (const name of [...Object.keys(files()), "screen.md", "ios/screen.md", "examples/email.md"]) {
     const text = readFileSync(`${GRAMMAR_DIR}${name}`, "utf8");
     assert.equal(printGrammar(parseGrammar(text)), text, name);
   }

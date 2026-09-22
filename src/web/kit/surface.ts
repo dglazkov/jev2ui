@@ -244,7 +244,7 @@ export class KitSurface extends LitElement {
   // --- Frame -----------------------------------------------------------------
 
   drawScreen(c: Component, s: Scope) {
-    return html`<div class="k-screen ${c.dialog ? "k-dialog" : ""}">
+    return html`<div class="k-screen ${c.dialog ? "k-dialog" : ""} ${c.presentation ? `k-${c.presentation}` : ""}">
       ${this.node(c.appBar, s)}
       <div class="k-scroll"><div class="k-scroll-inner">${this.node(c.body, s)}</div></div>
       ${this.node(c.sticky, s)} ${this.node(c.navBar, s)}
@@ -253,10 +253,13 @@ export class KitSurface extends LitElement {
 
   drawAppBar(c: Component, s: Scope) {
     const leading = { back: "arrow_back", close: "close", menu: "menu" }[c.leading as string];
+    const trailing = this.value(c.trailing, s);
     return html`<header class="k-appbar">
       ${leading ? html`<button class="k-iconbtn" aria-label=${c.leading} @click=${() => this.tap("back", c.leading)}>${this.icon(leading)}</button>` : nothing}
-      <h1 class="k-appbar-title ${leading ? "" : "k-large"}">${c.title === undefined ? nothing : this.words(c.title, s, 40)}</h1>
+      ${c.leading === "cancel" ? html`<button class="k-wordbtn" aria-label="cancel" @click=${() => this.tap("back", "cancel")}>Cancel</button>` : nothing}
+      <h1 class="k-appbar-title ${leading || c.leading === "cancel" ? "" : "k-large"}">${c.title === undefined ? nothing : this.words(c.title, s, 40)}</h1>
       ${(c.actions ?? []).map((name: string) => html`<button class="k-iconbtn" aria-label=${name} @click=${() => this.tap("appbar", name)}>${this.icon(name)}</button>`)}
+      ${trailing ? html`<button class="k-wordbtn k-strong" aria-label=${String(trailing)} @click=${() => this.tap("appbar", String(trailing))}>${trailing}</button>` : nothing}
     </header>`;
   }
 

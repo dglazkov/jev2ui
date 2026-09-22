@@ -136,8 +136,128 @@ body {
 
 /* Whatever acts sits at the trailing edge, even with nothing leading. */
 .k-appbar .k-appbar-title + .k-iconbtn,
+.k-appbar .k-appbar-title + .k-wordbtn,
 .k-appbar .k-iconbtn:not([aria-label="back"], [aria-label="close"]) {
   margin-left: auto;
+}
+
+/* Cancel and Done: words in the tint, the confirming one bold (HIG navigation bars). */
+.k-appbar .k-wordbtn {
+  min-height: 44px;
+  font: 400 17px / 1 var(--k-body-font);
+  letter-spacing: -0.4px;
+  color: var(--k-ink);
+}
+
+.k-appbar .k-wordbtn.k-strong {
+  font-weight: 600;
+}
+
+/* --- Presentations: a sheet from the bottom, a full-screen cover, an action sheet --------- */
+
+/* A sheet: a card risen over the screen behind it, with a grabber at the top. */
+.k-screen.k-sheet {
+  margin-top: 24px;
+  height: calc(100% - 24px);
+  overflow: hidden;
+  background: var(--k-page);
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -8px 40px rgb(0 0 0 / 0.25);
+}
+
+.k-screen.k-sheet::before {
+  display: block;
+  width: 36px;
+  height: 5px;
+  margin: 6px auto 0;
+  content: "";
+  background: color-mix(in srgb, var(--k-text) 30%, transparent);
+  border-radius: 999px;
+}
+
+/* A full-screen cover has no bar to speak of: its title, or its outcome, opens it. */
+.k-screen.k-fullscreen .k-scroll-inner {
+  padding-top: var(--k-space-xl);
+}
+
+/* An action sheet: the choices stacked in a card at the bottom, the last one (Cancel) set apart under them. */
+.k-dialog.k-actionsheet .k-scroll {
+  align-items: end;
+}
+
+.k-dialog.k-actionsheet .k-scroll-inner {
+  max-width: none;
+  padding: 8px;
+}
+
+.k-dialog.k-actionsheet .k-card {
+  background: none;
+  backdrop-filter: none;
+}
+
+.k-dialog.k-actionsheet .k-card > .k-stack {
+  gap: 0;
+  padding: 0;
+}
+
+.k-dialog.k-actionsheet .k-headline,
+.k-dialog.k-actionsheet .k-prose,
+.k-dialog.k-actionsheet .k-body {
+  padding: 14px 16px 0;
+  font: 400 13px / 1.4 var(--k-title-font);
+  color: var(--k-muted);
+  background: color-mix(in srgb, var(--k-card) 94%, transparent);
+  border-radius: 14px 14px 0 0;
+  backdrop-filter: blur(30px);
+}
+
+.k-dialog.k-actionsheet .k-headline {
+  font-weight: 600;
+}
+
+.k-dialog.k-actionsheet .k-headline + * {
+  border-radius: 0;
+}
+
+.k-dialog.k-actionsheet .k-cluster {
+  display: grid;
+  grid-auto-flow: row;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: 0;
+  border-top: 0;
+}
+
+.k-dialog.k-actionsheet .k-cluster > .k-button {
+  min-height: 57px;
+  font-size: 20px;
+  background: color-mix(in srgb, var(--k-card) 94%, transparent);
+  border-top: 0.5px solid var(--k-border);
+  border-left: 0;
+  backdrop-filter: blur(30px);
+}
+
+.k-dialog.k-actionsheet .k-cluster > .k-button:last-child {
+  margin-top: 8px;
+  font-weight: 600;
+  background: var(--k-card);
+  border-top: 0;
+  border-radius: 14px;
+}
+
+.k-dialog.k-actionsheet .k-cluster > .k-button:nth-last-child(2) {
+  border-radius: 0 0 14px 14px;
+}
+
+/* An alert with three or more buttons stacks them (HIG alerts). */
+.k-dialog:not(.k-actionsheet) .k-cluster:has(> :nth-child(3)) {
+  grid-auto-flow: row;
+  grid-auto-columns: auto;
+}
+
+.k-dialog:not(.k-actionsheet) .k-cluster:has(> :nth-child(3)) > .k-button + .k-button {
+  border-top: 0.5px solid var(--k-border);
+  border-left: 0;
 }
 
 /* The large title of a main screen, under the bar. */
@@ -263,10 +383,23 @@ body {
   text-transform: uppercase;
 }
 
+/* The separator between rows is inset from the leading edge, past the symbol when the rows have one; the rows are not. */
 .k-group-rows > * + * {
-  margin-left: var(--k-card-pad);
-  padding-left: 0;
+  position: relative;
+  border-top: 0;
+}
+
+.k-group-rows > * + *::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: var(--k-card-pad);
+  content: "";
   border-top: 0.5px solid var(--k-border);
+}
+
+.k-group-rows > *:has(> .k-item-leading) + *::before {
+  left: calc(var(--k-card-pad) + 44px);
 }
 
 .k-setting {

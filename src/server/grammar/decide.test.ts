@@ -28,7 +28,7 @@ test("a question is needed when the tree the file makes reads the field it decid
   const rng = random(13);
   const seen = { tones: 0, icons: 0, deltas: 0 };
   for (let n = 0; n < 1500; n++) {
-    const read = readGrammar(screen, answersTo(questionsOf(screen), rng), JEV, { values: { ...DESIGN_SAYS, symbols: rng() < 0.5 } });
+    const read = readGrammar(screen, answersTo(questionsOf(screen), rng), JEV, { values: { ...DESIGN_SAYS, no_symbols: rng() < 0.5 } });
     const look = { contained: true, icons: read.values.item_leading === "icon" || rng() < 0.5, symbol: "image" };
     for (const part of partsOf(screen, read)) {
       const bound = boundIn(treeOf(KIT_PATTERNS, screen, part, read, look));

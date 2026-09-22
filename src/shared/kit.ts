@@ -53,8 +53,10 @@ const weight = z.number().optional();
 
 export const KIT = {
   // --- Frame ---------------------------------------------------------------
-  Screen: z.object({ appBar: id.optional(), body: id, sticky: id.optional(), navBar: id.optional(), dialog: z.boolean().optional() }),
-  AppBar: z.object({ title: str.optional(), leading: z.enum(["none", "back", "close", "menu"]).optional(), actions: z.array(z.string()).max(3).optional() }),
+  /** `presentation` is how the screen arrived, for an idiom whose screens are presented in more than one way (iOS: a sheet, an action sheet, a full-screen cover); `dialog` is the alert. */
+  Screen: z.object({ appBar: id.optional(), body: id, sticky: id.optional(), navBar: id.optional(), dialog: z.boolean().optional(), presentation: z.enum(["sheet", "actionsheet", "fullscreen"]).optional() }),
+  /** `trailing` is a word at the bar's trailing edge that acts (Done, Save, Edit), beside or instead of the symbols in `actions`; `cancel` leads with the word. */
+  AppBar: z.object({ title: str.optional(), leading: z.enum(["none", "back", "close", "menu", "cancel"]).optional(), actions: z.array(z.string()).max(3).optional(), trailing: str.optional() }),
   /** `icon` is where each destination's symbol is, relative to the destination; without it, the bar looks under `icon`. */
   NavBar: z.object({ items: bound, active: num.optional(), icons: z.boolean().optional(), icon: bound.optional() }),
   StickyBar: z.object({ child: id }),
@@ -151,6 +153,6 @@ export function kitRefs(c: Record<string, any>): string[] {
   const refs: unknown[] = [c.child, c.appBar, c.body, c.sticky, c.navBar, c.leading, c.trailing, c.below];
   if (Array.isArray(c.children)) refs.push(...c.children);
   else if (c.children?.componentId) refs.push(c.children.componentId);
-  // `leading` is an enum on AppBar, not a reference.
-  return refs.filter((r): r is string => typeof r === "string" && !(c.component === "AppBar" && r === c.leading));
+  // `leading` is an enum on AppBar and `trailing` a word, not references; on a ListItem both are.
+  return refs.filter((r): r is string => typeof r === "string" && !(c.component === "AppBar" && (r === c.leading || r === c.trailing)));
 }

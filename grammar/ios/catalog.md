@@ -1,10 +1,10 @@
 # ios
 
-What the tool can draw the way iOS lays a screen out, for a graph to name. The patterns are the kit's (kit.md), drawn with the same components and painted by the idiom's stylesheet; the frame is the Human Interface Guidelines': a navigation bar, a large title on a main screen, a tab bar, an alert. Written out from src/server/grammar/patterns-ios.ts by `npm run grammar:export`.
+What the tool can draw the way iOS lays a screen out, for a graph to name. The patterns are the kit's (kit.md), drawn with the same components and painted by the idiom's stylesheet; the frame is the Human Interface Guidelines' and has knobs of its own: how the screen is presented (pushed, a sheet, a full-screen cover, an alert, an action sheet), a large or an inline title, what leads the bar and what word acts at its end. Written out from src/server/grammar/patterns-ios.ts by `npm run grammar:export`.
 
 ## page
 
-A screen of an iOS app: a navigation bar with what leads and the one action, a large title on a main screen or the title in the bar on a pushed one, the parts below, a tab bar of the app's main destinations on a main screen, a call to action pinned to the bottom edge, or an alert over it all (HIG navigation bar, tab bar, alert).
+A screen of an iOS app, however it is presented: pushed onto the one before it, under a navigation bar that leads back and may carry a word that acts; a tab's root, with a large title and the tab bar; a sheet risen from the bottom with Cancel and Done; a full-screen cover; an alert centred over the screen; or an action sheet of choices from the bottom (HIG navigation bars, tab bars, sheets, alerts, action sheets).
 
 - `title` required — what the screen is called; on a profile, who it is about
 - `subtitle` — one line under it: a person's line, how it went, an introduction
@@ -14,17 +14,33 @@ A screen of an iOS app: a navigation bar with what leads and the one action, a l
   - `icon` — the name of a symbol
 - `active` — which of the destinations this screen is
 
+### presentation
+
+how the screen arrives: pushed onto the one before it; as a sheet risen from the bottom, for a task the person completes and dismisses; as a full-screen cover; as an alert, a small card centred over the screen; or as an action sheet, choices stacked at the bottom with Cancel apart under them
+
+`push` `sheet` `fullscreen` `alert` `actionsheet`
+
 ### opening
 
-how the screen opens: with its title, large on a main screen and in the bar on a pushed one; with the person it is about; or with how something went, a symbol and a headline in place of a title
+how the screen opens: with its title; with the person it is about; or with how something went, a symbol and a headline in place of a title
 
 `title` `person` `outcome`
 
+### title
+
+whether the title is large, under the bar, or inline in it. Unset, a tab's root has a large title and the rest inline (HIG large titles)
+
+`large` `inline`
+
 ### leading
 
-what leads the bar on a screen that is not a main one: a back chevron, or a close button, or nothing. A main screen is a tab's root and its bar leads with nothing whatever is set; unset, the rest lead with a back chevron
+what leads the bar: a chevron back, the word Cancel, a close button, or nothing. A tab's root and a full-screen cover lead with nothing whatever is set; unset, a pushed screen leads back and a sheet with a close button
 
-`back` `close` `none`
+`back` `cancel` `close` `none`
+
+### trailing
+
+a word at the trailing edge of the bar that acts: Done, Save, Edit; or none. It takes any name.
 
 ### action
 
@@ -32,19 +48,13 @@ the symbol of the one action at the trailing edge of the bar, or none. It takes 
 
 ### navigation
 
-whether the tab bar of the app's main destinations is shown: on a main screen
+whether the tab bar of the app's main destinations is shown: on a tab's root
 
 `yes` `no`
 
 ### sticky
 
 the name of the part pinned to the bottom edge, so that a call to action is always in reach, or none. It takes any name.
-
-### dialog
-
-an alert over the screen: the title and the parts centred in a small card, the buttons stacked under a hairline, and no bar
-
-`yes` `no`
 
 ### intro
 

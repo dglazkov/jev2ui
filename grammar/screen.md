@@ -468,28 +468,28 @@ among [subjects](subjects.md)
 
 among [icons](icons.md)
 
-## photographs (given)
+## no_photographs (given)
 
-What the DESIGN.md says, given by the tool and not asked: a design can rule pictures, symbols or cards out, and the rules below say what that does to the screen.
+What the DESIGN.md rules out, given by the tool and not asked: a design can say there are no pictures, no symbols or no cards, and the rules below say what that does to the screen. Given nothing, a design rules nothing out.
 
-> Does the design show photographs?
+> Does the design say there are no photographs?
 
-+ It does, or says nothing about it.
-- Its prose says there are no photographs, or that its pictures are drawn.
++ Its prose says there are no photographs, or that its pictures are drawn.
+- It shows photographs, or says nothing about it.
 
-## symbols (given)
+## no_symbols (given)
 
-> Does the design use symbols?
+> Does the design say there are no symbols?
 
-+ It does, or says nothing about it.
-- Its prose says there are no icons.
++ Its prose says there are no icons.
+- It uses symbols, or says nothing about it.
 
-## cards (given)
+## no_cards (given)
 
-> Does the design set content in cards?
+> Does the design say content is not set in cards?
 
-+ It does, or says nothing about it.
-- Its prose says content flows on the page without cards.
++ Its prose says content flows on the page without cards.
+- It sets content in cards, or says nothing about it.
 
 ## Rules
 
@@ -500,10 +500,10 @@ What the DESIGN.md says, given by the tool and not asked: a design can rule pict
 - when archetype is confirm, app_bar_action is none — a dialog has no top bar
 - when archetype is not detail, person is no — only a page about one thing can be about one person
 - when person is yes, no hero — a profile opens with the person, and a lead photograph would compete with them
-- when photographs is no, no hero — the design has no photographs, so nothing leads with one
-- when photographs is no and item_leading is thumbnail, item_leading is icon — the design has no photographs, so items are led by a symbol instead
-- when symbols is no and item_leading is icon, item_leading is none — the design has no symbols either
-- when cards is no and list_layout is cards or reel, list_layout is rows — the design sets nothing in cards
+- when no_photographs is yes, no hero — the design has no photographs, so nothing leads with one
+- when no_photographs is yes and item_leading is thumbnail, item_leading is icon — the design has no photographs, so items are led by a symbol instead
+- when no_symbols is yes and item_leading is icon, item_leading is none — the design has no symbols either
+- when no_cards is yes and list_layout is cards or reel, list_layout is rows — the design sets nothing in cards
 - when item_leading is not thumbnail, list_layout is rows — picture layouts are for things with a look; anything else is scanned as rows
 - when item_leading is avatar, item_subject is portrait — people are pictured as portraits, whatever the screen is about
 - when no list, custom_linked is no — with no list there are no items for it to draw

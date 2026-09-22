@@ -35,8 +35,8 @@ export interface Idiom {
 /** Each idiom's files and code. The grammar and the catalog are names in grammar/, or paths under it. */
 const OF: Record<IdiomId, { grammar: string; catalog: string; patterns: Catalog }> = {
   kit: { grammar: "screen.md", catalog: "kit.md", patterns: KIT_PATTERNS },
-  // The same grammar: the frame's knobs are the contract, and iOS's catalog draws them its way.
-  ios: { grammar: "screen.md", catalog: "ios/catalog.md", patterns: IOS_PATTERNS },
+  // A graph of its own, written from the Human Interface Guidelines, drawn by a frame with iOS's knobs.
+  ios: { grammar: "ios/screen.md", catalog: "ios/catalog.md", patterns: IOS_PATTERNS },
   email: { grammar: "examples/email.md", catalog: "kit.md", patterns: KIT_PATTERNS },
 };
 

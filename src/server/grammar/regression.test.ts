@@ -80,7 +80,7 @@ function drawn(idiom: (typeof IDIOMS)[keyof typeof IDIOMS]) {
     const answers = answersTo(of, rng);
     const look = { imagery: rng() < 0.7, icons: rng() < 0.7, contained: rng() < 0.7 };
     // The design's facts are given to the graph, whose rules say what they take off the screen.
-    const reading = readGrammar(grammar, answers, JEV, { values: { photographs: look.imagery, symbols: look.icons, cards: look.contained } });
+    const reading = readGrammar(grammar, answers, JEV, { values: { no_photographs: !look.imagery, no_symbols: !look.icons, no_cards: !look.contained } });
     const symbol = reading.values.screen_icon === "none" ? "image" : String(reading.values.screen_icon);
     const drawing = { contained: look.contained, icons: look.icons, symbol };
     const parts = Object.fromEntries(partsOf(grammar, reading).map((node) => [node.name, { schema: schemaOf(node, reading), tree: treeOf(idiom.patterns, grammar, node, reading, drawing) }]));

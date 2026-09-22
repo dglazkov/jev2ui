@@ -8,17 +8,16 @@
     "contained": false
    },
    "reading": {
-    "kind": "checkout",
+    "kind": "welcome",
     "blocks": [
-     "facts",
-     "form"
+     "features",
+     "buttons"
     ],
     "values": {
-     "archetype": "checkout",
+     "kind": "welcome",
+     "has_search": false,
      "has_banner": false,
      "has_hero": false,
-     "has_filters": false,
-     "search": false,
      "has_custom": false,
      "custom_use": "watch",
      "custom_size": "strip",
@@ -36,236 +35,181 @@
      "item_time": false,
      "item_progress": false,
      "has_groups": false,
-     "has_facts": true,
-     "facts_total": true,
-     "has_prose": false,
+     "has_text": false,
+     "has_details": false,
+     "details_total": false,
      "has_steps": false,
-     "has_form": true,
-     "has_actions": false,
+     "has_form": false,
+     "has_features": true,
+     "has_buttons": true,
      "person": false,
-     "top_level": true,
-     "app_bar_action": "add",
+     "tab_root": false,
+     "sheet": true,
+     "editable": false,
+     "bar_action": "none",
      "hero_subject": "landmark",
      "item_subject": "farm_animal",
      "screen_icon": "sports_soccer",
-     "photographs": true,
-     "symbols": true,
-     "cards": false
+     "no_photographs": false,
+     "no_symbols": false,
+     "no_cards": true
     }
    },
    "parts": {
-    "facts": {
+    "features": {
      "schema": {
       "type": "object",
       "properties": {
-       "facts": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "Short label."
+       "features": {
+        "type": "object",
+        "properties": {
+         "items": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "title": {
+             "type": "string",
+             "description": "Two to four words."
+            },
+            "description": {
+             "type": "string",
+             "description": "One sentence, what it does for the person."
+            }
+           },
+           "required": [
+            "title",
+            "description"
+           ],
+           "propertyOrdering": [
+            "title",
+            "description"
+           ]
           },
-          "value": {
-           "type": "string",
-           "description": "Short value."
-          }
-         },
-         "required": [
-          "label",
-          "value"
-         ],
-         "propertyOrdering": [
-          "label",
-          "value"
-         ]
+          "description": "Three or four features, most important first.",
+          "maxItems": 4,
+          "minItems": 3
+         }
         },
-        "description": "Label-value details. The last one is the total.",
-        "maxItems": 8,
-        "minItems": 2
+        "required": [
+         "items"
+        ],
+        "propertyOrdering": [
+         "items"
+        ]
        }
       },
       "required": [
-       "facts"
+       "features"
       ],
       "propertyOrdering": [
-       "facts"
+       "features"
       ]
      },
      "tree": [
       {
-       "id": "facts",
-       "component": "Card",
-       "child": "facts_rows",
+       "id": "features",
+       "component": "Stack",
+       "gap": "sm",
+       "children": [
+        "features_items"
+       ]
+      },
+      {
+       "id": "features_items",
+       "component": "Group",
+       "children": {
+        "path": "/features/items",
+        "componentId": "features_item"
+       },
        "flat": true
       },
       {
-       "id": "facts_rows",
-       "component": "Stack",
-       "gap": "none",
-       "children": {
-        "path": "/facts",
-        "componentId": "facts_row"
-       }
+       "id": "features_item",
+       "component": "ListItem",
+       "headline": {
+        "path": "title"
+       },
+       "supporting": {
+        "path": "description"
+       },
+       "leading": "features_item_leading"
       },
       {
-       "id": "facts_row",
-       "component": "KeyValue",
-       "label": {
-        "path": "label"
+       "id": "features_item_leading",
+       "component": "Icon",
+       "name": {
+        "path": "icon"
        },
-       "value": {
-        "path": "value"
-       },
-       "strong": {
-        "path": "strong"
-       }
+       "boxed": true
       }
      ]
     },
-    "form": {
+    "buttons": {
      "schema": {
       "type": "object",
       "properties": {
-       "form": {
+       "buttons": {
         "type": "object",
         "properties": {
-         "heading": {
-          "type": "string",
-          "description": "Heading above the fields."
-         },
-         "submitLabel": {
-          "type": "string",
-          "description": "Label of the submit button."
-         },
-         "fields": {
+         "actions": {
           "type": "array",
           "items": {
            "type": "object",
            "properties": {
             "label": {
              "type": "string",
-             "description": "Field label."
-            },
-            "placeholder": {
-             "type": "string",
-             "description": "Example of what a person would enter, e.g. 'Jane Appleseed', 'name@example.com'."
-            },
-            "options": {
-             "type": "array",
-             "items": {
-              "type": "string",
-              "description": "Option label."
-             },
-             "description": "ONLY for fields where the person picks from three or more known choices. Never for yes/no fields.",
-             "maxItems": 8,
-             "minItems": 2
-            },
-            "min": {
-             "type": "number",
-             "description": "ONLY for bounded numeric fields."
-            },
-            "max": {
-             "type": "number",
-             "description": "ONLY for bounded numeric fields."
+             "description": "Button label, one to three words."
             }
            },
            "required": [
-            "label",
-            "placeholder"
+            "label"
            ],
            "propertyOrdering": [
-            "label",
-            "placeholder",
-            "options",
-            "min",
-            "max"
+            "label"
            ]
           },
-          "description": "The input fields.",
-          "maxItems": 8,
+          "description": "The buttons, one or two on most screens, the main one first and Cancel last if there is one.",
+          "maxItems": 5,
           "minItems": 1
          }
         },
         "required": [
-         "heading",
-         "submitLabel",
-         "fields"
+         "actions"
         ],
         "propertyOrdering": [
-         "heading",
-         "submitLabel",
-         "fields"
+         "actions"
         ]
        }
       },
       "required": [
-       "form"
+       "buttons"
       ],
       "propertyOrdering": [
-       "form"
+       "buttons"
       ]
      },
      "tree": [
       {
-       "id": "form",
-       "component": "Stack",
-       "gap": "md",
-       "children": [
-        "form_heading",
-        "form_fields",
-        "form_submit"
-       ]
-      },
-      {
-       "id": "form_heading",
-       "component": "Text",
-       "role": "title",
-       "text": {
-        "path": "/form/heading"
-       }
-      },
-      {
-       "id": "form_fields",
-       "component": "Stack",
-       "gap": "md",
+       "id": "buttons",
+       "component": "Cluster",
+       "gap": "sm",
+       "justify": "end",
        "children": {
-        "path": "/form/fields",
-        "componentId": "form_field"
+        "path": "/buttons/actions",
+        "componentId": "buttons_action"
        }
       },
       {
-       "id": "form_field",
-       "component": "Field",
+       "id": "buttons_action",
+       "component": "Button",
        "label": {
         "path": "label"
        },
-       "kind": {
-        "path": "kind"
+       "variant": {
+        "path": "variant"
        },
-       "placeholder": {
-        "path": "placeholder"
-       },
-       "options": {
-        "path": "options"
-       },
-       "min": {
-        "path": "min"
-       },
-       "max": {
-        "path": "max"
-       }
-      },
-      {
-       "id": "form_submit",
-       "component": "Button",
-       "variant": "primary",
-       "full": true,
-       "label": {
-        "path": "/form/submitLabel"
-       },
-       "event": "submit"
+       "event": "action"
       }
      ]
     }
@@ -326,13 +270,13 @@
            "label"
           ]
          },
-         "description": "The app's three to five main destinations.",
+         "description": "The app's two to five tabs.",
          "maxItems": 5,
-         "minItems": 3
+         "minItems": 2
         },
         "active": {
          "type": "integer",
-         "description": "Index of the destination this screen belongs to."
+         "description": "Index of the tab this screen belongs to."
         }
        },
        "required": [
@@ -357,17 +301,9 @@
     {
      "id": "root",
      "component": "Screen",
-     "appBar": "appbar",
      "body": "body",
-     "navBar": "navbar"
-    },
-    {
-     "id": "appbar",
-     "component": "AppBar",
-     "leading": "none",
-     "actions": [
-      "add"
-     ]
+     "sticky": "sticky",
+     "presentation": "fullscreen"
     },
     {
      "id": "body",
@@ -375,9 +311,7 @@
      "gap": "lg",
      "children": [
       "large_title",
-      "intro",
-      "facts",
-      "form"
+      "features"
      ]
     },
     {
@@ -389,113 +323,66 @@
      }
     },
     {
-     "id": "intro",
-     "component": "Text",
-     "tone": "muted",
-     "text": {
-      "path": "/header/subtitle"
-     }
+     "id": "sticky",
+     "component": "StickyBar",
+     "child": "buttons"
     },
     {
-     "id": "navbar",
-     "component": "NavBar",
-     "items": {
-      "path": "/nav/items"
-     },
-     "active": {
-      "path": "/nav/active"
-     },
-     "icons": true,
-     "icon": {
-      "path": "icon"
-     }
-    },
-    {
-     "id": "facts",
-     "component": "Card",
-     "child": "facts_rows",
-     "flat": true
-    },
-    {
-     "id": "facts_rows",
+     "id": "features",
      "component": "Stack",
-     "gap": "none",
-     "children": {
-      "path": "/facts",
-      "componentId": "facts_row"
-     }
-    },
-    {
-     "id": "facts_row",
-     "component": "KeyValue",
-     "label": {
-      "path": "label"
-     },
-     "value": {
-      "path": "value"
-     },
-     "strong": {
-      "path": "strong"
-     }
-    },
-    {
-     "id": "form",
-     "component": "Stack",
-     "gap": "md",
+     "gap": "sm",
      "children": [
-      "form_heading",
-      "form_fields",
-      "form_submit"
+      "features_items"
      ]
     },
     {
-     "id": "form_heading",
-     "component": "Text",
-     "role": "title",
-     "text": {
-      "path": "/form/heading"
-     }
-    },
-    {
-     "id": "form_fields",
-     "component": "Stack",
-     "gap": "md",
+     "id": "features_items",
+     "component": "Group",
      "children": {
-      "path": "/form/fields",
-      "componentId": "form_field"
+      "path": "/features/items",
+      "componentId": "features_item"
+     },
+     "flat": true
+    },
+    {
+     "id": "features_item",
+     "component": "ListItem",
+     "headline": {
+      "path": "title"
+     },
+     "supporting": {
+      "path": "description"
+     },
+     "leading": "features_item_leading"
+    },
+    {
+     "id": "features_item_leading",
+     "component": "Icon",
+     "name": {
+      "path": "icon"
+     },
+     "boxed": true
+    },
+    {
+     "id": "buttons",
+     "component": "Cluster",
+     "gap": "sm",
+     "justify": "end",
+     "children": {
+      "path": "/buttons/actions",
+      "componentId": "buttons_action"
      }
     },
     {
-     "id": "form_field",
-     "component": "Field",
+     "id": "buttons_action",
+     "component": "Button",
      "label": {
       "path": "label"
      },
-     "kind": {
-      "path": "kind"
+     "variant": {
+      "path": "variant"
      },
-     "placeholder": {
-      "path": "placeholder"
-     },
-     "options": {
-      "path": "options"
-     },
-     "min": {
-      "path": "min"
-     },
-     "max": {
-      "path": "max"
-     }
-    },
-    {
-     "id": "form_submit",
-     "component": "Button",
-     "variant": "primary",
-     "full": true,
-     "label": {
-      "path": "/form/submitLabel"
-     },
-     "event": "submit"
+     "event": "action"
     }
    ]
   },
@@ -507,1742 +394,15 @@
     "contained": true
    },
    "reading": {
-    "kind": "confirm",
-    "blocks": [
-     "prose",
-     "actions"
-    ],
-    "values": {
-     "archetype": "confirm",
-     "has_banner": false,
-     "has_hero": false,
-     "has_filters": false,
-     "search": false,
-     "has_custom": false,
-     "custom_use": "watch",
-     "custom_size": "strip",
-     "custom_linked": false,
-     "has_stats": false,
-     "stat_deltas": false,
-     "has_list": false,
-     "list_layout": "rows",
-     "item_leading": "none",
-     "item_trailing": "none",
-     "item_description": false,
-     "item_price": false,
-     "item_rating": false,
-     "item_status": false,
-     "item_time": false,
-     "item_progress": false,
-     "has_groups": false,
-     "has_facts": false,
-     "facts_total": false,
-     "has_prose": true,
-     "has_steps": false,
-     "has_form": false,
-     "has_actions": true,
-     "person": false,
-     "top_level": false,
-     "app_bar_action": "none",
-     "hero_subject": "city",
-     "item_subject": "bird",
-     "screen_icon": "thermostat",
-     "photographs": true,
-     "symbols": false,
-     "cards": true
-    }
-   },
-   "parts": {
-    "prose": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "prose": {
-        "type": "object",
-        "properties": {
-         "body": {
-          "type": "string",
-          "description": "Body text. Simple markdown (bold, short bullet lists) is allowed."
-         }
-        },
-        "required": [
-         "body"
-        ],
-        "propertyOrdering": [
-         "body"
-        ]
-       }
-      },
-      "required": [
-       "prose"
-      ],
-      "propertyOrdering": [
-       "prose"
-      ]
-     },
-     "tree": [
-      {
-       "id": "prose",
-       "component": "Text",
-       "markdown": true,
-       "text": {
-        "path": "/prose/body"
-       }
-      }
-     ]
-    },
-    "actions": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "actions": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "Button label, one to three words."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
-        },
-        "description": "One or two buttons, most important first.",
-        "maxItems": 2,
-        "minItems": 1
-       }
-      },
-      "required": [
-       "actions"
-      ],
-      "propertyOrdering": [
-       "actions"
-      ]
-     },
-     "tree": [
-      {
-       "id": "actions",
-       "component": "Cluster",
-       "gap": "sm",
-       "justify": "end",
-       "children": {
-        "path": "/actions",
-        "componentId": "actions_action"
-       }
-      },
-      {
-       "id": "actions_action",
-       "component": "Button",
-       "label": {
-        "path": "label"
-       },
-       "variant": {
-        "path": "variant"
-       },
-       "event": "action"
-      }
-     ]
-    }
-   },
-   "content": {
-    "header": {
-     "type": "object",
-     "properties": {
-      "header": {
-       "type": "object",
-       "properties": {
-        "title": {
-         "type": "string",
-         "description": "Screen title, at most four words."
-        },
-        "subtitle": {
-         "type": "string",
-         "description": "One short supporting line."
-        }
-       },
-       "required": [
-        "title",
-        "subtitle"
-       ],
-       "propertyOrdering": [
-        "title",
-        "subtitle"
-       ]
-      }
-     },
-     "required": [
-      "header"
-     ],
-     "propertyOrdering": [
-      "header"
-     ]
-    },
-    "nav": {
-     "type": "object",
-     "properties": {
-      "nav": {
-       "type": "object",
-       "properties": {
-        "items": {
-         "type": "array",
-         "items": {
-          "type": "object",
-          "properties": {
-           "label": {
-            "type": "string",
-            "description": "One word."
-           }
-          },
-          "required": [
-           "label"
-          ],
-          "propertyOrdering": [
-           "label"
-          ]
-         },
-         "description": "The app's three to five main destinations.",
-         "maxItems": 5,
-         "minItems": 3
-        },
-        "active": {
-         "type": "integer",
-         "description": "Index of the destination this screen belongs to."
-        }
-       },
-       "required": [
-        "items",
-        "active"
-       ],
-       "propertyOrdering": [
-        "items",
-        "active"
-       ]
-      }
-     },
-     "required": [
-      "nav"
-     ],
-     "propertyOrdering": [
-      "nav"
-     ]
-    }
-   },
-   "screen": [
-    {
-     "id": "root",
-     "component": "Screen",
-     "body": "dialog",
-     "dialog": true
-    },
-    {
-     "id": "dialog",
-     "component": "Card",
-     "child": "dialog_body"
-    },
-    {
-     "id": "dialog_body",
-     "component": "Stack",
-     "gap": "md",
-     "children": [
-      "dialog_title",
-      "prose",
-      "actions"
-     ]
-    },
-    {
-     "id": "dialog_title",
-     "component": "Text",
-     "role": "headline",
-     "text": {
-      "path": "/header/title"
-     }
-    },
-    {
-     "id": "prose",
-     "component": "Text",
-     "markdown": true,
-     "text": {
-      "path": "/prose/body"
-     }
-    },
-    {
-     "id": "actions",
-     "component": "Cluster",
-     "gap": "sm",
-     "justify": "end",
-     "children": {
-      "path": "/actions",
-      "componentId": "actions_action"
-     }
-    },
-    {
-     "id": "actions_action",
-     "component": "Button",
-     "label": {
-      "path": "label"
-     },
-     "variant": {
-      "path": "variant"
-     },
-     "event": "action"
-    }
-   ]
-  },
-  {
-   "seed": 2002,
-   "look": {
-    "imagery": false,
-    "icons": false,
-    "contained": true
-   },
-   "reading": {
-    "kind": "result",
-    "blocks": [
-     "prose",
-     "actions"
-    ],
-    "values": {
-     "archetype": "result",
-     "has_banner": false,
-     "has_hero": false,
-     "has_filters": false,
-     "search": false,
-     "has_custom": false,
-     "custom_use": "watch",
-     "custom_size": "strip",
-     "custom_linked": false,
-     "has_stats": false,
-     "stat_deltas": false,
-     "has_list": false,
-     "list_layout": "rows",
-     "item_leading": "none",
-     "item_trailing": "none",
-     "item_description": false,
-     "item_price": false,
-     "item_rating": false,
-     "item_status": false,
-     "item_time": false,
-     "item_progress": false,
-     "has_groups": false,
-     "has_facts": false,
-     "facts_total": false,
-     "has_prose": true,
-     "has_steps": false,
-     "has_form": false,
-     "has_actions": true,
-     "person": false,
-     "top_level": false,
-     "app_bar_action": "settings",
-     "hero_subject": "gadget",
-     "item_subject": "work",
-     "screen_icon": "tv",
-     "photographs": false,
-     "symbols": false,
-     "cards": true
-    }
-   },
-   "parts": {
-    "prose": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "prose": {
-        "type": "object",
-        "properties": {
-         "body": {
-          "type": "string",
-          "description": "Body text. Simple markdown (bold, short bullet lists) is allowed."
-         }
-        },
-        "required": [
-         "body"
-        ],
-        "propertyOrdering": [
-         "body"
-        ]
-       }
-      },
-      "required": [
-       "prose"
-      ],
-      "propertyOrdering": [
-       "prose"
-      ]
-     },
-     "tree": [
-      {
-       "id": "prose",
-       "component": "Text",
-       "markdown": true,
-       "text": {
-        "path": "/prose/body"
-       }
-      }
-     ]
-    },
-    "actions": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "actions": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "Button label, one to three words."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
-        },
-        "description": "One or two buttons, most important first.",
-        "maxItems": 2,
-        "minItems": 1
-       }
-      },
-      "required": [
-       "actions"
-      ],
-      "propertyOrdering": [
-       "actions"
-      ]
-     },
-     "tree": [
-      {
-       "id": "actions",
-       "component": "Cluster",
-       "gap": "sm",
-       "justify": "end",
-       "children": {
-        "path": "/actions",
-        "componentId": "actions_action"
-       }
-      },
-      {
-       "id": "actions_action",
-       "component": "Button",
-       "label": {
-        "path": "label"
-       },
-       "variant": {
-        "path": "variant"
-       },
-       "event": "action"
-      }
-     ]
-    }
-   },
-   "content": {
-    "header": {
-     "type": "object",
-     "properties": {
-      "header": {
-       "type": "object",
-       "properties": {
-        "title": {
-         "type": "string",
-         "description": "Screen title, at most four words."
-        },
-        "subtitle": {
-         "type": "string",
-         "description": "One short supporting line."
-        }
-       },
-       "required": [
-        "title",
-        "subtitle"
-       ],
-       "propertyOrdering": [
-        "title",
-        "subtitle"
-       ]
-      }
-     },
-     "required": [
-      "header"
-     ],
-     "propertyOrdering": [
-      "header"
-     ]
-    },
-    "nav": {
-     "type": "object",
-     "properties": {
-      "nav": {
-       "type": "object",
-       "properties": {
-        "items": {
-         "type": "array",
-         "items": {
-          "type": "object",
-          "properties": {
-           "label": {
-            "type": "string",
-            "description": "One word."
-           }
-          },
-          "required": [
-           "label"
-          ],
-          "propertyOrdering": [
-           "label"
-          ]
-         },
-         "description": "The app's three to five main destinations.",
-         "maxItems": 5,
-         "minItems": 3
-        },
-        "active": {
-         "type": "integer",
-         "description": "Index of the destination this screen belongs to."
-        }
-       },
-       "required": [
-        "items",
-        "active"
-       ],
-       "propertyOrdering": [
-        "items",
-        "active"
-       ]
-      }
-     },
-     "required": [
-      "nav"
-     ],
-     "propertyOrdering": [
-      "nav"
-     ]
-    }
-   },
-   "screen": [
-    {
-     "id": "root",
-     "component": "Screen",
-     "appBar": "appbar",
-     "body": "body"
-    },
-    {
-     "id": "appbar",
-     "component": "AppBar",
-     "leading": "close",
-     "actions": [
-      "settings"
-     ]
-    },
-    {
-     "id": "body",
-     "component": "Stack",
-     "gap": "lg",
-     "children": [
-      "outcome",
-      "prose",
-      "actions"
-     ]
-    },
-    {
-     "id": "outcome",
-     "component": "Stack",
-     "gap": "sm",
-     "align": "center",
-     "children": [
-      "outcome_title",
-      "outcome_line"
-     ]
-    },
-    {
-     "id": "outcome_title",
-     "component": "Text",
-     "role": "headline",
-     "text": {
-      "path": "/header/title"
-     }
-    },
-    {
-     "id": "outcome_line",
-     "component": "Text",
-     "tone": "muted",
-     "text": {
-      "path": "/header/subtitle"
-     }
-    },
-    {
-     "id": "prose",
-     "component": "Text",
-     "markdown": true,
-     "text": {
-      "path": "/prose/body"
-     }
-    },
-    {
-     "id": "actions",
-     "component": "Cluster",
-     "gap": "sm",
-     "justify": "end",
-     "children": {
-      "path": "/actions",
-      "componentId": "actions_action"
-     }
-    },
-    {
-     "id": "actions_action",
-     "component": "Button",
-     "label": {
-      "path": "label"
-     },
-     "variant": {
-      "path": "variant"
-     },
-     "event": "action"
-    }
-   ]
-  },
-  {
-   "seed": 2003,
-   "look": {
-    "imagery": true,
-    "icons": true,
-    "contained": true
-   },
-   "reading": {
-    "kind": "result",
-    "blocks": [
-     "prose",
-     "actions"
-    ],
-    "values": {
-     "archetype": "result",
-     "has_banner": false,
-     "has_hero": false,
-     "has_filters": false,
-     "search": false,
-     "has_custom": false,
-     "custom_use": "watch",
-     "custom_size": "strip",
-     "custom_linked": false,
-     "has_stats": false,
-     "stat_deltas": false,
-     "has_list": false,
-     "list_layout": "rows",
-     "item_leading": "none",
-     "item_trailing": "none",
-     "item_description": false,
-     "item_price": false,
-     "item_rating": false,
-     "item_status": false,
-     "item_time": false,
-     "item_progress": false,
-     "has_groups": false,
-     "has_facts": false,
-     "facts_total": false,
-     "has_prose": true,
-     "has_steps": false,
-     "has_form": false,
-     "has_actions": true,
-     "person": false,
-     "top_level": false,
-     "app_bar_action": "share",
-     "hero_subject": "portrait",
-     "item_subject": "gadget",
-     "screen_icon": "key",
-     "photographs": true,
-     "symbols": true,
-     "cards": true
-    }
-   },
-   "parts": {
-    "prose": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "prose": {
-        "type": "object",
-        "properties": {
-         "body": {
-          "type": "string",
-          "description": "Body text. Simple markdown (bold, short bullet lists) is allowed."
-         }
-        },
-        "required": [
-         "body"
-        ],
-        "propertyOrdering": [
-         "body"
-        ]
-       }
-      },
-      "required": [
-       "prose"
-      ],
-      "propertyOrdering": [
-       "prose"
-      ]
-     },
-     "tree": [
-      {
-       "id": "prose",
-       "component": "Text",
-       "markdown": true,
-       "text": {
-        "path": "/prose/body"
-       }
-      }
-     ]
-    },
-    "actions": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "actions": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "Button label, one to three words."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
-        },
-        "description": "One or two buttons, most important first.",
-        "maxItems": 2,
-        "minItems": 1
-       }
-      },
-      "required": [
-       "actions"
-      ],
-      "propertyOrdering": [
-       "actions"
-      ]
-     },
-     "tree": [
-      {
-       "id": "actions",
-       "component": "Cluster",
-       "gap": "sm",
-       "justify": "end",
-       "children": {
-        "path": "/actions",
-        "componentId": "actions_action"
-       }
-      },
-      {
-       "id": "actions_action",
-       "component": "Button",
-       "label": {
-        "path": "label"
-       },
-       "variant": {
-        "path": "variant"
-       },
-       "event": "action"
-      }
-     ]
-    }
-   },
-   "content": {
-    "header": {
-     "type": "object",
-     "properties": {
-      "header": {
-       "type": "object",
-       "properties": {
-        "title": {
-         "type": "string",
-         "description": "Screen title, at most four words."
-        },
-        "subtitle": {
-         "type": "string",
-         "description": "One short supporting line."
-        }
-       },
-       "required": [
-        "title",
-        "subtitle"
-       ],
-       "propertyOrdering": [
-        "title",
-        "subtitle"
-       ]
-      }
-     },
-     "required": [
-      "header"
-     ],
-     "propertyOrdering": [
-      "header"
-     ]
-    },
-    "nav": {
-     "type": "object",
-     "properties": {
-      "nav": {
-       "type": "object",
-       "properties": {
-        "items": {
-         "type": "array",
-         "items": {
-          "type": "object",
-          "properties": {
-           "label": {
-            "type": "string",
-            "description": "One word."
-           }
-          },
-          "required": [
-           "label"
-          ],
-          "propertyOrdering": [
-           "label"
-          ]
-         },
-         "description": "The app's three to five main destinations.",
-         "maxItems": 5,
-         "minItems": 3
-        },
-        "active": {
-         "type": "integer",
-         "description": "Index of the destination this screen belongs to."
-        }
-       },
-       "required": [
-        "items",
-        "active"
-       ],
-       "propertyOrdering": [
-        "items",
-        "active"
-       ]
-      }
-     },
-     "required": [
-      "nav"
-     ],
-     "propertyOrdering": [
-      "nav"
-     ]
-    }
-   },
-   "screen": [
-    {
-     "id": "root",
-     "component": "Screen",
-     "appBar": "appbar",
-     "body": "body"
-    },
-    {
-     "id": "appbar",
-     "component": "AppBar",
-     "leading": "close",
-     "actions": [
-      "share"
-     ]
-    },
-    {
-     "id": "body",
-     "component": "Stack",
-     "gap": "lg",
-     "children": [
-      "outcome",
-      "prose",
-      "actions"
-     ]
-    },
-    {
-     "id": "outcome",
-     "component": "Stack",
-     "gap": "sm",
-     "align": "center",
-     "children": [
-      "outcome_icon",
-      "outcome_title",
-      "outcome_line"
-     ]
-    },
-    {
-     "id": "outcome_icon",
-     "component": "Icon",
-     "name": "key",
-     "boxed": true,
-     "size": 32
-    },
-    {
-     "id": "outcome_title",
-     "component": "Text",
-     "role": "headline",
-     "text": {
-      "path": "/header/title"
-     }
-    },
-    {
-     "id": "outcome_line",
-     "component": "Text",
-     "tone": "muted",
-     "text": {
-      "path": "/header/subtitle"
-     }
-    },
-    {
-     "id": "prose",
-     "component": "Text",
-     "markdown": true,
-     "text": {
-      "path": "/prose/body"
-     }
-    },
-    {
-     "id": "actions",
-     "component": "Cluster",
-     "gap": "sm",
-     "justify": "end",
-     "children": {
-      "path": "/actions",
-      "componentId": "actions_action"
-     }
-    },
-    {
-     "id": "actions_action",
-     "component": "Button",
-     "label": {
-      "path": "label"
-     },
-     "variant": {
-      "path": "variant"
-     },
-     "event": "action"
-    }
-   ]
-  },
-  {
-   "seed": 2004,
-   "look": {
-    "imagery": true,
-    "icons": true,
-    "contained": true
-   },
-   "reading": {
-    "kind": "result",
-    "blocks": [
-     "prose",
-     "facts"
-    ],
-    "values": {
-     "archetype": "result",
-     "has_banner": false,
-     "has_hero": false,
-     "has_filters": false,
-     "search": false,
-     "has_custom": false,
-     "custom_use": "watch",
-     "custom_size": "strip",
-     "custom_linked": false,
-     "has_stats": false,
-     "stat_deltas": false,
-     "has_list": false,
-     "list_layout": "rows",
-     "item_leading": "none",
-     "item_trailing": "none",
-     "item_description": false,
-     "item_price": false,
-     "item_rating": false,
-     "item_status": false,
-     "item_time": false,
-     "item_progress": false,
-     "has_groups": false,
-     "has_facts": true,
-     "facts_total": true,
-     "has_prose": true,
-     "has_steps": false,
-     "has_form": false,
-     "has_actions": false,
-     "person": false,
-     "top_level": false,
-     "app_bar_action": "more",
-     "hero_subject": "work",
-     "item_subject": "water",
-     "screen_icon": "savings",
-     "photographs": true,
-     "symbols": true,
-     "cards": true
-    }
-   },
-   "parts": {
-    "prose": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "prose": {
-        "type": "object",
-        "properties": {
-         "body": {
-          "type": "string",
-          "description": "Body text. Simple markdown (bold, short bullet lists) is allowed."
-         }
-        },
-        "required": [
-         "body"
-        ],
-        "propertyOrdering": [
-         "body"
-        ]
-       }
-      },
-      "required": [
-       "prose"
-      ],
-      "propertyOrdering": [
-       "prose"
-      ]
-     },
-     "tree": [
-      {
-       "id": "prose",
-       "component": "Text",
-       "markdown": true,
-       "text": {
-        "path": "/prose/body"
-       }
-      }
-     ]
-    },
-    "facts": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "facts": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "Short label."
-          },
-          "value": {
-           "type": "string",
-           "description": "Short value."
-          }
-         },
-         "required": [
-          "label",
-          "value"
-         ],
-         "propertyOrdering": [
-          "label",
-          "value"
-         ]
-        },
-        "description": "Label-value details. The last one is the total.",
-        "maxItems": 8,
-        "minItems": 2
-       }
-      },
-      "required": [
-       "facts"
-      ],
-      "propertyOrdering": [
-       "facts"
-      ]
-     },
-     "tree": [
-      {
-       "id": "facts",
-       "component": "Card",
-       "child": "facts_rows",
-       "flat": false
-      },
-      {
-       "id": "facts_rows",
-       "component": "Stack",
-       "gap": "none",
-       "children": {
-        "path": "/facts",
-        "componentId": "facts_row"
-       }
-      },
-      {
-       "id": "facts_row",
-       "component": "KeyValue",
-       "label": {
-        "path": "label"
-       },
-       "value": {
-        "path": "value"
-       },
-       "strong": {
-        "path": "strong"
-       }
-      }
-     ]
-    }
-   },
-   "content": {
-    "header": {
-     "type": "object",
-     "properties": {
-      "header": {
-       "type": "object",
-       "properties": {
-        "title": {
-         "type": "string",
-         "description": "Screen title, at most four words."
-        },
-        "subtitle": {
-         "type": "string",
-         "description": "One short supporting line."
-        }
-       },
-       "required": [
-        "title",
-        "subtitle"
-       ],
-       "propertyOrdering": [
-        "title",
-        "subtitle"
-       ]
-      }
-     },
-     "required": [
-      "header"
-     ],
-     "propertyOrdering": [
-      "header"
-     ]
-    },
-    "nav": {
-     "type": "object",
-     "properties": {
-      "nav": {
-       "type": "object",
-       "properties": {
-        "items": {
-         "type": "array",
-         "items": {
-          "type": "object",
-          "properties": {
-           "label": {
-            "type": "string",
-            "description": "One word."
-           }
-          },
-          "required": [
-           "label"
-          ],
-          "propertyOrdering": [
-           "label"
-          ]
-         },
-         "description": "The app's three to five main destinations.",
-         "maxItems": 5,
-         "minItems": 3
-        },
-        "active": {
-         "type": "integer",
-         "description": "Index of the destination this screen belongs to."
-        }
-       },
-       "required": [
-        "items",
-        "active"
-       ],
-       "propertyOrdering": [
-        "items",
-        "active"
-       ]
-      }
-     },
-     "required": [
-      "nav"
-     ],
-     "propertyOrdering": [
-      "nav"
-     ]
-    }
-   },
-   "screen": [
-    {
-     "id": "root",
-     "component": "Screen",
-     "appBar": "appbar",
-     "body": "body"
-    },
-    {
-     "id": "appbar",
-     "component": "AppBar",
-     "leading": "close",
-     "actions": [
-      "more_vert"
-     ]
-    },
-    {
-     "id": "body",
-     "component": "Stack",
-     "gap": "lg",
-     "children": [
-      "outcome",
-      "prose",
-      "facts"
-     ]
-    },
-    {
-     "id": "outcome",
-     "component": "Stack",
-     "gap": "sm",
-     "align": "center",
-     "children": [
-      "outcome_icon",
-      "outcome_title",
-      "outcome_line"
-     ]
-    },
-    {
-     "id": "outcome_icon",
-     "component": "Icon",
-     "name": "savings",
-     "boxed": true,
-     "size": 32
-    },
-    {
-     "id": "outcome_title",
-     "component": "Text",
-     "role": "headline",
-     "text": {
-      "path": "/header/title"
-     }
-    },
-    {
-     "id": "outcome_line",
-     "component": "Text",
-     "tone": "muted",
-     "text": {
-      "path": "/header/subtitle"
-     }
-    },
-    {
-     "id": "prose",
-     "component": "Text",
-     "markdown": true,
-     "text": {
-      "path": "/prose/body"
-     }
-    },
-    {
-     "id": "facts",
-     "component": "Card",
-     "child": "facts_rows",
-     "flat": false
-    },
-    {
-     "id": "facts_rows",
-     "component": "Stack",
-     "gap": "none",
-     "children": {
-      "path": "/facts",
-      "componentId": "facts_row"
-     }
-    },
-    {
-     "id": "facts_row",
-     "component": "KeyValue",
-     "label": {
-      "path": "label"
-     },
-     "value": {
-      "path": "value"
-     },
-     "strong": {
-      "path": "strong"
-     }
-    }
-   ]
-  },
-  {
-   "seed": 2005,
-   "look": {
-    "imagery": false,
-    "icons": true,
-    "contained": true
-   },
-   "reading": {
-    "kind": "dashboard",
-    "blocks": [
-     "banner",
-     "stats",
-     "facts"
-    ],
-    "values": {
-     "archetype": "dashboard",
-     "has_banner": true,
-     "has_hero": false,
-     "has_filters": false,
-     "search": false,
-     "has_custom": false,
-     "custom_use": "watch",
-     "custom_size": "strip",
-     "custom_linked": false,
-     "has_stats": true,
-     "stat_deltas": true,
-     "has_list": false,
-     "list_layout": "rows",
-     "item_leading": "none",
-     "item_trailing": "none",
-     "item_description": false,
-     "item_price": false,
-     "item_rating": false,
-     "item_status": false,
-     "item_time": false,
-     "item_progress": false,
-     "has_groups": false,
-     "has_facts": true,
-     "facts_total": true,
-     "has_prose": false,
-     "has_steps": false,
-     "has_form": false,
-     "has_actions": false,
-     "person": false,
-     "top_level": true,
-     "app_bar_action": "edit",
-     "hero_subject": "story",
-     "item_subject": "stay",
-     "screen_icon": "savings",
-     "photographs": false,
-     "symbols": true,
-     "cards": true
-    }
-   },
-   "parts": {
-    "banner": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "banner": {
-        "type": "object",
-        "properties": {
-         "title": {
-          "type": "string",
-          "description": "What needs attention, in a few words."
-         },
-         "text": {
-          "type": "string",
-          "description": "One sentence of detail."
-         }
-        },
-        "required": [
-         "title",
-         "text"
-        ],
-        "propertyOrdering": [
-         "title",
-         "text"
-        ]
-       }
-      },
-      "required": [
-       "banner"
-      ],
-      "propertyOrdering": [
-       "banner"
-      ]
-     },
-     "tree": [
-      {
-       "id": "banner",
-       "component": "Banner",
-       "title": {
-        "path": "/banner/title"
-       },
-       "text": {
-        "path": "/banner/text"
-       },
-       "tone": {
-        "path": "/banner/tone"
-       }
-      }
-     ]
-    },
-    "stats": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "stats": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "Short label."
-          },
-          "value": {
-           "type": "string",
-           "description": "The figure with its unit, e.g. '24.2 kWh'."
-          },
-          "delta": {
-           "type": "string",
-           "description": "Change against the previous period, signed, e.g. '+12%' or '-0.4 kW'."
-          }
-         },
-         "required": [
-          "label",
-          "value",
-          "delta"
-         ],
-         "propertyOrdering": [
-          "label",
-          "value",
-          "delta"
-         ]
-        },
-        "description": "Headline numbers.",
-        "maxItems": 6,
-        "minItems": 2
-       }
-      },
-      "required": [
-       "stats"
-      ],
-      "propertyOrdering": [
-       "stats"
-      ]
-     },
-     "tree": [
-      {
-       "id": "stats",
-       "component": "Grid",
-       "min": 140,
-       "children": {
-        "path": "/stats",
-        "componentId": "stats_stat"
-       }
-      },
-      {
-       "id": "stats_stat",
-       "component": "Stat",
-       "label": {
-        "path": "label"
-       },
-       "value": {
-        "path": "value"
-       },
-       "delta": {
-        "path": "delta"
-       },
-       "tone": {
-        "path": "tone"
-       },
-       "flat": false
-      }
-     ]
-    },
-    "facts": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "facts": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "Short label."
-          },
-          "value": {
-           "type": "string",
-           "description": "Short value."
-          }
-         },
-         "required": [
-          "label",
-          "value"
-         ],
-         "propertyOrdering": [
-          "label",
-          "value"
-         ]
-        },
-        "description": "Label-value details. The last one is the total.",
-        "maxItems": 8,
-        "minItems": 2
-       }
-      },
-      "required": [
-       "facts"
-      ],
-      "propertyOrdering": [
-       "facts"
-      ]
-     },
-     "tree": [
-      {
-       "id": "facts",
-       "component": "Card",
-       "child": "facts_rows",
-       "flat": false
-      },
-      {
-       "id": "facts_rows",
-       "component": "Stack",
-       "gap": "none",
-       "children": {
-        "path": "/facts",
-        "componentId": "facts_row"
-       }
-      },
-      {
-       "id": "facts_row",
-       "component": "KeyValue",
-       "label": {
-        "path": "label"
-       },
-       "value": {
-        "path": "value"
-       },
-       "strong": {
-        "path": "strong"
-       }
-      }
-     ]
-    }
-   },
-   "content": {
-    "header": {
-     "type": "object",
-     "properties": {
-      "header": {
-       "type": "object",
-       "properties": {
-        "title": {
-         "type": "string",
-         "description": "Screen title, at most four words."
-        },
-        "subtitle": {
-         "type": "string",
-         "description": "One short supporting line."
-        }
-       },
-       "required": [
-        "title",
-        "subtitle"
-       ],
-       "propertyOrdering": [
-        "title",
-        "subtitle"
-       ]
-      }
-     },
-     "required": [
-      "header"
-     ],
-     "propertyOrdering": [
-      "header"
-     ]
-    },
-    "nav": {
-     "type": "object",
-     "properties": {
-      "nav": {
-       "type": "object",
-       "properties": {
-        "items": {
-         "type": "array",
-         "items": {
-          "type": "object",
-          "properties": {
-           "label": {
-            "type": "string",
-            "description": "One word."
-           }
-          },
-          "required": [
-           "label"
-          ],
-          "propertyOrdering": [
-           "label"
-          ]
-         },
-         "description": "The app's three to five main destinations.",
-         "maxItems": 5,
-         "minItems": 3
-        },
-        "active": {
-         "type": "integer",
-         "description": "Index of the destination this screen belongs to."
-        }
-       },
-       "required": [
-        "items",
-        "active"
-       ],
-       "propertyOrdering": [
-        "items",
-        "active"
-       ]
-      }
-     },
-     "required": [
-      "nav"
-     ],
-     "propertyOrdering": [
-      "nav"
-     ]
-    }
-   },
-   "screen": [
-    {
-     "id": "root",
-     "component": "Screen",
-     "appBar": "appbar",
-     "body": "body",
-     "navBar": "navbar"
-    },
-    {
-     "id": "appbar",
-     "component": "AppBar",
-     "leading": "none",
-     "actions": [
-      "edit"
-     ]
-    },
-    {
-     "id": "body",
-     "component": "Stack",
-     "gap": "lg",
-     "children": [
-      "large_title",
-      "banner",
-      "stats",
-      "facts"
-     ]
-    },
-    {
-     "id": "large_title",
-     "component": "Text",
-     "role": "display",
-     "text": {
-      "path": "/header/title"
-     }
-    },
-    {
-     "id": "navbar",
-     "component": "NavBar",
-     "items": {
-      "path": "/nav/items"
-     },
-     "active": {
-      "path": "/nav/active"
-     },
-     "icons": true,
-     "icon": {
-      "path": "icon"
-     }
-    },
-    {
-     "id": "banner",
-     "component": "Banner",
-     "title": {
-      "path": "/banner/title"
-     },
-     "text": {
-      "path": "/banner/text"
-     },
-     "tone": {
-      "path": "/banner/tone"
-     }
-    },
-    {
-     "id": "stats",
-     "component": "Grid",
-     "min": 140,
-     "children": {
-      "path": "/stats",
-      "componentId": "stats_stat"
-     }
-    },
-    {
-     "id": "stats_stat",
-     "component": "Stat",
-     "label": {
-      "path": "label"
-     },
-     "value": {
-      "path": "value"
-     },
-     "delta": {
-      "path": "delta"
-     },
-     "tone": {
-      "path": "tone"
-     },
-     "flat": false
-    },
-    {
-     "id": "facts",
-     "component": "Card",
-     "child": "facts_rows",
-     "flat": false
-    },
-    {
-     "id": "facts_rows",
-     "component": "Stack",
-     "gap": "none",
-     "children": {
-      "path": "/facts",
-      "componentId": "facts_row"
-     }
-    },
-    {
-     "id": "facts_row",
-     "component": "KeyValue",
-     "label": {
-      "path": "label"
-     },
-     "value": {
-      "path": "value"
-     },
-     "strong": {
-      "path": "strong"
-     }
-    }
-   ]
-  },
-  {
-   "seed": 2006,
-   "look": {
-    "imagery": false,
-    "icons": true,
-    "contained": true
-   },
-   "reading": {
     "kind": "settings",
     "blocks": [
-     "groups",
-     "actions"
+     "groups"
     ],
     "values": {
-     "archetype": "settings",
+     "kind": "settings",
+     "has_search": false,
      "has_banner": false,
      "has_hero": false,
-     "has_filters": false,
-     "search": false,
      "has_custom": false,
      "custom_use": "watch",
      "custom_size": "strip",
@@ -2260,21 +420,24 @@
      "item_time": false,
      "item_progress": false,
      "has_groups": true,
-     "has_facts": false,
-     "facts_total": false,
-     "has_prose": false,
+     "has_text": false,
+     "has_details": false,
+     "details_total": false,
      "has_steps": false,
      "has_form": false,
-     "has_actions": true,
+     "has_features": false,
+     "has_buttons": false,
      "person": false,
-     "top_level": false,
-     "app_bar_action": "notifications",
-     "hero_subject": "story",
-     "item_subject": "plant",
-     "screen_icon": "newspaper",
-     "photographs": false,
-     "symbols": true,
-     "cards": true
+     "tab_root": false,
+     "sheet": true,
+     "editable": false,
+     "bar_action": "settings",
+     "hero_subject": "city",
+     "item_subject": "bird",
+     "screen_icon": "thermostat",
+     "no_photographs": false,
+     "no_symbols": true,
+     "no_cards": false
     }
    },
    "parts": {
@@ -2332,7 +495,7 @@
           "rows"
          ]
         },
-        "description": "Groups of related settings. The last group holds account-level actions if there are any.",
+        "description": "Groups of related settings. The last group holds account-level actions if there are any, sign out last.",
         "maxItems": 5,
         "minItems": 2
        }
@@ -2369,9 +532,6 @@
       {
        "id": "groups_row",
        "component": "SettingRow",
-       "icon": {
-        "path": "icon"
-       },
        "label": {
         "path": "label"
        },
@@ -2387,63 +547,6 @@
        "on": {
         "path": "on"
        }
-      }
-     ]
-    },
-    "actions": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "actions": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "Button label, one to three words."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
-        },
-        "description": "One or two buttons, most important first.",
-        "maxItems": 2,
-        "minItems": 1
-       }
-      },
-      "required": [
-       "actions"
-      ],
-      "propertyOrdering": [
-       "actions"
-      ]
-     },
-     "tree": [
-      {
-       "id": "actions",
-       "component": "Cluster",
-       "gap": "sm",
-       "justify": "end",
-       "children": {
-        "path": "/actions",
-        "componentId": "actions_action"
-       }
-      },
-      {
-       "id": "actions_action",
-       "component": "Button",
-       "label": {
-        "path": "label"
-       },
-       "variant": {
-        "path": "variant"
-       },
-       "event": "action"
       }
      ]
     }
@@ -2504,13 +607,13 @@
            "label"
           ]
          },
-         "description": "The app's three to five main destinations.",
+         "description": "The app's two to five tabs.",
          "maxItems": 5,
-         "minItems": 3
+         "minItems": 2
         },
         "active": {
          "type": "integer",
-         "description": "Index of the destination this screen belongs to."
+         "description": "Index of the tab this screen belongs to."
         }
        },
        "required": [
@@ -2536,7 +639,8 @@
      "id": "root",
      "component": "Screen",
      "appBar": "appbar",
-     "body": "body"
+     "body": "body",
+     "presentation": "sheet"
     },
     {
      "id": "appbar",
@@ -2544,9 +648,9 @@
      "title": {
       "path": "/header/title"
      },
-     "leading": "back",
+     "leading": "close",
      "actions": [
-      "notifications"
+      "settings"
      ]
     },
     {
@@ -2554,8 +658,7 @@
      "component": "Stack",
      "gap": "lg",
      "children": [
-      "groups",
-      "actions"
+      "groups"
      ]
     },
     {
@@ -2582,9 +685,6 @@
     {
      "id": "groups_row",
      "component": "SettingRow",
-     "icon": {
-      "path": "icon"
-     },
      "label": {
       "path": "label"
      },
@@ -2600,422 +700,29 @@
      "on": {
       "path": "on"
      }
-    },
-    {
-     "id": "actions",
-     "component": "Cluster",
-     "gap": "sm",
-     "justify": "end",
-     "children": {
-      "path": "/actions",
-      "componentId": "actions_action"
-     }
-    },
-    {
-     "id": "actions_action",
-     "component": "Button",
-     "label": {
-      "path": "label"
-     },
-     "variant": {
-      "path": "variant"
-     },
-     "event": "action"
     }
    ]
   },
   {
-   "seed": 2007,
+   "seed": 2002,
    "look": {
     "imagery": false,
-    "icons": true,
+    "icons": false,
     "contained": true
    },
    "reading": {
-    "kind": "dashboard",
+    "kind": "done",
     "blocks": [
-     "banner",
-     "custom",
-     "stats"
+     "buttons"
     ],
     "values": {
-     "archetype": "dashboard",
-     "has_banner": true,
-     "has_hero": false,
-     "has_filters": false,
-     "search": false,
-     "has_custom": true,
-     "custom_use": "watch",
-     "custom_size": "strip",
-     "custom_linked": false,
-     "has_stats": true,
-     "stat_deltas": true,
-     "has_list": false,
-     "list_layout": "rows",
-     "item_leading": "none",
-     "item_trailing": "none",
-     "item_description": false,
-     "item_price": false,
-     "item_rating": false,
-     "item_status": false,
-     "item_time": false,
-     "item_progress": false,
-     "has_groups": false,
-     "has_facts": false,
-     "facts_total": false,
-     "has_prose": false,
-     "has_steps": false,
-     "has_form": false,
-     "has_actions": false,
-     "person": false,
-     "top_level": false,
-     "app_bar_action": "notifications",
-     "hero_subject": "art",
-     "item_subject": "play",
-     "screen_icon": "support_agent",
-     "photographs": false,
-     "symbols": true,
-     "cards": true
-    }
-   },
-   "parts": {
-    "banner": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "banner": {
-        "type": "object",
-        "properties": {
-         "title": {
-          "type": "string",
-          "description": "What needs attention, in a few words."
-         },
-         "text": {
-          "type": "string",
-          "description": "One sentence of detail."
-         }
-        },
-        "required": [
-         "title",
-         "text"
-        ],
-        "propertyOrdering": [
-         "title",
-         "text"
-        ]
-       }
-      },
-      "required": [
-       "banner"
-      ],
-      "propertyOrdering": [
-       "banner"
-      ]
-     },
-     "tree": [
-      {
-       "id": "banner",
-       "component": "Banner",
-       "title": {
-        "path": "/banner/title"
-       },
-       "text": {
-        "path": "/banner/text"
-       },
-       "tone": {
-        "path": "/banner/tone"
-       }
-      }
-     ]
-    },
-    "custom": {
-     "schema": null,
-     "tree": [
-      {
-       "id": "custom",
-       "component": "Custom",
-       "use": {
-        "path": "/custom/use"
-       },
-       "ratio": "3:1",
-       "data": {
-        "path": "/custom/data"
-       },
-       "selection": {
-        "path": "/custom/selection"
-       },
-       "failed": {
-        "path": "/custom/failed"
-       }
-      }
-     ]
-    },
-    "stats": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "stats": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "Short label."
-          },
-          "value": {
-           "type": "string",
-           "description": "The figure with its unit, e.g. '24.2 kWh'."
-          },
-          "delta": {
-           "type": "string",
-           "description": "Change against the previous period, signed, e.g. '+12%' or '-0.4 kW'."
-          }
-         },
-         "required": [
-          "label",
-          "value",
-          "delta"
-         ],
-         "propertyOrdering": [
-          "label",
-          "value",
-          "delta"
-         ]
-        },
-        "description": "Headline numbers.",
-        "maxItems": 6,
-        "minItems": 2
-       }
-      },
-      "required": [
-       "stats"
-      ],
-      "propertyOrdering": [
-       "stats"
-      ]
-     },
-     "tree": [
-      {
-       "id": "stats",
-       "component": "Grid",
-       "min": 140,
-       "children": {
-        "path": "/stats",
-        "componentId": "stats_stat"
-       }
-      },
-      {
-       "id": "stats_stat",
-       "component": "Stat",
-       "label": {
-        "path": "label"
-       },
-       "value": {
-        "path": "value"
-       },
-       "delta": {
-        "path": "delta"
-       },
-       "tone": {
-        "path": "tone"
-       },
-       "flat": false
-      }
-     ]
-    }
-   },
-   "content": {
-    "header": {
-     "type": "object",
-     "properties": {
-      "header": {
-       "type": "object",
-       "properties": {
-        "title": {
-         "type": "string",
-         "description": "Screen title, at most four words."
-        },
-        "subtitle": {
-         "type": "string",
-         "description": "One short supporting line."
-        }
-       },
-       "required": [
-        "title",
-        "subtitle"
-       ],
-       "propertyOrdering": [
-        "title",
-        "subtitle"
-       ]
-      }
-     },
-     "required": [
-      "header"
-     ],
-     "propertyOrdering": [
-      "header"
-     ]
-    },
-    "nav": {
-     "type": "object",
-     "properties": {
-      "nav": {
-       "type": "object",
-       "properties": {
-        "items": {
-         "type": "array",
-         "items": {
-          "type": "object",
-          "properties": {
-           "label": {
-            "type": "string",
-            "description": "One word."
-           }
-          },
-          "required": [
-           "label"
-          ],
-          "propertyOrdering": [
-           "label"
-          ]
-         },
-         "description": "The app's three to five main destinations.",
-         "maxItems": 5,
-         "minItems": 3
-        },
-        "active": {
-         "type": "integer",
-         "description": "Index of the destination this screen belongs to."
-        }
-       },
-       "required": [
-        "items",
-        "active"
-       ],
-       "propertyOrdering": [
-        "items",
-        "active"
-       ]
-      }
-     },
-     "required": [
-      "nav"
-     ],
-     "propertyOrdering": [
-      "nav"
-     ]
-    }
-   },
-   "screen": [
-    {
-     "id": "root",
-     "component": "Screen",
-     "appBar": "appbar",
-     "body": "body"
-    },
-    {
-     "id": "appbar",
-     "component": "AppBar",
-     "title": {
-      "path": "/header/title"
-     },
-     "leading": "back",
-     "actions": [
-      "notifications"
-     ]
-    },
-    {
-     "id": "body",
-     "component": "Stack",
-     "gap": "lg",
-     "children": [
-      "banner",
-      "custom",
-      "stats"
-     ]
-    },
-    {
-     "id": "banner",
-     "component": "Banner",
-     "title": {
-      "path": "/banner/title"
-     },
-     "text": {
-      "path": "/banner/text"
-     },
-     "tone": {
-      "path": "/banner/tone"
-     }
-    },
-    {
-     "id": "custom",
-     "component": "Custom",
-     "use": {
-      "path": "/custom/use"
-     },
-     "ratio": "3:1",
-     "data": {
-      "path": "/custom/data"
-     },
-     "selection": {
-      "path": "/custom/selection"
-     },
-     "failed": {
-      "path": "/custom/failed"
-     }
-    },
-    {
-     "id": "stats",
-     "component": "Grid",
-     "min": 140,
-     "children": {
-      "path": "/stats",
-      "componentId": "stats_stat"
-     }
-    },
-    {
-     "id": "stats_stat",
-     "component": "Stat",
-     "label": {
-      "path": "label"
-     },
-     "value": {
-      "path": "value"
-     },
-     "delta": {
-      "path": "delta"
-     },
-     "tone": {
-      "path": "tone"
-     },
-     "flat": false
-    }
-   ]
-  },
-  {
-   "seed": 2008,
-   "look": {
-    "imagery": true,
-    "icons": true,
-    "contained": true
-   },
-   "reading": {
-    "kind": "form",
-    "blocks": [
-     "custom",
-     "form"
-    ],
-    "values": {
-     "archetype": "form",
+     "kind": "done",
+     "has_search": false,
      "has_banner": false,
      "has_hero": false,
-     "has_filters": false,
-     "search": false,
-     "has_custom": true,
-     "custom_use": "pick",
-     "custom_size": "tall",
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
      "custom_linked": false,
      "has_stats": false,
      "stat_deltas": false,
@@ -3030,767 +737,84 @@
      "item_time": false,
      "item_progress": false,
      "has_groups": false,
-     "has_facts": false,
-     "facts_total": false,
-     "has_prose": false,
+     "has_text": false,
+     "has_details": false,
+     "details_total": false,
      "has_steps": false,
-     "has_form": true,
-     "has_actions": false,
+     "has_form": false,
+     "has_features": false,
+     "has_buttons": true,
      "person": false,
-     "top_level": true,
-     "app_bar_action": "more",
-     "hero_subject": "water",
-     "item_subject": "wildlife",
-     "screen_icon": "kitchen",
-     "photographs": true,
-     "symbols": true,
-     "cards": true
+     "tab_root": false,
+     "sheet": true,
+     "editable": false,
+     "bar_action": "none",
+     "hero_subject": "gadget",
+     "item_subject": "work",
+     "screen_icon": "tv",
+     "no_photographs": true,
+     "no_symbols": true,
+     "no_cards": false
     }
    },
    "parts": {
-    "custom": {
-     "schema": null,
-     "tree": [
-      {
-       "id": "custom",
-       "component": "Custom",
-       "use": {
-        "path": "/custom/use"
-       },
-       "ratio": "3:4",
-       "data": {
-        "path": "/custom/data"
-       },
-       "selection": {
-        "path": "/custom/selection"
-       },
-       "failed": {
-        "path": "/custom/failed"
-       }
-      }
-     ]
-    },
-    "form": {
+    "buttons": {
      "schema": {
       "type": "object",
       "properties": {
-       "form": {
+       "buttons": {
         "type": "object",
         "properties": {
-         "heading": {
-          "type": "string",
-          "description": "Heading above the fields."
-         },
-         "submitLabel": {
-          "type": "string",
-          "description": "Label of the submit button."
-         },
-         "fields": {
+         "actions": {
           "type": "array",
           "items": {
            "type": "object",
            "properties": {
             "label": {
              "type": "string",
-             "description": "Field label."
-            },
-            "placeholder": {
-             "type": "string",
-             "description": "Example of what a person would enter, e.g. 'Jane Appleseed', 'name@example.com'."
-            },
-            "options": {
-             "type": "array",
-             "items": {
-              "type": "string",
-              "description": "Option label."
-             },
-             "description": "ONLY for fields where the person picks from three or more known choices. Never for yes/no fields.",
-             "maxItems": 8,
-             "minItems": 2
-            },
-            "min": {
-             "type": "number",
-             "description": "ONLY for bounded numeric fields."
-            },
-            "max": {
-             "type": "number",
-             "description": "ONLY for bounded numeric fields."
+             "description": "Button label, one to three words."
             }
            },
            "required": [
-            "label",
-            "placeholder"
+            "label"
            ],
            "propertyOrdering": [
-            "label",
-            "placeholder",
-            "options",
-            "min",
-            "max"
+            "label"
            ]
           },
-          "description": "The input fields.",
-          "maxItems": 8,
+          "description": "The buttons, one or two on most screens, the main one first and Cancel last if there is one.",
+          "maxItems": 5,
           "minItems": 1
          }
         },
         "required": [
-         "heading",
-         "submitLabel",
-         "fields"
+         "actions"
         ],
         "propertyOrdering": [
-         "heading",
-         "submitLabel",
-         "fields"
+         "actions"
         ]
        }
       },
       "required": [
-       "form"
+       "buttons"
       ],
       "propertyOrdering": [
-       "form"
+       "buttons"
       ]
      },
      "tree": [
       {
-       "id": "form",
-       "component": "Stack",
-       "gap": "md",
-       "children": [
-        "form_heading",
-        "form_fields",
-        "form_submit"
-       ]
-      },
-      {
-       "id": "form_heading",
-       "component": "Text",
-       "role": "title",
-       "text": {
-        "path": "/form/heading"
-       }
-      },
-      {
-       "id": "form_fields",
-       "component": "Stack",
-       "gap": "md",
-       "children": {
-        "path": "/form/fields",
-        "componentId": "form_field"
-       }
-      },
-      {
-       "id": "form_field",
-       "component": "Field",
-       "label": {
-        "path": "label"
-       },
-       "kind": {
-        "path": "kind"
-       },
-       "placeholder": {
-        "path": "placeholder"
-       },
-       "options": {
-        "path": "options"
-       },
-       "min": {
-        "path": "min"
-       },
-       "max": {
-        "path": "max"
-       }
-      },
-      {
-       "id": "form_submit",
-       "component": "Button",
-       "variant": "primary",
-       "full": true,
-       "label": {
-        "path": "/form/submitLabel"
-       },
-       "event": "submit"
-      }
-     ]
-    }
-   },
-   "content": {
-    "header": {
-     "type": "object",
-     "properties": {
-      "header": {
-       "type": "object",
-       "properties": {
-        "title": {
-         "type": "string",
-         "description": "Screen title, at most four words."
-        },
-        "subtitle": {
-         "type": "string",
-         "description": "One short supporting line."
-        }
-       },
-       "required": [
-        "title",
-        "subtitle"
-       ],
-       "propertyOrdering": [
-        "title",
-        "subtitle"
-       ]
-      }
-     },
-     "required": [
-      "header"
-     ],
-     "propertyOrdering": [
-      "header"
-     ]
-    },
-    "nav": {
-     "type": "object",
-     "properties": {
-      "nav": {
-       "type": "object",
-       "properties": {
-        "items": {
-         "type": "array",
-         "items": {
-          "type": "object",
-          "properties": {
-           "label": {
-            "type": "string",
-            "description": "One word."
-           }
-          },
-          "required": [
-           "label"
-          ],
-          "propertyOrdering": [
-           "label"
-          ]
-         },
-         "description": "The app's three to five main destinations.",
-         "maxItems": 5,
-         "minItems": 3
-        },
-        "active": {
-         "type": "integer",
-         "description": "Index of the destination this screen belongs to."
-        }
-       },
-       "required": [
-        "items",
-        "active"
-       ],
-       "propertyOrdering": [
-        "items",
-        "active"
-       ]
-      }
-     },
-     "required": [
-      "nav"
-     ],
-     "propertyOrdering": [
-      "nav"
-     ]
-    }
-   },
-   "screen": [
-    {
-     "id": "root",
-     "component": "Screen",
-     "appBar": "appbar",
-     "body": "body",
-     "navBar": "navbar"
-    },
-    {
-     "id": "appbar",
-     "component": "AppBar",
-     "leading": "none",
-     "actions": [
-      "more_vert"
-     ]
-    },
-    {
-     "id": "body",
-     "component": "Stack",
-     "gap": "lg",
-     "children": [
-      "large_title",
-      "intro",
-      "custom",
-      "form"
-     ]
-    },
-    {
-     "id": "large_title",
-     "component": "Text",
-     "role": "display",
-     "text": {
-      "path": "/header/title"
-     }
-    },
-    {
-     "id": "intro",
-     "component": "Text",
-     "tone": "muted",
-     "text": {
-      "path": "/header/subtitle"
-     }
-    },
-    {
-     "id": "navbar",
-     "component": "NavBar",
-     "items": {
-      "path": "/nav/items"
-     },
-     "active": {
-      "path": "/nav/active"
-     },
-     "icons": true,
-     "icon": {
-      "path": "icon"
-     }
-    },
-    {
-     "id": "custom",
-     "component": "Custom",
-     "use": {
-      "path": "/custom/use"
-     },
-     "ratio": "3:4",
-     "data": {
-      "path": "/custom/data"
-     },
-     "selection": {
-      "path": "/custom/selection"
-     },
-     "failed": {
-      "path": "/custom/failed"
-     }
-    },
-    {
-     "id": "form",
-     "component": "Stack",
-     "gap": "md",
-     "children": [
-      "form_heading",
-      "form_fields",
-      "form_submit"
-     ]
-    },
-    {
-     "id": "form_heading",
-     "component": "Text",
-     "role": "title",
-     "text": {
-      "path": "/form/heading"
-     }
-    },
-    {
-     "id": "form_fields",
-     "component": "Stack",
-     "gap": "md",
-     "children": {
-      "path": "/form/fields",
-      "componentId": "form_field"
-     }
-    },
-    {
-     "id": "form_field",
-     "component": "Field",
-     "label": {
-      "path": "label"
-     },
-     "kind": {
-      "path": "kind"
-     },
-     "placeholder": {
-      "path": "placeholder"
-     },
-     "options": {
-      "path": "options"
-     },
-     "min": {
-      "path": "min"
-     },
-     "max": {
-      "path": "max"
-     }
-    },
-    {
-     "id": "form_submit",
-     "component": "Button",
-     "variant": "primary",
-     "full": true,
-     "label": {
-      "path": "/form/submitLabel"
-     },
-     "event": "submit"
-    }
-   ]
-  },
-  {
-   "seed": 2009,
-   "look": {
-    "imagery": true,
-    "icons": false,
-    "contained": false
-   },
-   "reading": {
-    "kind": "checkout",
-    "blocks": [
-     "custom",
-     "list",
-     "facts",
-     "actions"
-    ],
-    "values": {
-     "archetype": "checkout",
-     "has_banner": false,
-     "has_hero": false,
-     "has_filters": false,
-     "search": false,
-     "has_custom": true,
-     "custom_use": "read",
-     "custom_size": "square",
-     "custom_linked": false,
-     "has_stats": false,
-     "stat_deltas": false,
-     "has_list": true,
-     "list_layout": "rows",
-     "item_leading": "number",
-     "item_trailing": "button",
-     "item_description": false,
-     "item_price": false,
-     "item_rating": false,
-     "item_status": true,
-     "item_time": false,
-     "item_progress": true,
-     "has_groups": false,
-     "has_facts": true,
-     "facts_total": false,
-     "has_prose": false,
-     "has_steps": false,
-     "has_form": false,
-     "has_actions": true,
-     "person": false,
-     "top_level": false,
-     "app_bar_action": "more",
-     "hero_subject": "dog",
-     "item_subject": "mountain",
-     "screen_icon": "family_restroom",
-     "photographs": true,
-     "symbols": false,
-     "cards": false
-    }
-   },
-   "parts": {
-    "custom": {
-     "schema": null,
-     "tree": [
-      {
-       "id": "custom",
-       "component": "Custom",
-       "use": {
-        "path": "/custom/use"
-       },
-       "ratio": "1:1",
-       "data": {
-        "path": "/custom/data"
-       },
-       "selection": {
-        "path": "/custom/selection"
-       },
-       "failed": {
-        "path": "/custom/failed"
-       }
-      }
-     ]
-    },
-    "list": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "list": {
-        "type": "object",
-        "properties": {
-         "heading": {
-          "type": "string",
-          "description": "Heading above the list."
-         },
-         "actionLabel": {
-          "type": "string",
-          "description": "One word for the button on every item, e.g. 'Book', 'Add', 'Play'."
-         },
-         "items": {
-          "type": "array",
-          "items": {
-           "type": "object",
-           "properties": {
-            "title": {
-             "type": "string",
-             "description": "The item's name."
-            },
-            "subtitle": {
-             "type": "string",
-             "description": "A short secondary line: category, author, place, variant."
-            },
-            "status": {
-             "type": "string",
-             "description": "One or two words: the item's current state."
-            },
-            "progress": {
-             "type": "number",
-             "description": "Percent from 0 to 100."
-            }
-           },
-           "required": [
-            "title",
-            "subtitle",
-            "status",
-            "progress"
-           ],
-           "propertyOrdering": [
-            "title",
-            "subtitle",
-            "status",
-            "progress"
-           ]
-          },
-          "description": "The items.",
-          "maxItems": 8,
-          "minItems": 3
-         }
-        },
-        "required": [
-         "heading",
-         "actionLabel",
-         "items"
-        ],
-        "propertyOrdering": [
-         "heading",
-         "actionLabel",
-         "items"
-        ]
-       }
-      },
-      "required": [
-       "list"
-      ],
-      "propertyOrdering": [
-       "list"
-      ]
-     },
-     "tree": [
-      {
-       "id": "list",
-       "component": "Stack",
-       "gap": "sm",
-       "children": [
-        "list_heading",
-        "list_items"
-       ]
-      },
-      {
-       "id": "list_heading",
-       "component": "Text",
-       "role": "title",
-       "text": {
-        "path": "/list/heading"
-       }
-      },
-      {
-       "id": "list_items",
-       "component": "Group",
-       "children": {
-        "path": "/list/items",
-        "componentId": "list_item"
-       },
-       "flat": true
-      },
-      {
-       "id": "list_item",
-       "component": "ListItem",
-       "headline": {
-        "path": "title"
-       },
-       "supporting": {
-        "path": "subtitle"
-       },
-       "leading": "list_item_leading",
-       "trailing": "list_item_trailing",
-       "below": "list_item_below"
-      },
-      {
-       "id": "list_item_below",
-       "component": "Stack",
-       "gap": "xs",
-       "children": [
-        "list_item_chips",
-        "list_item_progress"
-       ]
-      },
-      {
-       "id": "list_item_chips",
-       "component": "Cluster",
-       "gap": "sm",
-       "children": [
-        "list_item_badge"
-       ]
-      },
-      {
-       "id": "list_item_badge",
-       "component": "Badge",
-       "text": {
-        "path": "status"
-       },
-       "tone": {
-        "path": "tone"
-       }
-      },
-      {
-       "id": "list_item_progress",
-       "component": "Progress",
-       "value": {
-        "path": "progress"
-       },
-       "tone": {
-        "path": "tone"
-       }
-      },
-      {
-       "id": "list_item_leading",
-       "component": "Numeral"
-      },
-      {
-       "id": "list_item_trailing",
-       "component": "Button",
-       "label": {
-        "path": "/list/actionLabel"
-       },
-       "small": true,
-       "event": "itemAction"
-      }
-     ]
-    },
-    "facts": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "facts": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "Short label."
-          },
-          "value": {
-           "type": "string",
-           "description": "Short value."
-          }
-         },
-         "required": [
-          "label",
-          "value"
-         ],
-         "propertyOrdering": [
-          "label",
-          "value"
-         ]
-        },
-        "description": "Label-value details.",
-        "maxItems": 8,
-        "minItems": 2
-       }
-      },
-      "required": [
-       "facts"
-      ],
-      "propertyOrdering": [
-       "facts"
-      ]
-     },
-     "tree": [
-      {
-       "id": "facts",
-       "component": "Card",
-       "child": "facts_rows",
-       "flat": true
-      },
-      {
-       "id": "facts_rows",
-       "component": "Stack",
-       "gap": "none",
-       "children": {
-        "path": "/facts",
-        "componentId": "facts_row"
-       }
-      },
-      {
-       "id": "facts_row",
-       "component": "KeyValue",
-       "label": {
-        "path": "label"
-       },
-       "value": {
-        "path": "value"
-       }
-      }
-     ]
-    },
-    "actions": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "actions": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "Button label, one to three words."
-          }
-         },
-         "required": [
-          "label"
-         ],
-         "propertyOrdering": [
-          "label"
-         ]
-        },
-        "description": "One or two buttons, most important first.",
-        "maxItems": 2,
-        "minItems": 1
-       }
-      },
-      "required": [
-       "actions"
-      ],
-      "propertyOrdering": [
-       "actions"
-      ]
-     },
-     "tree": [
-      {
-       "id": "actions",
+       "id": "buttons",
        "component": "Cluster",
        "gap": "sm",
        "justify": "end",
        "children": {
-        "path": "/actions",
-        "componentId": "actions_action"
+        "path": "/buttons/actions",
+        "componentId": "buttons_action"
        }
       },
       {
-       "id": "actions_action",
+       "id": "buttons_action",
        "component": "Button",
        "label": {
         "path": "label"
@@ -3859,13 +883,830 @@
            "label"
           ]
          },
-         "description": "The app's three to five main destinations.",
+         "description": "The app's two to five tabs.",
          "maxItems": 5,
-         "minItems": 3
+         "minItems": 2
         },
         "active": {
          "type": "integer",
-         "description": "Index of the destination this screen belongs to."
+         "description": "Index of the tab this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Screen",
+     "body": "body",
+     "sticky": "sticky",
+     "presentation": "fullscreen"
+    },
+    {
+     "id": "body",
+     "component": "Stack",
+     "gap": "lg",
+     "children": [
+      "outcome"
+     ]
+    },
+    {
+     "id": "outcome",
+     "component": "Stack",
+     "gap": "sm",
+     "align": "center",
+     "children": [
+      "outcome_title",
+      "outcome_line"
+     ]
+    },
+    {
+     "id": "outcome_title",
+     "component": "Text",
+     "role": "headline",
+     "text": {
+      "path": "/header/title"
+     }
+    },
+    {
+     "id": "outcome_line",
+     "component": "Text",
+     "tone": "muted",
+     "text": {
+      "path": "/header/subtitle"
+     }
+    },
+    {
+     "id": "sticky",
+     "component": "StickyBar",
+     "child": "buttons"
+    },
+    {
+     "id": "buttons",
+     "component": "Cluster",
+     "gap": "sm",
+     "justify": "end",
+     "children": {
+      "path": "/buttons/actions",
+      "componentId": "buttons_action"
+     }
+    },
+    {
+     "id": "buttons_action",
+     "component": "Button",
+     "label": {
+      "path": "label"
+     },
+     "variant": {
+      "path": "variant"
+     },
+     "event": "action"
+    }
+   ]
+  },
+  {
+   "seed": 2003,
+   "look": {
+    "imagery": true,
+    "icons": true,
+    "contained": true
+   },
+   "reading": {
+    "kind": "done",
+    "blocks": [
+     "buttons"
+    ],
+    "values": {
+     "kind": "done",
+     "has_search": false,
+     "has_banner": false,
+     "has_hero": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_text": false,
+     "has_details": false,
+     "details_total": false,
+     "has_steps": false,
+     "has_form": false,
+     "has_features": false,
+     "has_buttons": true,
+     "person": false,
+     "tab_root": false,
+     "sheet": true,
+     "editable": false,
+     "bar_action": "none",
+     "hero_subject": "portrait",
+     "item_subject": "gadget",
+     "screen_icon": "key",
+     "no_photographs": false,
+     "no_symbols": false,
+     "no_cards": false
+    }
+   },
+   "parts": {
+    "buttons": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "buttons": {
+        "type": "object",
+        "properties": {
+         "actions": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "label": {
+             "type": "string",
+             "description": "Button label, one to three words."
+            }
+           },
+           "required": [
+            "label"
+           ],
+           "propertyOrdering": [
+            "label"
+           ]
+          },
+          "description": "The buttons, one or two on most screens, the main one first and Cancel last if there is one.",
+          "maxItems": 5,
+          "minItems": 1
+         }
+        },
+        "required": [
+         "actions"
+        ],
+        "propertyOrdering": [
+         "actions"
+        ]
+       }
+      },
+      "required": [
+       "buttons"
+      ],
+      "propertyOrdering": [
+       "buttons"
+      ]
+     },
+     "tree": [
+      {
+       "id": "buttons",
+       "component": "Cluster",
+       "gap": "sm",
+       "justify": "end",
+       "children": {
+        "path": "/buttons/actions",
+        "componentId": "buttons_action"
+       }
+      },
+      {
+       "id": "buttons_action",
+       "component": "Button",
+       "label": {
+        "path": "label"
+       },
+       "variant": {
+        "path": "variant"
+       },
+       "event": "action"
+      }
+     ]
+    }
+   },
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
+        },
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
+       },
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
+    },
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's two to five tabs.",
+         "maxItems": 5,
+         "minItems": 2
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the tab this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Screen",
+     "body": "body",
+     "sticky": "sticky",
+     "presentation": "fullscreen"
+    },
+    {
+     "id": "body",
+     "component": "Stack",
+     "gap": "lg",
+     "children": [
+      "outcome"
+     ]
+    },
+    {
+     "id": "outcome",
+     "component": "Stack",
+     "gap": "sm",
+     "align": "center",
+     "children": [
+      "outcome_icon",
+      "outcome_title",
+      "outcome_line"
+     ]
+    },
+    {
+     "id": "outcome_icon",
+     "component": "Icon",
+     "name": "key",
+     "boxed": true,
+     "size": 32
+    },
+    {
+     "id": "outcome_title",
+     "component": "Text",
+     "role": "headline",
+     "text": {
+      "path": "/header/title"
+     }
+    },
+    {
+     "id": "outcome_line",
+     "component": "Text",
+     "tone": "muted",
+     "text": {
+      "path": "/header/subtitle"
+     }
+    },
+    {
+     "id": "sticky",
+     "component": "StickyBar",
+     "child": "buttons"
+    },
+    {
+     "id": "buttons",
+     "component": "Cluster",
+     "gap": "sm",
+     "justify": "end",
+     "children": {
+      "path": "/buttons/actions",
+      "componentId": "buttons_action"
+     }
+    },
+    {
+     "id": "buttons_action",
+     "component": "Button",
+     "label": {
+      "path": "label"
+     },
+     "variant": {
+      "path": "variant"
+     },
+     "event": "action"
+    }
+   ]
+  },
+  {
+   "seed": 2004,
+   "look": {
+    "imagery": true,
+    "icons": true,
+    "contained": true
+   },
+   "reading": {
+    "kind": "done",
+    "blocks": [
+     "buttons"
+    ],
+    "values": {
+     "kind": "done",
+     "has_search": false,
+     "has_banner": false,
+     "has_hero": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_text": false,
+     "has_details": false,
+     "details_total": false,
+     "has_steps": false,
+     "has_form": false,
+     "has_features": false,
+     "has_buttons": true,
+     "person": false,
+     "tab_root": false,
+     "sheet": true,
+     "editable": false,
+     "bar_action": "none",
+     "hero_subject": "work",
+     "item_subject": "water",
+     "screen_icon": "savings",
+     "no_photographs": false,
+     "no_symbols": false,
+     "no_cards": false
+    }
+   },
+   "parts": {
+    "buttons": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "buttons": {
+        "type": "object",
+        "properties": {
+         "actions": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "label": {
+             "type": "string",
+             "description": "Button label, one to three words."
+            }
+           },
+           "required": [
+            "label"
+           ],
+           "propertyOrdering": [
+            "label"
+           ]
+          },
+          "description": "The buttons, one or two on most screens, the main one first and Cancel last if there is one.",
+          "maxItems": 5,
+          "minItems": 1
+         }
+        },
+        "required": [
+         "actions"
+        ],
+        "propertyOrdering": [
+         "actions"
+        ]
+       }
+      },
+      "required": [
+       "buttons"
+      ],
+      "propertyOrdering": [
+       "buttons"
+      ]
+     },
+     "tree": [
+      {
+       "id": "buttons",
+       "component": "Cluster",
+       "gap": "sm",
+       "justify": "end",
+       "children": {
+        "path": "/buttons/actions",
+        "componentId": "buttons_action"
+       }
+      },
+      {
+       "id": "buttons_action",
+       "component": "Button",
+       "label": {
+        "path": "label"
+       },
+       "variant": {
+        "path": "variant"
+       },
+       "event": "action"
+      }
+     ]
+    }
+   },
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
+        },
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
+       },
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
+    },
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's two to five tabs.",
+         "maxItems": 5,
+         "minItems": 2
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the tab this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Screen",
+     "body": "body",
+     "sticky": "sticky",
+     "presentation": "fullscreen"
+    },
+    {
+     "id": "body",
+     "component": "Stack",
+     "gap": "lg",
+     "children": [
+      "outcome"
+     ]
+    },
+    {
+     "id": "outcome",
+     "component": "Stack",
+     "gap": "sm",
+     "align": "center",
+     "children": [
+      "outcome_icon",
+      "outcome_title",
+      "outcome_line"
+     ]
+    },
+    {
+     "id": "outcome_icon",
+     "component": "Icon",
+     "name": "savings",
+     "boxed": true,
+     "size": 32
+    },
+    {
+     "id": "outcome_title",
+     "component": "Text",
+     "role": "headline",
+     "text": {
+      "path": "/header/title"
+     }
+    },
+    {
+     "id": "outcome_line",
+     "component": "Text",
+     "tone": "muted",
+     "text": {
+      "path": "/header/subtitle"
+     }
+    },
+    {
+     "id": "sticky",
+     "component": "StickyBar",
+     "child": "buttons"
+    },
+    {
+     "id": "buttons",
+     "component": "Cluster",
+     "gap": "sm",
+     "justify": "end",
+     "children": {
+      "path": "/buttons/actions",
+      "componentId": "buttons_action"
+     }
+    },
+    {
+     "id": "buttons_action",
+     "component": "Button",
+     "label": {
+      "path": "label"
+     },
+     "variant": {
+      "path": "variant"
+     },
+     "event": "action"
+    }
+   ]
+  },
+  {
+   "seed": 2005,
+   "look": {
+    "imagery": false,
+    "icons": true,
+    "contained": true
+   },
+   "reading": {
+    "kind": "detail",
+    "blocks": [
+     "text"
+    ],
+    "values": {
+     "kind": "detail",
+     "has_search": false,
+     "has_banner": false,
+     "has_hero": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_text": true,
+     "has_details": false,
+     "details_total": false,
+     "has_steps": false,
+     "has_form": false,
+     "has_features": false,
+     "has_buttons": false,
+     "person": true,
+     "tab_root": true,
+     "sheet": true,
+     "editable": false,
+     "bar_action": "share",
+     "hero_subject": "story",
+     "item_subject": "stay",
+     "screen_icon": "savings",
+     "no_photographs": true,
+     "no_symbols": false,
+     "no_cards": false
+    }
+   },
+   "parts": {
+    "text": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "text": {
+        "type": "object",
+        "properties": {
+         "body": {
+          "type": "string",
+          "description": "Body text. Simple markdown (bold, short bullet lists) is allowed."
+         }
+        },
+        "required": [
+         "body"
+        ],
+        "propertyOrdering": [
+         "body"
+        ]
+       }
+      },
+      "required": [
+       "text"
+      ],
+      "propertyOrdering": [
+       "text"
+      ]
+     },
+     "tree": [
+      {
+       "id": "text",
+       "component": "Text",
+       "markdown": true,
+       "text": {
+        "path": "/text/body"
+       }
+      }
+     ]
+    }
+   },
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
+        },
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
+       },
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
+    },
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's two to five tabs.",
+         "maxItems": 5,
+         "minItems": 2
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the tab this screen belongs to."
         }
        },
        "required": [
@@ -3892,7 +1733,530 @@
      "component": "Screen",
      "appBar": "appbar",
      "body": "body",
-     "sticky": "sticky"
+     "navBar": "navbar",
+     "presentation": "sheet"
+    },
+    {
+     "id": "appbar",
+     "component": "AppBar",
+     "leading": "none",
+     "actions": [
+      "ios_share"
+     ]
+    },
+    {
+     "id": "body",
+     "component": "Stack",
+     "gap": "lg",
+     "children": [
+      "person",
+      "text"
+     ]
+    },
+    {
+     "id": "person",
+     "component": "Stack",
+     "gap": "xs",
+     "align": "center",
+     "children": [
+      "person_avatar",
+      "person_name",
+      "person_line"
+     ]
+    },
+    {
+     "id": "person_avatar",
+     "component": "Avatar",
+     "name": {
+      "path": "/header/title"
+     },
+     "url": {
+      "path": "/header/imageUrl"
+     },
+     "size": 88
+    },
+    {
+     "id": "person_name",
+     "component": "Text",
+     "role": "headline",
+     "text": {
+      "path": "/header/title"
+     }
+    },
+    {
+     "id": "person_line",
+     "component": "Text",
+     "tone": "muted",
+     "text": {
+      "path": "/header/subtitle"
+     }
+    },
+    {
+     "id": "navbar",
+     "component": "NavBar",
+     "items": {
+      "path": "/nav/items"
+     },
+     "active": {
+      "path": "/nav/active"
+     },
+     "icons": true,
+     "icon": {
+      "path": "icon"
+     }
+    },
+    {
+     "id": "text",
+     "component": "Text",
+     "markdown": true,
+     "text": {
+      "path": "/text/body"
+     }
+    }
+   ]
+  },
+  {
+   "seed": 2006,
+   "look": {
+    "imagery": false,
+    "icons": true,
+    "contained": true
+   },
+   "reading": {
+    "kind": "alert",
+    "blocks": [
+     "buttons"
+    ],
+    "values": {
+     "kind": "alert",
+     "has_search": false,
+     "has_banner": false,
+     "has_hero": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_text": false,
+     "has_details": false,
+     "details_total": false,
+     "has_steps": false,
+     "has_form": false,
+     "has_features": false,
+     "has_buttons": true,
+     "person": false,
+     "tab_root": false,
+     "sheet": false,
+     "editable": false,
+     "bar_action": "none",
+     "hero_subject": "story",
+     "item_subject": "plant",
+     "screen_icon": "newspaper",
+     "no_photographs": true,
+     "no_symbols": false,
+     "no_cards": false
+    }
+   },
+   "parts": {
+    "buttons": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "buttons": {
+        "type": "object",
+        "properties": {
+         "actions": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "label": {
+             "type": "string",
+             "description": "Button label, one to three words."
+            }
+           },
+           "required": [
+            "label"
+           ],
+           "propertyOrdering": [
+            "label"
+           ]
+          },
+          "description": "The buttons, one or two on most screens, the main one first and Cancel last if there is one. Two buttons, the confirming one first and Cancel second; three only if there are three real choices.",
+          "maxItems": 5,
+          "minItems": 1
+         }
+        },
+        "required": [
+         "actions"
+        ],
+        "propertyOrdering": [
+         "actions"
+        ]
+       }
+      },
+      "required": [
+       "buttons"
+      ],
+      "propertyOrdering": [
+       "buttons"
+      ]
+     },
+     "tree": [
+      {
+       "id": "buttons",
+       "component": "Cluster",
+       "gap": "sm",
+       "justify": "end",
+       "children": {
+        "path": "/buttons/actions",
+        "componentId": "buttons_action"
+       }
+      },
+      {
+       "id": "buttons_action",
+       "component": "Button",
+       "label": {
+        "path": "label"
+       },
+       "variant": {
+        "path": "variant"
+       },
+       "event": "action"
+      }
+     ]
+    }
+   },
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
+        },
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
+       },
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
+    },
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's two to five tabs.",
+         "maxItems": 5,
+         "minItems": 2
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the tab this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Screen",
+     "body": "dialog",
+     "dialog": true
+    },
+    {
+     "id": "dialog",
+     "component": "Card",
+     "child": "dialog_body"
+    },
+    {
+     "id": "dialog_body",
+     "component": "Stack",
+     "gap": "md",
+     "children": [
+      "dialog_title",
+      "buttons"
+     ]
+    },
+    {
+     "id": "dialog_title",
+     "component": "Text",
+     "role": "headline",
+     "text": {
+      "path": "/header/title"
+     }
+    },
+    {
+     "id": "buttons",
+     "component": "Cluster",
+     "gap": "sm",
+     "justify": "end",
+     "children": {
+      "path": "/buttons/actions",
+      "componentId": "buttons_action"
+     }
+    },
+    {
+     "id": "buttons_action",
+     "component": "Button",
+     "label": {
+      "path": "label"
+     },
+     "variant": {
+      "path": "variant"
+     },
+     "event": "action"
+    }
+   ]
+  },
+  {
+   "seed": 2007,
+   "look": {
+    "imagery": false,
+    "icons": true,
+    "contained": true
+   },
+   "reading": {
+    "kind": "detail",
+    "blocks": [
+     "text"
+    ],
+    "values": {
+     "kind": "detail",
+     "has_search": false,
+     "has_banner": false,
+     "has_hero": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_text": true,
+     "has_details": false,
+     "details_total": false,
+     "has_steps": false,
+     "has_form": false,
+     "has_features": false,
+     "has_buttons": false,
+     "person": false,
+     "tab_root": false,
+     "sheet": false,
+     "editable": false,
+     "bar_action": "info",
+     "hero_subject": "art",
+     "item_subject": "play",
+     "screen_icon": "support_agent",
+     "no_photographs": true,
+     "no_symbols": false,
+     "no_cards": false
+    }
+   },
+   "parts": {
+    "text": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "text": {
+        "type": "object",
+        "properties": {
+         "body": {
+          "type": "string",
+          "description": "Body text. Simple markdown (bold, short bullet lists) is allowed."
+         }
+        },
+        "required": [
+         "body"
+        ],
+        "propertyOrdering": [
+         "body"
+        ]
+       }
+      },
+      "required": [
+       "text"
+      ],
+      "propertyOrdering": [
+       "text"
+      ]
+     },
+     "tree": [
+      {
+       "id": "text",
+       "component": "Text",
+       "markdown": true,
+       "text": {
+        "path": "/text/body"
+       }
+      }
+     ]
+    }
+   },
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
+        },
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
+       },
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
+    },
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's two to five tabs.",
+         "maxItems": 5,
+         "minItems": 2
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the tab this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Screen",
+     "appBar": "appbar",
+     "body": "body"
     },
     {
      "id": "appbar",
@@ -3902,7 +2266,7 @@
      },
      "leading": "back",
      "actions": [
-      "more_vert"
+      "info"
      ]
     },
     {
@@ -3911,9 +2275,7 @@
      "gap": "lg",
      "children": [
       "intro",
-      "custom",
-      "list",
-      "facts"
+      "text"
      ]
     },
     {
@@ -3925,153 +2287,650 @@
      }
     },
     {
-     "id": "sticky",
-     "component": "StickyBar",
-     "child": "actions"
-    },
-    {
-     "id": "custom",
-     "component": "Custom",
-     "use": {
-      "path": "/custom/use"
-     },
-     "ratio": "1:1",
-     "data": {
-      "path": "/custom/data"
-     },
-     "selection": {
-      "path": "/custom/selection"
-     },
-     "failed": {
-      "path": "/custom/failed"
+     "id": "text",
+     "component": "Text",
+     "markdown": true,
+     "text": {
+      "path": "/text/body"
      }
+    }
+   ]
+  },
+  {
+   "seed": 2008,
+   "look": {
+    "imagery": true,
+    "icons": true,
+    "contained": true
+   },
+   "reading": {
+    "kind": "choices",
+    "blocks": [
+     "buttons"
+    ],
+    "values": {
+     "kind": "choices",
+     "has_search": false,
+     "has_banner": false,
+     "has_hero": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_text": false,
+     "has_details": false,
+     "details_total": false,
+     "has_steps": false,
+     "has_form": false,
+     "has_features": false,
+     "has_buttons": true,
+     "person": false,
+     "tab_root": false,
+     "sheet": true,
+     "editable": false,
+     "bar_action": "none",
+     "hero_subject": "water",
+     "item_subject": "wildlife",
+     "screen_icon": "kitchen",
+     "no_photographs": false,
+     "no_symbols": false,
+     "no_cards": false
+    }
+   },
+   "parts": {
+    "buttons": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "buttons": {
+        "type": "object",
+        "properties": {
+         "actions": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "label": {
+             "type": "string",
+             "description": "Button label, one to three words."
+            }
+           },
+           "required": [
+            "label"
+           ],
+           "propertyOrdering": [
+            "label"
+           ]
+          },
+          "description": "The buttons, one or two on most screens, the main one first and Cancel last if there is one. Two to four choices, and then always one more button labelled 'Cancel', last.",
+          "maxItems": 5,
+          "minItems": 1
+         }
+        },
+        "required": [
+         "actions"
+        ],
+        "propertyOrdering": [
+         "actions"
+        ]
+       }
+      },
+      "required": [
+       "buttons"
+      ],
+      "propertyOrdering": [
+       "buttons"
+      ]
+     },
+     "tree": [
+      {
+       "id": "buttons",
+       "component": "Cluster",
+       "gap": "sm",
+       "justify": "end",
+       "children": {
+        "path": "/buttons/actions",
+        "componentId": "buttons_action"
+       }
+      },
+      {
+       "id": "buttons_action",
+       "component": "Button",
+       "label": {
+        "path": "label"
+       },
+       "variant": {
+        "path": "variant"
+       },
+       "event": "action"
+      }
+     ]
+    }
+   },
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
+        },
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
+       },
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
+    },
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's two to five tabs.",
+         "maxItems": 5,
+         "minItems": 2
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the tab this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Screen",
+     "body": "dialog",
+     "dialog": true,
+     "presentation": "actionsheet"
     },
     {
-     "id": "list",
+     "id": "dialog",
+     "component": "Card",
+     "child": "dialog_body"
+    },
+    {
+     "id": "dialog_body",
      "component": "Stack",
-     "gap": "sm",
+     "gap": "md",
      "children": [
-      "list_heading",
-      "list_items"
+      "dialog_title",
+      "buttons"
      ]
     },
     {
-     "id": "list_heading",
+     "id": "dialog_title",
      "component": "Text",
-     "role": "title",
+     "role": "headline",
      "text": {
-      "path": "/list/heading"
+      "path": "/header/title"
      }
     },
     {
-     "id": "list_items",
+     "id": "buttons",
+     "component": "Cluster",
+     "gap": "sm",
+     "justify": "end",
+     "children": {
+      "path": "/buttons/actions",
+      "componentId": "buttons_action"
+     }
+    },
+    {
+     "id": "buttons_action",
+     "component": "Button",
+     "label": {
+      "path": "label"
+     },
+     "variant": {
+      "path": "variant"
+     },
+     "event": "action"
+    }
+   ]
+  },
+  {
+   "seed": 2009,
+   "look": {
+    "imagery": true,
+    "icons": false,
+    "contained": false
+   },
+   "reading": {
+    "kind": "welcome",
+    "blocks": [
+     "features",
+     "buttons"
+    ],
+    "values": {
+     "kind": "welcome",
+     "has_search": false,
+     "has_banner": false,
+     "has_hero": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_text": false,
+     "has_details": false,
+     "details_total": false,
+     "has_steps": false,
+     "has_form": false,
+     "has_features": true,
+     "has_buttons": true,
+     "person": false,
+     "tab_root": false,
+     "sheet": false,
+     "editable": false,
+     "bar_action": "none",
+     "hero_subject": "dog",
+     "item_subject": "mountain",
+     "screen_icon": "family_restroom",
+     "no_photographs": false,
+     "no_symbols": true,
+     "no_cards": true
+    }
+   },
+   "parts": {
+    "features": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "features": {
+        "type": "object",
+        "properties": {
+         "items": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "title": {
+             "type": "string",
+             "description": "Two to four words."
+            },
+            "description": {
+             "type": "string",
+             "description": "One sentence, what it does for the person."
+            }
+           },
+           "required": [
+            "title",
+            "description"
+           ],
+           "propertyOrdering": [
+            "title",
+            "description"
+           ]
+          },
+          "description": "Three or four features, most important first.",
+          "maxItems": 4,
+          "minItems": 3
+         }
+        },
+        "required": [
+         "items"
+        ],
+        "propertyOrdering": [
+         "items"
+        ]
+       }
+      },
+      "required": [
+       "features"
+      ],
+      "propertyOrdering": [
+       "features"
+      ]
+     },
+     "tree": [
+      {
+       "id": "features",
+       "component": "Stack",
+       "gap": "sm",
+       "children": [
+        "features_items"
+       ]
+      },
+      {
+       "id": "features_items",
+       "component": "Group",
+       "children": {
+        "path": "/features/items",
+        "componentId": "features_item"
+       },
+       "flat": true
+      },
+      {
+       "id": "features_item",
+       "component": "ListItem",
+       "headline": {
+        "path": "title"
+       },
+       "supporting": {
+        "path": "description"
+       },
+       "leading": "features_item_leading"
+      },
+      {
+       "id": "features_item_leading",
+       "component": "Icon",
+       "name": {
+        "path": "icon"
+       },
+       "boxed": true
+      }
+     ]
+    },
+    "buttons": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "buttons": {
+        "type": "object",
+        "properties": {
+         "actions": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "label": {
+             "type": "string",
+             "description": "Button label, one to three words."
+            }
+           },
+           "required": [
+            "label"
+           ],
+           "propertyOrdering": [
+            "label"
+           ]
+          },
+          "description": "The buttons, one or two on most screens, the main one first and Cancel last if there is one.",
+          "maxItems": 5,
+          "minItems": 1
+         }
+        },
+        "required": [
+         "actions"
+        ],
+        "propertyOrdering": [
+         "actions"
+        ]
+       }
+      },
+      "required": [
+       "buttons"
+      ],
+      "propertyOrdering": [
+       "buttons"
+      ]
+     },
+     "tree": [
+      {
+       "id": "buttons",
+       "component": "Cluster",
+       "gap": "sm",
+       "justify": "end",
+       "children": {
+        "path": "/buttons/actions",
+        "componentId": "buttons_action"
+       }
+      },
+      {
+       "id": "buttons_action",
+       "component": "Button",
+       "label": {
+        "path": "label"
+       },
+       "variant": {
+        "path": "variant"
+       },
+       "event": "action"
+      }
+     ]
+    }
+   },
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
+        },
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
+       },
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
+    },
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's two to five tabs.",
+         "maxItems": 5,
+         "minItems": 2
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the tab this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Screen",
+     "body": "body",
+     "sticky": "sticky",
+     "presentation": "fullscreen"
+    },
+    {
+     "id": "body",
+     "component": "Stack",
+     "gap": "lg",
+     "children": [
+      "large_title",
+      "features"
+     ]
+    },
+    {
+     "id": "large_title",
+     "component": "Text",
+     "role": "display",
+     "text": {
+      "path": "/header/title"
+     }
+    },
+    {
+     "id": "sticky",
+     "component": "StickyBar",
+     "child": "buttons"
+    },
+    {
+     "id": "features",
+     "component": "Stack",
+     "gap": "sm",
+     "children": [
+      "features_items"
+     ]
+    },
+    {
+     "id": "features_items",
      "component": "Group",
      "children": {
-      "path": "/list/items",
-      "componentId": "list_item"
+      "path": "/features/items",
+      "componentId": "features_item"
      },
      "flat": true
     },
     {
-     "id": "list_item",
+     "id": "features_item",
      "component": "ListItem",
      "headline": {
       "path": "title"
      },
      "supporting": {
-      "path": "subtitle"
+      "path": "description"
      },
-     "leading": "list_item_leading",
-     "trailing": "list_item_trailing",
-     "below": "list_item_below"
+     "leading": "features_item_leading"
     },
     {
-     "id": "list_item_below",
-     "component": "Stack",
-     "gap": "xs",
-     "children": [
-      "list_item_chips",
-      "list_item_progress"
-     ]
-    },
-    {
-     "id": "list_item_chips",
-     "component": "Cluster",
-     "gap": "sm",
-     "children": [
-      "list_item_badge"
-     ]
-    },
-    {
-     "id": "list_item_badge",
-     "component": "Badge",
-     "text": {
-      "path": "status"
+     "id": "features_item_leading",
+     "component": "Icon",
+     "name": {
+      "path": "icon"
      },
-     "tone": {
-      "path": "tone"
-     }
+     "boxed": true
     },
     {
-     "id": "list_item_progress",
-     "component": "Progress",
-     "value": {
-      "path": "progress"
-     },
-     "tone": {
-      "path": "tone"
-     }
-    },
-    {
-     "id": "list_item_leading",
-     "component": "Numeral"
-    },
-    {
-     "id": "list_item_trailing",
-     "component": "Button",
-     "label": {
-      "path": "/list/actionLabel"
-     },
-     "small": true,
-     "event": "itemAction"
-    },
-    {
-     "id": "facts",
-     "component": "Card",
-     "child": "facts_rows",
-     "flat": true
-    },
-    {
-     "id": "facts_rows",
-     "component": "Stack",
-     "gap": "none",
-     "children": {
-      "path": "/facts",
-      "componentId": "facts_row"
-     }
-    },
-    {
-     "id": "facts_row",
-     "component": "KeyValue",
-     "label": {
-      "path": "label"
-     },
-     "value": {
-      "path": "value"
-     }
-    },
-    {
-     "id": "actions",
+     "id": "buttons",
      "component": "Cluster",
      "gap": "sm",
      "justify": "end",
      "children": {
-      "path": "/actions",
-      "componentId": "actions_action"
+      "path": "/buttons/actions",
+      "componentId": "buttons_action"
      }
     },
     {
-     "id": "actions_action",
+     "id": "buttons_action",
      "component": "Button",
      "label": {
       "path": "label"
@@ -4091,99 +2950,75 @@
     "contained": true
    },
    "reading": {
-    "kind": "feed",
+    "kind": "browse",
     "blocks": [
-     "filters",
+     "custom",
      "list"
     ],
     "values": {
-     "archetype": "feed",
+     "kind": "browse",
+     "has_search": false,
      "has_banner": false,
      "has_hero": false,
-     "has_filters": true,
-     "search": false,
-     "has_custom": false,
-     "custom_use": "watch",
-     "custom_size": "strip",
-     "custom_linked": false,
+     "has_custom": true,
+     "custom_use": "adjust",
+     "custom_size": "wide",
+     "custom_linked": true,
      "has_stats": false,
      "stat_deltas": false,
      "has_list": true,
      "list_layout": "rows",
-     "item_leading": "number",
-     "item_trailing": "checkbox",
+     "item_leading": "none",
+     "item_trailing": "chevron",
      "item_description": true,
-     "item_price": true,
-     "item_rating": false,
-     "item_status": false,
+     "item_price": false,
+     "item_rating": true,
+     "item_status": true,
      "item_time": false,
-     "item_progress": true,
+     "item_progress": false,
      "has_groups": false,
-     "has_facts": false,
-     "facts_total": false,
-     "has_prose": false,
+     "has_text": false,
+     "has_details": false,
+     "details_total": false,
      "has_steps": false,
      "has_form": false,
-     "has_actions": false,
+     "has_features": false,
+     "has_buttons": false,
      "person": false,
-     "top_level": true,
-     "app_bar_action": "share",
+     "tab_root": true,
+     "sheet": false,
+     "editable": true,
+     "bar_action": "more",
      "hero_subject": "venue",
      "item_subject": "beach",
      "screen_icon": "print",
-     "photographs": true,
-     "symbols": false,
-     "cards": true
+     "no_photographs": false,
+     "no_symbols": true,
+     "no_cards": false
     }
    },
    "parts": {
-    "filters": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "filters": {
-        "type": "object",
-        "properties": {
-         "chips": {
-          "type": "array",
-          "items": {
-           "type": "string",
-           "description": "One or two words."
-          },
-          "description": "Filter categories. The first is the one currently selected, usually 'All'.",
-          "maxItems": 6,
-          "minItems": 3
-         }
-        },
-        "required": [
-         "chips"
-        ],
-        "propertyOrdering": [
-         "chips"
-        ]
-       }
-      },
-      "required": [
-       "filters"
-      ],
-      "propertyOrdering": [
-       "filters"
-      ]
-     },
+    "custom": {
+     "schema": null,
      "tree": [
       {
-       "id": "filters",
-       "component": "Stack",
-       "gap": "sm",
-       "children": [
-        "filters_chips"
-       ]
-      },
-      {
-       "id": "filters_chips",
-       "component": "Chips",
+       "id": "custom",
+       "component": "Custom",
+       "use": {
+        "path": "/custom/use"
+       },
+       "ratio": "16:9",
+       "data": {
+        "path": "/custom/data"
+       },
+       "selection": {
+        "path": "/custom/selection"
+       },
+       "failed": {
+        "path": "/custom/failed"
+       },
        "items": {
-        "path": "/filters/chips"
+        "path": "/list/items"
        }
       }
      ]
@@ -4212,34 +3047,34 @@
              "type": "string",
              "description": "One sentence."
             },
-            "price": {
-             "type": "string",
-             "description": "Price or amount with currency, e.g. '$24.00'."
-            },
-            "progress": {
+            "rating": {
              "type": "number",
-             "description": "Percent from 0 to 100."
+             "description": "Rating out of 5, one decimal."
             },
-            "on": {
-             "type": "boolean",
-             "description": "Whether it is currently on or ticked."
+            "reviews": {
+             "type": "string",
+             "description": "Number of reviews, e.g. '128'."
+            },
+            "status": {
+             "type": "string",
+             "description": "One or two words: the item's current state."
             }
            },
            "required": [
             "title",
             "subtitle",
             "description",
-            "price",
-            "progress",
-            "on"
+            "rating",
+            "reviews",
+            "status"
            ],
            "propertyOrdering": [
             "title",
             "subtitle",
             "description",
-            "price",
-            "progress",
-            "on"
+            "rating",
+            "reviews",
+            "status"
            ]
           },
           "description": "The items.",
@@ -4292,10 +3127,6 @@
        "supporting": {
         "path": "description"
        },
-       "meta": {
-        "path": "price"
-       },
-       "leading": "list_item_leading",
        "trailing": "list_item_trailing",
        "below": "list_item_below"
       },
@@ -4304,29 +3135,44 @@
        "component": "Stack",
        "gap": "xs",
        "children": [
-        "list_item_progress"
+        "list_item_chips"
        ]
       },
       {
-       "id": "list_item_progress",
-       "component": "Progress",
+       "id": "list_item_chips",
+       "component": "Cluster",
+       "gap": "sm",
+       "children": [
+        "list_item_rating",
+        "list_item_badge"
+       ]
+      },
+      {
+       "id": "list_item_rating",
+       "component": "Rating",
        "value": {
-        "path": "progress"
+        "path": "rating"
+       },
+       "count": {
+        "path": "reviews"
+       }
+      },
+      {
+       "id": "list_item_badge",
+       "component": "Badge",
+       "text": {
+        "path": "status"
        },
        "tone": {
         "path": "tone"
        }
       },
       {
-       "id": "list_item_leading",
-       "component": "Numeral"
-      },
-      {
        "id": "list_item_trailing",
-       "component": "Checkbox",
-       "on": {
-        "path": "on"
-       }
+       "component": "Icon",
+       "name": "chevron_right",
+       "tone": "muted",
+       "size": 20
       }
      ]
     }
@@ -4387,13 +3233,13 @@
            "label"
           ]
          },
-         "description": "The app's three to five main destinations.",
+         "description": "The app's two to five tabs.",
          "maxItems": 5,
-         "minItems": 3
+         "minItems": 2
         },
         "active": {
          "type": "integer",
-         "description": "Index of the destination this screen belongs to."
+         "description": "Index of the tab this screen belongs to."
         }
        },
        "required": [
@@ -4427,8 +3273,9 @@
      "component": "AppBar",
      "leading": "none",
      "actions": [
-      "share"
-     ]
+      "more_horiz"
+     ],
+     "trailing": "Edit"
     },
     {
      "id": "body",
@@ -4436,7 +3283,7 @@
      "gap": "lg",
      "children": [
       "large_title",
-      "filters",
+      "custom",
       "list"
      ]
     },
@@ -4446,866 +3293,6 @@
      "role": "display",
      "text": {
       "path": "/header/title"
-     }
-    },
-    {
-     "id": "navbar",
-     "component": "NavBar",
-     "items": {
-      "path": "/nav/items"
-     },
-     "active": {
-      "path": "/nav/active"
-     },
-     "icons": false
-    },
-    {
-     "id": "filters",
-     "component": "Stack",
-     "gap": "sm",
-     "children": [
-      "filters_chips"
-     ]
-    },
-    {
-     "id": "filters_chips",
-     "component": "Chips",
-     "items": {
-      "path": "/filters/chips"
-     }
-    },
-    {
-     "id": "list",
-     "component": "Stack",
-     "gap": "sm",
-     "children": [
-      "list_items"
-     ]
-    },
-    {
-     "id": "list_items",
-     "component": "Group",
-     "children": {
-      "path": "/list/items",
-      "componentId": "list_item"
-     },
-     "flat": false
-    },
-    {
-     "id": "list_item",
-     "component": "ListItem",
-     "headline": {
-      "path": "title"
-     },
-     "overline": {
-      "path": "subtitle"
-     },
-     "supporting": {
-      "path": "description"
-     },
-     "meta": {
-      "path": "price"
-     },
-     "leading": "list_item_leading",
-     "trailing": "list_item_trailing",
-     "below": "list_item_below"
-    },
-    {
-     "id": "list_item_below",
-     "component": "Stack",
-     "gap": "xs",
-     "children": [
-      "list_item_progress"
-     ]
-    },
-    {
-     "id": "list_item_progress",
-     "component": "Progress",
-     "value": {
-      "path": "progress"
-     },
-     "tone": {
-      "path": "tone"
-     }
-    },
-    {
-     "id": "list_item_leading",
-     "component": "Numeral"
-    },
-    {
-     "id": "list_item_trailing",
-     "component": "Checkbox",
-     "on": {
-      "path": "on"
-     }
-    }
-   ]
-  },
-  {
-   "seed": 2011,
-   "look": {
-    "imagery": true,
-    "icons": false,
-    "contained": false
-   },
-   "reading": {
-    "kind": "form",
-    "blocks": [
-     "custom",
-     "form"
-    ],
-    "values": {
-     "archetype": "form",
-     "has_banner": false,
-     "has_hero": false,
-     "has_filters": false,
-     "search": false,
-     "has_custom": true,
-     "custom_use": "pick",
-     "custom_size": "tall",
-     "custom_linked": false,
-     "has_stats": false,
-     "stat_deltas": false,
-     "has_list": false,
-     "list_layout": "rows",
-     "item_leading": "none",
-     "item_trailing": "none",
-     "item_description": false,
-     "item_price": false,
-     "item_rating": false,
-     "item_status": false,
-     "item_time": false,
-     "item_progress": false,
-     "has_groups": false,
-     "has_facts": false,
-     "facts_total": false,
-     "has_prose": false,
-     "has_steps": false,
-     "has_form": true,
-     "has_actions": false,
-     "person": false,
-     "top_level": false,
-     "app_bar_action": "notifications",
-     "hero_subject": "transit",
-     "item_subject": "home",
-     "screen_icon": "wb_sunny",
-     "photographs": true,
-     "symbols": false,
-     "cards": false
-    }
-   },
-   "parts": {
-    "custom": {
-     "schema": null,
-     "tree": [
-      {
-       "id": "custom",
-       "component": "Custom",
-       "use": {
-        "path": "/custom/use"
-       },
-       "ratio": "3:4",
-       "data": {
-        "path": "/custom/data"
-       },
-       "selection": {
-        "path": "/custom/selection"
-       },
-       "failed": {
-        "path": "/custom/failed"
-       }
-      }
-     ]
-    },
-    "form": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "form": {
-        "type": "object",
-        "properties": {
-         "heading": {
-          "type": "string",
-          "description": "Heading above the fields."
-         },
-         "submitLabel": {
-          "type": "string",
-          "description": "Label of the submit button."
-         },
-         "fields": {
-          "type": "array",
-          "items": {
-           "type": "object",
-           "properties": {
-            "label": {
-             "type": "string",
-             "description": "Field label."
-            },
-            "placeholder": {
-             "type": "string",
-             "description": "Example of what a person would enter, e.g. 'Jane Appleseed', 'name@example.com'."
-            },
-            "options": {
-             "type": "array",
-             "items": {
-              "type": "string",
-              "description": "Option label."
-             },
-             "description": "ONLY for fields where the person picks from three or more known choices. Never for yes/no fields.",
-             "maxItems": 8,
-             "minItems": 2
-            },
-            "min": {
-             "type": "number",
-             "description": "ONLY for bounded numeric fields."
-            },
-            "max": {
-             "type": "number",
-             "description": "ONLY for bounded numeric fields."
-            }
-           },
-           "required": [
-            "label",
-            "placeholder"
-           ],
-           "propertyOrdering": [
-            "label",
-            "placeholder",
-            "options",
-            "min",
-            "max"
-           ]
-          },
-          "description": "The input fields.",
-          "maxItems": 8,
-          "minItems": 1
-         }
-        },
-        "required": [
-         "heading",
-         "submitLabel",
-         "fields"
-        ],
-        "propertyOrdering": [
-         "heading",
-         "submitLabel",
-         "fields"
-        ]
-       }
-      },
-      "required": [
-       "form"
-      ],
-      "propertyOrdering": [
-       "form"
-      ]
-     },
-     "tree": [
-      {
-       "id": "form",
-       "component": "Stack",
-       "gap": "md",
-       "children": [
-        "form_heading",
-        "form_fields",
-        "form_submit"
-       ]
-      },
-      {
-       "id": "form_heading",
-       "component": "Text",
-       "role": "title",
-       "text": {
-        "path": "/form/heading"
-       }
-      },
-      {
-       "id": "form_fields",
-       "component": "Stack",
-       "gap": "md",
-       "children": {
-        "path": "/form/fields",
-        "componentId": "form_field"
-       }
-      },
-      {
-       "id": "form_field",
-       "component": "Field",
-       "label": {
-        "path": "label"
-       },
-       "kind": {
-        "path": "kind"
-       },
-       "placeholder": {
-        "path": "placeholder"
-       },
-       "options": {
-        "path": "options"
-       },
-       "min": {
-        "path": "min"
-       },
-       "max": {
-        "path": "max"
-       }
-      },
-      {
-       "id": "form_submit",
-       "component": "Button",
-       "variant": "primary",
-       "full": true,
-       "label": {
-        "path": "/form/submitLabel"
-       },
-       "event": "submit"
-      }
-     ]
-    }
-   },
-   "content": {
-    "header": {
-     "type": "object",
-     "properties": {
-      "header": {
-       "type": "object",
-       "properties": {
-        "title": {
-         "type": "string",
-         "description": "Screen title, at most four words."
-        },
-        "subtitle": {
-         "type": "string",
-         "description": "One short supporting line."
-        }
-       },
-       "required": [
-        "title",
-        "subtitle"
-       ],
-       "propertyOrdering": [
-        "title",
-        "subtitle"
-       ]
-      }
-     },
-     "required": [
-      "header"
-     ],
-     "propertyOrdering": [
-      "header"
-     ]
-    },
-    "nav": {
-     "type": "object",
-     "properties": {
-      "nav": {
-       "type": "object",
-       "properties": {
-        "items": {
-         "type": "array",
-         "items": {
-          "type": "object",
-          "properties": {
-           "label": {
-            "type": "string",
-            "description": "One word."
-           }
-          },
-          "required": [
-           "label"
-          ],
-          "propertyOrdering": [
-           "label"
-          ]
-         },
-         "description": "The app's three to five main destinations.",
-         "maxItems": 5,
-         "minItems": 3
-        },
-        "active": {
-         "type": "integer",
-         "description": "Index of the destination this screen belongs to."
-        }
-       },
-       "required": [
-        "items",
-        "active"
-       ],
-       "propertyOrdering": [
-        "items",
-        "active"
-       ]
-      }
-     },
-     "required": [
-      "nav"
-     ],
-     "propertyOrdering": [
-      "nav"
-     ]
-    }
-   },
-   "screen": [
-    {
-     "id": "root",
-     "component": "Screen",
-     "appBar": "appbar",
-     "body": "body"
-    },
-    {
-     "id": "appbar",
-     "component": "AppBar",
-     "title": {
-      "path": "/header/title"
-     },
-     "leading": "close",
-     "actions": [
-      "notifications"
-     ]
-    },
-    {
-     "id": "body",
-     "component": "Stack",
-     "gap": "lg",
-     "children": [
-      "intro",
-      "custom",
-      "form"
-     ]
-    },
-    {
-     "id": "intro",
-     "component": "Text",
-     "tone": "muted",
-     "text": {
-      "path": "/header/subtitle"
-     }
-    },
-    {
-     "id": "custom",
-     "component": "Custom",
-     "use": {
-      "path": "/custom/use"
-     },
-     "ratio": "3:4",
-     "data": {
-      "path": "/custom/data"
-     },
-     "selection": {
-      "path": "/custom/selection"
-     },
-     "failed": {
-      "path": "/custom/failed"
-     }
-    },
-    {
-     "id": "form",
-     "component": "Stack",
-     "gap": "md",
-     "children": [
-      "form_heading",
-      "form_fields",
-      "form_submit"
-     ]
-    },
-    {
-     "id": "form_heading",
-     "component": "Text",
-     "role": "title",
-     "text": {
-      "path": "/form/heading"
-     }
-    },
-    {
-     "id": "form_fields",
-     "component": "Stack",
-     "gap": "md",
-     "children": {
-      "path": "/form/fields",
-      "componentId": "form_field"
-     }
-    },
-    {
-     "id": "form_field",
-     "component": "Field",
-     "label": {
-      "path": "label"
-     },
-     "kind": {
-      "path": "kind"
-     },
-     "placeholder": {
-      "path": "placeholder"
-     },
-     "options": {
-      "path": "options"
-     },
-     "min": {
-      "path": "min"
-     },
-     "max": {
-      "path": "max"
-     }
-    },
-    {
-     "id": "form_submit",
-     "component": "Button",
-     "variant": "primary",
-     "full": true,
-     "label": {
-      "path": "/form/submitLabel"
-     },
-     "event": "submit"
-    }
-   ]
-  },
-  {
-   "seed": 2012,
-   "look": {
-    "imagery": true,
-    "icons": false,
-    "contained": false
-   },
-   "reading": {
-    "kind": "form",
-    "blocks": [
-     "custom",
-     "form"
-    ],
-    "values": {
-     "archetype": "form",
-     "has_banner": false,
-     "has_hero": false,
-     "has_filters": false,
-     "search": false,
-     "has_custom": true,
-     "custom_use": "read",
-     "custom_size": "wide",
-     "custom_linked": false,
-     "has_stats": false,
-     "stat_deltas": false,
-     "has_list": false,
-     "list_layout": "rows",
-     "item_leading": "none",
-     "item_trailing": "none",
-     "item_description": false,
-     "item_price": false,
-     "item_rating": false,
-     "item_status": false,
-     "item_time": false,
-     "item_progress": false,
-     "has_groups": false,
-     "has_facts": false,
-     "facts_total": false,
-     "has_prose": false,
-     "has_steps": false,
-     "has_form": true,
-     "has_actions": false,
-     "person": false,
-     "top_level": true,
-     "app_bar_action": "more",
-     "hero_subject": "vehicle",
-     "item_subject": "produce",
-     "screen_icon": "local_shipping",
-     "photographs": true,
-     "symbols": false,
-     "cards": false
-    }
-   },
-   "parts": {
-    "custom": {
-     "schema": null,
-     "tree": [
-      {
-       "id": "custom",
-       "component": "Custom",
-       "use": {
-        "path": "/custom/use"
-       },
-       "ratio": "16:9",
-       "data": {
-        "path": "/custom/data"
-       },
-       "selection": {
-        "path": "/custom/selection"
-       },
-       "failed": {
-        "path": "/custom/failed"
-       }
-      }
-     ]
-    },
-    "form": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "form": {
-        "type": "object",
-        "properties": {
-         "heading": {
-          "type": "string",
-          "description": "Heading above the fields."
-         },
-         "submitLabel": {
-          "type": "string",
-          "description": "Label of the submit button."
-         },
-         "fields": {
-          "type": "array",
-          "items": {
-           "type": "object",
-           "properties": {
-            "label": {
-             "type": "string",
-             "description": "Field label."
-            },
-            "placeholder": {
-             "type": "string",
-             "description": "Example of what a person would enter, e.g. 'Jane Appleseed', 'name@example.com'."
-            },
-            "options": {
-             "type": "array",
-             "items": {
-              "type": "string",
-              "description": "Option label."
-             },
-             "description": "ONLY for fields where the person picks from three or more known choices. Never for yes/no fields.",
-             "maxItems": 8,
-             "minItems": 2
-            },
-            "min": {
-             "type": "number",
-             "description": "ONLY for bounded numeric fields."
-            },
-            "max": {
-             "type": "number",
-             "description": "ONLY for bounded numeric fields."
-            }
-           },
-           "required": [
-            "label",
-            "placeholder"
-           ],
-           "propertyOrdering": [
-            "label",
-            "placeholder",
-            "options",
-            "min",
-            "max"
-           ]
-          },
-          "description": "The input fields.",
-          "maxItems": 8,
-          "minItems": 1
-         }
-        },
-        "required": [
-         "heading",
-         "submitLabel",
-         "fields"
-        ],
-        "propertyOrdering": [
-         "heading",
-         "submitLabel",
-         "fields"
-        ]
-       }
-      },
-      "required": [
-       "form"
-      ],
-      "propertyOrdering": [
-       "form"
-      ]
-     },
-     "tree": [
-      {
-       "id": "form",
-       "component": "Stack",
-       "gap": "md",
-       "children": [
-        "form_heading",
-        "form_fields",
-        "form_submit"
-       ]
-      },
-      {
-       "id": "form_heading",
-       "component": "Text",
-       "role": "title",
-       "text": {
-        "path": "/form/heading"
-       }
-      },
-      {
-       "id": "form_fields",
-       "component": "Stack",
-       "gap": "md",
-       "children": {
-        "path": "/form/fields",
-        "componentId": "form_field"
-       }
-      },
-      {
-       "id": "form_field",
-       "component": "Field",
-       "label": {
-        "path": "label"
-       },
-       "kind": {
-        "path": "kind"
-       },
-       "placeholder": {
-        "path": "placeholder"
-       },
-       "options": {
-        "path": "options"
-       },
-       "min": {
-        "path": "min"
-       },
-       "max": {
-        "path": "max"
-       }
-      },
-      {
-       "id": "form_submit",
-       "component": "Button",
-       "variant": "primary",
-       "full": true,
-       "label": {
-        "path": "/form/submitLabel"
-       },
-       "event": "submit"
-      }
-     ]
-    }
-   },
-   "content": {
-    "header": {
-     "type": "object",
-     "properties": {
-      "header": {
-       "type": "object",
-       "properties": {
-        "title": {
-         "type": "string",
-         "description": "Screen title, at most four words."
-        },
-        "subtitle": {
-         "type": "string",
-         "description": "One short supporting line."
-        }
-       },
-       "required": [
-        "title",
-        "subtitle"
-       ],
-       "propertyOrdering": [
-        "title",
-        "subtitle"
-       ]
-      }
-     },
-     "required": [
-      "header"
-     ],
-     "propertyOrdering": [
-      "header"
-     ]
-    },
-    "nav": {
-     "type": "object",
-     "properties": {
-      "nav": {
-       "type": "object",
-       "properties": {
-        "items": {
-         "type": "array",
-         "items": {
-          "type": "object",
-          "properties": {
-           "label": {
-            "type": "string",
-            "description": "One word."
-           }
-          },
-          "required": [
-           "label"
-          ],
-          "propertyOrdering": [
-           "label"
-          ]
-         },
-         "description": "The app's three to five main destinations.",
-         "maxItems": 5,
-         "minItems": 3
-        },
-        "active": {
-         "type": "integer",
-         "description": "Index of the destination this screen belongs to."
-        }
-       },
-       "required": [
-        "items",
-        "active"
-       ],
-       "propertyOrdering": [
-        "items",
-        "active"
-       ]
-      }
-     },
-     "required": [
-      "nav"
-     ],
-     "propertyOrdering": [
-      "nav"
-     ]
-    }
-   },
-   "screen": [
-    {
-     "id": "root",
-     "component": "Screen",
-     "appBar": "appbar",
-     "body": "body",
-     "navBar": "navbar"
-    },
-    {
-     "id": "appbar",
-     "component": "AppBar",
-     "leading": "none",
-     "actions": [
-      "more_vert"
-     ]
-    },
-    {
-     "id": "body",
-     "component": "Stack",
-     "gap": "lg",
-     "children": [
-      "large_title",
-      "intro",
-      "custom",
-      "form"
-     ]
-    },
-    {
-     "id": "large_title",
-     "component": "Text",
-     "role": "display",
-     "text": {
-      "path": "/header/title"
-     }
-    },
-    {
-     "id": "intro",
-     "component": "Text",
-     "tone": "muted",
-     "text": {
-      "path": "/header/subtitle"
      }
     },
     {
@@ -5334,66 +3321,654 @@
      },
      "failed": {
       "path": "/custom/failed"
+     },
+     "items": {
+      "path": "/list/items"
      }
     },
     {
-     "id": "form",
+     "id": "list",
      "component": "Stack",
-     "gap": "md",
+     "gap": "sm",
      "children": [
-      "form_heading",
-      "form_fields",
-      "form_submit"
+      "list_items"
      ]
     },
     {
-     "id": "form_heading",
-     "component": "Text",
-     "role": "title",
-     "text": {
-      "path": "/form/heading"
+     "id": "list_items",
+     "component": "Group",
+     "children": {
+      "path": "/list/items",
+      "componentId": "list_item"
+     },
+     "flat": false
+    },
+    {
+     "id": "list_item",
+     "component": "ListItem",
+     "headline": {
+      "path": "title"
+     },
+     "overline": {
+      "path": "subtitle"
+     },
+     "supporting": {
+      "path": "description"
+     },
+     "trailing": "list_item_trailing",
+     "below": "list_item_below"
+    },
+    {
+     "id": "list_item_below",
+     "component": "Stack",
+     "gap": "xs",
+     "children": [
+      "list_item_chips"
+     ]
+    },
+    {
+     "id": "list_item_chips",
+     "component": "Cluster",
+     "gap": "sm",
+     "children": [
+      "list_item_rating",
+      "list_item_badge"
+     ]
+    },
+    {
+     "id": "list_item_rating",
+     "component": "Rating",
+     "value": {
+      "path": "rating"
+     },
+     "count": {
+      "path": "reviews"
      }
     },
     {
-     "id": "form_fields",
+     "id": "list_item_badge",
+     "component": "Badge",
+     "text": {
+      "path": "status"
+     },
+     "tone": {
+      "path": "tone"
+     }
+    },
+    {
+     "id": "list_item_trailing",
+     "component": "Icon",
+     "name": "chevron_right",
+     "tone": "muted",
+     "size": 20
+    }
+   ]
+  },
+  {
+   "seed": 2011,
+   "look": {
+    "imagery": true,
+    "icons": false,
+    "contained": false
+   },
+   "reading": {
+    "kind": "choices",
+    "blocks": [
+     "text",
+     "buttons"
+    ],
+    "values": {
+     "kind": "choices",
+     "has_search": false,
+     "has_banner": false,
+     "has_hero": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_text": true,
+     "has_details": false,
+     "details_total": false,
+     "has_steps": false,
+     "has_form": false,
+     "has_features": false,
+     "has_buttons": true,
+     "person": false,
+     "tab_root": false,
+     "sheet": false,
+     "editable": false,
+     "bar_action": "none",
+     "hero_subject": "transit",
+     "item_subject": "home",
+     "screen_icon": "wb_sunny",
+     "no_photographs": false,
+     "no_symbols": true,
+     "no_cards": true
+    }
+   },
+   "parts": {
+    "text": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "text": {
+        "type": "object",
+        "properties": {
+         "body": {
+          "type": "string",
+          "description": "Body text. Simple markdown (bold, short bullet lists) is allowed."
+         }
+        },
+        "required": [
+         "body"
+        ],
+        "propertyOrdering": [
+         "body"
+        ]
+       }
+      },
+      "required": [
+       "text"
+      ],
+      "propertyOrdering": [
+       "text"
+      ]
+     },
+     "tree": [
+      {
+       "id": "text",
+       "component": "Text",
+       "markdown": true,
+       "text": {
+        "path": "/text/body"
+       }
+      }
+     ]
+    },
+    "buttons": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "buttons": {
+        "type": "object",
+        "properties": {
+         "actions": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "label": {
+             "type": "string",
+             "description": "Button label, one to three words."
+            }
+           },
+           "required": [
+            "label"
+           ],
+           "propertyOrdering": [
+            "label"
+           ]
+          },
+          "description": "The buttons, one or two on most screens, the main one first and Cancel last if there is one. Two to four choices, and then always one more button labelled 'Cancel', last.",
+          "maxItems": 5,
+          "minItems": 1
+         }
+        },
+        "required": [
+         "actions"
+        ],
+        "propertyOrdering": [
+         "actions"
+        ]
+       }
+      },
+      "required": [
+       "buttons"
+      ],
+      "propertyOrdering": [
+       "buttons"
+      ]
+     },
+     "tree": [
+      {
+       "id": "buttons",
+       "component": "Cluster",
+       "gap": "sm",
+       "justify": "end",
+       "children": {
+        "path": "/buttons/actions",
+        "componentId": "buttons_action"
+       }
+      },
+      {
+       "id": "buttons_action",
+       "component": "Button",
+       "label": {
+        "path": "label"
+       },
+       "variant": {
+        "path": "variant"
+       },
+       "event": "action"
+      }
+     ]
+    }
+   },
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
+        },
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
+       },
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
+    },
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's two to five tabs.",
+         "maxItems": 5,
+         "minItems": 2
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the tab this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Screen",
+     "body": "dialog",
+     "dialog": true,
+     "presentation": "actionsheet"
+    },
+    {
+     "id": "dialog",
+     "component": "Card",
+     "child": "dialog_body"
+    },
+    {
+     "id": "dialog_body",
      "component": "Stack",
      "gap": "md",
-     "children": {
-      "path": "/form/fields",
-      "componentId": "form_field"
+     "children": [
+      "dialog_title",
+      "text",
+      "buttons"
+     ]
+    },
+    {
+     "id": "dialog_title",
+     "component": "Text",
+     "role": "headline",
+     "text": {
+      "path": "/header/title"
      }
     },
     {
-     "id": "form_field",
-     "component": "Field",
+     "id": "text",
+     "component": "Text",
+     "markdown": true,
+     "text": {
+      "path": "/text/body"
+     }
+    },
+    {
+     "id": "buttons",
+     "component": "Cluster",
+     "gap": "sm",
+     "justify": "end",
+     "children": {
+      "path": "/buttons/actions",
+      "componentId": "buttons_action"
+     }
+    },
+    {
+     "id": "buttons_action",
+     "component": "Button",
      "label": {
       "path": "label"
      },
-     "kind": {
-      "path": "kind"
+     "variant": {
+      "path": "variant"
      },
-     "placeholder": {
-      "path": "placeholder"
+     "event": "action"
+    }
+   ]
+  },
+  {
+   "seed": 2012,
+   "look": {
+    "imagery": true,
+    "icons": false,
+    "contained": false
+   },
+   "reading": {
+    "kind": "choices",
+    "blocks": [
+     "buttons"
+    ],
+    "values": {
+     "kind": "choices",
+     "has_search": false,
+     "has_banner": false,
+     "has_hero": false,
+     "has_custom": false,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_text": false,
+     "has_details": false,
+     "details_total": false,
+     "has_steps": false,
+     "has_form": false,
+     "has_features": false,
+     "has_buttons": true,
+     "person": false,
+     "tab_root": false,
+     "sheet": true,
+     "editable": false,
+     "bar_action": "none",
+     "hero_subject": "vehicle",
+     "item_subject": "produce",
+     "screen_icon": "local_shipping",
+     "no_photographs": false,
+     "no_symbols": true,
+     "no_cards": true
+    }
+   },
+   "parts": {
+    "buttons": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "buttons": {
+        "type": "object",
+        "properties": {
+         "actions": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "label": {
+             "type": "string",
+             "description": "Button label, one to three words."
+            }
+           },
+           "required": [
+            "label"
+           ],
+           "propertyOrdering": [
+            "label"
+           ]
+          },
+          "description": "The buttons, one or two on most screens, the main one first and Cancel last if there is one. Two to four choices, and then always one more button labelled 'Cancel', last.",
+          "maxItems": 5,
+          "minItems": 1
+         }
+        },
+        "required": [
+         "actions"
+        ],
+        "propertyOrdering": [
+         "actions"
+        ]
+       }
+      },
+      "required": [
+       "buttons"
+      ],
+      "propertyOrdering": [
+       "buttons"
+      ]
      },
-     "options": {
-      "path": "options"
+     "tree": [
+      {
+       "id": "buttons",
+       "component": "Cluster",
+       "gap": "sm",
+       "justify": "end",
+       "children": {
+        "path": "/buttons/actions",
+        "componentId": "buttons_action"
+       }
+      },
+      {
+       "id": "buttons_action",
+       "component": "Button",
+       "label": {
+        "path": "label"
+       },
+       "variant": {
+        "path": "variant"
+       },
+       "event": "action"
+      }
+     ]
+    }
+   },
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
+        },
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
+       },
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
      },
-     "min": {
-      "path": "min"
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
+    },
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's two to five tabs.",
+         "maxItems": 5,
+         "minItems": 2
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the tab this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
      },
-     "max": {
-      "path": "max"
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Screen",
+     "body": "dialog",
+     "dialog": true,
+     "presentation": "actionsheet"
+    },
+    {
+     "id": "dialog",
+     "component": "Card",
+     "child": "dialog_body"
+    },
+    {
+     "id": "dialog_body",
+     "component": "Stack",
+     "gap": "md",
+     "children": [
+      "dialog_title",
+      "buttons"
+     ]
+    },
+    {
+     "id": "dialog_title",
+     "component": "Text",
+     "role": "headline",
+     "text": {
+      "path": "/header/title"
      }
     },
     {
-     "id": "form_submit",
+     "id": "buttons",
+     "component": "Cluster",
+     "gap": "sm",
+     "justify": "end",
+     "children": {
+      "path": "/buttons/actions",
+      "componentId": "buttons_action"
+     }
+    },
+    {
+     "id": "buttons_action",
      "component": "Button",
-     "variant": "primary",
-     "full": true,
      "label": {
-      "path": "/form/submitLabel"
+      "path": "label"
      },
-     "event": "submit"
+     "variant": {
+      "path": "variant"
+     },
+     "event": "action"
     }
    ]
   },
@@ -5405,181 +3980,75 @@
     "contained": true
    },
    "reading": {
-    "kind": "dashboard",
+    "kind": "detail",
     "blocks": [
-     "stats",
-     "facts",
+     "custom",
      "list"
     ],
     "values": {
-     "archetype": "dashboard",
+     "kind": "detail",
+     "has_search": false,
      "has_banner": false,
      "has_hero": false,
-     "has_filters": false,
-     "search": false,
-     "has_custom": false,
+     "has_custom": true,
      "custom_use": "watch",
-     "custom_size": "strip",
-     "custom_linked": false,
-     "has_stats": true,
+     "custom_size": "tall",
+     "custom_linked": true,
+     "has_stats": false,
      "stat_deltas": false,
      "has_list": true,
      "list_layout": "rows",
-     "item_leading": "icon",
-     "item_trailing": "switch",
-     "item_description": true,
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
      "item_price": true,
      "item_rating": true,
-     "item_status": false,
-     "item_time": false,
+     "item_status": true,
+     "item_time": true,
      "item_progress": false,
      "has_groups": false,
-     "has_facts": true,
-     "facts_total": true,
-     "has_prose": false,
+     "has_text": false,
+     "has_details": false,
+     "details_total": false,
      "has_steps": false,
      "has_form": false,
-     "has_actions": false,
-     "person": false,
-     "top_level": true,
-     "app_bar_action": "share",
+     "has_features": false,
+     "has_buttons": false,
+     "person": true,
+     "tab_root": true,
+     "sheet": true,
+     "editable": false,
+     "bar_action": "more",
      "hero_subject": "flower",
      "item_subject": "farm_animal",
      "screen_icon": "monitor_heart",
-     "photographs": false,
-     "symbols": true,
-     "cards": true
+     "no_photographs": true,
+     "no_symbols": false,
+     "no_cards": false
     }
    },
    "parts": {
-    "stats": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "stats": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "Short label."
-          },
-          "value": {
-           "type": "string",
-           "description": "The figure with its unit, e.g. '24.2 kWh'."
-          }
-         },
-         "required": [
-          "label",
-          "value"
-         ],
-         "propertyOrdering": [
-          "label",
-          "value"
-         ]
-        },
-        "description": "Headline numbers.",
-        "maxItems": 6,
-        "minItems": 2
-       }
-      },
-      "required": [
-       "stats"
-      ],
-      "propertyOrdering": [
-       "stats"
-      ]
-     },
+    "custom": {
+     "schema": null,
      "tree": [
       {
-       "id": "stats",
-       "component": "Grid",
-       "min": 140,
-       "children": {
-        "path": "/stats",
-        "componentId": "stats_stat"
-       }
-      },
-      {
-       "id": "stats_stat",
-       "component": "Stat",
-       "label": {
-        "path": "label"
+       "id": "custom",
+       "component": "Custom",
+       "use": {
+        "path": "/custom/use"
        },
-       "value": {
-        "path": "value"
+       "ratio": "3:4",
+       "data": {
+        "path": "/custom/data"
        },
-       "flat": false
-      }
-     ]
-    },
-    "facts": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "facts": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "label": {
-           "type": "string",
-           "description": "Short label."
-          },
-          "value": {
-           "type": "string",
-           "description": "Short value."
-          }
-         },
-         "required": [
-          "label",
-          "value"
-         ],
-         "propertyOrdering": [
-          "label",
-          "value"
-         ]
-        },
-        "description": "Label-value details. The last one is the total.",
-        "maxItems": 8,
-        "minItems": 2
-       }
-      },
-      "required": [
-       "facts"
-      ],
-      "propertyOrdering": [
-       "facts"
-      ]
-     },
-     "tree": [
-      {
-       "id": "facts",
-       "component": "Card",
-       "child": "facts_rows",
-       "flat": false
-      },
-      {
-       "id": "facts_rows",
-       "component": "Stack",
-       "gap": "none",
-       "children": {
-        "path": "/facts",
-        "componentId": "facts_row"
-       }
-      },
-      {
-       "id": "facts_row",
-       "component": "KeyValue",
-       "label": {
-        "path": "label"
+       "selection": {
+        "path": "/custom/selection"
        },
-       "value": {
-        "path": "value"
+       "failed": {
+        "path": "/custom/failed"
        },
-       "strong": {
-        "path": "strong"
+       "items": {
+        "path": "/list/items"
        }
       }
      ]
@@ -5608,10 +4077,6 @@
              "type": "string",
              "description": "A short secondary line: category, author, place, variant."
             },
-            "description": {
-             "type": "string",
-             "description": "One sentence."
-            },
             "price": {
              "type": "string",
              "description": "Price or amount with currency, e.g. '$24.00'."
@@ -5624,28 +4089,32 @@
              "type": "string",
              "description": "Number of reviews, e.g. '128'."
             },
-            "on": {
-             "type": "boolean",
-             "description": "Whether it is currently on or ticked."
+            "status": {
+             "type": "string",
+             "description": "One or two words: the item's current state."
+            },
+            "time": {
+             "type": "string",
+             "description": "Short date, time or duration, e.g. 'Today 7:15 pm', '42 min'."
             }
            },
            "required": [
             "title",
             "subtitle",
-            "description",
             "price",
             "rating",
             "reviews",
-            "on"
+            "status",
+            "time"
            ],
            "propertyOrdering": [
             "title",
             "subtitle",
-            "description",
             "price",
             "rating",
             "reviews",
-            "on"
+            "status",
+            "time"
            ]
           },
           "description": "The items.",
@@ -5703,17 +4172,12 @@
        "headline": {
         "path": "title"
        },
-       "overline": {
-        "path": "subtitle"
-       },
        "supporting": {
-        "path": "description"
+        "path": "subtitle"
        },
        "meta": {
         "path": "price"
        },
-       "leading": "list_item_leading",
-       "trailing": "list_item_trailing",
        "below": "list_item_below"
       },
       {
@@ -5729,7 +4193,9 @@
        "component": "Cluster",
        "gap": "sm",
        "children": [
-        "list_item_rating"
+        "list_item_rating",
+        "list_item_badge",
+        "list_item_caption"
        ]
       },
       {
@@ -5743,18 +4209,22 @@
        }
       },
       {
-       "id": "list_item_leading",
-       "component": "Icon",
-       "name": {
-        "path": "icon"
+       "id": "list_item_badge",
+       "component": "Badge",
+       "text": {
+        "path": "status"
        },
-       "boxed": true
+       "tone": {
+        "path": "tone"
+       }
       },
       {
-       "id": "list_item_trailing",
-       "component": "Switch",
-       "on": {
-        "path": "on"
+       "id": "list_item_caption",
+       "component": "Text",
+       "role": "caption",
+       "tone": "muted",
+       "text": {
+        "path": "time"
        }
       }
      ]
@@ -5816,13 +4286,13 @@
            "label"
           ]
          },
-         "description": "The app's three to five main destinations.",
+         "description": "The app's two to five tabs.",
          "maxItems": 5,
-         "minItems": 3
+         "minItems": 2
         },
         "active": {
          "type": "integer",
-         "description": "Index of the destination this screen belongs to."
+         "description": "Index of the tab this screen belongs to."
         }
        },
        "required": [
@@ -5849,14 +4319,15 @@
      "component": "Screen",
      "appBar": "appbar",
      "body": "body",
-     "navBar": "navbar"
+     "navBar": "navbar",
+     "presentation": "sheet"
     },
     {
      "id": "appbar",
      "component": "AppBar",
      "leading": "none",
      "actions": [
-      "share"
+      "more_horiz"
      ]
     },
     {
@@ -5864,18 +4335,47 @@
      "component": "Stack",
      "gap": "lg",
      "children": [
-      "large_title",
-      "stats",
-      "facts",
+      "person",
+      "custom",
       "list"
      ]
     },
     {
-     "id": "large_title",
+     "id": "person",
+     "component": "Stack",
+     "gap": "xs",
+     "align": "center",
+     "children": [
+      "person_avatar",
+      "person_name",
+      "person_line"
+     ]
+    },
+    {
+     "id": "person_avatar",
+     "component": "Avatar",
+     "name": {
+      "path": "/header/title"
+     },
+     "url": {
+      "path": "/header/imageUrl"
+     },
+     "size": 88
+    },
+    {
+     "id": "person_name",
      "component": "Text",
-     "role": "display",
+     "role": "headline",
      "text": {
       "path": "/header/title"
+     }
+    },
+    {
+     "id": "person_line",
+     "component": "Text",
+     "tone": "muted",
+     "text": {
+      "path": "/header/subtitle"
      }
     },
     {
@@ -5893,51 +4393,23 @@
      }
     },
     {
-     "id": "stats",
-     "component": "Grid",
-     "min": 140,
-     "children": {
-      "path": "/stats",
-      "componentId": "stats_stat"
-     }
-    },
-    {
-     "id": "stats_stat",
-     "component": "Stat",
-     "label": {
-      "path": "label"
+     "id": "custom",
+     "component": "Custom",
+     "use": {
+      "path": "/custom/use"
      },
-     "value": {
-      "path": "value"
+     "ratio": "3:4",
+     "data": {
+      "path": "/custom/data"
      },
-     "flat": false
-    },
-    {
-     "id": "facts",
-     "component": "Card",
-     "child": "facts_rows",
-     "flat": false
-    },
-    {
-     "id": "facts_rows",
-     "component": "Stack",
-     "gap": "none",
-     "children": {
-      "path": "/facts",
-      "componentId": "facts_row"
-     }
-    },
-    {
-     "id": "facts_row",
-     "component": "KeyValue",
-     "label": {
-      "path": "label"
+     "selection": {
+      "path": "/custom/selection"
      },
-     "value": {
-      "path": "value"
+     "failed": {
+      "path": "/custom/failed"
      },
-     "strong": {
-      "path": "strong"
+     "items": {
+      "path": "/list/items"
      }
     },
     {
@@ -5972,17 +4444,12 @@
      "headline": {
       "path": "title"
      },
-     "overline": {
-      "path": "subtitle"
-     },
      "supporting": {
-      "path": "description"
+      "path": "subtitle"
      },
      "meta": {
       "path": "price"
      },
-     "leading": "list_item_leading",
-     "trailing": "list_item_trailing",
      "below": "list_item_below"
     },
     {
@@ -5998,7 +4465,9 @@
      "component": "Cluster",
      "gap": "sm",
      "children": [
-      "list_item_rating"
+      "list_item_rating",
+      "list_item_badge",
+      "list_item_caption"
      ]
     },
     {
@@ -6012,18 +4481,22 @@
      }
     },
     {
-     "id": "list_item_leading",
-     "component": "Icon",
-     "name": {
-      "path": "icon"
+     "id": "list_item_badge",
+     "component": "Badge",
+     "text": {
+      "path": "status"
      },
-     "boxed": true
+     "tone": {
+      "path": "tone"
+     }
     },
     {
-     "id": "list_item_trailing",
-     "component": "Switch",
-     "on": {
-      "path": "on"
+     "id": "list_item_caption",
+     "component": "Text",
+     "role": "caption",
+     "tone": "muted",
+     "text": {
+      "path": "time"
      }
     }
    ]
@@ -6036,20 +4509,17 @@
     "contained": true
    },
    "reading": {
-    "kind": "form",
+    "kind": "choices",
     "blocks": [
-     "prose",
-     "custom",
-     "form"
+     "buttons"
     ],
     "values": {
-     "archetype": "form",
+     "kind": "choices",
+     "has_search": false,
      "has_banner": false,
      "has_hero": false,
-     "has_filters": false,
-     "search": false,
-     "has_custom": true,
-     "custom_use": "read",
+     "has_custom": false,
+     "custom_use": "watch",
      "custom_size": "strip",
      "custom_linked": false,
      "has_stats": false,
@@ -6065,62 +4535,288 @@
      "item_time": false,
      "item_progress": false,
      "has_groups": false,
-     "has_facts": false,
-     "facts_total": false,
-     "has_prose": true,
+     "has_text": false,
+     "has_details": false,
+     "details_total": false,
      "has_steps": false,
-     "has_form": true,
-     "has_actions": false,
+     "has_form": false,
+     "has_features": false,
+     "has_buttons": true,
      "person": false,
-     "top_level": true,
-     "app_bar_action": "notifications",
+     "tab_root": false,
+     "sheet": true,
+     "editable": false,
+     "bar_action": "none",
      "hero_subject": "dessert",
      "item_subject": "portrait",
      "screen_icon": "call",
-     "photographs": false,
-     "symbols": true,
-     "cards": true
+     "no_photographs": true,
+     "no_symbols": false,
+     "no_cards": false
     }
    },
    "parts": {
-    "prose": {
+    "buttons": {
      "schema": {
       "type": "object",
       "properties": {
-       "prose": {
+       "buttons": {
         "type": "object",
         "properties": {
-         "body": {
-          "type": "string",
-          "description": "Body text. Simple markdown (bold, short bullet lists) is allowed."
+         "actions": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "label": {
+             "type": "string",
+             "description": "Button label, one to three words."
+            }
+           },
+           "required": [
+            "label"
+           ],
+           "propertyOrdering": [
+            "label"
+           ]
+          },
+          "description": "The buttons, one or two on most screens, the main one first and Cancel last if there is one. Two to four choices, and then always one more button labelled 'Cancel', last.",
+          "maxItems": 5,
+          "minItems": 1
          }
         },
         "required": [
-         "body"
+         "actions"
         ],
         "propertyOrdering": [
-         "body"
+         "actions"
         ]
        }
       },
       "required": [
-       "prose"
+       "buttons"
       ],
       "propertyOrdering": [
-       "prose"
+       "buttons"
       ]
      },
      "tree": [
       {
-       "id": "prose",
-       "component": "Text",
-       "markdown": true,
-       "text": {
-        "path": "/prose/body"
+       "id": "buttons",
+       "component": "Cluster",
+       "gap": "sm",
+       "justify": "end",
+       "children": {
+        "path": "/buttons/actions",
+        "componentId": "buttons_action"
        }
+      },
+      {
+       "id": "buttons_action",
+       "component": "Button",
+       "label": {
+        "path": "label"
+       },
+       "variant": {
+        "path": "variant"
+       },
+       "event": "action"
       }
      ]
+    }
+   },
+   "content": {
+    "header": {
+     "type": "object",
+     "properties": {
+      "header": {
+       "type": "object",
+       "properties": {
+        "title": {
+         "type": "string",
+         "description": "Screen title, at most four words."
+        },
+        "subtitle": {
+         "type": "string",
+         "description": "One short supporting line."
+        }
+       },
+       "required": [
+        "title",
+        "subtitle"
+       ],
+       "propertyOrdering": [
+        "title",
+        "subtitle"
+       ]
+      }
+     },
+     "required": [
+      "header"
+     ],
+     "propertyOrdering": [
+      "header"
+     ]
     },
+    "nav": {
+     "type": "object",
+     "properties": {
+      "nav": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One word."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's two to five tabs.",
+         "maxItems": 5,
+         "minItems": 2
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the tab this screen belongs to."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "nav"
+     ],
+     "propertyOrdering": [
+      "nav"
+     ]
+    }
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Screen",
+     "body": "dialog",
+     "dialog": true,
+     "presentation": "actionsheet"
+    },
+    {
+     "id": "dialog",
+     "component": "Card",
+     "child": "dialog_body"
+    },
+    {
+     "id": "dialog_body",
+     "component": "Stack",
+     "gap": "md",
+     "children": [
+      "dialog_title",
+      "buttons"
+     ]
+    },
+    {
+     "id": "dialog_title",
+     "component": "Text",
+     "role": "headline",
+     "text": {
+      "path": "/header/title"
+     }
+    },
+    {
+     "id": "buttons",
+     "component": "Cluster",
+     "gap": "sm",
+     "justify": "end",
+     "children": {
+      "path": "/buttons/actions",
+      "componentId": "buttons_action"
+     }
+    },
+    {
+     "id": "buttons_action",
+     "component": "Button",
+     "label": {
+      "path": "label"
+     },
+     "variant": {
+      "path": "variant"
+     },
+     "event": "action"
+    }
+   ]
+  },
+  {
+   "seed": 2015,
+   "look": {
+    "imagery": false,
+    "icons": true,
+    "contained": true
+   },
+   "reading": {
+    "kind": "compose",
+    "blocks": [
+     "custom",
+     "form"
+    ],
+    "values": {
+     "kind": "compose",
+     "has_search": false,
+     "has_banner": false,
+     "has_hero": false,
+     "has_custom": true,
+     "custom_use": "watch",
+     "custom_size": "strip",
+     "custom_linked": false,
+     "has_stats": false,
+     "stat_deltas": false,
+     "has_list": false,
+     "list_layout": "rows",
+     "item_leading": "none",
+     "item_trailing": "none",
+     "item_description": false,
+     "item_price": false,
+     "item_rating": false,
+     "item_status": false,
+     "item_time": false,
+     "item_progress": false,
+     "has_groups": false,
+     "has_text": false,
+     "has_details": false,
+     "details_total": false,
+     "has_steps": false,
+     "has_form": true,
+     "has_features": false,
+     "has_buttons": false,
+     "person": false,
+     "tab_root": false,
+     "sheet": false,
+     "editable": false,
+     "bar_action": "none",
+     "hero_subject": "beach",
+     "item_subject": "sky",
+     "screen_icon": "article",
+     "no_photographs": true,
+     "no_symbols": false,
+     "no_cards": false
+    }
+   },
+   "parts": {
     "custom": {
      "schema": null,
      "tree": [
@@ -6156,7 +4852,7 @@
          },
          "submitLabel": {
           "type": "string",
-          "description": "Label of the submit button."
+          "description": "Label of the submit button, e.g. 'Save', 'Book', 'Sign Up'."
          },
          "fields": {
           "type": "array",
@@ -6345,13 +5041,13 @@
            "label"
           ]
          },
-         "description": "The app's three to five main destinations.",
+         "description": "The app's two to five tabs.",
          "maxItems": 5,
-         "minItems": 3
+         "minItems": 2
         },
         "active": {
          "type": "integer",
-         "description": "Index of the destination this screen belongs to."
+         "description": "Index of the tab this screen belongs to."
         }
        },
        "required": [
@@ -6378,35 +5074,27 @@
      "component": "Screen",
      "appBar": "appbar",
      "body": "body",
-     "navBar": "navbar"
+     "presentation": "sheet"
     },
     {
      "id": "appbar",
      "component": "AppBar",
-     "leading": "none",
-     "actions": [
-      "notifications"
-     ]
+     "title": {
+      "path": "/header/title"
+     },
+     "leading": "cancel",
+     "actions": [],
+     "trailing": "Done"
     },
     {
      "id": "body",
      "component": "Stack",
      "gap": "lg",
      "children": [
-      "large_title",
       "intro",
-      "prose",
       "custom",
       "form"
      ]
-    },
-    {
-     "id": "large_title",
-     "component": "Text",
-     "role": "display",
-     "text": {
-      "path": "/header/title"
-     }
     },
     {
      "id": "intro",
@@ -6414,28 +5102,6 @@
      "tone": "muted",
      "text": {
       "path": "/header/subtitle"
-     }
-    },
-    {
-     "id": "navbar",
-     "component": "NavBar",
-     "items": {
-      "path": "/nav/items"
-     },
-     "active": {
-      "path": "/nav/active"
-     },
-     "icons": true,
-     "icon": {
-      "path": "icon"
-     }
-    },
-    {
-     "id": "prose",
-     "component": "Text",
-     "markdown": true,
-     "text": {
-      "path": "/prose/body"
      }
     },
     {
@@ -6513,349 +5179,6 @@
       "path": "/form/submitLabel"
      },
      "event": "submit"
-    }
-   ]
-  },
-  {
-   "seed": 2015,
-   "look": {
-    "imagery": false,
-    "icons": true,
-    "contained": true
-   },
-   "reading": {
-    "kind": "guide",
-    "blocks": [
-     "prose",
-     "custom",
-     "steps"
-    ],
-    "values": {
-     "archetype": "guide",
-     "has_banner": false,
-     "has_hero": false,
-     "has_filters": false,
-     "search": false,
-     "has_custom": true,
-     "custom_use": "adjust",
-     "custom_size": "square",
-     "custom_linked": false,
-     "has_stats": false,
-     "stat_deltas": false,
-     "has_list": false,
-     "list_layout": "rows",
-     "item_leading": "none",
-     "item_trailing": "none",
-     "item_description": false,
-     "item_price": false,
-     "item_rating": false,
-     "item_status": false,
-     "item_time": false,
-     "item_progress": false,
-     "has_groups": false,
-     "has_facts": false,
-     "facts_total": false,
-     "has_prose": true,
-     "has_steps": true,
-     "has_form": false,
-     "has_actions": false,
-     "person": false,
-     "top_level": false,
-     "app_bar_action": "more",
-     "hero_subject": "beach",
-     "item_subject": "sky",
-     "screen_icon": "article",
-     "photographs": false,
-     "symbols": true,
-     "cards": true
-    }
-   },
-   "parts": {
-    "prose": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "prose": {
-        "type": "object",
-        "properties": {
-         "body": {
-          "type": "string",
-          "description": "Body text. Simple markdown (bold, short bullet lists) is allowed."
-         }
-        },
-        "required": [
-         "body"
-        ],
-        "propertyOrdering": [
-         "body"
-        ]
-       }
-      },
-      "required": [
-       "prose"
-      ],
-      "propertyOrdering": [
-       "prose"
-      ]
-     },
-     "tree": [
-      {
-       "id": "prose",
-       "component": "Text",
-       "markdown": true,
-       "text": {
-        "path": "/prose/body"
-       }
-      }
-     ]
-    },
-    "custom": {
-     "schema": null,
-     "tree": [
-      {
-       "id": "custom",
-       "component": "Custom",
-       "use": {
-        "path": "/custom/use"
-       },
-       "ratio": "1:1",
-       "data": {
-        "path": "/custom/data"
-       },
-       "selection": {
-        "path": "/custom/selection"
-       },
-       "failed": {
-        "path": "/custom/failed"
-       }
-      }
-     ]
-    },
-    "steps": {
-     "schema": {
-      "type": "object",
-      "properties": {
-       "steps": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "properties": {
-          "title": {
-           "type": "string",
-           "description": "Imperative step title."
-          },
-          "detail": {
-           "type": "string",
-           "description": "One or two sentences."
-          }
-         },
-         "required": [
-          "title",
-          "detail"
-         ],
-         "propertyOrdering": [
-          "title",
-          "detail"
-         ]
-        },
-        "description": "Ordered steps.",
-        "maxItems": 8,
-        "minItems": 2
-       }
-      },
-      "required": [
-       "steps"
-      ],
-      "propertyOrdering": [
-       "steps"
-      ]
-     },
-     "tree": [
-      {
-       "id": "steps",
-       "component": "Stack",
-       "gap": "sm",
-       "children": {
-        "path": "/steps",
-        "componentId": "steps_step"
-       }
-      },
-      {
-       "id": "steps_step",
-       "component": "Step",
-       "title": {
-        "path": "title"
-       },
-       "detail": {
-        "path": "detail"
-       }
-      }
-     ]
-    }
-   },
-   "content": {
-    "header": {
-     "type": "object",
-     "properties": {
-      "header": {
-       "type": "object",
-       "properties": {
-        "title": {
-         "type": "string",
-         "description": "Screen title, at most four words."
-        },
-        "subtitle": {
-         "type": "string",
-         "description": "One short supporting line."
-        }
-       },
-       "required": [
-        "title",
-        "subtitle"
-       ],
-       "propertyOrdering": [
-        "title",
-        "subtitle"
-       ]
-      }
-     },
-     "required": [
-      "header"
-     ],
-     "propertyOrdering": [
-      "header"
-     ]
-    },
-    "nav": {
-     "type": "object",
-     "properties": {
-      "nav": {
-       "type": "object",
-       "properties": {
-        "items": {
-         "type": "array",
-         "items": {
-          "type": "object",
-          "properties": {
-           "label": {
-            "type": "string",
-            "description": "One word."
-           }
-          },
-          "required": [
-           "label"
-          ],
-          "propertyOrdering": [
-           "label"
-          ]
-         },
-         "description": "The app's three to five main destinations.",
-         "maxItems": 5,
-         "minItems": 3
-        },
-        "active": {
-         "type": "integer",
-         "description": "Index of the destination this screen belongs to."
-        }
-       },
-       "required": [
-        "items",
-        "active"
-       ],
-       "propertyOrdering": [
-        "items",
-        "active"
-       ]
-      }
-     },
-     "required": [
-      "nav"
-     ],
-     "propertyOrdering": [
-      "nav"
-     ]
-    }
-   },
-   "screen": [
-    {
-     "id": "root",
-     "component": "Screen",
-     "appBar": "appbar",
-     "body": "body"
-    },
-    {
-     "id": "appbar",
-     "component": "AppBar",
-     "title": {
-      "path": "/header/title"
-     },
-     "leading": "back",
-     "actions": [
-      "more_vert"
-     ]
-    },
-    {
-     "id": "body",
-     "component": "Stack",
-     "gap": "lg",
-     "children": [
-      "intro",
-      "prose",
-      "custom",
-      "steps"
-     ]
-    },
-    {
-     "id": "intro",
-     "component": "Text",
-     "tone": "muted",
-     "text": {
-      "path": "/header/subtitle"
-     }
-    },
-    {
-     "id": "prose",
-     "component": "Text",
-     "markdown": true,
-     "text": {
-      "path": "/prose/body"
-     }
-    },
-    {
-     "id": "custom",
-     "component": "Custom",
-     "use": {
-      "path": "/custom/use"
-     },
-     "ratio": "1:1",
-     "data": {
-      "path": "/custom/data"
-     },
-     "selection": {
-      "path": "/custom/selection"
-     },
-     "failed": {
-      "path": "/custom/failed"
-     }
-    },
-    {
-     "id": "steps",
-     "component": "Stack",
-     "gap": "sm",
-     "children": {
-      "path": "/steps",
-      "componentId": "steps_step"
-     }
-    },
-    {
-     "id": "steps_step",
-     "component": "Step",
-     "title": {
-      "path": "title"
-     },
-     "detail": {
-      "path": "detail"
-     }
     }
    ]
   }

@@ -31,8 +31,8 @@ export function answersTo(questions: Questions, rng: () => number): Record<strin
   );
 }
 
-/** What a design says, as the graph is given it: screen.md's three given questions. A design that says nothing rules nothing out. */
-export const DESIGN_SAYS = { photographs: true, symbols: true, cards: true };
+/** What a design rules out, as the graph is given it: screen.md's three given questions. A design that says nothing rules nothing out. */
+export const DESIGN_SAYS = { no_photographs: false, no_symbols: false, no_cards: false };
 
 /** A design nobody wrote: each of the three ruled out about a third of the time. */
-export const designSays = (rng: () => number) => ({ photographs: rng() < 0.7, symbols: rng() < 0.7, cards: rng() < 0.7 });
+export const designSays = (rng: () => number) => ({ no_photographs: rng() < 0.3, no_symbols: rng() < 0.3, no_cards: rng() < 0.3 });

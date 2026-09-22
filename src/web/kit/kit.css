@@ -202,6 +202,20 @@ kit-surface {
   border-radius: 50%;
 }
 
+/* A word that acts in the bar (Done, Save, Cancel), where an idiom puts words there. */
+.k-wordbtn {
+  min-height: 40px;
+  padding: 0 8px;
+  font: var(--k-label-weight, 600) calc(var(--k-label-size, 12px) + 3px) / 1 var(--k-label-font, inherit);
+  color: var(--k-ink);
+  background: none;
+  border: 0;
+}
+
+.k-wordbtn.k-strong {
+  font-weight: 700;
+}
+
 .k-navbar {
   display: flex;
   flex: none;

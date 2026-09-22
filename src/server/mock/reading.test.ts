@@ -37,16 +37,16 @@ test("a feed can render the existing hero when selected, while a plain feed stay
 });
 
 test("what the design rules out, the file's rules take off the screen, and say why", () => {
-  const noPhotographs = read(0.99, { ...DESIGN_SAYS, photographs: false });
+  const noPhotographs = read(0.99, { ...DESIGN_SAYS, no_photographs: true });
   assert.deepEqual(noPhotographs.blocks, ["list"]);
   assert.match(noPhotographs.decisions.find((d) => d.id === "has_hero")!.note!, /no photographs/);
   // Items led by a thumbnail are led by a symbol instead, and laid out as rows; with no symbols either, by nothing.
   assert.deepEqual([noPhotographs.values.item_leading, noPhotographs.values.list_layout], ["icon", "rows"]);
-  const nothing = read(0.99, { photographs: false, symbols: false, cards: true });
+  const nothing = read(0.99, { no_photographs: true, no_symbols: true, no_cards: false });
   assert.deepEqual([nothing.values.item_leading, nothing.values.list_layout], ["none", "rows"]);
   // Without cards, picture cards and reels become rows; a grid stays a grid.
-  assert.equal(read(0.5, { ...DESIGN_SAYS, cards: false }).values.list_layout, "rows");
-  assert.equal(read(0.5, { ...DESIGN_SAYS, cards: false }, "thumbnail", "grid").values.list_layout, "grid");
+  assert.equal(read(0.5, { ...DESIGN_SAYS, no_cards: true }).values.list_layout, "rows");
+  assert.equal(read(0.5, { ...DESIGN_SAYS, no_cards: true }, "thumbnail", "grid").values.list_layout, "grid");
   // A design that says nothing changes nothing.
   assert.deepEqual([read(0.99).values.item_leading, read(0.99).values.list_layout], ["thumbnail", "cards"]);
 });

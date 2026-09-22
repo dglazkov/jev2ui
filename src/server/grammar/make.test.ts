@@ -38,7 +38,7 @@ function* cases(count: number, grammar = screen): Generator<{ reading: Reading; 
     const answers = answersTo(questionsOf(grammar), rng);
     const contained = rng() < 0.5;
     const icons = rng() < 0.5;
-    const reading = readGrammar(grammar, answers, JEV, { values: { ...DESIGN_SAYS, symbols: icons, cards: contained } });
+    const reading = readGrammar(grammar, answers, JEV, { values: { ...DESIGN_SAYS, no_symbols: !icons, no_cards: !contained } });
     const symbol = reading.values.screen_icon === "none" ? "image" : String(reading.values.screen_icon);
     yield { reading, look: { contained, icons, symbol } };
   }

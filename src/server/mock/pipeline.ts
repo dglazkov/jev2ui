@@ -277,7 +277,7 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
     // The question whose answer is the frame's navigation: a main screen, or one reached by drilling in.
     const mainScreen = grammar.nodes.find((node) => node.target === "navigation" && node.asking?.type === "noul");
     // What the design says, given to the graph: its rules say what a design without photographs, symbols or cards does to the screen.
-    const given = { ...givensOf(grammar), ...(("photographs" in givensOf(grammar)) ? { photographs: designRead.imagery, symbols: designRead.icons, cards: designRead.contained } : {}) };
+    const given = { ...givensOf(grammar), ...("no_photographs" in givensOf(grammar) ? { no_photographs: !designRead.imagery, no_symbols: !designRead.icons, no_cards: !designRead.contained } : {}) };
     reading = readGrammar(grammar, planned.answers, JEV, {
       ...(settled ? { blocks: settled, ...(was ? { among: was } : {}) } : arrived.among ? { among: arrived.among } : {}),
       values: {

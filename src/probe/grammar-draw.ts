@@ -67,7 +67,7 @@ const since = () => `${String(Math.round(performance.now() - started)).padStart(
 const [asked, { report, read: designRead }] = await Promise.all([run.askJev("Jev: read it", { [key]: text }, questionsOf(grammar)), loadDesign({ brief: text }).loaded]);
 // What the design says is given to the graph, where the graph has a question for it (screen.md does; email.md does not).
 const givens = givensOf(grammar);
-const reading = readGrammar(grammar, asked.answers, JEV, { values: { ...givens, ...("photographs" in givens ? { photographs: designRead.imagery, symbols: designRead.icons, cards: designRead.contained } : {}) } });
+const reading = readGrammar(grammar, asked.answers, JEV, { values: { ...givens, ...("no_photographs" in givens ? { no_photographs: !designRead.imagery, no_symbols: !designRead.icons, no_cards: !designRead.contained } : {}) } });
 const parts = partsOf(grammar, reading);
 console.log(`${since()}  Jev: a ${reading.kind}: ${reading.blocks.join(", ")}`);
 for (const d of reading.decisions) if (d.note) console.log(`           ${d.id} → ${d.answer}: ${d.note}`);

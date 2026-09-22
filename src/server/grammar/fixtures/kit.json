@@ -48,9 +48,9 @@
      "hero_subject": "landmark",
      "item_subject": "farm_animal",
      "screen_icon": "sports_soccer",
-     "photographs": true,
-     "symbols": true,
-     "cards": false
+     "no_photographs": false,
+     "no_symbols": false,
+     "no_cards": true
     }
    },
    "parts": {
@@ -541,9 +541,9 @@
      "hero_subject": "city",
      "item_subject": "bird",
      "screen_icon": "thermostat",
-     "photographs": true,
-     "symbols": false,
-     "cards": true
+     "no_photographs": false,
+     "no_symbols": true,
+     "no_cards": false
     }
    },
    "parts": {
@@ -835,9 +835,9 @@
      "hero_subject": "gadget",
      "item_subject": "work",
      "screen_icon": "tv",
-     "photographs": false,
-     "symbols": false,
-     "cards": true
+     "no_photographs": true,
+     "no_symbols": true,
+     "no_cards": false
     }
    },
    "parts": {
@@ -1150,9 +1150,9 @@
      "hero_subject": "portrait",
      "item_subject": "gadget",
      "screen_icon": "key",
-     "photographs": true,
-     "symbols": true,
-     "cards": true
+     "no_photographs": false,
+     "no_symbols": false,
+     "no_cards": false
     }
    },
    "parts": {
@@ -1473,9 +1473,9 @@
      "hero_subject": "work",
      "item_subject": "water",
      "screen_icon": "savings",
-     "photographs": true,
-     "symbols": true,
-     "cards": true
+     "no_photographs": false,
+     "no_symbols": false,
+     "no_cards": false
     }
    },
    "parts": {
@@ -1817,9 +1817,9 @@
      "hero_subject": "story",
      "item_subject": "stay",
      "screen_icon": "savings",
-     "photographs": false,
-     "symbols": true,
-     "cards": true
+     "no_photographs": true,
+     "no_symbols": false,
+     "no_cards": false
     }
    },
    "parts": {
@@ -2260,9 +2260,9 @@
      "hero_subject": "story",
      "item_subject": "plant",
      "screen_icon": "newspaper",
-     "photographs": false,
-     "symbols": true,
-     "cards": true
+     "no_photographs": true,
+     "no_symbols": false,
+     "no_cards": false
     }
    },
    "parts": {
@@ -2661,9 +2661,9 @@
      "hero_subject": "art",
      "item_subject": "play",
      "screen_icon": "support_agent",
-     "photographs": false,
-     "symbols": true,
-     "cards": true
+     "no_photographs": true,
+     "no_symbols": false,
+     "no_cards": false
     }
    },
    "parts": {
@@ -3030,9 +3030,9 @@
      "hero_subject": "water",
      "item_subject": "wildlife",
      "screen_icon": "kitchen",
-     "photographs": true,
-     "symbols": true,
-     "cards": true
+     "no_photographs": false,
+     "no_symbols": false,
+     "no_cards": false
     }
    },
    "parts": {
@@ -3466,9 +3466,9 @@
      "hero_subject": "dog",
      "item_subject": "mountain",
      "screen_icon": "family_restroom",
-     "photographs": true,
-     "symbols": false,
-     "cards": false
+     "no_photographs": false,
+     "no_symbols": true,
+     "no_cards": true
     }
    },
    "parts": {
@@ -4113,9 +4113,9 @@
      "hero_subject": "venue",
      "item_subject": "beach",
      "screen_icon": "print",
-     "photographs": true,
-     "symbols": false,
-     "cards": true
+     "no_photographs": false,
+     "no_symbols": true,
+     "no_cards": false
     }
    },
    "parts": {
@@ -4565,9 +4565,9 @@
      "hero_subject": "transit",
      "item_subject": "home",
      "screen_icon": "wb_sunny",
-     "photographs": true,
-     "symbols": false,
-     "cards": false
+     "no_photographs": false,
+     "no_symbols": true,
+     "no_cards": true
     }
    },
    "parts": {
@@ -4984,9 +4984,9 @@
      "hero_subject": "vehicle",
      "item_subject": "produce",
      "screen_icon": "local_shipping",
-     "photographs": true,
-     "symbols": false,
-     "cards": false
+     "no_photographs": false,
+     "no_symbols": true,
+     "no_cards": true
     }
    },
    "parts": {
@@ -5416,9 +5416,9 @@
      "hero_subject": "flower",
      "item_subject": "farm_animal",
      "screen_icon": "monitor_heart",
-     "photographs": false,
-     "symbols": true,
-     "cards": true
+     "no_photographs": true,
+     "no_symbols": false,
+     "no_cards": false
     }
    },
    "parts": {
@@ -6041,9 +6041,9 @@
      "hero_subject": "dessert",
      "item_subject": "portrait",
      "screen_icon": "call",
-     "photographs": false,
-     "symbols": true,
-     "cards": true
+     "no_photographs": true,
+     "no_symbols": false,
+     "no_cards": false
     }
    },
    "parts": {
@@ -6523,9 +6523,9 @@
      "hero_subject": "beach",
      "item_subject": "sky",
      "screen_icon": "article",
-     "photographs": false,
-     "symbols": true,
-     "cards": true
+     "no_photographs": true,
+     "no_symbols": false,
+     "no_cards": false
     }
    },
    "parts": {
