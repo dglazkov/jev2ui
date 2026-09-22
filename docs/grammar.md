@@ -146,6 +146,39 @@ knob nothing asks about is set where the pattern is named: `### code → slot wi
 The lint, from the two files: a source the catalog lacks, `by` on what is not a set, and **a chain that ends in
 a set or a maker, which can come up empty**. So no graph that passes can leave a screen waiting on a model.
 
+**What can only be decided once the words exist** (is "Degraded" bad news, is "Auto-download" a switch or a
+page) is a question like any other, under its part. Its heading says what it is asked of, and a field says
+which question decides it:
+
+```markdown
+#### row_control (of each row in rows, within each group in groups)
+> `{row}` is a row in the supplied screen and section. Grouped rows can represent content, navigation…
+>
+> What kind of row is {row}?                              {row} is the element's name where Jev reads it: row_0, row_1
+
+#### stat_news (of each stat in stats with delta)         only of the figures that moved
+#### banner_tone (once written)                           once, of the part's words
+#### main (among each action in actions)                  one question, whose options are the elements themselves
++ `primary` It is the one.
+- `secondary` It is one of the others.
+
+    - `control` as control, decided by row_control
+    - `icon` as icon, decided by row_icon, all or none
+    - `on` as on, decided by row_on, one where row_control is check
+```
+
+A blockquote in two parts, with a bare `>` between, is what Jev reads first and then what it is asked: such a
+question is not read under the file's context, which is about the description. There is one request for each
+part, or for each element of an outer list (the rows of one group). **A question is asked only if something
+that is drawn reads the field it decides**, which is found out from the tree the file makes and not said
+anywhere: no badge and no progress bar, no question about tones. Rules can be about the elements, where a bare
+name is what was written for one (`when row_control is value and no value, row_control is nav`), and can set
+what an answer yields (`when destructive is yes and main is primary, main is danger`). Two things a field can
+say are about all of its elements at once: `all or none` (symbols down the edge of a group, because a ragged
+edge reads as a mistake) and `one where …` (of the options of one setting, exactly one is chosen: the
+likeliest, or the one already known to be). `none` yields nothing, unless the question says over again what
+it yields here (`- **none** \`circle\``, under a set read from another file).
+
 **A catalog is a file of patterns**: what each is for (the sentence a Choice would offer), its slots, written as
 fields are, and its knobs with what they can be set to; and, under `## Sources`, of where values can come
 from. `grammar/kit.md` is written out from `patterns.ts` and `fill.ts`.
@@ -176,7 +209,8 @@ tables behind them. The tests hold that:
 - a Score with values reads as `design-mix.ts` reads its dials.
 
 Live (`npm run probe:grammar`, 2026-09-21, jev-latest): asked from the file, **30 of 30 plans are the plan
-`readPlan` makes of the same answers**; 26 of 28 labelled examples came out as labelled.
+`readPlan` makes of the same answers** (in seven runs of eight; see 32 below); 26 of 28 labelled examples came
+out as labelled.
 
 One of the two misses is a find. "Thermostat control for the living room": Jev says custom at 0.56, which
 clears the probed threshold, and `probe:custom` counts that a pass. But Jev also reads the screen
@@ -262,6 +296,32 @@ the library and three were painted, the lead one among them.
 Two of the three from the library are wrong (a sea cliff for an alpine lake, a beach for a group of rock towers). The chain did
 what it says; the mountain shelf and an offer of five is where that went wrong, and no file is going to fix it.
 
+**Step 4: `decided`.** Six of the seven functions of `refine.ts` have the same shape (the seventh, the kind of
+a form's field, is 26 below), and `screen.md` now has all of what they ask: ten questions under six parts (the rows of a group, the items of a list, the figures that moved,
+a banner, the navigation, the buttons), five rules about elements, `all or none` once and `one where` once.
+`decide()` in `decide.ts` is refine.ts done for any graph. The tests hold that:
+
+- for 400 made-up groups and 300 each of the other five, **what Jev reads and what Jev is asked are deep-equal
+  to what refine.ts sends**, and the same answers, given to both, leave the same data: with and without
+  symbols, with and without an option the person is already known to have chosen, with figures that did and
+  did not move, with one button and with two;
+- a question is needed exactly when the pipeline works out by hand that it is (`want.tones`, `want.icons`,
+  the design's `icons`, `statDeltas`): over 1500 random screens, "the tree the file makes reads the field"
+  says the same;
+- nothing said about a decision is decoration: without any one of the four rules about rows, or `all or none`,
+  or `one where`, some group comes out differently;
+- none of it is asked before there are words: the first request is still deep-equal to `planQuestions()`.
+
+Writing it down found that `refineGroup` turned a group's symbols off from the first option-to-pick-among
+*onwards*, so a group whose second row was one kept the first row's symbol. It decides before reading any row
+now; two settings screens were run through the real pipeline to see it.
+
+The email graph got two such questions by hand (whether its warning is bad news, which button is the main
+one), and `probe:draw` asks them as each part is written. A failed payment, drawn live: the warning read as
+`danger` at 0.91, and the only button made the main one without asking anything.
+
+<img src="grammar-email-alert.png" width="300" alt="A failed-payment email: the banner's tone and the main button were decided once the words existed">
+
 ## What resisted
 
 What the export could not say, or could only say by growing the format:
@@ -293,10 +353,10 @@ From the catalog half:
    always bound. What a pattern does with a slot it has no use for is the pattern's business, as it is when a
    grid is too tight for a second line.
 10. **A yes had to turn a knob that takes a name** (`item_picture → leading`), so a yes and a no can yield.
-11. **Ways a field gets a value that nobody writes.** Pictures and the custom part are chains now (step 3).
-    `decided` (Jev, once the words exist: where `refine.ts` will attach) and `computed` (the last row of a bill
-    is its total) are still only words, which is why the drawn emails have no tones and no bold total.
-    `from /list/items` is another part's data, and is simply there.
+11. **Ways a field gets a value that nobody writes.** Pictures and the custom part are chains (step 3) and
+    `decided` is a question (step 4). `computed` (the last row of a bill is its total) is still only a word,
+    which is why the drawn receipt has no bold total. `from /list/items` is another part's data, and is
+    simply there.
 12. **The frame is not in the catalog.** The app bar, the navigation, a profile's opening, a dialog, the sticky
     bar: `screen()` in `mock/screen.ts`. That is where a kind's traits, the header, `top_level`, `person` and
     `app_bar_action` land. `probe:draw` puts the parts on a bare page under the header.
@@ -331,9 +391,35 @@ From the chains:
 24. **`written` is a source too**, the first of every plain field, and its tier, its system prompt and which
     writer waits for which are still the host's.
 
+From what is decided once the words exist:
+
+25. **Two things are about all the elements at once**, and needed words of their own: `all or none`, `one
+    where`. Everything else in refine.ts was a question, a yield or a flat rule.
+26. **The kind of a form's field is still `decided` by nothing the file says**, and the lint says so.
+    `design.ts` is older than the kit: it asks about one field at a time, under other names (`user_request`,
+    `form_field`), walks Jev's ranking to the first control the content can back (a choice needs options, a
+    slider a lower bound under an upper one), and makes a choice of four or fewer into chips. That wants an
+    option that is only on offer when something was written, and a count.
+27. **Two conventions made the requests come out the same, and are said nowhere**: an element with one thing
+    written for it is that thing where Jev reads it (a destination is its label, a group is its title), and
+    `none` yields nothing.
+28. **The names answers come back under differ.** refine.ts says `control_0`, `news_2`, `primary`; the file
+    says `row_control_0`, `stat_news_2`, `main`, because a heading is an id and `icon` is asked in three parts.
+    The requests were held equal in what is asked and in what order, not in these names. Whether Jev reads
+    them is not known.
+29. **What is already known is the host's**: the option the person saw on the row they tapped. `decide()` takes
+    it as a function; the file cannot say where it comes from.
+30. **The tool's own graph does not pass its own lint clean**: `row_on` and `destructive` do not say what yes
+    and no look like. They were left as they are, since new wording is new behaviour and wants a probe first.
+31. **When to ask** (as each group completes, once a list is complete) is the host's, with the streaming.
+32. **Once in eight live runs of thirty, one plan differed from `readPlan`'s**, and it was not seen again, so what
+    differed is not known; the probe now prints it. Both read the same answers, so it is a tie or a boundary and
+    not chance. The one place they are built differently: `readPlan` reads most choices as Jev's `choice` but a
+    symbol as the top of the ranking (`readIcon`), and the file's reader reads every choice one way. On a tie
+    between two symbols those can differ. This is a suspicion, not a finding.
+
 Not attempted, and each is a piece of the graph that is still only code:
 
-- **Per-instance decisions** (`refine.ts`): asked once the words exist, once per row. Needs an `each`.
 - **Reading a change** (`change.ts`): every dial and gate has a relative twin ("what does this message want
   done to it"). That twin looks derivable from the graph rather than something to write down twice.
 - **The design overruling the plan** (`applyDesign`) and **what stays when a screen is made again**
@@ -343,16 +429,15 @@ Not attempted, and each is a piece of the graph that is still only code:
 
 ## Next, in the order that seems right
 
-1. **`decided`, which is `each`.** A field Jev decides once the words exist carries its own question and
-   options, asked per element: `refine.ts` as fields (`- \`tone\` as tone, decided` grows a question under it).
-   It is the last big piece of the screen graph that is only code, and what would give the drawn emails their
-   tones and their main button.
+1. **Let the tool read the files.** Everything `runMock` does for a screen now has a generic twin held to it:
+   `readGrammar` + `planOf` for the plan, `schemaOf` + `treeOf` for the parts, `fill()` for what nobody writes,
+   `decide()` for what is decided later. What differs is the trace a person reads, the ids of components and
+   the names answers come back under (28), and `grammar/*.md` would have to travel with the server bundle the
+   way `library.json` does. This is the step after which editing `screen.md` changes the tool.
 2. **The frame as a pattern**, so that traits have somewhere to go and a brought graph gets more than a page.
-3. **Let the tool read the files.** `readGrammar` + `planOf` for the plan, `schemaOf` + `treeOf` for the parts,
-   `fill()` for what nobody writes; the differential tests are the safety. What differs is the trace a person
-   reads and the ids of components, and `grammar/*.md` would have to travel with the server bundle the way
-   `library.json` does.
-4. **A contract of the graph's own** for the baker and the shelf (19), and more than one slot (20): what it
+   It can come before or after 1; a brought graph needs it, the tool's own does not.
+3. **A contract of the graph's own** for the baker and the shelf (19), and more than one slot (20): what it
    takes for a brought graph's baked parts to be first-class.
+4. **Form fields** (26): an option that is on offer only when something was written, and a count.
 5. **Calibration from examples**, and with it the policy for a torn answer (18): fit the tiers for gev from a
    graph's own examples, and say in the file what happens under them.

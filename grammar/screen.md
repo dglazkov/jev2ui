@@ -47,7 +47,17 @@ Polaris: banners are for important, often time-sensitive status; use sparingly.
 
 - `title` as title — What needs attention, in a few words.
 - `text` as text — One sentence of detail.
-- `tone` as tone, decided
+- `tone` as tone, decided by banner_tone
+
+#### banner_tone (once written)
+
+> For the person looking at the screen, what kind of news is `banner`?
+
+- **success** — Good news or a healthy state: done, available, on time, paid, active, in stock.
+- **warning** — Needs attention soon: low, delayed, pending, degraded, expiring, almost full.
+- **danger** — Bad news: failed, overdue, critical, cancelled, offline, out of stock.
+- **accent** — A highlight and not a state: new, featured, popular, recommended.
+- **neutral** `accent` — Plain information that is neither good nor bad.
 
 ### hero → picture
 
@@ -129,7 +139,7 @@ filled from shelf else baked else closed
   - `label` as label — Short label.
   - `value` as value — The figure with its unit, e.g. '24.2 kWh'.
   - `delta` as delta, when stat_deltas is yes — Change against the previous period, signed, e.g. '+12%' or '-0.4 kW'.
-  - `tone` as tone, decided, when stat_deltas is yes
+  - `tone` as tone, decided by stat_news, when stat_deltas is yes
 
 #### stat_deltas
 
@@ -137,6 +147,16 @@ filled from shelf else baked else closed
 
 + Usage, spending, revenue, health or performance figures compared with yesterday, last week or a target.
 - Fixed figures, such as counts or specifications, with nothing to compare against.
+
+#### stat_news (of each stat in stats with delta)
+
+"+12%" is good news for revenue and bad news for an electricity bill.
+
+> For the person looking at the screen, is the change in {stat} good or bad news?
+
+- **good** — The figure moved the way the person wants it to.
+- **bad** — The figure moved the way the person does not want.
+- **neutral** — Neither; it is just a change.
 
 ### list → collection
 
@@ -158,8 +178,8 @@ filled from shelf else baked else closed
   - `time` as meta, when item_time is yes — Short date, time or duration, e.g. 'Today 7:15 pm', '42 min'.
   - `progress` number, as progress, when item_progress is yes — Percent from 0 to 100.
   - `on` boolean, as on, when item_trailing is switch or checkbox — Whether it is currently on or ticked.
-  - `tone` as tone, decided
-  - `icon` as icon, decided
+  - `tone` as tone, decided by item_tone
+  - `icon` as icon, decided by item_icon
   - `imageUrl` as picture, from library by item_subject else painted else placeholder
 
 #### list_layout → layout
@@ -239,6 +259,24 @@ Material 3 list item trailing slot; HIG disclosure indicators; Material selectio
 + Downloads, courses, goals, budgets, batteries, storage, tasks part-way done.
 - Nothing about the item is part-way.
 
+#### item_tone (of each item in items)
+
+> For the person looking at the screen, what is the state of {item}?
+
+- **success** — Good news or a healthy state: done, available, on time, paid, active, in stock.
+- **warning** — Needs attention soon: low, delayed, pending, degraded, expiring, almost full.
+- **danger** — Bad news: failed, overdue, critical, cancelled, offline, out of stock.
+- **accent** — A highlight and not a state: new, featured, popular, recommended.
+- **neutral** — Plain information that is neither good nor bad.
+
+#### item_icon (of each item in items)
+
+> Which symbol best stands for {item}?
+
+among [icons](icons.md)
+
+- **none** `circle` — No symbol in the set relates to it.
+
 ### groups → groups
 
 > Does the screen consist of rows of settings or options the person turns on, picks or opens?
@@ -252,9 +290,35 @@ Material 3 list item trailing slot; HIG disclosure indicators; Material selectio
     - `label` as label — The setting or option.
     - `detail` as detail, optional — ONLY if the label needs explaining: one short line.
     - `value` as value, optional — ONLY for a setting with one current value picked from several: that value, e.g. 'English', 'High quality', '15 seconds'. Never for on/off settings.
-    - `icon` as icon, decided
-    - `control` as control, decided
-    - `on` as on, decided
+    - `icon` as icon, decided by row_icon, all or none
+    - `control` as control, decided by row_control
+    - `on` as on, decided by row_on, one where row_control is check
+
+#### row_control (of each row in rows, within each group in groups)
+
+Material: a switch for one on/off setting that takes effect at once. HIG: a disclosure indicator for a row that opens another page.
+
+> `{row}` is a row in the supplied screen and section. Grouped rows can represent content, navigation, settings or actions; use their actual text and context to decide.
+>
+> What kind of row is {row}?
+
+- **switch** — A setting that is simply on or off and takes effect at once: notifications, dark mode, autoplay, sync.
+- **value** — A setting with one current value picked from several, changed on another page: language, quality, theme, frequency, units.
+- **nav** — A link to another page: a content item, details, account, privacy, help, about, or managing something. Its text and section identify what it opens.
+- **check** — One of several alternative options listed together, of which one is chosen: the choices of a single setting, such as '10 seconds', '30 seconds', 'High', 'Low'.
+- **danger** — A final or destructive account action: sign out, delete account, clear data, reset.
+
+#### row_on (of each row in rows, within each group in groups)
+
+> `{row}` is a row in the supplied screen and section. Grouped rows can represent content, navigation, settings or actions; use their actual text and context to decide.
+>
+> If {row} is an on/off setting, would a typical person have it switched on?
+
+#### row_icon (of each row in rows, within each group in groups)
+
+> Which symbol best stands for {row}?
+
+among [icons](icons.md)
 
 ### facts → details
 
@@ -323,7 +387,20 @@ Material 3 list item trailing slot; HIG disclosure indicators; Material selectio
 
 - `actions` 1–2, as actions — One or two buttons, most important first.
   - `label` as label — Button label, one to three words.
-  - `variant` as variant, decided
+  - `variant` as variant, decided by main
+
+#### destructive (once written)
+
+> Does the main action of this screen delete, cancel or otherwise destroy something that cannot be recovered?
+
+#### main (among each action in actions)
+
+One primary action per screen: Material, HIG and Polaris all agree.
+
+> Which button is the main thing the person came to this screen to do?
+
++ `primary` It is the one.
+- `secondary` It is one of the others.
 
 ## person
 
@@ -345,8 +422,16 @@ Written once for an app, on its first main screen; every main screen after that 
 
 - `items` 3–5 — The app's three to five main destinations.
   - `label` — One word.
-  - `icon` decided
+  - `icon` decided by destination_icon
 - `active` integer — Index of the destination this screen belongs to.
+
+#### destination_icon (of each destination in items)
+
+> Which symbol best stands for {destination} of the app's main navigation?
+
+among [icons](icons.md)
+
+- **none** `circle` — No symbol in the set relates to it.
 
 ## app_bar_action
 
@@ -392,6 +477,11 @@ among [icons](icons.md)
 - when archetype is not detail, person is no — only a page about one thing can be about one person
 - when item_leading is not thumbnail, list_layout is rows — picture layouts are for things with a look; anything else is scanned as rows
 - when no list, custom_linked is no — with no list there are no items for it to draw
+- when row_control is value and no value, row_control is nav — a row can only show a value if one was written
+- when row_control is switch and value, row_control is value — a row that has a value is not a switch
+- when row_control is check, row_icon is none — options to pick among are told apart by their words, and a group with any of them has no symbols
+- when row_control is check, no value — which option is chosen is shown by the tick
+- when destructive is yes and main is primary, main is danger — if it destroys something, it says so in red
 
 ## Examples
 

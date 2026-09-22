@@ -54,6 +54,18 @@
 //
 //   - **watch** — It shows something that changes on its own: a timer, a gauge.
 //     → Make it run: it moves, counts or updates by itself once started.
+//
+// Some things can only be decided once the words exist: is "Degraded" bad news, is
+// "Auto-download" a switch or a page. Those are questions like any other, under the
+// part, and their heading says what they are asked of; a field says which decides it:
+//
+//   #### row_control (of each row in rows, within each group in groups)
+//   > What kind of row is {row}?                          {row} is the element's name where Jev reads it: row_0, row_1
+//   #### main (among each action in actions)              one question, whose options are the elements themselves
+//   #### banner_tone (once written)                       one question, about the part's words
+//   - `control` as control, decided by row_control
+//   - `icon` as icon, decided by row_icon, all or none    a ragged edge reads as a mistake
+//   - `on` as on, decided by row_on, one where row_control is check
 
 export interface Shape {
   /** The parts a thing of this kind may have, in the order they come. */
@@ -83,8 +95,8 @@ export interface Level {
 export type Asking =
   /** `yesValue` and `noValue` are what the answer yields, when a yes or a no has to turn something that takes a name. */
   | { type: "noul"; yes?: string; no?: string; yesValue?: string; noValue?: string }
-  /** `among` names a set kept in another file; `options` are that file's. */
-  | { type: "choice"; options: Option[]; among?: { name: string; href: string } }
+  /** `among` names a set kept in another file; `options` are that file's, but for any this question says over again (`overrides`): what `none` yields here. */
+  | { type: "choice"; options: Option[]; among?: { name: string; href: string }; overrides?: Option[] }
   | { type: "score"; levels: Level[] };
 
 /**
@@ -118,6 +130,10 @@ export interface Field {
   required?: boolean;
   source?: Source;
   when?: Atom[];
+  /** Every element has a value for it or none does: symbols down the left edge of a group. */
+  allOrNone?: boolean;
+  /** Among the elements where this holds, exactly one is yes: the likeliest, or the one already known to be. */
+  oneWhere?: Atom[];
   /** What the writer is told about it. */
   description?: string;
   /** What else the writer is told, when something holds. */
@@ -142,6 +158,8 @@ export interface Node {
   /** Anything said under the heading that is not asked of Jev: where the knowledge came from. */
   prose: string[];
   question?: string;
+  /** Read by Jev before this question and no other. A question asked once the words exist is not read under the file's context, which is about the description. */
+  context?: string;
   asking?: Asking;
   /** What it is made of. A heading with fields and no question is always there: the header of a screen. */
   fields: Field[];
@@ -174,6 +192,54 @@ export interface Grammar {
   examples: Example[];
   /** The name an example goes under in what Jev reads: `## Examples (screen)`. Without one, the name of the file's graph. */
   stateKey?: string;
+}
+
+/**
+ * What a question under a part is asked of, when it is not the description: said in its heading.
+ *   (once written)                       the part's words, once
+ *   (of each row in rows)                each element of a list, by the name Jev reads it under; `with delta` leaves out those that have none
+ *   (within each group in groups)        ...a list that is inside another: one request for each of the outer
+ *   (among each action in actions)       one question whose options are the elements
+ */
+export interface Later {
+  kind: "once" | "each" | "among";
+  /** The element's name, and the list it is an element of. */
+  name?: string;
+  list?: string;
+  /** Only the elements in which this was written. */
+  withField?: string;
+  outer?: { name: string; list: string };
+}
+
+export function laterOf(node: Node): Later | undefined {
+  let later: Later | undefined;
+  let outer: Later["outer"];
+  for (const trait of node.traits) {
+    const each = /^of each (\w+) in (\w+)(?: with (\w+))?$/.exec(trait);
+    const among = /^among each (\w+) in (\w+)$/.exec(trait);
+    const within = /^within each (\w+) in (\w+)$/.exec(trait);
+    if (trait === "once written") later = { kind: "once" };
+    if (each) later = { kind: "each", name: each[1], list: each[2], ...(each[3] ? { withField: each[3] } : {}) };
+    if (among) later = { kind: "among", name: among[1], list: among[2] };
+    if (within) outer = { name: within[1], list: within[2] };
+  }
+  return later && { ...later, ...(outer ? { outer } : {}) };
+}
+
+/** The question asked once the words exist that a rule is about, if it is about one: such a rule is tried for each element, not for the screen. */
+export function laterIn(grammar: Grammar, rule: Rule): Later | undefined {
+  let found: Later | undefined;
+  const ids = [...rule.when, rule.then].flatMap((atom) => ("id" in atom ? [atom.id] : []));
+  walk(grammar.nodes, (node) => void (ids.includes(node.name) && !node.block && (found ??= laterOf(node))));
+  return found;
+}
+
+/** What each element of a list is made of, wherever in the file the list is. */
+export function fieldsOfList(grammar: Grammar, list: string): Field[] | undefined {
+  let found: Field[] | undefined;
+  const into = (fields: Field[]) => fields.forEach((field) => (field.name === list && field.list && (found ??= field.fields), into(field.fields)));
+  walk(grammar.nodes, (node) => into(node.fields));
+  return found;
 }
 
 /** The id an answer comes back under. */
@@ -229,6 +295,8 @@ function parseSpec(spec: string, line: number): Partial<Field> {
     else if (word === "optional") out.optional = true;
     else if (word === "required") out.required = true;
     else if (word.startsWith("when ")) out.when = parseWhen(word.slice(5), line);
+    else if (word === "all or none") out.allOrNone = true;
+    else if (word.startsWith("one where ")) out.oneWhere = parseWhen(word.slice(10), line);
     else out.source = parseSource(word, line);
   }
   return out;
@@ -287,9 +355,10 @@ export function parseGrammar(markdown: string, load?: (href: string) => string):
   };
   const flush = () => {
     if (quote.length) {
-      const text = quote.join(" ");
+      // A bare ">" parts what Jev reads first from what it is asked.
+      const [text, ...before] = quote.join("\n").split("\n>\n").map((part) => part.replace(/\n/g, " ")).reverse();
       const node = here();
-      if (node) node.question = text;
+      if (node) Object.assign(node, { question: text, ...(before.length ? { context: before.reverse().join(" ") } : {}) });
       else grammar.context = text;
       quote = [];
     }
@@ -302,9 +371,9 @@ export function parseGrammar(markdown: string, load?: (href: string) => string):
   markdown.split("\n").forEach((raw, index) => {
     const line = index + 1;
     const text = raw.trimEnd();
-    if (text.startsWith("> ")) {
+    if (text.startsWith("> ") || text === ">") {
       if (paragraph.length) flush();
-      quote.push(text.slice(2).trim());
+      quote.push(text === ">" ? ">" : text.slice(2).trim());
       return;
     }
     if (quote.length) flush();
@@ -411,7 +480,14 @@ export function parseGrammar(markdown: string, load?: (href: string) => string):
     if (option) {
       flush();
       lastOption = { name: option[1], ...(option[2] !== undefined ? { value: option[2] } : {}), criteria: option[3] ?? null };
-      (here() ? asking("choice", line).options : grammar.options).push(lastOption);
+      const choice = here() ? asking("choice", line) : undefined;
+      if (choice?.among) {
+        // Said over again under a set that was read from another file: the same option, as it is here.
+        (choice.overrides ??= []).push(lastOption);
+        const at = choice.options.findIndex((o) => o.name === lastOption!.name);
+        if (at >= 0) choice.options[at] = lastOption;
+        else choice.options.push(lastOption);
+      } else (choice?.options ?? grammar.options).push(lastOption);
       return;
     }
     if (BARE.test(text)) {
@@ -503,6 +579,8 @@ function printField(field: Field, pad = ""): string[] {
     ...(field.required ? ["required"] : []),
     ...(field.optional ? ["optional"] : []),
     ...(field.source ? [printSource(field.source)] : []),
+    ...(field.allOrNone ? ["all or none"] : []),
+    ...(field.oneWhere ? [`one where ${field.oneWhere.map(printAtom).join(" and ")}`] : []),
     ...(field.when ? [`when ${field.when.map(printAtom).join(" and ")}`] : []),
   ].join(", ");
   const said = (text?: string) => (text ? ` — ${oneLine(text, field.name)}` : "");
@@ -518,7 +596,7 @@ function printNode(node: Node, depth: number): string[] {
   const fixed = node.fixed ? ` with ${Object.entries(node.fixed).map(([knob, value]) => `${knob} ${value}`).join(", ")}` : "";
   const out = [`${"#".repeat(depth)} ${node.name}${node.traits.length ? ` (${node.traits.join(", ")})` : ""}${node.target ? ` → ${node.target}${fixed}` : ""}`, ""];
   for (const paragraph of node.prose) out.push(oneLine(paragraph, node.name), "");
-  if (node.question) out.push(`> ${oneLine(node.question, node.name)}`, "");
+  if (node.question) out.push(...(node.context ? [`> ${oneLine(node.context, node.name)}`, ">"] : []), `> ${oneLine(node.question, node.name)}`, "");
   const asking = node.asking;
   if (asking?.type === "noul" && (asking.yes !== undefined || asking.no !== undefined)) {
     if (asking.no?.startsWith("**")) throw new Error(`"${node.name}": a line that opens with a bold name is an option`);
@@ -529,7 +607,7 @@ function printNode(node: Node, depth: number): string[] {
     out.push("");
   }
   if (asking?.type === "choice") {
-    if (asking.among) out.push(`among [${asking.among.name}](${asking.among.href})`, "");
+    if (asking.among) out.push(`among [${asking.among.name}](${asking.among.href})`, "", ...(asking.overrides?.length ? [...printOptions(asking.overrides), ""] : []));
     else out.push(...printOptions(asking.options), "");
   }
   if (asking?.type === "score") {
@@ -591,41 +669,60 @@ export function checkGrammar(grammar: Grammar): { errors: string[]; warnings: st
     if (asking?.type === "score" && asking.levels.length < 2) errors.push(`"${node.name}" needs at least two levels`);
     if (asking?.type === "score" && asking.levels.some((l) => l.value !== undefined) && asking.levels.some((l) => l.value === undefined || Number.isNaN(Number(l.value)))) errors.push(`"${node.name}" is a dial only if every level has a number`);
     if (asking?.type === "noul" && (asking.yes === undefined || asking.no === undefined)) warnings.push(`"${id}" does not say what yes and no look like; bare questions come back near even odds`);
+    const later = laterOf(node);
+    if (later?.name && node.question && !node.question.includes(`{${later.name}}`) && later.kind === "each") warnings.push(`"${id}" is asked of each ${later.name} and never says {${later.name}}, so Jev is not told which one`);
     // A part is not under its kind the way a question is under a part: whether there is a list is asked of every screen.
-    if (parent && !node.block && node.question && !/^if\b/i.test(node.question)) warnings.push(`"${id}" is asked before "${idOf(parent)}" is known, so it should open with "If…"`);
+    // And a question asked once the words exist is asked when the part is known to be there.
+    if (parent && !node.block && !later && node.question && !/^if\b/i.test(node.question)) warnings.push(`"${id}" is asked before "${idOf(parent)}" is known, so it should open with "If…"`);
   });
   walk(grammar.nodes, (node) => {
     if (node.asking?.type !== "choice") return;
     for (const option of node.asking.options) for (const part of option.shape?.parts ?? []) if (!blocks.has(part.block)) errors.push(`"${option.name}" has a part "${part.block}" that nothing describes`);
   });
-  const checkAtom = (atom: Atom) => {
+  const checkAtom = (atom: Atom, sets = false) => {
     if ("block" in atom) return void (blocks.has(atom.block) || errors.push(`a rule or an example names a part "${atom.block}" that nothing describes`));
-    const asking = byId.get(atom.id)?.asking;
+    const node = byId.get(atom.id);
+    const asking = node?.asking;
     if (!asking) return void errors.push(`a rule or an example names "${atom.id}", which is not asked`);
+    // What a rule sets a later answer to need not be one of its answers: it is then what the answer is to yield (`main is danger`).
+    if (sets && node && laterOf(node)) return;
     for (const is of atom.is) {
-      if (asking.type === "choice" && !asking.options.some((o) => o.name === is)) errors.push(`"${atom.id} is ${is}" is said somewhere, and that is not one of its options`);
-      if (asking.type === "noul" && is !== "yes" && is !== "no") errors.push(`"${atom.id} is ${is}" is said somewhere, and it can only be yes or no`);
+      // An answer can be named by what it yields, which is how whoever wrote the rule thinks of it: `main is primary`.
+      if (asking.type === "choice" && !asking.options.some((o) => o.name === is || o.value === is)) errors.push(`"${atom.id} is ${is}" is said somewhere, and that is not one of its options`);
+      if (asking.type === "noul" && ![`yes`, `no`, asking.yesValue, asking.noValue].includes(is)) errors.push(`"${atom.id} is ${is}" is said somewhere, and it can only be yes or no`);
     }
     if (asking.type === "score") errors.push(`a rule names "${atom.id}", which is a score; rules read parts, choices and yes-or-no answers`);
   };
   for (const rule of grammar.rules) {
-    [...rule.when, rule.then].forEach(checkAtom);
+    const about = laterIn(grammar, rule);
+    // In a rule about the elements of a list, a bare name is what was written for the element: `no value`.
+    const fields = about?.list ? fieldsOfList(grammar, about.list) : undefined;
+    for (const atom of [...rule.when, rule.then]) {
+      if (fields && "block" in atom) fields.some((f) => f.name === atom.block) || blocks.has(atom.block) || errors.push(`a rule about each ${about!.name} names "${atom.block}", which is neither written for one nor a part`);
+      else checkAtom(atom, atom === rule.then);
+    }
     if (!("block" in rule.then) && (rule.then.is.length > 1 || rule.then.not)) errors.push(`a rule ends in "${printAtom(rule.then)}", which does not say what it is to be`);
   }
   const checkSource = (source: Source | undefined, where: string) => {
-    for (const step of source ?? []) if (step.by && byId.get(step.by)?.asking?.type !== "choice") errors.push(`"${where}" is looked for by "${step.by}", which is not a choice that is asked`);
+    for (const step of source ?? []) {
+      const by = step.by ? byId.get(step.by) : undefined;
+      if (step.name === "decided") {
+        if (!step.by) warnings.push(`"${where}" is decided, and nothing says by what question`);
+        else if (!by || !laterOf(by)) errors.push(`"${where}" is decided by "${step.by}", which is not a question asked once the words exist`);
+      } else if (step.by && by?.asking?.type !== "choice") errors.push(`"${where}" is looked for by "${step.by}", which is not a choice that is asked`);
+    }
   };
   walk(grammar.nodes, (node) => checkSource(node.filled, node.name));
   const checkFields = (fields: Field[]) => {
     for (const field of fields) {
       checkSource(field.source, field.name);
-      field.when?.forEach(checkAtom);
-      for (const note of field.notes) note.when.forEach(checkAtom);
+      field.when?.forEach((atom) => checkAtom(atom));
+      for (const note of field.notes) note.when.forEach((atom) => checkAtom(atom));
       checkFields(field.fields);
     }
   };
   walk(grammar.nodes, (node) => checkFields(node.fields));
-  for (const example of grammar.examples) example.expect.forEach(checkAtom);
+  for (const example of grammar.examples) example.expect.forEach((atom) => checkAtom(atom));
   if (grammar.nodes.length && !grammar.examples.length) warnings.push("the file has no examples, so nothing says its questions are read as they were meant");
   return { errors, warnings };
 }

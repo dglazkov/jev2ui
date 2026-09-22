@@ -117,6 +117,18 @@ export function treeOf(catalog: Catalog, grammar: Grammar, node: Node, reading: 
   return pattern ? pattern.draw(node.name, boundOf(node, reading), knobsOf(grammar, node, reading), look) : [];
 }
 
+/** Where the data that a tree reads is: every path some component is bound to. A field nothing is bound to is not drawn, and Jev is not asked about it. */
+export function boundIn(components: KitComponent[]): Set<string> {
+  const paths = new Set<string>();
+  const into = (value: unknown): void => {
+    if (!value || typeof value !== "object") return;
+    if (typeof (value as { path?: unknown }).path === "string") paths.add((value as { path: string }).path);
+    Object.values(value).forEach(into);
+  };
+  components.forEach(into);
+  return paths;
+}
+
 /** The parts of a reading, in the order its kind puts them. */
 export function partsOf(grammar: Grammar, reading: Reading): Node[] {
   const parts: Node[] = [];
@@ -142,7 +154,7 @@ export function checkBindings(grammar: Grammar, catalog: Grammar): { errors: str
     const last = chain.at(-1)!;
     const traits = sources.get(last.name) ?? [];
     if (traits.includes("set") || traits.includes("maker")) errors.push(`"${where}" ends in "${last.name}", which can come up empty: end the chain with ${sure.join(" or ")}`);
-    for (const step of chain) if (step.by && !sources.get(step.name)?.includes("set")) warnings.push(`"${where}": "by ${step.by}" says where in a set to look, and "${step.name}" is not a set`);
+    for (const step of chain) if (step.by && !sources.get(step.name)?.some((trait) => trait === "set" || trait === "asks")) warnings.push(`"${where}": "by ${step.by}" says where in a set to look, and "${step.name}" is not a set`);
   };
   const checkChains = (fields: Field[], where: string) => fields.forEach((field) => (checkChain(field.source, `${where}${field.name}`), checkChains(field.fields, `${where}${field.name}.`)));
   walk(grammar.nodes, (node) => (checkChain(node.filled, node.name), checkChains(node.fields, `${node.name}.`)));

@@ -325,7 +325,14 @@ these, a maker, a terminal), the contract a maker works to is what the graph dec
 each answer means to a maker is a line under the option that opens with an arrow. A lint refuses a chain that
 can end in nothing. A runner that knows only how to try a chain is held to `bakeCustom` and `Pictures.find`,
 call for call, with the models stood in for; and the email graph's one-time code, which nothing in the kit
-draws, is baked through its chain. Nothing the tool serves reads these files yet. The format, the results,
+draws, is baked through its chain.
+
+What Jev decides once the words exist (`refine.ts`) is in the file too: a question under its part whose
+heading says what it is asked of (`(of each row in rows)`, `(once written)`, `(among each action in
+actions)`), a field that says which question decides it, rules about the elements, and two words for what is
+about all of them at once (`all or none`, `one where …`). A question is asked only if something drawn reads
+the field it decides. `decide()` is held to six of refine.ts's seven functions (the kind of a form's field is the
+seventh): the same requests to Jev, and from the same answers the same data. Nothing the tool serves reads these files yet. The format, the results,
 the pictures and what resisted are in [docs/grammar.md](docs/grammar.md).
 
 ## Rendering strategy: the mock is painted by a DESIGN.md
@@ -701,7 +708,7 @@ src/shared/kit.ts           the kit: component schemas of the A2UI fork, shared 
 src/server/mock/plan.ts     the grammar (archetypes, blocks, anatomy) and the questions that fill it
 src/server/mock/screen.ts   plan to component tree; and the content schema Gemini is asked to fill
 grammar/                    the graph as files: screen.md and paint.md (written out by npm run grammar:export), the sets they link to, kit.md (the catalog a graph's parts name), examples/email.md
-src/server/grammar/         format.ts reads, writes and checks a graph file; read.ts asks it and reads the answers; make.ts turns what a part is made of into a writer's schema and a tree; fill.ts tries a chain of sources; patterns.ts is the kit as a catalog; export.ts writes the tool's own files; screen-plan.ts renames a reading into a ScreenPlan
+src/server/grammar/         format.ts reads, writes and checks a graph file; read.ts asks it and reads the answers; make.ts turns what a part is made of into a writer's schema and a tree; fill.ts tries a chain of sources; decide.ts asks what is decided once the words exist; patterns.ts is the kit as a catalog; export.ts writes the tool's own files; screen-plan.ts renames a reading into a ScreenPlan
 src/probe/grammar.ts        a graph file run on its own examples; screen.md held against readPlan
 src/probe/grammar-draw.ts   a graph file drawn: Jev reads, the file gives the tree, the schemas and the chains, Gemini writes, bakes and paints, the kit renders (out/grammar/)
 src/server/mock/refine.ts   per-instance decisions from the content, written into the data model

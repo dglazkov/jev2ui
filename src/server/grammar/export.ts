@@ -13,6 +13,7 @@ import { pathToFileURL } from "node:url";
 import type { Question, Questions } from "@typesafe-ai/sdk";
 import { HUES, STOPS, mixQuestions } from "../design-mix.js";
 import { USES } from "../mock/bake.js";
+import { CONTROLS, TONES } from "../mock/refine.js";
 import { ICON_OPTIONS } from "../mock/icons.js";
 import { SUBJECT_OPTIONS } from "../mock/pictures.js";
 import { APP_BAR_ACTIONS, ARCHETYPES, BLOCKS, CUSTOM_SIZE, planQuestions, type Block } from "../mock/plan.js";
@@ -120,6 +121,11 @@ const SCREEN_RULES: Rule[] = parseGrammar(`## Rules
 - when archetype is not detail, person is no — only a page about one thing can be about one person
 - when item_leading is not thumbnail, list_layout is rows — picture layouts are for things with a look; anything else is scanned as rows
 - when no list, custom_linked is no — with no list there are no items for it to draw
+- when row_control is value and no value, row_control is nav — a row can only show a value if one was written
+- when row_control is switch and value, row_control is value — a row that has a value is not a switch
+- when row_control is check, row_icon is none — options to pick among are told apart by their words, and a group with any of them has no symbols
+- when row_control is check, no value — which option is chosen is shown by the tick
+- when destructive is yes and main is primary, main is danger — if it destroys something, it says so in red
 `).rules;
 
 /** The prompts of probe:custom, labelled by hand before they were ever run. Those that could be read either way claim nothing. */
@@ -137,7 +143,7 @@ export const CUSTOM_CHAIN = "from shelf else baked else closed";
 const pictureChain = (by: string) => `from library by ${by} else painted else placeholder`;
 
 const MADE_OF: Record<Block, { pattern: string; made: string; filled?: string }> = {
-  banner: { pattern: "banner", made: "- `title` as title — What needs attention, in a few words.\n- `text` as text — One sentence of detail.\n- `tone` as tone, decided" },
+  banner: { pattern: "banner", made: "- `title` as title — What needs attention, in a few words.\n- `text` as text — One sentence of detail.\n- `tone` as tone, decided by banner_tone" },
   hero: { pattern: "picture", made: `- \`imageUrl\` as picture, ${pictureChain("hero_subject")}` },
   filters: {
     pattern: "filters",
@@ -151,7 +157,7 @@ const MADE_OF: Record<Block, { pattern: string; made: string; filled?: string }>
       "  - `label` as label — Short label.",
       "  - `value` as value — The figure with its unit, e.g. '24.2 kWh'.",
       "  - `delta` as delta, when stat_deltas is yes — Change against the previous period, signed, e.g. '+12%' or '-0.4 kW'.",
-      "  - `tone` as tone, decided, when stat_deltas is yes",
+      "  - `tone` as tone, decided by stat_news, when stat_deltas is yes",
     ].join("\n"),
   },
   list: {
@@ -170,8 +176,8 @@ const MADE_OF: Record<Block, { pattern: string; made: string; filled?: string }>
       "  - `time` as meta, when item_time is yes — Short date, time or duration, e.g. 'Today 7:15 pm', '42 min'.",
       "  - `progress` number, as progress, when item_progress is yes — Percent from 0 to 100.",
       "  - `on` boolean, as on, when item_trailing is switch or checkbox — Whether it is currently on or ticked.",
-      "  - `tone` as tone, decided",
-      "  - `icon` as icon, decided",
+      "  - `tone` as tone, decided by item_tone",
+      "  - `icon` as icon, decided by item_icon",
       `  - \`imageUrl\` as picture, ${pictureChain("item_subject")}`,
     ].join("\n"),
   },
@@ -184,9 +190,9 @@ const MADE_OF: Record<Block, { pattern: string; made: string; filled?: string }>
       "    - `label` as label — The setting or option.",
       "    - `detail` as detail, optional — ONLY if the label needs explaining: one short line.",
       "    - `value` as value, optional — ONLY for a setting with one current value picked from several: that value, e.g. 'English', 'High quality', '15 seconds'. Never for on/off settings.",
-      "    - `icon` as icon, decided",
-      "    - `control` as control, decided",
-      "    - `on` as on, decided",
+      "    - `icon` as icon, decided by row_icon, all or none",
+      "    - `control` as control, decided by row_control",
+      "    - `on` as on, decided by row_on, one where row_control is check",
     ].join("\n"),
   },
   facts: {
@@ -210,12 +216,47 @@ const MADE_OF: Record<Block, { pattern: string; made: string; filled?: string }>
       "  - `kind` as kind, decided",
     ].join("\n"),
   },
-  actions: { pattern: "actions", made: "- `actions` 1–2, as actions — One or two buttons, most important first.\n  - `label` as label — Button label, one to three words.\n  - `variant` as variant, decided" },
+  actions: { pattern: "actions", made: "- `actions` 1–2, as actions — One or two buttons, most important first.\n  - `label` as label — Button label, one to three words.\n  - `variant` as variant, decided by main" },
 };
 
 /** What is written for every screen whatever it is made of, and what is written for a main screen: the frame's, not any part's. */
 const HEADER = "- `title` — Screen title, at most four words.\n- `subtitle` — One short supporting line.";
-const NAV = "- `items` 3–5 — The app's three to five main destinations.\n  - `label` — One word.\n  - `icon` decided\n- `active` integer — Index of the destination this screen belongs to.";
+const NAV = "- `items` 3–5 — The app's three to five main destinations.\n  - `label` — One word.\n  - `icon` decided by destination_icon\n- `active` integer — Index of the destination this screen belongs to.";
+
+/**
+ * What Jev is asked once the words exist: refine.ts, in the words the file uses. Each sits under the part it is about, and
+ * its heading says what it is asked of. A test asks them of made-up words both ways and holds the requests, and what
+ * comes of the answers, to refine.ts.
+ */
+const options = (table: Record<string, string>, yields: Record<string, string> = {}) => Object.entries(table).map(([name, criteria]) => `- **${name}**${yields[name] ? ` \`${yields[name]}\`` : ""} — ${criteria}`).join("\n");
+const ROW = "`{row}` is a row in the supplied screen and section. Grouped rows can represent content, navigation, settings or actions; use their actual text and context to decide.";
+const LATER: Record<string, string> = {
+  banner: `#### banner_tone (once written)\n\n> For the person looking at the screen, what kind of news is \`banner\`?\n\n${options(TONES, { neutral: "accent" })}`,
+  stats: [
+    "#### stat_news (of each stat in stats with delta)",
+    "",
+    "\"+12%\" is good news for revenue and bad news for an electricity bill.",
+    "",
+    "> For the person looking at the screen, is the change in {stat} good or bad news?",
+    "",
+    "- **good** — The figure moved the way the person wants it to.\n- **bad** — The figure moved the way the person does not want.\n- **neutral** — Neither; it is just a change.",
+  ].join("\n"),
+  list: [
+    `#### item_tone (of each item in items)\n\n> For the person looking at the screen, what is the state of {item}?\n\n${options(TONES)}`,
+    "#### item_icon (of each item in items)\n\n> Which symbol best stands for {item}?\n\namong [icons](icons.md)\n\n- **none** `circle` — No symbol in the set relates to it.",
+  ].join("\n\n"),
+  groups: [
+    `#### row_control (of each row in rows, within each group in groups)\n\nMaterial: a switch for one on/off setting that takes effect at once. HIG: a disclosure indicator for a row that opens another page.\n\n> ${ROW}\n>\n> What kind of row is {row}?\n\n${options(CONTROLS)}`,
+    `#### row_on (of each row in rows, within each group in groups)\n\n> ${ROW}\n>\n> If {row} is an on/off setting, would a typical person have it switched on?`,
+    "#### row_icon (of each row in rows, within each group in groups)\n\n> Which symbol best stands for {row}?\n\namong [icons](icons.md)",
+  ].join("\n\n"),
+  actions: [
+    "#### destructive (once written)\n\n> Does the main action of this screen delete, cancel or otherwise destroy something that cannot be recovered?",
+    "#### main (among each action in actions)\n\nOne primary action per screen: Material, HIG and Polaris all agree.\n\n> Which button is the main thing the person came to this screen to do?\n\n+ `primary` It is the one.\n- `secondary` It is one of the others.",
+  ].join("\n\n"),
+  nav: "#### destination_icon (of each destination in items)\n\n> Which symbol best stands for {destination} of the app's main navigation?\n\namong [icons](icons.md)\n\n- **none** `circle` — No symbol in the set relates to it.",
+};
+const laterOf = (part: string): Node[] => (LATER[part] ? parseGrammar(`## part\n\n${LATER[part]}`).nodes[0].children : []);
 
 const UNDER_BLOCK: Partial<Record<Block, string[]>> = {
   filters: ["search"],
@@ -252,7 +293,8 @@ export function screenGrammar(): Grammar {
   );
   grammar.rules = SCREEN_RULES;
   grammar.examples = SCREEN_EXAMPLES;
-  const content = (name: string, prose: string, made: string): Node => ({ name, block: false, traits: [], prose: [prose], fields: fieldsOf(made), children: [] });
+  const content = (name: string, prose: string, made: string): Node => ({ name, block: false, traits: [], prose: [prose], fields: fieldsOf(made), children: laterOf(name) });
+  for (const node of grammar.nodes.find((n) => n.name === "archetype")!.children) node.children.push(...laterOf(node.name));
   grammar.nodes.unshift(content("header", "Written for every screen, before anything about it is known. It is the frame's, which no part draws.", HEADER));
   grammar.nodes.find((node) => node.name === "top_level")!.children.push(content("nav", "Written once for an app, on its first main screen; every main screen after that shows the same one.", NAV));
   return grammar;

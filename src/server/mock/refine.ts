@@ -22,7 +22,7 @@ export interface Decoration {
 }
 
 /** Material: a switch for one on/off setting that takes effect at once. HIG: a disclosure indicator for a row that opens another page. */
-const CONTROLS = {
+export const CONTROLS = {
   switch: "A setting that is simply on or off and takes effect at once: notifications, dark mode, autoplay, sync.",
   value: "A setting with one current value picked from several, changed on another page: language, quality, theme, frequency, units.",
   nav: "A link to another page: a content item, details, account, privacy, help, about, or managing something. Its text and section identify what it opens.",
@@ -30,7 +30,7 @@ const CONTROLS = {
   danger: "A final or destructive account action: sign out, delete account, clear data, reset.",
 };
 
-const TONES = {
+export const TONES = {
   success: "Good news or a healthy state: done, available, on time, paid, active, in stock.",
   warning: "Needs attention soon: low, delayed, pending, degraded, expiring, almost full.",
   danger: "Bad news: failed, overdue, critical, cancelled, offline, out of stock.",
@@ -59,7 +59,9 @@ export async function refineGroup(run: Run, screen: string, g: number, group: an
   let symbols = icons;
   const state = { screen, group: group.title, ...Object.fromEntries(rows.map((row, r) => [`row_${r}`, row])) };
   await ask(run, `Jev: rows of "${group.title}"`, state, questions, (a) => {
-    symbols &&= rows.every((_, r) => readIcon(a[`icon_${r}`]));
+    // Options to pick among are told apart by their words, and a group with any of them has no symbols: decided before
+    // any row is read, so that it does not depend on which row the option is.
+    symbols &&= rows.every((_, r) => readIcon(a[`icon_${r}`])) && !rows.some((_, r) => a[`control_${r}`].choice === "check");
     // Exactly one option of a picker is chosen: the value the person saw on the row they tapped, else the likeliest.
     const options = rows.map((_, r) => r).filter((r) => a[`control_${r}`].choice === "check");
     const same = (x: unknown, y: unknown) => String(x).trim().toLowerCase() === String(y).trim().toLowerCase();
@@ -69,7 +71,6 @@ export async function refineGroup(run: Run, screen: string, g: number, group: an
       let note: string | undefined;
       // A row can only show a value if one was written, and one that has a value is not a switch.
       if (control === "value" && !row.value) [control, note] = ["nav", "read as a value, but none was written"];
-      if (control === "check") symbols = false;
       if (control === "switch" && row.value) [control, note] = ["value", `read as a switch, but it has the value "${row.value}"`];
       const icon = symbols ? readIcon(a[`icon_${r}`]) : undefined;
       out.push({ at: [g, "rows", r], values: { control, on: control === "check" ? r === picked : a[`on_${r}`].noul >= 0.5, ...(icon ? { icon } : {}), ...(control === "check" ? { value: undefined } : {}) } });

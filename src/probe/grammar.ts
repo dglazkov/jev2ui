@@ -67,7 +67,13 @@ for (const example of grammar.examples) {
     const byHand = readPlan(answers).plan;
     const byFile = planOf(grammar, reading);
     if (same(byHand, byFile)) agree++;
-    else console.log(`           readPlan differs\n           by hand: ${JSON.stringify(byHand)}\n           by file: ${JSON.stringify(byFile)}`);
+    else {
+      // Only where they differ, and what Jev said there, so that a rare one can be understood from the log.
+      const differing = Object.keys({ ...byHand, ...byFile }).filter((k) => !same((byHand as any)[k], (byFile as any)[k]));
+      console.log(`           readPlan differs in ${differing.join(", ")}`);
+      for (const k of differing) console.log(`             ${k}: by hand ${JSON.stringify((byHand as any)[k])}; by file ${JSON.stringify((byFile as any)[k])}`);
+      if (differing.includes("symbol")) console.log(`             screen_icon: choice ${answers.screen_icon.choice}; top of the ranking ${Object.entries(answers.screen_icon.probabilities as Record<string, number>).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([n, p]) => `${n} ${p.toFixed(4)}`).join(", ")}`);
+    }
   }
 }
 console.log(`\n${whole}/${labelled} labelled examples came out as labelled; ${held}/${claims} of what they claim`);

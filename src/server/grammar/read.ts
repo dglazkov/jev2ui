@@ -10,12 +10,13 @@
 
 import { choice, noul, score, type Questions } from "@typesafe-ai/sdk";
 import type { Decision } from "../../shared/events.js";
-import { idOf, walk, type Atom, type Grammar, type Node } from "./format.js";
+import { idOf, laterIn, laterOf, walk, type Atom, type Grammar, type Node } from "./format.js";
 
 export function questionsOf(grammar: Grammar): Questions {
   const out: Questions = {};
   walk(grammar.nodes, (node) => {
-    if (!node.question || !node.asking) return;
+    // What is asked once the words exist is asked then (decide.ts), not now.
+    if (!node.question || !node.asking || laterOf(node)) return;
     const instructions = grammar.context ? { context: grammar.context, question: node.question } : node.question;
     const asking = node.asking;
     if (asking.type === "noul") out[idOf(node)] = asking.yes === undefined && asking.no === undefined ? noul(instructions) : noul(instructions, { ...(asking.yes !== undefined ? { true: asking.yes } : {}), ...(asking.no !== undefined ? { false: asking.no } : {}) });
@@ -37,7 +38,7 @@ export interface Calibration {
   questions?: Record<string, number>;
 }
 
-export const JEV: Calibration = { expected: 0.4, extra: 0.75, yes: 0.5, questions: { has_custom: 0.55 } };
+export const JEV: Calibration = { expected: 0.4, extra: 0.75, yes: 0.5, questions: { has_custom: 0.55, destructive: 0.6 } };
 
 /** What is settled before Jev is asked: by how the person got here, or by what the developer said. */
 export interface Known {
@@ -143,6 +144,8 @@ export function readGrammar(grammar: Grammar, answers: Record<string, any>, cali
     return atom.is.includes(typeof value === "boolean" ? (value ? "yes" : "no") : String(value)) !== atom.not;
   };
   for (const rule of grammar.rules) {
+    // A rule about the elements of a list is tried for each of them, once there are any (decide.ts).
+    if (laterIn(grammar, rule)) continue;
     if (!rule.when.every(holds) || holds(rule.then)) continue;
     const then = rule.then;
     if ("block" in then) {
@@ -160,6 +163,7 @@ export function readGrammar(grammar: Grammar, answers: Record<string, any>, cali
 
   const values: Record<string, Value> = {};
   walk(grammar.nodes, (node) => {
+    if (laterOf(node)) return;
     const id = idOf(node);
     const value = valueOf(node);
     if (value !== undefined) values[id] = value;

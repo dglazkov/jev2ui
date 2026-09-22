@@ -15,8 +15,10 @@
 // only with --paint, because a made picture costs something and joins the library.
 // What comes out is out/grammar/<name>.html, which stands alone, and what was sent beside it.
 //
-// What is not here, because the file cannot say it yet: what Jev decides once the words
-// exist (tones, which button is the main one), and anything `computed`.
+// Once a part is written, Jev is asked whatever the file says is decided then (whether a
+// warning is bad news, which button is the main one), and the answers join the words.
+//
+// What is not here, because the file cannot say it yet: anything `computed`.
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -35,7 +37,8 @@ import { validateMessages } from "../server/validate.js";
 import { fill, sourcesOf } from "../server/grammar/fill.js";
 import { idOf, type Field, type Node } from "../server/grammar/format.js";
 import { loadGrammar } from "../server/grammar/load.js";
-import { checkBindings, knobsOf, partsOf, schemaOf, treeOf } from "../server/grammar/make.js";
+import { decide, decorate } from "../server/grammar/decide.js";
+import { boundIn, checkBindings, knobsOf, partsOf, schemaOf, treeOf } from "../server/grammar/make.js";
 import { KIT_PATTERNS } from "../server/grammar/patterns.js";
 import { JEV, holdsIn, questionsOf, readGrammar, yieldOf } from "../server/grammar/read.js";
 
@@ -114,6 +117,15 @@ const write = async (node: Node, agreeWith?: unknown) => {
   written[node.name] = JSON.parse(raw)[node.name];
   show(node);
   console.log(`${since()}  written: "${node.name}"`);
+  // What is decided once the words exist, and only of what is drawn.
+  const bound = boundIn(treeOf(KIT_PATTERNS, grammar, node, reading, look));
+  for (const asking of decide(grammar, node, written[node.name], { description: text, reading, calibration: JEV, needed: (path) => bound.has(path) })) {
+    const answers = Object.keys(asking.questions).length ? (await run.askJev(`Jev: read "${node.name}"`, asking.state, asking.questions)).answers : {};
+    const { decorations, decisions } = asking.read(answers);
+    written[node.name] = decorate(written[node.name], decorations);
+    show(node);
+    console.log(`${since()}  decided: ${decisions.map((d) => `${d.id} → ${d.answer}${Object.keys(asking.questions).length ? ` (${d.p.toFixed(2)})` : " (nothing to ask)"}`).join(", ")}`);
+  }
 };
 
 // --- What is not written: the chains -------------------------------------------------

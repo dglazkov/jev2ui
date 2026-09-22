@@ -41,7 +41,15 @@ The order of the parts belongs to the kind of email. What matters most comes fir
 
 - `title` as title — What happened or what is due, in a few words.
 - `text` as text — One sentence on what it means for the person.
-- `tone` as tone, decided
+- `tone` as tone, decided by warning_tone
+
+#### warning_tone (once written)
+
+> For the person reading the email, what kind of news is `warning`?
+
+- **danger** — Something has gone wrong or is at risk now: a sign-in nobody recognises, a failed payment, a breach.
+- **warning** — Something will go wrong if nothing is done: a trial about to end, a card about to expire, a deadline.
+- **neutral** `accent` — A notice that is neither: a change of terms, something coming up that needs no worry.
 
 ### hero (never padding) → picture
 
@@ -140,7 +148,14 @@ filled from shelf else baked else closed
 
 - `cta` 1–1, as actions — The one button.
   - `label` as label — What the button says, in two or three words.
-  - `variant` as variant, decided
+  - `variant` as variant, decided by main
+
+#### main (among each button in cta)
+
+> Which button is the main thing the email asks of the person?
+
++ `primary` It is the one.
+- `secondary` It is one of the others.
 
 ## pictures_of
 

@@ -6,7 +6,7 @@ import { ARCHETYPES, BLOCKS, planQuestions, readPlan } from "../mock/plan.js";
 import { files, screenGrammar } from "./export.js";
 import { answersTo, random } from "./fixtures.js";
 import { GRAMMAR_DIR, loadGrammar } from "./load.js";
-import { checkGrammar, parseGrammar, printGrammar, printRule } from "./format.js";
+import { checkGrammar, laterIn, parseGrammar, printGrammar, printRule } from "./format.js";
 import { JEV, questionsOf, readGrammar, yieldOf } from "./read.js";
 import { planOf } from "./screen-plan.js";
 
@@ -22,7 +22,7 @@ test("what is read from screen.md is what was written, to the last trait", () =>
   const written = screenGrammar();
   const read = parseGrammar(printGrammar(written));
   // A set kept in another file is only named here; its options are read through the link.
-  const bare = JSON.parse(JSON.stringify(written), (key, value) => (value?.among ? { ...value, options: [] } : value));
+  const bare = JSON.parse(JSON.stringify(written), (key, value) => (value?.among ? { ...value, options: value.overrides ?? [] } : value));
   assert.deepEqual(JSON.parse(JSON.stringify(read)), bare);
 });
 
@@ -35,7 +35,16 @@ test("paint.md asks Jev exactly what mixQuestions asks", () => {
 });
 
 test("the files pass their own check, and the check says which of them has no examples yet", () => {
-  assert.deepEqual(checkGrammar(loadGrammar("screen.md")), { errors: [], warnings: [] });
+  // The tool's own graph has three things to be told: two questions that do not say what yes and no look like, and the kind
+  // of a form's field, which is still decided by code that is older than the kit (design.ts).
+  assert.deepEqual(checkGrammar(loadGrammar("screen.md")), {
+    errors: [],
+    warnings: [
+      '"row_on" does not say what yes and no look like; bare questions come back near even odds',
+      '"destructive" does not say what yes and no look like; bare questions come back near even odds',
+      '"kind" is decided, and nothing says by what question',
+    ],
+  });
   assert.deepEqual(checkGrammar(loadGrammar("examples/email.md")), { errors: [], warnings: [] });
   assert.deepEqual(checkGrammar(loadGrammar("paint.md")), { errors: [], warnings: ["the file has no examples, so nothing says its questions are read as they were meant"] });
 });
@@ -71,7 +80,10 @@ test("nothing in the file is there for show: without any one rule, trait or prob
   const cases = Array.from({ length: 1500 }, (_, i) => answersFrom(random(i + 1)));
   const plans = (g: typeof grammar, calibration = JEV) => JSON.stringify(cases.map((answers) => planOf(g, readGrammar(g, answers, calibration))));
   const whole = plans(grammar);
-  for (const rule of grammar.rules) assert.notEqual(plans({ ...grammar, rules: grammar.rules.filter((r) => r !== rule) }), whole, printRule(rule));
+  // The rules about what is decided once the words exist have a test of their own (decide.test.ts).
+  const first = grammar.rules.filter((rule) => !laterIn(grammar, rule));
+  assert.equal(first.length, 8);
+  for (const rule of first) assert.notEqual(plans({ ...grammar, rules: grammar.rules.filter((r) => r !== rule) }), whole, printRule(rule));
   const untraited = parseGrammar(printGrammar(grammar).replaceAll(" (never padding)", ""), (href) => readFileSync(`${GRAMMAR_DIR}${href}`, "utf8"));
   assert.notEqual(plans(untraited), whole, "never padding");
   assert.notEqual(plans(grammar, { ...JEV, questions: {} }), whole, "has_custom, probed");
