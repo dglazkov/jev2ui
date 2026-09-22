@@ -332,10 +332,13 @@ What Jev decides once the words exist (`refine.ts`) is in the file too: a questi
 heading says what it is asked of (`(of each row in rows)`, `(once written)`, `(among each action in
 actions)`), a field that says which question decides it, rules about the elements, and two words for what is
 about all of them at once (`all or none`, `one where …`). A question is asked only if something drawn reads
-the field it decides. The kind of a form's field is the one decision still made by code
-older than the kit (`design.ts`), and the file's lint says so. The tool reads `grammar/screen.md` and
-`grammar/kit.md` on every run (`src/server/mock/graph.ts`): editing a criterion, a rule, a part's fields or a
-chain changes what it makes. `paint.md` is still written out from `design-mix.ts`, which has not made the
+the field it decides. The frame is a pattern of the catalog too (`page`: a bar, the parts, a
+bar of destinations, a sticky call to action, a dialog), named by the kinds' question, set by each kind's traits
+(`sticky actions`, `leading close`, `dialog`) and turned by the answers at the top of the graph; its knobs are
+named by what they mean, not by any widget, so that another catalog can draw them its own way. The kind of a
+form's field is the one decision still made by code older than the kit (`design.ts`), and the file's lint says
+so. The tool reads `grammar/screen.md` and `grammar/kit.md` on every run (`src/server/mock/graph.ts`): editing a
+criterion, a rule, a part's fields, a chain or a kind's frame changes what it makes. `paint.md` is still written out from `design-mix.ts`, which has not made the
 move. The format, the results, the pictures and what resisted are in [docs/grammar.md](docs/grammar.md).
 
 ## Rendering strategy: the mock is painted by a DESIGN.md
@@ -709,9 +712,9 @@ src/server/design-source.ts a supplied or mixed design, worked out once and reus
 src/server/theme.ts         tokens and the reading, as the kit's --k-* variables
 src/shared/kit.ts           the kit: component schemas of the A2UI fork, shared by server and renderer
 src/server/mock/plan.ts     the shape of a plan, what is taken of one a browser sent back, and what a design overrules
-src/server/mock/screen.ts   the frame (app bar, navigation, a profile's opening, a dialog, the sticky bar) around the parts the file drew; what the writers are told
+src/server/mock/screen.ts   what the writers are told
 grammar/                    the tool's graph, screen.md, which it reads; kit.md (the catalog its parts name), paint.md, icons.md and subjects.md, written out from code by npm run grammar:export; examples/email.md
-src/server/mock/graph.ts    the tool's graph read once, and what code still knows by name: the kinds of screen and their traits, a plan read back into a reading
+src/server/mock/graph.ts    the tool's graph read once, and what code still knows by name: the kinds of screen, the options a browser may send back, a plan read back into a reading
 src/server/grammar/         format.ts reads, writes and checks a graph file; read.ts asks it and reads the answers; make.ts turns what a part is made of into a writer's schema and a tree; fill.ts tries a chain of sources; decide.ts asks what is decided once the words exist; patterns.ts is the kit as a catalog; export.ts writes the tool's own files; screen-plan.ts renames a reading into a ScreenPlan
 src/probe/grammar.ts        a graph file run on its own examples; screen.md held against readPlan
 src/probe/grammar-draw.ts   a graph file drawn: Jev reads, the file gives the tree, the schemas and the chains, Gemini writes, bakes and paints, the kit renders (out/grammar/)

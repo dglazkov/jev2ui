@@ -110,7 +110,8 @@ test("a list inside a part may have the part's own name, and is still inside it"
 
 test("a graph can be checked against a catalog by someone who has only the two files", () => {
   assert.deepEqual(checkBindings(screen, kit), { errors: [], warnings: [] });
-  assert.deepEqual(checkBindings(loadGrammar("examples/email.md"), kit), { errors: [], warnings: [] });
+  // The email's length goes to its writers, not to the frame: said, and not refused.
+  assert.deepEqual(checkBindings(loadGrammar("examples/email.md"), kit), { errors: [], warnings: ['"length" turns "word budget", and "page" has no such knob: taken for the name of something outside the catalog'] });
   const broken = parseGrammar(
     [
       "# thing",
@@ -143,6 +144,40 @@ test("a graph can be checked against a catalog by someone who has only the two f
     ],
     warnings: ['nothing draws "chart": it names no pattern'],
   });
+});
+
+test("a kind's traits, the kinds' heading and what is always written are checked against the frame", () => {
+  const broken = parseGrammar(
+    [
+      "# thing",
+      "## header",
+      "- `title` as title",
+      "- `byline` as author",
+      "## kind → page with leading sideways",
+      "> What is it?",
+      "- **a** — An a.",
+      "  `LIST` sticky list, floating, opening outcome",
+      "- **b** — A b.",
+      "  `list` dialog maybe",
+      "### list → collection",
+      "> Are there items?",
+      "- `items` 1–3, as items",
+      "  - `name` as headline",
+      "## mood → opening",
+      "> How does it feel?",
+      "- **up** `person` — Up.",
+      "- **down** `sideways` — Down.",
+    ].join("\n"),
+  );
+  assert.deepEqual(checkBindings(broken, kit).errors, [
+    '"kind" sets "leading" to "sideways", and it is one of back, close, none',
+    '"a" sets "floating", and "page" has no such knob',
+    '"b" sets "dialog" to "maybe", and it is one of yes, no',
+    '"mood" can yield "sideways", and the "opening" of "page" is one of title, person, outcome',
+    '"header.byline" goes to "author", and "page" has no such slot (it has title, subtitle, portrait, destinations, active)',
+  ]);
+  const unframed = parseGrammar(["# thing", "## kind", "> What is it?", "- **a** — An a.", "  `LIST` sticky list", "- **b** — A b.", "  `list`", "### list → collection", "> Items?", "- `items` 1–3, as items", "  - `name` as headline"].join("\n"));
+  assert.deepEqual(checkBindings(unframed, kit).warnings, ['"a" says "sticky list", and no frame is named to read it']);
 });
 
 test("a field line says everything about a field, and is read back as written", () => {

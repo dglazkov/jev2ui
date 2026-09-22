@@ -261,10 +261,11 @@ export class KitSurface extends LitElement {
     const active = Number(this.value(c.active, s) ?? 0);
     if (!items.length) return html`<nav class="k-navbar"><span class="k-skel" style="width:70%"></span></nav>`;
     if (items.length === 1 && active === 0) return nothing;
+    const symbolOf = (item: any): string | undefined => (c.icon?.path ? this.value(c.icon, { base: `${this.absolute(c.items.path, s)}/${items.indexOf(item)}`, index: items.indexOf(item) }) : item?.icon);
     return html`<nav class="k-navbar">
       ${orderedNavigation(items).slice(0, 5).map(
         ({ item, index: i }) => html`<a class=${i === active ? "k-active" : ""} @click=${() => i !== active && this.tap("nav", item?.label, undefined, { index: i, source: `nav:${item?.destination}` })}>
-          ${c.icons === false ? nothing : html`<span class="k-navpill">${this.icon(item?.icon && item.icon !== "circle" ? item.icon : this.navigationIcons[item?.destination] ?? item?.icon ?? "circle")}</span>`}
+          ${c.icons === false ? nothing : html`<span class="k-navpill">${this.icon(symbolOf(item) && symbolOf(item) !== "circle" ? symbolOf(item) : this.navigationIcons[item?.destination] ?? symbolOf(item) ?? "circle")}</span>`}
           <span>${item?.label ?? ""}</span>
         </a>`,
       )}

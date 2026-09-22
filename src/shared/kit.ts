@@ -53,7 +53,8 @@ export const KIT = {
   // --- Frame ---------------------------------------------------------------
   Screen: z.object({ appBar: id.optional(), body: id, sticky: id.optional(), navBar: id.optional(), dialog: z.boolean().optional() }),
   AppBar: z.object({ title: str.optional(), leading: z.enum(["none", "back", "close", "menu"]).optional(), actions: z.array(z.string()).max(3).optional() }),
-  NavBar: z.object({ items: bound, active: num.optional(), icons: z.boolean().optional() }),
+  /** `icon` is where each destination's symbol is, relative to the destination; without it, the bar looks under `icon`. */
+  NavBar: z.object({ items: bound, active: num.optional(), icons: z.boolean().optional(), icon: bound.optional() }),
   StickyBar: z.object({ child: id }),
 
   // --- Layout --------------------------------------------------------------

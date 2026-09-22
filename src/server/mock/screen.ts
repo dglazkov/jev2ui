@@ -1,12 +1,8 @@
-// The frame of a screen, and what the writers are told. What the parts are made of,
-// how they are drawn and what a writer is asked for are the file's (grammar/screen.md
-// and kit.md, through src/server/grammar); the app bar, the navigation bar, a
-// profile's opening, a dialog and the sticky bar are not patterns yet, so they are
-// built here from the plan. Nothing here is model output.
+// What the writers are told. What a screen is made of, how its parts and its frame
+// are drawn and what a writer is asked for are the file's (grammar/screen.md and
+// kit.md, through src/server/grammar).
 
-import type { KitComponent } from "../../shared/kit.js";
 import type { Block, ScreenPlan } from "./plan.js";
-import { KINDS } from "./graph.js";
 import type { KnownDestination } from "../../shared/identity.js";
 
 /** Only screens about individual subjects belong in a content collection. A made
@@ -14,68 +10,6 @@ import type { KnownDestination } from "../../shared/identity.js";
 export function knownSubjects(catalog: KnownDestination[] | undefined, destination: string) {
   return catalog?.filter((c) => c.id !== destination && c.rendered && ["detail", "guide"].includes(c.rendered.archetype)).map((c) => c.rendered!);
 }
-
-const at = (path: string) => ({ path });
-type C = KitComponent;
-
-/** The whole tree: the frame, from the plan, around the parts, which the file drew (grammar/screen.md, kit.md). */
-export function screen(plan: ScreenPlan, screenIcon: string | null, blocks: C[]): C[] {
-  const shape = KINDS[plan.archetype];
-  const sticky = shape.stickyActions && plan.blocks.includes("actions");
-  const inBody = plan.blocks.filter((b) => !(sticky && b === "actions"));
-
-  if (shape.dialog) {
-    const icon = plan.icons && screenIcon;
-    return [
-      { id: "root", component: "Screen", body: "dialog", dialog: true },
-      { id: "dialog", component: "Card", child: "dialog_body" },
-      { id: "dialog_body", component: "Stack", gap: "md", children: [...(icon ? ["dialog_icon"] : []), "dialog_title", ...inBody] },
-      ...(icon ? [{ id: "dialog_icon", component: "Icon", name: icon, boxed: true } as C] : []),
-      { id: "dialog_title", component: "Text", role: "headline", text: at("/header/title") },
-      ...blocks,
-    ];
-  }
-
-  // A feed, a dashboard and a settings page are named by their bar; the others earn a line of introduction.
-  // A profile opens with the person instead, and a lead photograph would compete with them.
-  const outcome = shape.outcome;
-  const intro = !plan.person && !outcome && !["feed", "dashboard", "settings"].includes(plan.archetype);
-  const body = [...(plan.person ? ["person"] : []), ...(outcome ? ["outcome"] : []), ...(intro ? ["intro"] : []), ...inBody.filter((b) => !(plan.person && b === "hero"))];
-  return [
-    { id: "root", component: "Screen", appBar: "appbar", body: "body", ...(sticky ? { sticky: "sticky" } : {}), ...(plan.topLevel ? { navBar: "navbar" } : {}) },
-    {
-      id: "appbar",
-      component: "AppBar",
-      // On a profile the person is the title.
-      ...(plan.person || outcome ? {} : { title: at("/header/title") }),
-      leading: plan.topLevel ? "none" : plan.archetype === "form" || outcome ? "close" : "back",
-      actions: plan.appBarAction ? [plan.appBarAction] : [],
-    },
-    { id: "body", component: "Stack", gap: "lg", children: body },
-    ...(plan.person
-      ? ([
-          { id: "person", component: "Stack", gap: "xs", align: "center", children: ["person_avatar", "person_name", "person_line"] },
-          { id: "person_avatar", component: "Avatar", name: at("/header/title"), url: at("/person/imageUrl"), size: 88 },
-          { id: "person_name", component: "Text", role: "headline", text: at("/header/title") },
-          { id: "person_line", component: "Text", tone: "muted", text: at("/header/subtitle") },
-        ] as C[])
-      : []),
-    ...(outcome
-      ? ([
-          { id: "outcome", component: "Stack", gap: "sm", align: "center", children: [...(plan.icons && screenIcon ? ["outcome_icon"] : []), "outcome_title", "outcome_line"] },
-          { id: "outcome_icon", component: "Icon", name: screenIcon ?? "check_circle", boxed: true, size: 32 },
-          { id: "outcome_title", component: "Text", role: "headline", text: at("/header/title") },
-          { id: "outcome_line", component: "Text", tone: "muted", text: at("/header/subtitle") },
-        ] as C[])
-      : []),
-    ...(intro ? [{ id: "intro", component: "Text", tone: "muted", text: at("/header/subtitle") } as C] : []),
-    ...(sticky ? [{ id: "sticky", component: "StickyBar", child: "actions" } as C] : []),
-    ...(plan.topLevel ? [{ id: "navbar", component: "NavBar", items: at("/nav/items"), active: at("/nav/active"), icons: plan.icons } as C] : []),
-    ...blocks,
-  ];
-}
-
-// --- What Gemini is asked to write ----------------------------------------------
 
 export type Part = "header" | "nav" | Exclude<Block, "hero" | "custom">;
 

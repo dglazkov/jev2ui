@@ -13,10 +13,9 @@ import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
 import { KINDS, SCREEN, partNode, readingOf } from "../mock/graph.js";
 import { applyDesign, type ScreenPlan } from "../mock/plan.js";
-import { screen } from "../mock/screen.js";
 import { decide, decorate } from "./decide.js";
 import { answersTo, random } from "./fixtures.js";
-import { boundIn, partsOf, schemaOf, treeOf } from "./make.js";
+import { boundIn, frameOf, partsOf, schemaOf, treeOf } from "./make.js";
 import { KIT_PATTERNS } from "./patterns.js";
 import { JEV, questionsOf, readGrammar } from "./read.js";
 import { planOf } from "./screen-plan.js";
@@ -49,7 +48,9 @@ function made() {
     const plan = applyDesign(planOf(SCREEN, reading), look).plan;
     const back = readingOf(plan);
     const parts = Object.fromEntries(partsOf(SCREEN, back).map((node) => [node.name, { schema: schemaOf(node, back), tree: treeOf(KIT_PATTERNS, SCREEN, node, back, { contained: plan.contained, icons: plan.icons, symbol: plan.symbol }) }]));
-    return { seed: 2000 + i, look, plan, parts, header: schemaOf(partNode("header"), back), nav: schemaOf(partNode("nav"), back), screen: screen(plan, plan.archetype === "confirm" ? "delete" : null, Object.values(parts).flatMap((p) => p.tree)) };
+    const drawing = { contained: plan.contained, icons: plan.icons, symbol: plan.symbol };
+    const frame = frameOf(KIT_PATTERNS, SCREEN, back, drawing, Object.entries(parts).map(([name, part]) => ({ name, root: part.tree[0].id })))!;
+    return { seed: 2000 + i, look, plan, parts, header: schemaOf(partNode("header"), back), nav: schemaOf(partNode("nav"), back), screen: [...frame, ...Object.values(parts).flatMap((p) => p.tree)] };
   });
   // What is decided once the words exist, for words nobody wrote.
   out.decided = Array.from({ length: 40 }, (_, i) => {

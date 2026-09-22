@@ -26,8 +26,8 @@ test("a file read and written again is the same file, screen.md and email.md inc
 test("the tool's graph is the file: what the code knows by name is what the file says", () => {
   assert.deepEqual(BLOCKS, ["banner", "hero", "filters", "custom", "stats", "list", "groups", "facts", "prose", "steps", "form", "actions"]);
   assert.deepEqual(Object.keys(KINDS), ["feed", "dashboard", "detail", "guide", "settings", "form", "checkout", "result", "confirm"]);
-  assert.deepEqual(KINDS.checkout, { order: ["banner", "custom", "list", "facts", "form", "actions"], requires: [], atLeast: 2, stickyActions: true, dialog: false, outcome: false });
-  assert.deepEqual(KINDS.confirm.dialog && KINDS.result.outcome && KINDS.feed.requires, ["list"]);
+  assert.deepEqual(KINDS.checkout, { order: ["banner", "custom", "list", "facts", "form", "actions"], requires: [], atLeast: 2, traits: ["sticky actions", "intro"] });
+  assert.deepEqual([KINDS.confirm.traits, KINDS.result.traits, KINDS.feed.requires], [["dialog"], ["opening outcome", "leading close"], ["list"]]);
 });
 
 test("paint.md asks Jev exactly what mixQuestions asks", () => {
@@ -68,7 +68,7 @@ test("nothing in the file is there for show: without any one rule, trait or prob
   const whole = plans(grammar);
   // The rules about what is decided once the words exist have a test of their own (decide.test.ts).
   const first = grammar.rules.filter((rule) => !laterIn(grammar, rule));
-  assert.equal(first.length, 8);
+  assert.equal(first.length, 9);
   void read;
   for (const rule of first) assert.notEqual(plans({ ...grammar, rules: grammar.rules.filter((r) => r !== rule) }), whole, printRule(rule));
   const untraited = parseGrammar(printGrammar(grammar).replaceAll(" (never padding)", ""), (href) => readFileSync(`${GRAMMAR_DIR}${href}`, "utf8"));

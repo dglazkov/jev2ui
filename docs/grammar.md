@@ -182,6 +182,18 @@ edge reads as a mistake) and `one where …` (of the options of one setting, exa
 likeliest, or the one already known to be). `none` yields nothing, unless the question says over again what
 it yields here (`- **none** \`circle\``, under a set read from another file).
 
+**The frame is a pattern too**, and the kinds' question names it: `## archetype → page`. What a kind says after
+its parts sets the frame's knobs (`sticky actions`, `leading close`, `opening outcome`, `dialog`, `intro`; a word
+alone is `yes`), the answers at the top of the graph turn the rest (`## top_level → navigation`,
+`## person → opening` with `+ \`person\`` and `- \`title\``, `## app_bar_action → action`,
+`## screen_icon → symbol`), the kinds' heading can fix a knob for every kind (`## kind → page with leading
+none, intro yes`), and what is always written fills its slots (`## header` with `as title`, `as subtitle`,
+`as portrait`; the navigation with `as destinations`). The knobs are named by what they mean and not by any
+widget (`opening`, `leading`, `navigation`, `sticky`, `dialog`, `intro`, `action`, `symbol`), so that another
+catalog can draw them its own way: a tab bar for `navigation`, a FAB for `action add`. The lint checks a kind's
+traits against the frame's knobs, and a top-level answer that turns nothing the frame has is only a warning,
+since it may go somewhere outside the catalog (a writer's word budget, a token).
+
 **A catalog is a file of patterns**: what each is for (the sentence a Choice would offer), its slots, written as
 fields are, and its knobs with what they can be set to; and, under `## Sources`, of where values can come
 from. `grammar/kit.md` is written out from `patterns.ts` and `fill.ts`.
@@ -352,6 +364,34 @@ code had, and since a refinement re-sends the part, which calls the hook again, 
 same list every 60 ms for the ten minutes a test run sat on a checkout screen, and again for a minute while
 it was found: roughly nine thousand Jev requests. Fixed with the `once`, and a comment says why it is there.
 
+**Step 6: the frame as a pattern, with a swappable catalog as the north star.** `screen()` in `mock/screen.ts`
+was the last hand-built piece of the tree: the app bar, the navigation bar, a profile's opening, an outcome's,
+the dialog, the sticky bar, and the reading of the kind's traits that chose between them. It is now the `page`
+pattern of `kit.md`, with five slots and eight knobs (above), and `frameOf()` in `make.ts` builds it from the
+file the way `treeOf()` builds a part: knobs from the top-level answers, then the kinds' heading, then the kind's
+traits; slots from the header and the navigation. Along the way:
+
+- the navigation bar binds each destination's symbol (`NavBar.icon`, a relative binding the renderer now
+  honours), so "is the symbol needed" is read off the frame's tree like any other field's, and the pipeline's
+  last hand-set `plan.icons` is gone;
+- a profile's portrait is a field of the header (`imageUrl as portrait, from library else painted else
+  placeholder`) and joins it as a decoration, where it was written to `/person` by hand;
+- "a profile has no lead photograph" is a rule in the file (`when person is yes, no hero`) instead of the frame
+  quietly not placing a hero it had fetched;
+- "a main screen's bar leads with nothing, whatever the kind says" stayed in the pattern, since it is the
+  pattern's system's rule (Material's top-level destinations have no up arrow), and a kind's `leading close`
+  must not beat it;
+- `Kind` in `graph.ts` lost its three booleans; the frame reads the traits, not code.
+
+The recording was compared before and after: every plan, tree, schema and decoration is what it was, but for
+the three things meant (profiles lose their hero; a result shows the symbol Jev chose, which the old
+recording's shortcut had hidden; navigation bars bind their symbols). Live: six screens whose frames differ
+(a profile, a dialog, an outcome, a form, a main screen, a detail page), the edit path and the tap-through
+path, all valid, trees at 160–330 ms, and a tapped walker's picture travelling into the header of the profile
+it opens. The email graph then got the same frame with one line, `## kind → page with leading none, intro yes`,
+and is drawn with a large title, its preheader as the line under it and no bar of destinations: the first thing
+a brought graph draws that is not a bare page.
+
 ## What resisted
 
 What the export could not say, or could only say by growing the format:
@@ -421,6 +461,22 @@ From the chains:
 24. **`written` is a source too**, the first of every plain field, and its tier, its system prompt and which
     writer waits for which are still the host's.
 
+From the frame:
+
+38. **A knob's value "none" is a value.** The first draft of the pattern read `none` as unset, so an email that
+    fixed `leading none` got a back arrow. Open knobs (`action`, `sticky`, `symbol`) still use `none` for
+    "nothing"; closed ones (`leading`) take it as one of their names.
+39. **Whose rule is it.** "A main screen's bar leads with nothing" could be a rule in the graph (`when top_level
+    is yes, leading is none`) or the pattern's. It is the pattern's, because it is Material's, and a catalog
+    that is Apple's may want a large title and no bar at all. Where a rule lives decides which file a style
+    changes.
+40. **The frame's knobs are the contract for a second catalog**, and they were named from one system's needs.
+    A FAB (Material), a large title (HIG), a page header with a primary action (Polaris) each fit `action` and
+    `opening` only loosely; the first other catalog will say which names were right.
+41. **The renderer reads `destination`, `label` and `icon` of a navigation item by name**, and orders them
+    (`orderedNavigation`). Only `icon` is bound now; the rest is still a convention between the pattern and the
+    renderer.
+
 From the tool reading the file:
 
 33. **A plan and a reading are two shapes of one thing.** The browser holds a `ScreenPlan` and sends it back;
@@ -430,8 +486,7 @@ From the tool reading the file:
 34. **The trace changed.** Decisions are labelled by the file's question text and ids (`item_leading`,
     `row_control_0`), where the hand-written code had short labels ("each item is…", a row's label). The trace
     panel and Gemini's answers to questions read them; whether either is worse for it is not measured.
-35. **The navigation bar draws its own symbols**, so nothing binds them and "is it needed" cannot be found from
-    the tree: the pipeline says `plan.icons` by hand for the nav, and the frame is still not a pattern.
+35. **The navigation bar draws its own symbols** (fixed in step 6: it binds them, and the frame is a pattern).
 36. **The four other files are still exported from code**: `paint.md` because `design-mix.ts` has not made the
     move (its dials are read by functions and one dial's stops depend on another answer, 5); `kit.md` because
     the catalog *is* code that draws; `icons.md` and `subjects.md` because they are lists of assets. And
@@ -477,10 +532,11 @@ Not attempted, and each is a piece of the graph that is still only code:
 
 ## Next, in the order that seems right
 
-1. **The frame as a pattern**, so that traits have somewhere to go, the nav's symbols are bound like any
-   other's (35), and a brought graph gets more than a page.
+1. **A second catalog.** The frame's knobs, the slots' roles and the sources are now the whole contract; the
+   way to find out whether it is a contract is a catalog that is not the kit's. Material Web (`@material/web`,
+   Lit, with a custom-elements manifest the catalog file could be generated from) is the cheap one; Apple HIG
+   is the one that tests the frame (tab bar, large title, alerts).
 2. **The design and the edit as layers over a reading** (33), so that a brought graph is not tied to
-   `ScreenPlan`, and `paint.md` read by the tool (36), which wants the two things paint resisted (5).
+   `ScreenPlan`, and `paint.md` read by the tool (36).
 3. **A contract of the graph's own** for the baker and the shelf (19), and more than one slot (20).
-4. **Form fields** (26): an option that is on offer only when something was written, and a count.
-5. **Calibration from examples**, and with it the policy for a torn answer (18).
+4. **Form fields** (26), and **calibration from examples** with the policy for a torn answer (18).

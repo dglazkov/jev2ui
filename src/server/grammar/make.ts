@@ -70,22 +70,35 @@ export interface Look {
   symbol: string;
 }
 
+/** A part already drawn, as the frame needs to know it: its name, and the id of the component at its root. */
+export interface DrawnPart {
+  name: string;
+  root: string;
+}
+
+/** What a knob can be set to: the names listed, or, with none listed, anything (a symbol, the name of a part). */
+export interface Knob {
+  takes: readonly string[];
+  is: string;
+}
+
 export interface Pattern {
   name: string;
   /** When to use it, in the words a Choice would offer. */
   card: string;
   /** Its slots, as fields: a name, whether it is required, what it is for; nested where a slot is a list of things. */
   slots: Field[];
-  knobs: Record<string, readonly string[]>;
-  draw(id: string, bound: Bound, knobs: Record<string, Value>, look: Look): KitComponent[];
+  knobs: Record<string, Knob>;
+  /** `parts` are given to a frame: the parts drawn already, in the order they come. */
+  draw(id: string, bound: Bound, knobs: Record<string, Value>, look: Look, parts?: DrawnPart[]): KitComponent[];
 }
 
 export type Catalog = Record<string, Pattern>;
 
-export function boundOf(node: Node, reading: Reading): Bound {
+/** The fields of several headings, bound together: the frame's slots are filled by the header and the navigation. */
+function boundOfAll(nodes: Node[], reading: Reading): Bound {
   const holds = (atoms?: Atom[]) => !atoms || atoms.every((atom) => holdsIn(reading, atom));
-  const whole = wholeOf(node, holds);
-  const bind = (fields: Field[], base: string | null): Bound => {
+  const bind = (fields: Field[], base: string | null, whole?: Field): Bound => {
     const there = fields.filter((field) => field.role && holds(field.when));
     const pathOf = (field: Field) => pathIn(field.source) ?? (base === null ? field.name : field === whole ? base : `${base}/${field.name}`);
     const all = (slot: string) => there.filter((field) => field.role === slot).map(pathOf);
@@ -98,8 +111,15 @@ export function boundOf(node: Node, reading: Reading): Bound {
       },
     };
   };
-  return bind(node.fields, `/${node.name}`);
+  const each = nodes.map((node) => bind(node.fields, `/${node.name}`, wholeOf(node, holds)));
+  return {
+    all: (slot) => each.flatMap((b) => b.all(slot)),
+    one: (slot) => each.map((b) => b.one(slot)).find((path) => path !== undefined),
+    each: (slot) => each.map((b) => b.each(slot)).find((found) => found !== undefined),
+  };
 }
+
+export const boundOf = (node: Node, reading: Reading): Bound => boundOfAll([node], reading);
 
 /** The answers under a part that turn one of its pattern's knobs, as what they yield. */
 export function knobsOf(grammar: Grammar, node: Node, reading: Reading): Record<string, Value> {
@@ -115,6 +135,56 @@ export function knobsOf(grammar: Grammar, node: Node, reading: Reading): Record<
 export function treeOf(catalog: Catalog, grammar: Grammar, node: Node, reading: Reading, look: Look): KitComponent[] {
   const pattern = node.target ? catalog[node.target] : undefined;
   return pattern ? pattern.draw(node.name, boundOf(node, reading), knobsOf(grammar, node, reading), look) : [];
+}
+
+// --- The frame -----------------------------------------------------------------------
+
+/** The question the kinds are the options of: the one whose options carry a shape. */
+export function kindsOf(grammar: Grammar): Node | undefined {
+  let found: Node | undefined;
+  walk(grammar.nodes, (node) => void (node.asking?.type === "choice" && node.asking.options.some((o) => o.shape) && (found ??= node)));
+  return found;
+}
+
+/** A trait of a kind, read as a setting of the frame: `sticky actions` sets `sticky` to `actions`; `dialog` alone sets it to yes. */
+export function traitKnob(trait: string): [string, string] {
+  const [knob, ...value] = trait.split(/\s+/);
+  return [knob, value.length ? value.join(" ") : "yes"];
+}
+
+/** What is always written and never asked, at the top of a graph or under a question: the header, the navigation. Their fields fill the frame's slots. */
+export function contentNodes(grammar: Grammar): Node[] {
+  const out: Node[] = [];
+  walk(grammar.nodes, (node) => void (!node.block && !node.question && node.fields.length && out.push(node)));
+  return out;
+}
+
+/**
+ * The frame's knobs: what the answers at the top of the graph turn, then what the kinds' heading fixes for every kind,
+ * then what the kind that was read says in its traits. Nothing under a part reaches the frame.
+ */
+export function frameKnobsOf(grammar: Grammar, reading: Reading, knobs: Record<string, Knob>): Record<string, Value> {
+  const kinds = kindsOf(grammar);
+  const out: Record<string, Value> = {};
+  for (const node of grammar.nodes) {
+    const value = reading.values[idOf(node)];
+    if (node !== kinds && node.target && node.target in knobs && value !== undefined) out[node.target] = yieldOf(grammar, idOf(node), value);
+  }
+  Object.assign(out, kinds?.fixed);
+  const kind = kinds?.asking?.type === "choice" ? kinds.asking.options.find((o) => o.name === reading.kind) : undefined;
+  for (const trait of kind?.shape?.traits ?? []) {
+    const [knob, value] = traitKnob(trait);
+    if (knob in knobs) out[knob] = value;
+  }
+  return out;
+}
+
+/** The frame around the parts, drawn by the pattern the kinds' question names; nothing, for a graph that names none. */
+export function frameOf(catalog: Catalog, grammar: Grammar, reading: Reading, look: Look, parts: DrawnPart[]): KitComponent[] | undefined {
+  const kinds = kindsOf(grammar);
+  const pattern = kinds?.target ? catalog[kinds.target] : undefined;
+  if (!pattern) return undefined;
+  return pattern.draw("root", boundOfAll(contentNodes(grammar), reading), frameKnobsOf(grammar, reading, pattern.knobs), look, parts);
 }
 
 /** Where the data that a tree reads is: every path some component is bound to. A field nothing is bound to is not drawn, and Jev is not asked about it. */
@@ -147,6 +217,36 @@ export function checkBindings(grammar: Grammar, catalog: Grammar): { errors: str
   const warnings: string[] = [];
   const patterns = new Map(catalog.nodes.filter((node) => node.name !== "Sources").map((pattern) => [pattern.name, pattern]));
   const sources = sourcesOf(catalog);
+  /** A knob of a pattern as the catalog file has it: what it takes, or anything when it lists nothing. */
+  const knobOf = (pattern: Node, name: string) => {
+    const knob = pattern.children.find((k) => k.name === name);
+    return knob && { takes: knob.asking?.type === "choice" ? knob.asking.options.map((o) => o.name) : [] };
+  };
+  const checkSetting = (pattern: Node, who: string, knob: string, value: string) => {
+    const found = knobOf(pattern, knob);
+    if (!found) errors.push(`"${who}" sets "${knob}", and "${pattern.name}" has no such knob`);
+    else if (found.takes.length && !found.takes.includes(value)) errors.push(`"${who}" sets "${knob}" to "${value}", and it is one of ${found.takes.join(", ")}`);
+  };
+  const checkTurns = (pattern: Node, child: Node, top = false) => {
+    const found = knobOf(pattern, child.target!);
+    // At the top of a graph, an answer may go to something outside the catalog: a token of a DESIGN.md, a writer's word budget.
+    if (!found) return void (top ? warnings : errors).push(`"${child.name}" turns "${child.target}", and "${pattern.name}" has no such knob${top ? ": taken for the name of something outside the catalog" : ""}`);
+    const asking = child.asking;
+    const yields = asking?.type === "choice" ? asking.options.map((o) => o.value ?? o.name) : asking?.type === "noul" ? [asking.yesValue ?? "yes", asking.noValue ?? "no"] : [];
+    for (const value of yields) if (found.takes.length && !found.takes.includes(value)) errors.push(`"${child.name}" can yield "${value}", and the "${child.target}" of "${pattern.name}" is one of ${found.takes.join(", ")}`);
+  };
+  // The frame: named by the kinds' question, set by their traits, turned by the answers at the top of the graph, filled by what is always written.
+  const kinds = kindsOf(grammar);
+  const frame = kinds?.target ? patterns.get(kinds.target) : undefined;
+  if (kinds?.target && !frame) errors.push(`the kinds are framed by "${kinds.target}", which the catalog does not have`);
+  if (frame && kinds) {
+    for (const [knob, value] of Object.entries(kinds.fixed ?? {})) checkSetting(frame, kinds.name, knob, value);
+    if (kinds.asking?.type === "choice") for (const option of kinds.asking.options) for (const trait of option.shape?.traits ?? []) checkSetting(frame, option.name, ...traitKnob(trait));
+    for (const node of grammar.nodes) if (node !== kinds && node.target && node.question) checkTurns(frame, node, true);
+    for (const node of contentNodes(grammar)) for (const field of node.fields) if (field.role && !frame.fields.some((slot) => slot.name === field.role)) errors.push(`"${node.name}.${field.name}" goes to "${field.role}", and "${frame.name}" has no such slot (it has ${frame.fields.map((s) => s.name).join(", ")})`);
+  } else if (kinds?.asking?.type === "choice") {
+    for (const option of kinds.asking.options) for (const trait of option.shape?.traits ?? []) warnings.push(`"${option.name}" says "${trait}", and no frame is named to read it`);
+  }
   const sure = [...sources].filter(([, traits]) => traits.includes("terminal")).map(([name]) => name);
   const checkChain = (chain: Source | undefined, where: string) => {
     if (!chain?.length) return;
@@ -173,21 +273,8 @@ export function checkBindings(grammar: Grammar, catalog: Grammar): { errors: str
       for (const slot of slots) if (slot.required && !fields.some((f) => f.role === slot.name && !f.when)) errors.push(`"${node.name}" fills no "${slot.name}", and "${pattern.name}" cannot be drawn without one`);
     };
     check(node.fields, pattern.fields, `${node.name}.`);
-    for (const [knob, value] of Object.entries(node.fixed ?? {})) {
-      const takes = pattern.children.find((k) => k.name === knob)?.asking;
-      if (takes?.type !== "choice") errors.push(`"${node.name}" sets "${knob}", and "${pattern.name}" has no such knob`);
-      else if (!takes.options.some((o) => o.name === value)) errors.push(`"${node.name}" sets "${knob}" to "${value}", and it is one of ${takes.options.map((o) => o.name).join(", ")}`);
-    }
-    walk(node.children, (child) => {
-      if (!child.target) return;
-      const knob = pattern.children.find((k) => k.name === child.target);
-      if (!knob || knob.asking?.type !== "choice") return void errors.push(`"${child.name}" turns "${child.target}", and "${pattern.name}" has no such knob`);
-      const takes = knob.asking.options.map((o) => o.name);
-      const asking = child.asking;
-      const yields = asking?.type === "choice" ? asking.options.map((o) => o.value ?? o.name) : asking?.type === "noul" ? [asking.yesValue ?? "yes", asking.noValue ?? "no"] : [];
-      // A knob with no values listed takes anything: a ratio, a number.
-      for (const value of yields) if (takes.length && !takes.includes(value)) errors.push(`"${child.name}" can yield "${value}", and the "${child.target}" of "${pattern.name}" is one of ${takes.join(", ")}`);
-    });
+    for (const [knob, value] of Object.entries(node.fixed ?? {})) checkSetting(pattern, node.name, knob, value);
+    walk(node.children, (child) => void (child.target && checkTurns(pattern, child)));
   });
   return { errors, warnings };
 }

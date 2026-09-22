@@ -16,7 +16,7 @@
 import type { KitComponent } from "../../shared/kit.js";
 import { parseGrammar, type Field, type Grammar } from "./format.js";
 import { SOURCES } from "./fill.js";
-import type { Bound, Catalog, Pattern } from "./make.js";
+import type { Bound, Catalog, DrawnPart, Pattern } from "./make.js";
 
 type C = KitComponent;
 const at = (path: string) => ({ path });
@@ -34,7 +34,102 @@ const LEADINGS = ["avatar", "thumbnail", "icon", "number", "none"] as const;
 const TRAILINGS = ["chevron", "button", "switch", "checkbox", "none"] as const;
 const RATIOS = ["3:1", "16:9", "1:1", "3:4"] as const;
 
+const OPENINGS = ["title", "person", "outcome"] as const;
+const LEADINGS_OF_BAR = ["back", "close", "none"] as const;
+const YES_NO = ["yes", "no"] as const;
+
 const PATTERNS: Pattern[] = [
+  {
+    name: "page",
+    card: "A screen of a phone app: a bar with the title and one action, the parts below it, a bar of the app's main destinations on a main screen, a call to action pinned to the bottom edge, or a dialog over it all (Material 3 top app bar, navigation bar, bottom bar; HIG navigation bar, tab bar, alert).",
+    slots: slots(
+      [
+        "- `title` required — what the screen is called; on a profile, who it is about",
+        "- `subtitle` — one line under it: a person's line, how it went, an introduction",
+        "- `portrait` — the address of the person's picture, on a profile",
+        "- `destinations` — the app's main destinations, for the bar at the bottom",
+        "  - `label` required",
+        "  - `icon` — the name of a symbol",
+        "- `active` — which of the destinations this screen is",
+      ].join("\n"),
+    ),
+    knobs: {
+      opening: { takes: OPENINGS, is: "how the screen opens: with its title in the bar; with the person it is about; or with how something went, a symbol and a headline in place of a title" },
+      leading: { takes: LEADINGS_OF_BAR, is: "what leads the bar on a screen that is not a main one: a back arrow, or a close cross, or nothing. A main screen's bar leads with nothing whatever is set, and unset, the rest lead with a back arrow" },
+      action: { takes: [], is: "the symbol of the one action in the bar, or none" },
+      navigation: { takes: YES_NO, is: "whether the bar of the app's main destinations is shown: on a main screen" },
+      sticky: { takes: [], is: "the name of the part pinned to the bottom edge, so that a call to action is always in reach, or none" },
+      dialog: { takes: YES_NO, is: "a dialog over the screen: a card with a symbol, the title and the parts, and no bar" },
+      intro: { takes: YES_NO, is: "a line of introduction under the bar, from the subtitle: for a kind of screen its bar does not name" },
+      symbol: { takes: [], is: "the symbol of what the screen is about, shown by a dialog and by an outcome, or none" },
+    },
+    draw: (id, b, knobs, look, parts = []) => {
+      const yes = (knob: string) => knobs[knob] === "yes" || knobs[knob] === true;
+      const named = (knob: string) => (knobs[knob] === undefined || knobs[knob] === "none" ? undefined : String(knobs[knob]));
+      const opening = String(knobs.opening ?? "title") as (typeof OPENINGS)[number];
+      const title = bind(b.one("title"));
+      const subtitle = bind(b.one("subtitle"));
+      const symbol = look.icons ? named("symbol") : undefined;
+      const sticky = named("sticky");
+      const pinned = parts.find((part) => part.name === sticky);
+      const inBody = parts.filter((part) => part !== pinned).map((part) => part.root);
+
+      if (yes("dialog")) {
+        // Only a dialog shows it: Material and HIG both lead an alert with a symbol of what it is about.
+        return [
+          { id, component: "Screen", body: "dialog", dialog: true },
+          { id: "dialog", component: "Card", child: "dialog_body" },
+          { id: "dialog_body", component: "Stack", gap: "md", children: [...(symbol ? ["dialog_icon"] : []), "dialog_title", ...inBody] },
+          ...(symbol ? [{ id: "dialog_icon", component: "Icon", name: symbol, boxed: true } as C] : []),
+          made({ id: "dialog_title", component: "Text", role: "headline", text: title }),
+        ];
+      }
+
+      const navigation = yes("navigation");
+      // A main screen's bar leads with nothing, whatever the kind says, so the chain of screens ends by construction; the rest
+      // drill in, with a back arrow unless the kind says a cross (Material top app bar; HIG navigation bar).
+      const leading = navigation ? "none" : knobs.leading === undefined ? "back" : String(knobs.leading);
+      const action = named("action");
+      // A feed, a dashboard and a settings page are named by their bar; the others earn a line of introduction.
+      // A profile opens with the person instead, and how something went opens with the outcome.
+      const intro = opening === "title" && yes("intro");
+      const body = [...(opening === "person" ? ["person"] : []), ...(opening === "outcome" ? ["outcome"] : []), ...(intro ? ["intro"] : []), ...inBody];
+      const destinations = b.each("destinations");
+      return [
+        { id, component: "Screen", appBar: "appbar", body: "body", ...(pinned ? { sticky: "sticky" } : {}), ...(navigation ? { navBar: "navbar" } : {}) } as C,
+        made({
+          id: "appbar",
+          component: "AppBar",
+          // On a profile the person is the title, and an outcome says how it went in its own words.
+          title: opening === "title" ? title : undefined,
+          leading,
+          actions: action ? [action] : [],
+        }),
+        { id: "body", component: "Stack", gap: "lg", children: body } as C,
+        ...(opening === "person"
+          ? [
+              { id: "person", component: "Stack", gap: "xs", align: "center", children: ["person_avatar", "person_name", "person_line"] } as C,
+              made({ id: "person_avatar", component: "Avatar", name: title, url: bind(b.one("portrait")), size: 88 }),
+              made({ id: "person_name", component: "Text", role: "headline", text: title }),
+              made({ id: "person_line", component: "Text", tone: "muted", text: subtitle }),
+            ]
+          : []),
+        ...(opening === "outcome"
+          ? [
+              { id: "outcome", component: "Stack", gap: "sm", align: "center", children: [...(symbol ? ["outcome_icon"] : []), "outcome_title", "outcome_line"] } as C,
+              ...(symbol ? [{ id: "outcome_icon", component: "Icon", name: symbol, boxed: true, size: 32 } as C] : []),
+              made({ id: "outcome_title", component: "Text", role: "headline", text: title }),
+              made({ id: "outcome_line", component: "Text", tone: "muted", text: subtitle }),
+            ]
+          : []),
+        ...(intro ? [made({ id: "intro", component: "Text", tone: "muted", text: subtitle })] : []),
+        ...(pinned ? [{ id: "sticky", component: "StickyBar", child: pinned.root } as C] : []),
+        ...(navigation && destinations
+          ? [made({ id: "navbar", component: "NavBar", items: at(destinations.path), active: bind(b.one("active")), icons: look.icons, icon: look.icons ? bind(destinations.bound.one("icon")) : undefined })]
+          : []),
+      ];
+    },
+  },
   {
     name: "banner",
     card: "One thing that needs attention before anything else, set apart in a tinted band (Polaris).",
@@ -67,7 +162,7 @@ const PATTERNS: Pattern[] = [
     name: "slot",
     card: "A box of a fixed shape for something no catalog has. What fills it arrives later, the way a picture does.",
     slots: slots("- `items` — a list from elsewhere, when what fills the slot draws those"),
-    knobs: { ratio: RATIOS },
+    knobs: { ratio: { takes: RATIOS, is: "the shape of the box" } },
     // Which definition fills it, the data it draws, what the person picked in it and whether it had to close are the slot's own
     // plumbing, under the part's name. A graph says only what fills the part (`filled from shelf else baked else closed`).
     draw: (id, b, knobs) => [made({ id, component: "Custom", use: at(`/${id}/use`), ratio: knobs.ratio ?? "16:9", data: at(`/${id}/data`), selection: at(`/${id}/selection`), failed: at(`/${id}/failed`), items: bind(b.one("items")) })],
@@ -107,7 +202,11 @@ const PATTERNS: Pattern[] = [
         "  - `on` — whether it is switched on or ticked",
       ].join("\n"),
     ),
-    knobs: { layout: LAYOUTS, leading: LEADINGS, trailing: TRAILINGS },
+    knobs: {
+      layout: { takes: LAYOUTS, is: "how the things are laid out: dense rows, large picture cards, a grid of tiles, a sideways reel" },
+      leading: { takes: LEADINGS, is: "what leads each row: a portrait, a thumbnail, a symbol, its number, or nothing" },
+      trailing: { takes: TRAILINGS, is: "what ends each row: a chevron into its page, a button, a switch, a checkbox, or nothing" },
+    },
     draw: (id, b, knobs, look) => {
       const layout = (knobs.layout ?? "rows") as (typeof LAYOUTS)[number];
       const leading = (knobs.leading ?? "none") as (typeof LEADINGS)[number];
@@ -278,7 +377,7 @@ export function kitCatalog(): Grammar {
       traits: [],
       prose: [pattern.card],
       fields: pattern.slots,
-      children: Object.entries(pattern.knobs).map(([knob, values]) => ({ name: knob, block: false, traits: [], prose: [], fields: [], asking: { type: "choice" as const, options: values.map((value) => ({ name: value, criteria: null })) }, children: [] })),
+      children: Object.entries(pattern.knobs).map(([knob, { takes, is }]) => ({ name: knob, block: false, traits: [], prose: [takes.length ? is : `${is}. It takes any name.`], fields: [], ...(takes.length ? { asking: { type: "choice" as const, options: takes.map((value) => ({ name: value, criteria: null })) } } : {}), children: [] })),
       })),
       {
         name: "Sources",

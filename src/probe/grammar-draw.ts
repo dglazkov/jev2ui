@@ -39,7 +39,7 @@ import { fill, sourcesOf } from "../server/grammar/fill.js";
 import { idOf, type Field, type Node } from "../server/grammar/format.js";
 import { loadGrammar } from "../server/grammar/load.js";
 import { decide, decorate } from "../server/grammar/decide.js";
-import { boundIn, checkBindings, knobsOf, partsOf, schemaOf, treeOf } from "../server/grammar/make.js";
+import { boundIn, checkBindings, frameOf, knobsOf, partsOf, schemaOf, treeOf } from "../server/grammar/make.js";
 import { KIT_PATTERNS } from "../server/grammar/patterns.js";
 import { JEV, holdsIn, questionsOf, readGrammar, yieldOf } from "../server/grammar/read.js";
 
@@ -79,20 +79,12 @@ for (const node of grammar.nodes) {
 
 const { report } = await designing;
 const look = { contained: true, icons: true, symbol: "image" };
-// The frame is the one thing here that is not the file's: a page, with the header at the top of it if the graph writes one.
+// The frame is the file's too: the pattern its kinds name, set by the kind's traits, filled by what is always written.
 const header = grammar.nodes.find((node) => node.name === "header" && !node.question);
-const components: KitComponent[] = [
-  { id: "root", component: "Screen", body: "body" },
-  { id: "body", component: "Stack", gap: "lg", pad: "md", children: [...(header ? ["page_header"] : []), ...parts.map((node) => node.name)] },
-  ...(header
-    ? ([
-        { id: "page_header", component: "Stack", gap: "xs", children: ["page_title", "page_line"] },
-        { id: "page_title", component: "Text", role: "headline", text: { path: "/header/title" } },
-        { id: "page_line", component: "Text", tone: "muted", text: { path: "/header/subtitle" } },
-      ] as KitComponent[])
-    : []),
-  ...parts.flatMap((node) => treeOf(KIT_PATTERNS, grammar, node, reading, look)),
-];
+const trees = parts.map((node) => [node.name, treeOf(KIT_PATTERNS, grammar, node, reading, look)] as const);
+const frame = frameOf(KIT_PATTERNS, grammar, reading, look, trees.map(([name, tree]) => ({ name, root: tree[0].id })));
+if (!frame) throw new Error(`${file} names no frame for its kinds: say "→ page" after the heading of the kinds`);
+const components: KitComponent[] = [...frame, ...trees.flatMap(([, tree]) => tree)];
 run.send({ createSurface: { surfaceId, catalogId: KIT_CATALOG_ID } });
 run.send({ updateComponents: { surfaceId, components } });
 console.log(`${since()}  the tree: ${components.length} components, before a word is written`);

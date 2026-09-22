@@ -51,11 +51,8 @@ export interface Kind {
   order: Block[];
   requires: Block[];
   atLeast?: number;
-  /** Commit-style screens keep their call to action pinned to the bottom edge (Material: bottom app bar; HIG: toolbar). */
-  stickyActions: boolean;
-  dialog: boolean;
-  /** Opens with a symbol and a headline saying how it went, in place of an app bar title. */
-  outcome: boolean;
+  /** What the kind sets on the frame (`sticky actions`, `dialog`): the frame pattern reads these, not code. */
+  traits: string[];
 }
 
 export const KINDS: Record<string, Kind> = Object.fromEntries(
@@ -67,9 +64,7 @@ export const KINDS: Record<string, Kind> = Object.fromEntries(
         order: shape.parts.map((part) => part.block as Block),
         requires: shape.parts.filter((part) => part.tier === "always").map((part) => part.block as Block),
         ...(shape.atLeast ? { atLeast: shape.atLeast } : {}),
-        stickyActions: shape.traits.includes("sticky actions"),
-        dialog: shape.traits.includes("dialog"),
-        outcome: shape.traits.includes("outcome"),
+        traits: shape.traits,
       },
     ];
   }),

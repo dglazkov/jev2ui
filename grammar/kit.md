@@ -2,6 +2,60 @@
 
 What the kit can draw, for a graph to name: a part says `→ collection` after its heading, its fields say `as headline`, and a question under it says `→ layout`. Each pattern below is what it is for, the slots a graph's fields can fill, and the knobs a graph's answers can turn. Written out from src/server/grammar/patterns.ts by `npm run grammar:export`.
 
+## page
+
+A screen of a phone app: a bar with the title and one action, the parts below it, a bar of the app's main destinations on a main screen, a call to action pinned to the bottom edge, or a dialog over it all (Material 3 top app bar, navigation bar, bottom bar; HIG navigation bar, tab bar, alert).
+
+- `title` required — what the screen is called; on a profile, who it is about
+- `subtitle` — one line under it: a person's line, how it went, an introduction
+- `portrait` — the address of the person's picture, on a profile
+- `destinations` — the app's main destinations, for the bar at the bottom
+  - `label` required
+  - `icon` — the name of a symbol
+- `active` — which of the destinations this screen is
+
+### opening
+
+how the screen opens: with its title in the bar; with the person it is about; or with how something went, a symbol and a headline in place of a title
+
+`title` `person` `outcome`
+
+### leading
+
+what leads the bar on a screen that is not a main one: a back arrow, or a close cross, or nothing. A main screen's bar leads with nothing whatever is set, and unset, the rest lead with a back arrow
+
+`back` `close` `none`
+
+### action
+
+the symbol of the one action in the bar, or none. It takes any name.
+
+### navigation
+
+whether the bar of the app's main destinations is shown: on a main screen
+
+`yes` `no`
+
+### sticky
+
+the name of the part pinned to the bottom edge, so that a call to action is always in reach, or none. It takes any name.
+
+### dialog
+
+a dialog over the screen: a card with a symbol, the title and the parts, and no bar
+
+`yes` `no`
+
+### intro
+
+a line of introduction under the bar, from the subtitle: for a kind of screen its bar does not name
+
+`yes` `no`
+
+### symbol
+
+the symbol of what the screen is about, shown by a dialog and by an outcome, or none. It takes any name.
+
 ## banner
 
 One thing that needs attention before anything else, set apart in a tinted band (Polaris).
@@ -30,6 +84,8 @@ A box of a fixed shape for something no catalog has. What fills it arrives later
 - `items` — a list from elsewhere, when what fills the slot draws those
 
 ### ratio
+
+the shape of the box
 
 `3:1` `16:9` `1:1` `3:4`
 
@@ -64,13 +120,19 @@ Several similar things to look through: dense rows, large picture cards, a grid 
 
 ### layout
 
+how the things are laid out: dense rows, large picture cards, a grid of tiles, a sideways reel
+
 `rows` `cards` `grid` `reel`
 
 ### leading
 
+what leads each row: a portrait, a thumbnail, a symbol, its number, or nothing
+
 `avatar` `thumbnail` `icon` `number` `none`
 
 ### trailing
+
+what ends each row: a chevron into its page, a button, a switch, a checkbox, or nothing
 
 `chevron` `button` `switch` `checkbox` `none`
 

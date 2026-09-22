@@ -6,12 +6,14 @@ A graph nobody wrote code for: the emails a product sends. It is here to find ou
 
 ## header
 
-Written for every email, whatever it is made of.
+Written for every email, whatever it is made of. It fills the frame: the subject as the title, the preheader under it.
 
-- `title` — The subject line, as it shows in an inbox.
-- `subtitle` — The preheader: the one line an inbox shows after the subject.
+- `title` as title — The subject line, as it shows in an inbox.
+- `subtitle` as subtitle — The preheader: the one line an inbox shows after the subject.
 
-## kind
+## kind → page with leading none, intro yes
+
+An email is drawn by the same page as a screen, with nothing leading its bar and the preheader as its line of introduction, whatever kind it is. Nothing here turns the page's other knobs: no email is a main screen, a dialog or a profile.
 
 The order of the parts belongs to the kind of email. What matters most comes first, because most of an email is never scrolled to.
 

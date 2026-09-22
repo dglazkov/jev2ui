@@ -39,11 +39,11 @@ import { destination, destinationIntent, homeTask } from "./link.js";
 import { applyDesign, keepPlan, type Block, type ScreenPlan } from "./plan.js";
 import type { ScreenEdit } from "../../shared/turn.js";
 import { Pictures, itemWords } from "./pictures.js";
-import { SYSTEM_PROMPT, partPrompt, screen, knownSubjects, type Part, type Setting } from "./screen.js";
+import { SYSTEM_PROMPT, partPrompt, knownSubjects, type Part, type Setting } from "./screen.js";
 import { refineField } from "./refine.js";
-import { BLOCKS, KINDS, SCREEN, chainOf, partNode, partSchema, readingOf } from "./graph.js";
+import { BLOCKS, SCREEN, chainOf, partNode, partSchema, readingOf } from "./graph.js";
 import { decide, type Decoration } from "../grammar/decide.js";
-import { boundIn, treeOf } from "../grammar/make.js";
+import { boundIn, frameOf, treeOf } from "../grammar/make.js";
 import { KIT_PATTERNS } from "../grammar/patterns.js";
 import { JEV, questionsOf, readGrammar } from "../grammar/read.js";
 import { planOf } from "../grammar/screen-plan.js";
@@ -152,8 +152,7 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
      */
     const later = (part: Part, value: unknown, only?: (outer: number | undefined) => boolean) => {
       const node = partNode(part);
-      // The navigation bar draws its symbols itself, so nothing binds them: the frame is not a pattern yet (docs/grammar.md).
-      const bound = part === "nav" ? new Set(plan!.icons ? ["icon"] : []) : (drawn.get(part) ?? new Set<string>());
+      const bound = drawn.get(part) ?? new Set<string>();
       const chosen = typeof to?.about?.value === "string" ? to.about.value : undefined;
       const same = (x: unknown, y: unknown) => String(x).trim().toLowerCase() === String(y).trim().toLowerCase();
       const asked = decide(SCREEN, node, value, {
@@ -238,11 +237,7 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
       ...(settled ? { blocks: settled, ...(was ? { among: was } : {}) } : arrived.among ? { among: arrived.among } : {}),
       ...(arrived.topLevel !== undefined ? { values: { top_level: arrived.topLevel } } : {}),
     });
-    const kind = KINDS[reading.kind];
-    // Only a dialog shows it: Material and HIG both lead an alert with a symbol of what it is about.
-    const symbol = String(reading.values.screen_icon);
-    const read = { plan: planOf(SCREEN, reading), screenIcon: (kind.dialog || kind.outcome) && symbol !== "none" ? symbol : null, decisions: reading.decisions };
-    if (read.screenIcon !== null || kind.dialog) read.decisions.push({ id: "screen_icon", question: "symbol", answer: read.screenIcon ?? "none", p: reading.p.screen_icon ?? 1 });
+    const read = { plan: planOf(SCREEN, reading), decisions: reading.decisions };
     for (const id of Object.keys(navigationQuestions)) read.decisions.push({ id, question: id === "nav_home" ? "initial home destination" : `initial navigation: ${id.slice(4)}`, answer: planned.answers[id].choice, p: planned.answers[id].probabilities[planned.answers[id].choice] });
     run.trace({ stage: planned.stage, ms: planned.ms, decisions: read.decisions, tokens: { input: planned.inputTokens, output: 0 } });
 
@@ -273,12 +268,17 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
     pictures.drawn = plan.illustrated;
     if (designed.overruled.length) run.trace({ stage: `${design.name} overrules the plan: ${designed.overruled.join(", ")}`, ms: 0 });
 
-    // Each part is drawn by the pattern the file names for it, from what the file says it is made of, as the plan now stands.
+    // Each part is drawn by the pattern the file names for it, from what the file says it is made of, as the plan now
+    // stands; then the frame, by the pattern the kinds name, set by the kind's traits and the answers at the top of the file.
     const asRead = readingOf(plan);
-    const parts = plan.blocks.map((block) => [block, treeOf(KIT_PATTERNS, SCREEN, partNode(block), asRead, { contained: plan.contained, icons: plan.icons, symbol: plan.symbol })] as const);
+    const drawing = { contained: plan.contained, icons: plan.icons, symbol: plan.symbol };
+    const parts = plan.blocks.map((block) => [block, treeOf(KIT_PATTERNS, SCREEN, partNode(block), asRead, drawing)] as const);
     for (const [block, tree] of parts) drawn.set(block, boundIn(tree));
+    const frame = frameOf(KIT_PATTERNS, SCREEN, asRead, drawing, parts.map(([name, tree]) => ({ name, root: tree[0].id })));
+    if (!frame) throw new Error("grammar/screen.md names no frame for its kinds");
+    drawn.set("nav", boundIn(frame));
     run.send({ createSurface: { surfaceId, catalogId: KIT_CATALOG_ID } });
-    run.send({ updateComponents: { surfaceId, components: screen(plan, read.screenIcon, parts.flatMap(([, tree]) => tree)) } });
+    run.send({ updateComponents: { surfaceId, components: [...frame, ...parts.flatMap(([, tree]) => tree)] } });
     // The lead picture is of what the header names. The description will not do: it lists what is on the screen, and a picture of that is a picture of a phone.
     if (plan.blocks.includes("hero")) {
       const shown = (url: string) => run.send({ updateDataModel: { surfaceId, path: "/hero", value: { imageUrl: url } } });
@@ -287,12 +287,12 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
       else streams.spawn((async () => pictures.find({ ...plan.pictures.hero, of: itemWords(await header) || prompt, ratio: "16:9", size: [960, 540] }, shown, chainOf("hero", "imageUrl")))());
     }
 
-    // A profile opens with the person's portrait: the one from the list they were tapped in, if that is how the person got here.
-    if (plan.person && plan.imagery) {
-      const shown = (url: string) => run.send({ updateDataModel: { surfaceId, path: "/person", value: { imageUrl: url } } });
-      if (kept.person) run.send({ updateDataModel: { surfaceId, path: "/person", value: kept.person } });
-      else if (typeof carried === "string") shown(resized(carried, 320, 320));
-      else streams.spawn((async () => pictures.find({ subject: "portrait", of: itemWords(await header) || prompt, ratio: "1:1", size: [320, 320] }, shown, chainOf("hero", "imageUrl")))());
+    // A profile opens with the person's portrait: the one from the list they were tapped in, if that is how the person got
+    // here. It joins the header, which fills the frame, as any other of Jev's answers joins its part.
+    if (plan.person && plan.imagery && kept.header === undefined) {
+      const shown = (url: string) => (decorations.add("header", [{ at: [], values: { imageUrl: url } }]), streams.refresh("header"));
+      if (typeof carried === "string") shown(resized(carried, 320, 320));
+      else streams.spawn((async () => pictures.find({ subject: "portrait", of: itemWords(await header) || prompt, ratio: "1:1", size: [320, 320] }, shown, chainOf("header", "imageUrl")))());
     }
 
     // The app's navigation is established once; every main screen after that shows the same one.

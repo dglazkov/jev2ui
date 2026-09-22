@@ -6,14 +6,15 @@ The graph of one screen of an apparition: what kind of screen it is, which parts
 
 ## header
 
-Written for every screen, before anything about it is known. It is the frame's, which no part draws.
+Written for every screen, before anything about it is known. It fills the frame: the bar's title, or who a profile is about, or how something went; and the line under it.
 
-- `title` — Screen title, at most four words.
-- `subtitle` — One short supporting line.
+- `title` as title — Screen title, at most four words.
+- `subtitle` as subtitle — One short supporting line.
+- `imageUrl` as portrait, from library else painted else placeholder
 
-## archetype
+## archetype → page
 
-The order of the parts is not asked. It belongs to the kind of screen, where the best practice lives.
+The order of the parts is not asked. It belongs to the kind of screen, where the best practice lives. So does the frame around them: what a kind says after its parts sets the page (its call to action pinned to the bottom edge, a cross instead of a back arrow, a line of introduction, a dialog), and the answers below turn what the kind leaves open.
 
 > What kind of screen is this?
 
@@ -22,17 +23,17 @@ The order of the parts is not asked. It belongs to the kind of screen, where the
 - **dashboard** — Numbers and status at a glance: usage, health, progress, balances, today's summary.
   `banner? custom? STATS facts? list?` at least 2
 - **detail** — One thing in depth: a product, a place, an article, a profile, an event, an order, a recipe's overview.
-  `hero custom? stats? prose facts steps? list? actions?` at least 2, sticky actions
+  `hero custom? stats? prose facts steps? list? actions?` at least 2, sticky actions, intro
 - **guide** — Instructions followed in order: a how-to, a method, troubleshooting, an onboarding checklist.
-  `hero prose? custom? facts? STEPS actions?` at least 2, sticky actions
+  `hero prose? custom? facts? STEPS actions?` at least 2, sticky actions, intro
 - **settings** — Preferences, account options or configuration, arranged as groups of rows.
   `banner? GROUPS actions?`
 - **form** — Data entry: sign-up, booking, creating or editing a record, a survey, a contact form.
-  `prose? custom? FORM`
+  `prose? custom? FORM` leading close, intro
 - **checkout** — Review and commit: a cart, a checkout, an order or booking summary with totals, payment.
-  `banner? custom? list facts form? actions?` at least 2, sticky actions
+  `banner? custom? list facts form? actions?` at least 2, sticky actions, intro
 - **result** — The outcome of something the person just did: a success message, a confirmation, a receipt, an error, nothing found.
-  `prose? facts steps? actions` outcome
+  `prose? facts steps? actions` opening outcome, leading close
 - **confirm** — One short decision about one thing, asked before it happens: confirm, delete, approve, allow, a dialog or alert.
   `prose facts? actions` at least 2, dialog
 
@@ -402,14 +403,14 @@ One primary action per screen: Material, HIG and Polaris all agree.
 + `primary` It is the one.
 - `secondary` It is one of the others.
 
-## person
+## person → opening
 
 > Is this screen about one person or account, such as a profile?
 
-+ A user profile, a contact, a member page, an account overview.
-- It is about things, data, tasks or settings, or about many people at once.
++ `person` A user profile, a contact, a member page, an account overview.
+- `title` It is about things, data, tasks or settings, or about many people at once.
 
-## top_level
+## top_level → navigation
 
 > Is this one of the app's main screens, the kind reached from its main navigation?
 
@@ -418,12 +419,12 @@ One primary action per screen: Material, HIG and Polaris all agree.
 
 ### nav
 
-Written once for an app, on its first main screen; every main screen after that shows the same one.
+Written once for an app, on its first main screen; every main screen after that shows the same one. It fills the bar of destinations at the bottom of a main screen.
 
-- `items` 3–5 — The app's three to five main destinations.
-  - `label` — One word.
-  - `icon` decided by destination_icon
-- `active` integer — Index of the destination this screen belongs to.
+- `items` 3–5, as destinations — The app's three to five main destinations.
+  - `label` as label — One word.
+  - `icon` as icon, decided by destination_icon
+- `active` integer, as active — Index of the destination this screen belongs to.
 
 #### destination_icon (of each destination in items)
 
@@ -433,7 +434,7 @@ among [icons](icons.md)
 
 - **none** `circle` — No symbol in the set relates to it.
 
-## app_bar_action
+## app_bar_action → action
 
 Material top app bar: at most a couple of actions, the most used one first. What an option yields is the name of its symbol.
 
@@ -461,7 +462,7 @@ among [subjects](subjects.md)
 
 among [subjects](subjects.md)
 
-## screen_icon
+## screen_icon → symbol
 
 > Which symbol best stands for what this screen is about?
 
@@ -475,6 +476,7 @@ among [icons](icons.md)
 - when archetype is result, top_level is no — how something went is not a main screen
 - when archetype is confirm, app_bar_action is none — a dialog has no top bar
 - when archetype is not detail, person is no — only a page about one thing can be about one person
+- when person is yes, no hero — a profile opens with the person, and a lead photograph would compete with them
 - when item_leading is not thumbnail, list_layout is rows — picture layouts are for things with a look; anything else is scanned as rows
 - when no list, custom_linked is no — with no list there are no items for it to draw
 - when row_control is value and no value, row_control is nav — a row can only show a value if one was written

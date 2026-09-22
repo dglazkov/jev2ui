@@ -1125,7 +1125,6 @@
    "plan": {
     "archetype": "detail",
     "blocks": [
-     "hero",
      "custom",
      "facts",
      "list",
@@ -1165,6 +1164,7 @@
     "contained": true
    },
    "notes": [
+    "has_hero: dropped: a profile opens with the person, and a lead photograph would compete with them",
     "has_stats: an extra on a detail; needs 0.75",
     "has_steps: an extra on a detail; needs 0.75",
     "list_layout: picture layouts are for things with a look; anything else is scanned as rows"
@@ -2169,7 +2169,6 @@
    "plan": {
     "archetype": "detail",
     "blocks": [
-     "hero",
      "stats"
     ],
     "topLevel": true,
@@ -2201,6 +2200,7 @@
     "contained": true
    },
    "notes": [
+    "has_hero: dropped: a profile opens with the person, and a lead photograph would compete with them",
     "has_actions: an extra on a detail; needs 0.75",
     "top_level: settled beforehand"
    ]
@@ -3694,7 +3694,6 @@
    "plan": {
     "archetype": "detail",
     "blocks": [
-     "hero",
      "custom"
     ],
     "topLevel": false,
@@ -3731,6 +3730,7 @@
     "contained": true
    },
    "notes": [
+    "has_hero: dropped: a profile opens with the person, and a lead photograph would compete with them",
     "has_steps: an extra on a detail; needs 0.75",
     "has_list: an extra on a detail; needs 0.75",
     "has_actions: an extra on a detail; needs 0.75",
@@ -4815,7 +4815,6 @@
    "plan": {
     "archetype": "detail",
     "blocks": [
-     "hero",
      "custom",
      "prose",
      "facts",
@@ -4855,6 +4854,7 @@
     "contained": true
    },
    "notes": [
+    "has_hero: dropped: a profile opens with the person, and a lead photograph would compete with them",
     "custom_linked: with no list there are no items for it to draw"
    ]
   },
@@ -8007,7 +8007,6 @@
    "plan": {
     "archetype": "detail",
     "blocks": [
-     "hero",
      "actions"
     ],
     "topLevel": false,
@@ -8040,6 +8039,7 @@
    },
    "notes": [
     "archetype: read as \"guide\", which is ruled out here",
+    "has_hero: dropped: a profile opens with the person, and a lead photograph would compete with them",
     "has_stats: an extra on a detail; needs 0.75",
     "has_actions: added: a detail needs at least 2 parts"
    ]
@@ -10657,7 +10657,10 @@
      "active": {
       "path": "/nav/active"
      },
-     "icons": true
+     "icons": true,
+     "icon": {
+      "path": "icon"
+     }
     },
     {
      "id": "facts",
@@ -11283,13 +11286,6 @@
      ]
     },
     {
-     "id": "outcome_icon",
-     "component": "Icon",
-     "name": "check_circle",
-     "boxed": true,
-     "size": 32
-    },
-    {
      "id": "outcome_title",
      "component": "Text",
      "role": "headline",
@@ -11586,6 +11582,7 @@
      "gap": "sm",
      "align": "center",
      "children": [
+      "outcome_icon",
       "outcome_title",
       "outcome_line"
      ]
@@ -11593,7 +11590,7 @@
     {
      "id": "outcome_icon",
      "component": "Icon",
-     "name": "check_circle",
+     "name": "key",
      "boxed": true,
      "size": 32
     },
@@ -11907,6 +11904,7 @@
      "gap": "sm",
      "align": "center",
      "children": [
+      "outcome_icon",
       "outcome_title",
       "outcome_line"
      ]
@@ -11914,7 +11912,7 @@
     {
      "id": "outcome_icon",
      "component": "Icon",
-     "name": "check_circle",
+     "name": "savings",
      "boxed": true,
      "size": 32
     },
@@ -12328,7 +12326,10 @@
      "active": {
       "path": "/nav/active"
      },
-     "icons": true
+     "icons": true,
+     "icon": {
+      "path": "icon"
+     }
     },
     {
      "id": "banner",
@@ -13488,7 +13489,10 @@
      "active": {
       "path": "/nav/active"
      },
-     "icons": true
+     "icons": true,
+     "icon": {
+      "path": "icon"
+     }
     },
     {
      "id": "custom",
@@ -15965,7 +15969,10 @@
      "active": {
       "path": "/nav/active"
      },
-     "icons": true
+     "icons": true,
+     "icon": {
+      "path": "icon"
+     }
     },
     {
      "id": "stats",
@@ -16485,7 +16492,10 @@
      "active": {
       "path": "/nav/active"
      },
-     "icons": true
+     "icons": true,
+     "icon": {
+      "path": "icon"
+     }
     },
     {
      "id": "prose",
