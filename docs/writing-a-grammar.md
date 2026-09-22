@@ -312,20 +312,21 @@ knowledge probably belongs in a kind's shape or a question's criteria instead.
 
 A rule can read a fact that comes from outside the graph, such as what the design says. Write it as a
 question with the trait `given`: it's never sent to Jev, whoever runs the graph supplies the answer, and
-a yes-or-no that nobody supplies is no. `screen.md` has three (`photographs`, `symbols`, `cards`), which the
-tool gives from the DESIGN.md, and its rules say what a design without photographs takes off the screen:
+a yes-or-no that nobody supplies is no. So phrase a given as the exception, so that silence changes nothing.
+`screen.md` has three (`no_photographs`, `no_symbols`, `no_cards`), which the tool gives from the DESIGN.md,
+and its rules say what a design without photographs takes off the screen:
 
 ```markdown
-## photographs (given)
+## no_photographs (given)
 
-> Does the design show photographs?
+> Does the design say there are no photographs?
 
-+ It does, or says nothing about it.
-- Its prose says there are no photographs, or that its pictures are drawn.
++ Its prose says there are no photographs, or that its pictures are drawn.
+- It shows photographs, or says nothing about it.
 
 ## Rules
 
-- when photographs is no, no hero — the design has no photographs, so nothing leads with one
+- when no_photographs is yes, no hero — the design has no photographs, so nothing leads with one
 ```
 
 ## Step 8: Decide things once the words exist
@@ -435,7 +436,8 @@ and joins the library.
 ## Run your grammar in the tool
 
 The tool runs any grammar, not only its own: an **idiom** is a grammar, a catalog and a stylesheet, and
-the person picks one per app in the design panel. `examples/email.md` is one (`Email`), which is how you
+the person picks one per app in the design panel. `grammar/ios/screen.md` is one, a graph of its own
+written from the Human Interface Guidelines, and `examples/email.md` is another (`Email`), which is how you
 know a grammar with no screens, no navigation and no plan runs end to end. To add yours: name it in
 `src/shared/idioms.ts` (its name, the id its surfaces are created with, its stylesheets in the order they
 layer), give it a grammar, a catalog file and the code that draws the patterns in `src/server/idioms.ts`,

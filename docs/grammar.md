@@ -158,19 +158,20 @@ read it like any other. That is how the design's facts reach the graph, and how 
 in the file with its reason, where it was code:
 
 ```markdown
-## photographs (given)
-> Does the design show photographs?
+## no_photographs (given)
+> Does the design say there are no photographs?
 
-+ It does, or says nothing about it.
-- Its prose says there are no photographs, or that its pictures are drawn.
++ Its prose says there are no photographs, or that its pictures are drawn.
+- It shows photographs, or says nothing about it.
 
 ## Rules
-- when photographs is no, no hero — the design has no photographs, so nothing leads with one
-- when photographs is no and item_leading is thumbnail, item_leading is icon — …
+- when no_photographs is yes, no hero — the design has no photographs, so nothing leads with one
+- when no_photographs is yes and item_leading is thumbnail, item_leading is icon — …
 ```
 
-A given yes-or-no that nobody gives is no, like any other; the tool gives all three (`photographs`, `symbols`,
-`cards`) from what it read of the DESIGN.md.
+A given yes-or-no that nobody gives is no, like any other, which is why the three are phrased as what a design
+*rules out* (`no_photographs`, `no_symbols`, `no_cards`): a graph run with no design at all keeps its pictures. The
+tool gives them from what it read of the DESIGN.md.
 
 **A field that says `computed`** is worked out by the pattern its slot belongs to, once the part is written: the
 `details` pattern's `strong` is the last row (`Pattern.computed`, keyed by slot). The field's `when` says when
@@ -474,6 +475,38 @@ The same description, twice:
 
 <img src="idiom-kit-settings.png" width="240" alt="A settings screen drawn by the kit"> <img src="idiom-ios-settings.png" width="240" alt="The same settings screen drawn by the iOS idiom"> <img src="idiom-kit-dialog.png" width="240" alt="A confirmation drawn by the kit"> <img src="idiom-ios-alert.png" width="240" alt="The same confirmation drawn by the iOS idiom: an alert">
 
+**Step 8: iOS as a graph of its own.** `grammar/ios/screen.md` is written from the Human Interface Guidelines and
+not from `screen.md`. Its kinds are the ways iOS *presents* a screen, because that is what decides its frame: a
+tab's root (`browse`), a screen pushed onto the one before it (`detail`, `settings`), a sheet with Cancel and Done
+(`compose`), an alert (`alert`), an action sheet of choices from the bottom (`choices`), a full-screen cover for a
+first run (`welcome`) or an outcome (`done`). It asks what `screen.md` never asks: whether the screen is a
+self-contained task the person completes and dismisses (`sheet → presentation`), whether the collection is edited
+from an Edit in its bar (`editable → trailing`), and search is a part expected on a tab's root, with the scopes
+results split into. Its frame (`patterns-ios.ts`) has knobs of its own — `presentation`, `title large|inline`,
+`leading back|cancel|close|none`, `trailing` — and the kit's two frame components grew to carry them: a word that
+acts in the bar (`AppBar.trailing`, `leading: cancel`) and a presentation on the screen (`Screen.presentation`),
+which the stylesheet paints as a sheet with a grabber, an action sheet with Cancel set apart, and an alert that
+stacks three or more buttons. Twenty-four examples were labelled from the guidelines before the first run; after
+two wording fixes and one shape fix, 24 of 24 come out as labelled, 66 claims of 66. Live, through the served app:
+an inbox with a large title, compose and Edit in its bar, a scope bar and the tab bar; a tap pushes the message
+with a chevron Back and a share symbol; a settings screen, an alert, a share sheet, an order confirmed.
+
+<img src="idiom-ios-inbox.png" width="240" alt="An inbox: a tab's root with a large title, compose and Edit in the bar, search with scopes, the tab bar"> <img src="idiom-ios-sheet.png" width="240" alt="A new event: a sheet with a grabber, Cancel and Done"> <img src="idiom-ios-actionsheet.png" width="240" alt="Share this photo: an action sheet with Cancel set apart"> <img src="idiom-ios-welcome.png" width="240" alt="A welcome: a full-screen cover with a large title, features with symbols and a pinned button">
+
+The question this answers, measured against the files: **are the two design systems the same graph?** Of iOS's 36
+questions, 25 have the same id as one of `screen.md`'s 34, and 24 of those the same words: every question about
+the *content* (is it several similar things, what leads each, has it a price, is a figure's change good news,
+what is the picture of) and every later question. What differs is the kinds (8 against 9, none alike), the
+questions that decide the frame (`sheet`, `editable`, `bar_action`, `tab_root` for `top_level`), three parts
+(`search`, `features`, and `text`/`details`/`buttons` under their own names) and eleven more rules, all about
+presentation. So: a shared trunk of content decisions, and a dialect that is the frame and the kinds — which is
+what the first cut had guessed and could not show.
+
+First-run misses worth keeping: `search` came out at 0.65–0.67 on an inbox and on search results, under the 0.75 an
+extra needs, and the fix was the shape, not the words: on iOS search is *expected* on a tab's root. And a product
+page lost its hero because `probe:grammar` gave no design and "no photographs" was the default (51): the givens are
+now phrased as what a design rules out.
+
 ## What resisted
 
 What the export could not say, or could only say by growing the format:
@@ -641,9 +674,9 @@ Not attempted, and each is a piece of the graph that is still only code:
 
 From the reading:
 
-51. **A given yes-or-no that nobody gives is no**, like any other; so the design's facts are phrased as what the
-    design shows (`photographs`), and everyone who runs the graph without a design has to say yes to all three,
-    or the rules take the pictures off. The tests and the probe say it; a fourth runner would have to know.
+51. **A given yes-or-no that nobody gives is no**, like any other. Phrased as what the design shows, the fourth
+    runner (`probe:grammar`) forgot within the hour and lost a product page's hero; so they are phrased as what a
+    design rules out (`no_photographs`), and silence rules nothing out.
 52. **The size of a picture is a policy of the host**: a portrait is square and small, a thumbnail landscape and
     large where the `layout` knob is not `rows`. That is the catalog's knowledge (how big its `collection` draws a
     picture) and the pattern does not say it.
@@ -663,16 +696,34 @@ From the reading:
 57. **An email in a phone.** The Email idiom draws in the device frame, with the tool's chrome around it, and its
     writers are told they write "a screen"; the tool's shell is still an app's.
 
+From iOS as its own graph:
+
+58. **The tab bar shows on a tab's root and not on what is pushed onto it.** iOS keeps the tab bar on pushed
+    screens; the frame's `navigation` is turned by `tab_root`, and the tool sends the app's destinations only to
+    screens whose frame says yes, so a pushed detail has no tab bar. Saying "in a tab" separately from "a tab's
+    root" is a knob the frame does not have yet.
+59. **Cancel is the last button because the writer is told so.** HIG's rules for an alert's and an action sheet's
+    buttons (cancel last, the confirming one first, three or more stacked, destructive red) are a writer's note,
+    a stylesheet `:has(> :nth-child(3))` and the `main`/`destructive` questions; nothing in the graph can say
+    "one of the buttons is Cancel" (47 stands, half met).
+60. **The frame's word is capitalised by the pattern.** `trailing done` yields `Done`; a grammar cannot say the
+    word as the person reads it, only the knob's name.
+61. **`ios_share` and `more_horiz` are Material's names for Apple's symbols.** The bar's action yields a symbol
+    of the set every idiom shares (48 stands).
+62. **A pushed screen's bar reads "Back", not the title behind it** (46 stands): the journey knows it, the frame
+    is not told.
+63. **The two grammars share their content questions by copying them.** Twenty-four questions are word for word
+    the same in two files; a change to one is not a change to the other. A trunk two dialects import is what
+    the copy is asking for.
+
 ## Next, in the order that seems right
 
-1. **iOS as its own graph.** The tool runs any grammar now; the iOS idiom still reads `screen.md`. Write
-   `grammar/ios/screen.md` from the HIG, not from `screen.md`: its own kinds (tab root, pushed list, detail,
-   settings, form sheet, alert, action sheet, search), its own questions (push or sheet; did the confirmation come
-   from a button), its rules (settings always grouped, three buttons stack), examples labelled by hand; and a
-   catalog with what it needs (47, 46).
-2. **One idiom that is not a phone at all** (Slack Block Kit, a terminal), to see what a graph with no screen, no
+1. **One idiom that is not a phone at all** (Slack Block Kit, a terminal), to see what a graph with no screen, no
    bar and no tab bar does to the tool's shell (54, 55, 57): the email was the first of these and it drew in a
    phone.
+2. **A trunk two dialects import** (63): the content questions once, and `screen.md` and `ios/screen.md` each a
+   kinds question, a frame and rules over it. The format has `among [set](file.md)` for options; it has nothing
+   for questions.
 3. **An idiom's own components**: Material Web (`@material/web`, Lit, with a custom-elements manifest the catalog
    file could be generated from), where the renderer stops being one element.
 4. **`paint.md` read by the tool** (36), and with it a DESIGN.md with holes for an idiom to fix (43).
