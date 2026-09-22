@@ -121,7 +121,8 @@ test("every idiom draws the grammar it reads: its catalog binds, and the frame i
       seen.add(frame.map((c) => c.id).join(","));
     }
     // Every way the frame can come out was drawn: a dialog, a main screen, a pushed one, a person, an outcome; an email's frame has one way.
-    const varied = kindsOf(grammar)?.asking?.type === "choice" && kindsOf(grammar)!.asking!.options.some((o) => o.shape?.traits.length);
+    const kinds = kindsOf(grammar)?.asking;
+    const varied = kinds?.type === "choice" && kinds.options.some((o) => o.shape?.traits.length);
     assert.ok(seen.size >= (varied ? 5 : 1), `${idiom.id}: only ${seen.size} shapes of frame`);
   }
 });

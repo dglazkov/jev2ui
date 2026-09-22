@@ -153,6 +153,29 @@ knob nothing asks about is set where the pattern is named: `### code → slot wi
 The lint, from the two files: a source the catalog lacks, `by` on what is not a set, and **a chain that ends in
 a set or a maker, which can come up empty**. So no graph that passes can leave a screen waiting on a model.
 
+**A question nobody is asked** carries the trait `given`: its answer is given by whoever runs the graph, and the rules
+read it like any other. That is how the design's facts reach the graph, and how what a design rules out is a rule
+in the file with its reason, where it was code:
+
+```markdown
+## photographs (given)
+> Does the design show photographs?
+
++ It does, or says nothing about it.
+- Its prose says there are no photographs, or that its pictures are drawn.
+
+## Rules
+- when photographs is no, no hero — the design has no photographs, so nothing leads with one
+- when photographs is no and item_leading is thumbnail, item_leading is icon — …
+```
+
+A given yes-or-no that nobody gives is no, like any other; the tool gives all three (`photographs`, `symbols`,
+`cards`) from what it read of the DESIGN.md.
+
+**A field that says `computed`** is worked out by the pattern its slot belongs to, once the part is written: the
+`details` pattern's `strong` is the last row (`Pattern.computed`, keyed by slot). The field's `when` says when
+there is anything to work out (`strong … computed, when facts_total is yes`).
+
 **What can only be decided once the words exist** (is "Degraded" bad news, is "Auto-download" a switch or a
 page) is a question like any other, under its part. Its heading says what it is asked of, and a field says
 which question decides it:
@@ -396,38 +419,56 @@ it opens. The email graph then got the same frame with one line, `## kind → pa
 and is drawn with a large title, its preheader as the line under it and no bar of destinations: the first thing
 a brought graph draws that is not a bare page.
 
-**Step 7: a second idiom, and choosing one.** An idiom is the three things an app is imagined with: the grammar
-that reads the description, the catalog that draws what it says (a file, and the code behind it that draws each
-pattern), and the stylesheet that paints it in the browser. The tool's own is `screen.md`, `kit.md` and
-`src/web/kit/kit.css`; they are named in one table on each side (`src/shared/idioms.ts` for what both know,
-`src/server/idioms.ts` for the files and the code, `src/web/kit/idioms.ts` for the sheets), and which one a request
-is imagined in is the request's to say, in an `X-Idiom` header, carried the way the endpoint that answers System
-One is carried (`models.ts`): everything the request sets going reads that one, however deep. What code knew of
-the tool's graph by name (`mock/graph.ts`) is now the bindings of one idiom's graph and catalog, a `Graph`; the
-pipeline draws with the request's patterns and creates its surface under its catalog's id.
+**Step 7: idioms, in two cuts.** An idiom is the three things an app is imagined with: the grammar that reads
+the description, the catalog that draws what it says (a file, and the code behind it that draws each pattern), and
+the stylesheet that paints it in the browser. The tool's own is `screen.md`, `kit.md` and `src/web/kit/kit.css`;
+they are named in one table on each side (`src/shared/idioms.ts` for what both know, `src/server/idioms.ts` for the
+files and the code, `src/web/kit/idioms.ts` for the sheets), and which one a request is imagined in is the request's
+to say, in an `X-Idiom` header, carried the way the endpoint that answers System One is carried (`models.ts`). The
+idiom is chosen per app, in the design panel beside the design system; remembered for the next app; saved with the
+app and restored with it (`SAVED_APP.idiom`; an app saved before there was a choice is the kit's). The page is
+painted in one idiom at a time, and every baked component's frame is handed the same sheets.
 
-The second idiom is iOS, in its smallest cut: **the same grammar**, since the frame's knobs are the contract and a
-catalog's business is what it makes of them; a catalog that is the kit's twelve patterns with a `page` of its own
-(`patterns-ios.ts`: a navigation bar that centres its title, a large title under the bar on a main screen, a
-chevron and a word to go back, a tab bar, and an alert that leads with no symbol and stacks its buttons under a
-hairline); and a stylesheet layered over the kit's (`ios.css`) that fixes what iOS fixes, as the `--k-*` variables
-the kit already reads (the system type scale, continuous corners, no drawn edges, green switches, inset grouped
-lists), and leaves the design what the design decides (hue, light or dark, the greys, whether there are cards or
-pictures). Material was the other candidate and would have proved nothing: the kit's frame *is* Material's, so a
-Material catalog over the kit's components is the kit. Material's real work is its own components (`md-*`), which
-is another issue.
+*The first cut proved the catalog half and not the grammar half.* It added iOS as a catalog over the same
+`screen.md`: the kit's twelve patterns with a `page` of its own (`patterns-ios.ts`: a navigation bar that centres
+its title, a large title under the bar on a main screen, a chevron and a word to go back, a tab bar, an alert that
+leads with no symbol and stacks its buttons under a hairline) and a stylesheet layered over the kit's (`ios.css`)
+that fixes what iOS fixes as the `--k-*` variables the kit already reads. That was worth having, and it was the
+wrong half to stop at: the point of an idiom is a *different graph*, and a grammar that asked one question
+`screen.md` does not ask could not have run in the tool, because of what the next paragraph removed.
 
-The idiom is chosen per app, in the design panel beside the design system; the choice is remembered for the next
-app, saved with the app and restored with it (`SAVED_APP.idiom`; an app saved before there was a choice is the
-kit's). The page is painted in one idiom at a time, and every baked component's frame is handed the same sheets.
-Switching on an app that has screens repaints them and leaves their layout until they are generated again, and
-the tool says so. The tests hold that: every idiom's catalog binds the grammar it reads (`checkBindings`, no
-errors), and the frame it makes of 300 random readings is a tree the kit accepts, in every shape a frame can come
-out; what each idiom draws of the file is recorded (`fixtures/kit.json`, `fixtures/ios.json`, beside
-`fixtures/screen.json` for what depends on the grammar alone), and the kit's recording moved byte for byte. Both
-probes take `--catalog`. Live, through the served app: the header carries the choice, a settings screen, a main
-screen, a profile and a confirmation each come out in the idiom's frame, valid, and a snapshot of the app carries
-the idiom back through `restore`.
+*The second cut: the tool holds nothing but the reading.* Between a reading of the file and everything the tool did
+with it stood `ScreenPlan`, a struct whose fields were the tool's own questions by name (`topLevel`,
+`list.leading`, `factsTotal`, `custom.size`); the design and the developer's word were applied to it, the writers
+and the baker read it, the browser held it and sent it back, and the drawing converted it back into a reading
+(`readingOf`, item 33). A grammar with other questions had nowhere to put its answers. It is gone, and each thing
+it stood for is read off the grammar by what its fields and questions say:
+
+- when to look for a picture: *a field whose chain looks in a set is bound in the tree* (`looked`), not
+  `leading === "thumbnail"`; people are pictured as portraits by a rule in the file (`when item_leading is avatar,
+  item_subject is portrait`), not by a special case;
+- what to bake and to what: *a part with a `filled` chain*, its contract read off the part (`customOf`: the answer
+  whose options speak to a maker, the `ratio` knob, a field taken from another part's data), not `plan.custom`;
+- which row of a bill is its total: the `details` pattern's computation of `strong`, gated by the field's `when`;
+- what the design rules out: three `given` questions and five rules with their reasons, where `applyDesign` was;
+- what stays of a screen made again: `Graph.keptOf`, every answer the browser sent back that is one the file could
+  have given, under the parts that stay; the rules then have their say over it;
+- whether this is a main screen: the frame's `navigation` knob; what is written: every content node in scope and
+  every part with a schema; which writer waits for which: a part with a note that holds waits for the collection;
+- the browser holds the reading (`{kind, blocks, values, p}`) and sends it back; the key the description is read
+  under is the grammar's (`screen`, `email`).
+
+The tests hold that: what the old plan would have been, made of the new reading through the old `planOf`, is what was
+recorded, for 195 of 200 readings, the five others being the portrait rule; every recorded tree is what it was but
+for one, a details part without a total whose `strong` is no longer bound; what is decided once the words exist is
+byte for byte what it was; and `examples/email.md` is now an idiom of the tool's (`Email`, in the panel), which is
+the check that cannot be faked: a grammar with no phone, no kinds of screen and no plan, run by the served tool.
+
+Live, through the served app: a checkout whose bill adds up and ends bold; a profile with its portrait; a walker's
+picture carried from the feed to the page it opens; a pomodoro timer baked; a feed generated again with a notice
+added and its list kept word for word; a settings screen that writes no navigation and a feed that does; and, in
+the Email idiom, a sign-in code baked into an email with a Copy button, a receipt whose totals wait for its lines,
+a newsletter with its pictures, and a message about the email read over its reading and acted on.
 
 The same description, twice:
 
@@ -465,9 +506,9 @@ From the catalog half:
    grid is too tight for a second line.
 10. **A yes had to turn a knob that takes a name** (`item_picture → leading`), so a yes and a no can yield.
 11. **Ways a field gets a value that nobody writes.** Pictures and the custom part are chains (step 3) and
-    `decided` is a question (step 4). `computed` (the last row of a bill is its total) is still only a word,
-    which is why the drawn receipt has no bold total. `from /list/items` is another part's data, and is
-    simply there.
+    `decided` is a question (step 4). `computed` (the last row of a bill is its total) was only a word until
+    step 7, when it became the pattern's to work out (`Pattern.computed`, by slot); the receipt's total is bold
+    now. `from /list/items` is another part's data, and is simply there.
 12. **The frame is not in the catalog.** The app bar, the navigation, a profile's opening, a dialog, the sticky
     bar: `screen()` in `mock/screen.ts`. That is where a kind's traits, the header, `top_level`, `person` and
     `app_bar_action` land. `probe:draw` puts the parts on a bare page under the header.
@@ -528,10 +569,9 @@ From the idioms:
     fixes them by redeclaring the variables, which means the design panel shows a typeface the iOS screen is not
     set in, and a DESIGN.md that names one is overruled without a word. A DESIGN.md with holes, that an idiom fills
     and a mix fills the rest of, is the shape of the fix.
-44. **An idiom's grammar keeps `screen.md`'s ids.** The plan the browser holds and the reading the drawing reads
-    are still two shapes of one thing (33), and `readingOf` names the questions. iOS shares the grammar, which is
-    why it cost nothing; an idiom whose *structure* differs (settings that are always grouped, a confirmation
-    from a button that is an action sheet) waits on the plan becoming a layer, or copies the file.
+44. **An idiom's grammar had to keep `screen.md`'s ids** (fixed in step 7's second cut; an idiom's grammar can now
+    ask anything, and `examples/email.md` runs in the tool). The iOS idiom still shares the grammar, and that is
+    what #20 is now for.
 45. **Three names the frame contract does not cover** are still literal between a pattern and the renderer:
     `form_submit`, the `/custom/*` paths, and a destination's `destination`, `label`, `icon` (41). The iOS catalog
     honours them by reusing the kit's patterns, not by any check.
@@ -549,10 +589,9 @@ From the idioms:
 
 From the tool reading the file:
 
-33. **A plan and a reading are two shapes of one thing.** The browser holds a `ScreenPlan` and sends it back;
-    the design and the developer's word are applied to it (`applyDesign`, `keepPlan`); the drawing and the
-    writers read a reading. So `readingOf(plan)` exists, and the two must agree on every field. A brought graph
-    would have no plan type, and would want the design and the edit applied to the reading instead.
+33. **A plan and a reading were two shapes of one thing** (fixed in step 7's second cut: the plan is gone and
+    the tool holds the reading; the design and the edit are a rule and a `keptOf` over it). What the removal
+    left behind is under "From the reading", below.
 34. **The trace changed.** Decisions are labelled by the file's question text and ids (`item_leading`,
     `row_control_0`), where the hand-written code had short labels ("each item is…", a row's label). The trace
     panel and Gemini's answers to questions read them; whether either is worse for it is not measured.
@@ -600,13 +639,42 @@ Not attempted, and each is a piece of the graph that is still only code:
 - **The app map** (`src/server/ia/`).
 - **The reply when Jev found nothing to do** (`talk.ts`): the `else` of a turn.
 
+From the reading:
+
+51. **A given yes-or-no that nobody gives is no**, like any other; so the design's facts are phrased as what the
+    design shows (`photographs`), and everyone who runs the graph without a design has to say yes to all three,
+    or the rules take the pictures off. The tests and the probe say it; a fourth runner would have to know.
+52. **The size of a picture is a policy of the host**: a portrait is square and small, a thumbnail landscape and
+    large where the `layout` knob is not `rows`. That is the catalog's knowledge (how big its `collection` draws a
+    picture) and the pattern does not say it.
+53. **Which writer waits for which** is now read, and from a thin signal: a part with a writer's note whose `when`
+    holds waits for the part drawn as a `collection`, and is shown its elements. It is what a bill needs and the
+    format still has no word for "must agree with".
+54. **`header` and `nav` are still names.** The header is written first because it is called that; the journey's
+    destinations land at `/nav` because the frame's pattern reads them there; the IA sets the frame's navigation
+    by finding the question that turns it. A grammar that called them otherwise would draw, and would not get
+    the tool's navigation or its first screen.
+55. **The IA speaks the tool's kinds.** `plannedSeed` maps `feed`, `detail`, `settings` and the custom part's
+    uses to activities; another grammar's kinds fall to "Interact with the subject". The chat's words for a part
+    fall back to the part's own question.
+56. **The shelf's contract is still typed in the tool's words** (`use`, `size`, `linked`, in `BAKED`): a grammar
+    whose contract question has other options is read to the nearest of them (item 19 stands), and the renderer
+    still reads `/custom/name` by name (item 20 stands) although the slot's path is now the part's.
+57. **An email in a phone.** The Email idiom draws in the device frame, with the tool's chrome around it, and its
+    writers are told they write "a screen"; the tool's shell is still an app's.
+
 ## Next, in the order that seems right
 
-1. **An idiom's own components.** Step 7 proved the frame's knobs are a contract by drawing them another way with
-   the same components; the next proof is a catalog that brings its own, Material Web (`@material/web`, Lit, with
-   a custom-elements manifest the catalog file could be generated from), which is where the renderer stops being
-   one element. And iOS's structure (44, 47): settings always grouped, the action sheet, the alert's button rules.
-2. **The design and the edit as layers over a reading** (33, 44), so that a brought graph is not tied to
-   `ScreenPlan`, and `paint.md` read by the tool (36); with it, a DESIGN.md with holes for an idiom to fix (43).
-3. **A contract of the graph's own** for the baker and the shelf (19), and more than one slot (20).
-4. **Form fields** (26), and **calibration from examples** with the policy for a torn answer (18).
+1. **iOS as its own graph.** The tool runs any grammar now; the iOS idiom still reads `screen.md`. Write
+   `grammar/ios/screen.md` from the HIG, not from `screen.md`: its own kinds (tab root, pushed list, detail,
+   settings, form sheet, alert, action sheet, search), its own questions (push or sheet; did the confirmation come
+   from a button), its rules (settings always grouped, three buttons stack), examples labelled by hand; and a
+   catalog with what it needs (47, 46).
+2. **One idiom that is not a phone at all** (Slack Block Kit, a terminal), to see what a graph with no screen, no
+   bar and no tab bar does to the tool's shell (54, 55, 57): the email was the first of these and it drew in a
+   phone.
+3. **An idiom's own components**: Material Web (`@material/web`, Lit, with a custom-elements manifest the catalog
+   file could be generated from), where the renderer stops being one element.
+4. **`paint.md` read by the tool** (36), and with it a DESIGN.md with holes for an idiom to fix (43).
+5. **A contract of the graph's own** for the baker and the shelf (19, 56), and more than one slot (20).
+6. **Form fields** (26), and **calibration from examples** with the policy for a torn answer (18).

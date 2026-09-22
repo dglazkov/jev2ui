@@ -261,6 +261,10 @@ The sources are listed at the end of `grammar/kit.md`, under Sources, each with 
 A chain must end in a terminal. The lint refuses one that ends in a set or a maker, because that could
 leave the thing waiting on a model that never delivers.
 
+A field that says `computed` is worked out by the pattern its slot belongs to, once the part is written:
+the `details` pattern makes the last row `strong`. Give the field a `when` if there's only sometimes
+something to work out (`strong` as strong, computed, when facts_total is yes`).
+
 A whole part can come from a chain, when nothing in the catalog draws it. Say `filled` on a line of its
 own, and give the part a slot to arrive in:
 
@@ -303,6 +307,26 @@ the comma is one part, one missing part, or one answer set to one value.
 
 There's no `else`, no `or` between conditions, and no nesting. If you find yourself wanting them, the
 knowledge probably belongs in a kind's shape or a question's criteria instead.
+
+### Facts nobody is asked
+
+A rule can read a fact that comes from outside the graph, such as what the design says. Write it as a
+question with the trait `given`: it's never sent to Jev, whoever runs the graph supplies the answer, and
+a yes-or-no that nobody supplies is no. `screen.md` has three (`photographs`, `symbols`, `cards`), which the
+tool gives from the DESIGN.md, and its rules say what a design without photographs takes off the screen:
+
+```markdown
+## photographs (given)
+
+> Does the design show photographs?
+
++ It does, or says nothing about it.
+- Its prose says there are no photographs, or that its pictures are drawn.
+
+## Rules
+
+- when photographs is no, no hero — the design has no photographs, so nothing leads with one
+```
 
 ## Step 8: Decide things once the words exist
 
@@ -407,6 +431,18 @@ Jev reads the description and mixes a design for it, the tree is sent, one write
 chains are tried, and what's decided once the words exist is decided. The result is a page that stands
 alone in `out/grammar/`. Pictures are made only with `--paint`, because a made picture costs something
 and joins the library.
+
+## Run your grammar in the tool
+
+The tool runs any grammar, not only its own: an **idiom** is a grammar, a catalog and a stylesheet, and
+the person picks one per app in the design panel. `examples/email.md` is one (`Email`), which is how you
+know a grammar with no screens, no navigation and no plan runs end to end. To add yours: name it in
+`src/shared/idioms.ts` (its name, the id its surfaces are created with, its stylesheets in the order they
+layer), give it a grammar, a catalog file and the code that draws the patterns in `src/server/idioms.ts`,
+bundle its stylesheet in `src/web/kit/idioms.ts`, have `src/server/grammar/export.ts` write its catalog
+file if it has its own, and record what it draws (`RECORD=1 node --import tsx --test
+src/server/grammar/regression.test.ts`). Two things are still the tool's and not the grammar's: a content
+node called `header` is written first, and one called `nav` is where the app's destinations land.
 
 ## Change the tool's own grammar
 

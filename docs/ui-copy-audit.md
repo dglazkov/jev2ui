@@ -91,7 +91,7 @@ I–L settings · M sign-in gate · N server messages · O trace labels · P oth
 | E6 | `yours, and kept by a remix` | `Your changes. Remixing keeps them.` |
 | E7 | placeholder `Paste your project's DESIGN.md here.` | `Paste your project's DESIGN.md` (no terminal period in a placeholder) |
 | E8 | `Remix` / `Design` / aria-label `Design system` / aria-label `DESIGN.md` | Unchanged. |
-| E9 | (new, 2026-09-22) the idiom control: aria-label `Idiom`; options `Kit`, `iOS`; hint `Screens use the tool's own components, laid out and painted by the design.` / `Screens are laid out and painted the way iOS does it, in the design's palette.`; the message in the conversation `Switched to the iOS idiom`; the snackbar `Screens generated before this keep their layout until you regenerate them.` | Written to the guide from the start: one verb (generate/regenerate), present tense, "the tool" for the kit's idiom, no internal names (`kit` is the id; `Kit` is what it is called, as `Auto` is). |
+| E9 | (new, 2026-09-22) the idiom control: aria-label `Idiom`; options `Kit`, `iOS`, `Email` (the last a grammar with no screens, there to prove any grammar runs); hint `Screens use the tool's own components, laid out and painted by the design.` / `Screens are laid out and painted the way iOS does it, in the design's palette.`; the message in the conversation `Switched to the iOS idiom`; the snackbar `Screens generated before this keep their layout until you regenerate them.` | Written to the guide from the start: one verb (generate/regenerate), present tense, "the tool" for the kit's idiom, no internal names (`kit` is the id; `Kit` is what it is called, as `Auto` is). |
 
 ## F. Library — src/web/app.ts:990
 
