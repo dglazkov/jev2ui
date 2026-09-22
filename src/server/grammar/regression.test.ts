@@ -16,11 +16,12 @@ import { applyDesign, type ScreenPlan } from "../mock/plan.js";
 import { decide, decorate } from "./decide.js";
 import { answersTo, random } from "./fixtures.js";
 import { boundIn, frameOf, partsOf, schemaOf, treeOf } from "./make.js";
-import { KIT_PATTERNS } from "./patterns.js";
 import { JEV, questionsOf, readGrammar } from "./read.js";
 import { planOf } from "./screen-plan.js";
 
+/** What depends on the grammar alone (plans, what is decided) is recorded under its name; what a catalog draws of it (parts), under each idiom's. */
 const FIXTURE = new URL("./fixtures/screen.json", import.meta.url);
+const fixtureOf = (idiom: string) => new URL(`./fixtures/${idiom}.json`, import.meta.url);
 const { graph } = IDIOMS.kit;
 const { grammar: SCREEN, kinds: KINDS } = graph;
 const readingOf = graph.readingOf.bind(graph);
@@ -43,18 +44,6 @@ function made() {
     const known = { ...(among?.length ? { among } : {}), ...(rng() < 0.3 ? { blocks: some(rng, blocks) } : {}), ...(rng() < 0.4 ? { values: { top_level: rng() < 0.5 } } : {}) };
     const reading = readGrammar(SCREEN, answers, JEV, known);
     return { seed: 1000 + i, known, plan: planOf(SCREEN, reading), notes: reading.decisions.filter((d) => d.note).map((d) => `${d.id}: ${d.note}`) };
-  });
-  // Trees and schemas: what is drawn and what is written for every part, under a design that may rule things out.
-  out.parts = Array.from({ length: 16 }, (_, i) => {
-    const rng = random(2000 + i);
-    const reading = readGrammar(SCREEN, answersTo(questions, rng), JEV);
-    const look = { imagery: rng() < 0.7, icons: rng() < 0.7, contained: rng() < 0.7 };
-    const plan = applyDesign(planOf(SCREEN, reading), look).plan;
-    const back = readingOf(plan);
-    const parts = Object.fromEntries(partsOf(SCREEN, back).map((node) => [node.name, { schema: schemaOf(node, back), tree: treeOf(KIT_PATTERNS, SCREEN, node, back, { contained: plan.contained, icons: plan.icons, symbol: plan.symbol }) }]));
-    const drawing = { contained: plan.contained, icons: plan.icons, symbol: plan.symbol };
-    const frame = frameOf(KIT_PATTERNS, SCREEN, back, drawing, Object.entries(parts).map(([name, part]) => ({ name, root: part.tree[0].id })))!;
-    return { seed: 2000 + i, look, plan, parts, header: schemaOf(partNode("header"), back), nav: schemaOf(partNode("nav"), back), screen: [...frame, ...Object.values(parts).flatMap((p) => p.tree)] };
   });
   // What is decided once the words exist, for words nobody wrote.
   out.decided = Array.from({ length: 40 }, (_, i) => {
@@ -86,6 +75,25 @@ function made() {
   return out;
 }
 
+/** Trees and schemas: what an idiom draws and what is written for every part, under a design that may rule things out. */
+function drawn(idiom: (typeof IDIOMS)[keyof typeof IDIOMS]) {
+  const { grammar } = idiom.graph;
+  const of = questionsOf(grammar);
+  return Array.from({ length: 16 }, (_, i) => {
+    const rng = random(2000 + i);
+    const reading = readGrammar(grammar, answersTo(of, rng), JEV);
+    const look = { imagery: rng() < 0.7, icons: rng() < 0.7, contained: rng() < 0.7 };
+    const plan = applyDesign(planOf(grammar, reading), look).plan;
+    const back = idiom.graph.readingOf(plan);
+    const parts = Object.fromEntries(partsOf(grammar, back).map((node) => [node.name, { schema: schemaOf(node, back), tree: treeOf(idiom.patterns, grammar, node, back, { contained: plan.contained, icons: plan.icons, symbol: plan.symbol }) }]));
+    const drawing = { contained: plan.contained, icons: plan.icons, symbol: plan.symbol };
+    const frame = frameOf(idiom.patterns, grammar, back, drawing, Object.entries(parts).map(([name, part]) => ({ name, root: part.tree[0].id })))!;
+    return { seed: 2000 + i, look, plan, parts, header: schemaOf(idiom.graph.partNode("header"), back), nav: schemaOf(idiom.graph.partNode("nav"), back), screen: [...frame, ...Object.values(parts).flatMap((p) => p.tree)] };
+  });
+}
+
+const RECORD_AGAIN = "If the change is meant, record again: RECORD=1 node --import tsx --test src/server/grammar/regression.test.ts";
+
 test("what the file makes of answers nobody gave is what it made when this was recorded", () => {
   const now = JSON.parse(JSON.stringify(made()));
   if (process.env.RECORD) {
@@ -95,7 +103,21 @@ test("what the file makes of answers nobody gave is what it made when this was r
   const then = JSON.parse(readFileSync(FIXTURE, "utf8"));
   for (const section of Object.keys(then)) {
     for (const [i, one] of (then[section] as any[]).entries()) {
-      assert.deepEqual(now[section][i], one, `${section}[${i}] (seed ${one.seed}) differs from the recording. If the change is meant, record again: RECORD=1 node --import tsx --test src/server/grammar/regression.test.ts`);
+      assert.deepEqual(now[section][i], one, `${section}[${i}] (seed ${one.seed}) differs from the recording. ${RECORD_AGAIN}`);
+    }
+  }
+});
+
+test("what each idiom draws of the file is what it drew when this was recorded", () => {
+  for (const idiom of Object.values(IDIOMS)) {
+    const now = JSON.parse(JSON.stringify({ parts: drawn(idiom) }));
+    if (process.env.RECORD) {
+      writeFileSync(fixtureOf(idiom.id), JSON.stringify(now, null, 1));
+      continue;
+    }
+    const then = JSON.parse(readFileSync(fixtureOf(idiom.id), "utf8"));
+    for (const [i, one] of (then.parts as any[]).entries()) {
+      assert.deepEqual(now.parts[i], one, `${idiom.id}: parts[${i}] (seed ${one.seed}) differs from the recording. ${RECORD_AGAIN}`);
     }
   }
 });
@@ -108,7 +130,7 @@ test("every part of the file is drawn by something and every question of it is a
     const reading = readGrammar(SCREEN, answersTo(questions, rng), JEV);
     const plan: ScreenPlan = planOf(SCREEN, reading);
     for (const node of partsOf(SCREEN, readingOf(plan))) {
-      const tree = treeOf(KIT_PATTERNS, SCREEN, node, readingOf(plan), { contained: true, icons: true, symbol: "image" });
+      const tree = treeOf(IDIOMS.kit.patterns, SCREEN, node, readingOf(plan), { contained: true, icons: true, symbol: "image" });
       if (tree.length) drawn.add(node.name);
       for (const path of boundIn(tree)) seen.add(`${node.name}:${path}`);
     }

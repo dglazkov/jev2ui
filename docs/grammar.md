@@ -12,17 +12,20 @@ makes screens from; the hand-written tables it was taken from are gone. The othe
 still written out from code, for the reasons given under "What is still code".
 
 ```sh
-npm run grammar:export                                  # writes kit.md, paint.md, icons.md, subjects.md from the code
-npm run probe:grammar                                   # grammar/screen.md on its own examples, live, and against readPlan
+npm run grammar:export                                  # writes kit.md, ios/catalog.md, paint.md, icons.md, subjects.md from the code
+npm run probe:grammar                                   # grammar/screen.md on its own examples, live, linted against the kit's catalog
 npm run probe:grammar -- grammar/examples/email.md      # any graph
+npm run probe:grammar -- --catalog ios                  # linted against another idiom's catalog
 npm run probe:draw -- grammar/examples/email.md "Your one-time sign-in code"   # any graph, drawn; --paint lets pictures be made
+npm run probe:draw -- grammar/screen.md "Settings for a podcast app" --catalog ios   # drawn by another idiom's catalog
 node --import tsx --test src/server/grammar/*.test.ts
-RECORD=1 node --import tsx --test src/server/grammar/regression.test.ts   # after a change to screen.md that is meant
+RECORD=1 node --import tsx --test src/server/grammar/regression.test.ts   # after a change to screen.md or a catalog that is meant
 ```
 
 There are two kinds of file. A **graph** (`screen.md`, `paint.md`, `examples/email.md`) is somebody's decisions:
-what is asked, how the answers are read, what each part is made of. A **catalog** (`kit.md`) is what a renderer
-can draw. A graph names the catalog's patterns; neither contains the other.
+what is asked, how the answers are read, what each part is made of. A **catalog** (`kit.md`, `ios/catalog.md`) is
+what a renderer can draw. A graph names the catalog's patterns; neither contains the other. A graph, a catalog and a
+stylesheet together are an **idiom** (step 7): the way an app is imagined, and the app's to choose.
 
 ## The format
 
@@ -393,6 +396,43 @@ it opens. The email graph then got the same frame with one line, `## kind → pa
 and is drawn with a large title, its preheader as the line under it and no bar of destinations: the first thing
 a brought graph draws that is not a bare page.
 
+**Step 7: a second idiom, and choosing one.** An idiom is the three things an app is imagined with: the grammar
+that reads the description, the catalog that draws what it says (a file, and the code behind it that draws each
+pattern), and the stylesheet that paints it in the browser. The tool's own is `screen.md`, `kit.md` and
+`src/web/kit/kit.css`; they are named in one table on each side (`src/shared/idioms.ts` for what both know,
+`src/server/idioms.ts` for the files and the code, `src/web/kit/idioms.ts` for the sheets), and which one a request
+is imagined in is the request's to say, in an `X-Idiom` header, carried the way the endpoint that answers System
+One is carried (`models.ts`): everything the request sets going reads that one, however deep. What code knew of
+the tool's graph by name (`mock/graph.ts`) is now the bindings of one idiom's graph and catalog, a `Graph`; the
+pipeline draws with the request's patterns and creates its surface under its catalog's id.
+
+The second idiom is iOS, in its smallest cut: **the same grammar**, since the frame's knobs are the contract and a
+catalog's business is what it makes of them; a catalog that is the kit's twelve patterns with a `page` of its own
+(`patterns-ios.ts`: a navigation bar that centres its title, a large title under the bar on a main screen, a
+chevron and a word to go back, a tab bar, and an alert that leads with no symbol and stacks its buttons under a
+hairline); and a stylesheet layered over the kit's (`ios.css`) that fixes what iOS fixes, as the `--k-*` variables
+the kit already reads (the system type scale, continuous corners, no drawn edges, green switches, inset grouped
+lists), and leaves the design what the design decides (hue, light or dark, the greys, whether there are cards or
+pictures). Material was the other candidate and would have proved nothing: the kit's frame *is* Material's, so a
+Material catalog over the kit's components is the kit. Material's real work is its own components (`md-*`), which
+is another issue.
+
+The idiom is chosen per app, in the design panel beside the design system; the choice is remembered for the next
+app, saved with the app and restored with it (`SAVED_APP.idiom`; an app saved before there was a choice is the
+kit's). The page is painted in one idiom at a time, and every baked component's frame is handed the same sheets.
+Switching on an app that has screens repaints them and leaves their layout until they are generated again, and
+the tool says so. The tests hold that: every idiom's catalog binds the grammar it reads (`checkBindings`, no
+errors), and the frame it makes of 300 random readings is a tree the kit accepts, in every shape a frame can come
+out; what each idiom draws of the file is recorded (`fixtures/kit.json`, `fixtures/ios.json`, beside
+`fixtures/screen.json` for what depends on the grammar alone), and the kit's recording moved byte for byte. Both
+probes take `--catalog`. Live, through the served app: the header carries the choice, a settings screen, a main
+screen, a profile and a confirmation each come out in the idiom's frame, valid, and a snapshot of the app carries
+the idiom back through `restore`.
+
+The same description, twice:
+
+<img src="idiom-kit-settings.png" width="240" alt="A settings screen drawn by the kit"> <img src="idiom-ios-settings.png" width="240" alt="The same settings screen drawn by the iOS idiom"> <img src="idiom-kit-dialog.png" width="240" alt="A confirmation drawn by the kit"> <img src="idiom-ios-alert.png" width="240" alt="The same confirmation drawn by the iOS idiom: an alert">
+
 ## What resisted
 
 What the export could not say, or could only say by growing the format:
@@ -478,6 +518,35 @@ From the frame:
     (`orderedNavigation`). Only `icon` is bound now; the rest is still a convention between the pattern and the
     renderer.
 
+From the idioms:
+
+42. **One idiom's paint at a time.** Both idioms draw the kit's components under the kit's class names, so their
+    stylesheets cannot both be on; the page is painted in the app's idiom, and a view that showed two idioms side
+    by side would need the sheets scoped. The idiom is the app's, but the paint is the page's.
+43. **The mix does not know what an idiom fixes.** Jev's mix has no system typeface, no 10 pt radius and no "no
+    edges" among its options, and adding them would change what Jev is offered in every idiom. So the stylesheet
+    fixes them by redeclaring the variables, which means the design panel shows a typeface the iOS screen is not
+    set in, and a DESIGN.md that names one is overruled without a word. A DESIGN.md with holes, that an idiom fills
+    and a mix fills the rest of, is the shape of the fix.
+44. **An idiom's grammar keeps `screen.md`'s ids.** The plan the browser holds and the reading the drawing reads
+    are still two shapes of one thing (33), and `readingOf` names the questions. iOS shares the grammar, which is
+    why it cost nothing; an idiom whose *structure* differs (settings that are always grouped, a confirmation
+    from a button that is an action sheet) waits on the plan becoming a layer, or copies the file.
+45. **Three names the frame contract does not cover** are still literal between a pattern and the renderer:
+    `form_submit`, the `/custom/*` paths, and a destination's `destination`, `label`, `icon` (41). The iOS catalog
+    honours them by reusing the kit's patterns, not by any check.
+46. **Back carries no title.** An `AppBar`'s leading is an enum, and "Back" is a word the stylesheet writes; the
+    title of the screen behind is the journey's, which the frame is not told.
+47. **An alert's buttons come in the writer's order.** HIG puts cancel on the left and the confirming action on the
+    right, and stacks three or more: rules about the count and the roles of a part's elements, which the pattern
+    cannot read yet. The iOS alert draws the two side by side as written.
+48. **The symbols are Material's in every idiom.** SF Symbols are not on the web, and a catalog's symbol set is not
+    a thing the format says yet.
+49. **A baked component restarts on a switch.** Its frame's document is its stylesheet, so a change of idiom is a
+    reload; a running timer starts over.
+50. **Which idiom a saved app's screens were drawn in** is one field for the whole app, and a screen made before
+    a switch is recorded as the app's idiom, not its own.
+
 From the tool reading the file:
 
 33. **A plan and a reading are two shapes of one thing.** The browser holds a `ScreenPlan` and sends it back;
@@ -533,11 +602,11 @@ Not attempted, and each is a piece of the graph that is still only code:
 
 ## Next, in the order that seems right
 
-1. **A second catalog.** The frame's knobs, the slots' roles and the sources are now the whole contract; the
-   way to find out whether it is a contract is a catalog that is not the kit's. Material Web (`@material/web`,
-   Lit, with a custom-elements manifest the catalog file could be generated from) is the cheap one; Apple HIG
-   is the one that tests the frame (tab bar, large title, alerts).
-2. **The design and the edit as layers over a reading** (33), so that a brought graph is not tied to
-   `ScreenPlan`, and `paint.md` read by the tool (36).
+1. **An idiom's own components.** Step 7 proved the frame's knobs are a contract by drawing them another way with
+   the same components; the next proof is a catalog that brings its own, Material Web (`@material/web`, Lit, with
+   a custom-elements manifest the catalog file could be generated from), which is where the renderer stops being
+   one element. And iOS's structure (44, 47): settings always grouped, the action sheet, the alert's button rules.
+2. **The design and the edit as layers over a reading** (33, 44), so that a brought graph is not tied to
+   `ScreenPlan`, and `paint.md` read by the tool (36); with it, a DESIGN.md with holes for an idiom to fix (43).
 3. **A contract of the graph's own** for the baker and the shelf (19), and more than one slot (20).
 4. **Form fields** (26), and **calibration from examples** with the policy for a torn answer (18).

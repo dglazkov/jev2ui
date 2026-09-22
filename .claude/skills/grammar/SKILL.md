@@ -5,17 +5,17 @@ description: Write, edit, lint, probe and draw a grammar file (grammar/*.md): th
 
 # Grammar files
 
-A grammar = questions for a decision model (yes/no, choice, score) + how answers are read + what each part is made of + which catalog pattern draws it + where unwritten values come from + what is decided once words exist. `grammar/screen.md` is production: the tool reads it on every run. `grammar/examples/email.md` is a second graph with no code behind it. `grammar/kit.md` is the catalog (patterns, slots, knobs, sources); it and `paint.md`, `icons.md`, `subjects.md` are **generated** (`npm run grammar:export`), never hand-edited. Long form for humans: `docs/writing-a-grammar.md`. Rationale and open problems: `docs/grammar.md`.
+A grammar = questions for a decision model (yes/no, choice, score) + how answers are read + what each part is made of + which catalog pattern draws it + where unwritten values come from + what is decided once words exist. `grammar/screen.md` is production: the tool reads it on every run. `grammar/examples/email.md` is a second graph with no code behind it. `grammar/kit.md` is the catalog (patterns, slots, knobs, sources); `grammar/ios/catalog.md` is the iOS idiom's (same patterns, its own `page`); these and `paint.md`, `icons.md`, `subjects.md` are **generated** (`npm run grammar:export`), never hand-edited. An **idiom** = grammar + catalog (+ its `patterns*.ts`) + stylesheet, chosen per app (`src/shared/idioms.ts`, `src/server/idioms.ts`, `src/web/kit/idioms.ts`). Long form for humans: `docs/writing-a-grammar.md`. Rationale and open problems: `docs/grammar.md`.
 
 ## Workflow
 
 1. Read `grammar/kit.md` first (slot and knob names, sources with traits).
 2. Edit the `.md`. Keep lines one per statement; the printer must round-trip: `printGrammar(parseGrammar(text)) === text`.
-3. Lint: `npm run probe:grammar -- <file>` (runs `checkGrammar` + `checkBindings`, then asks Jev the file's examples, then ablates each rule). Errors abort. Fix warnings unless deliberate.
-4. Draw one: `npm run probe:draw -- <file> "<description>" [--paint]` → `out/grammar/<name>.html` (+ `.json`). `--paint` spends money (image model) and adds to `.cache/photos`.
+3. Lint: `npm run probe:grammar -- <file> [--catalog <idiom>]` (runs `checkGrammar` + `checkBindings` against the idiom's catalog, kit unless said, then asks Jev the file's examples, then ablates each rule). Errors abort. Fix warnings unless deliberate.
+4. Draw one: `npm run probe:draw -- <file> "<description>" [--catalog <idiom>] [--paint]` → `out/grammar/<name>.html` (+ `.json`). `--paint` spends money (image model) and adds to `.cache/photos`.
 5. Tests: `node --import tsx --test src/server/grammar/*.test.ts src/server/mock/plan.test.ts`.
-6. If `grammar/screen.md` changed on purpose: `RECORD=1 node --import tsx --test src/server/grammar/regression.test.ts` (rewrites `src/server/grammar/fixtures/screen.json`), then `npx tsc`, then land per house rules (commit to main, push, redeploy: `PROJECT=jev2ui-3281b2 ./deploy.sh`). Verify live through `runMock` before landing, never only by tests.
-7. Never edit generated files. To add a pattern/source: edit `src/server/grammar/patterns.ts` / `fill.ts`, then `npm run grammar:export`.
+6. If `grammar/screen.md` or a catalog changed on purpose: `RECORD=1 node --import tsx --test src/server/grammar/regression.test.ts` (rewrites `src/server/grammar/fixtures/screen.json` = plans + decided of the grammar, and `fixtures/<idiom>.json` = what each idiom draws), then `npx tsc`, then land per house rules (commit to main, push, redeploy: `PROJECT=jev2ui-3281b2 ./deploy.sh`). Verify live through `runMock` before landing, never only by tests.
+7. Never edit generated files. To add a pattern/source: edit `src/server/grammar/patterns.ts` / `fill.ts`, then `npm run grammar:export`. To add an idiom: `src/shared/idioms.ts` (name, catalogId, stylesheets), `src/server/idioms.ts` (grammar, catalog file, patterns), `src/web/kit/idioms.ts` (bundle the sheet), `export.ts` (write its catalog), then export + RECORD. The frame's 8 knobs are the contract: another idiom's `page` takes the same knobs and draws them its way (`patterns-ios.ts`).
 
 ## Syntax (exact; parser is `src/server/grammar/format.ts`)
 
@@ -76,5 +76,7 @@ Whole-list rule: a part whose only written root field is a list named like the p
 - `none` is a real value for closed knobs; don't treat it as unset.
 - `email.md`'s `length → word budget` warns (not a frame knob); intended.
 - Regression fixture is blunt: it says *what* changed, not whether it's good; the examples probe reads meaning and needs `JEV_API_KEY`.
+- The export tool imports `idioms.ts`; idioms are read lazily so a missing catalog file can be written before anything reads it.
+- Only one idiom's stylesheet is on the page at a time (same class names); a screen made before a switch keeps its frame until regenerated.
 - Trace labels come from question text; per-element decisions are labelled by the element.
 - Form-field kind (`design.ts`) is still code; lint warns `"kind" is decided, and nothing says by what question` on `screen.md` — known.

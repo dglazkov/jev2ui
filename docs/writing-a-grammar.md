@@ -16,13 +16,15 @@ You need:
 - Node 20 or later, and `npm install` run once.
 - A `.env` with `JEV_API_KEY`, and `GEMINI_API_KEY` if you want to draw what you make.
 - A catalog to draw with. `grammar/kit.md` is the tool's, and this guide assumes it. Read it once: it lists
-  the patterns you can name, the slots each has, and the knobs each can be turned by.
+  the patterns you can name, the slots each has, and the knobs each can be turned by. `grammar/ios/catalog.md`
+  is the same patterns drawn the way iOS draws them; a grammar written for one is read by the other.
 
 Commands you'll use:
 
 ```sh
-npm run probe:grammar -- path/to/your.md                   # ask Jev the file's examples, and lint it
+npm run probe:grammar -- path/to/your.md                   # ask Jev the file's examples, and lint it against the kit's catalog
 npm run probe:draw -- path/to/your.md "what to make"       # make one thing, into out/grammar/<name>.html
+npm run probe:draw -- path/to/your.md "what to make" --catalog ios   # the same, drawn and painted by another idiom
 node --import tsx --test src/server/grammar/*.test.ts      # the format's own tests
 ```
 
@@ -453,3 +455,11 @@ fields (`required` where the pattern can't be drawn without one), and a `### kno
 takes as bare options, or a sentence and no options when it takes any name; then `## Sources`. Look at
 `grammar/kit.md`. Catalog files are written out from code; to add a pattern, add it to
 `src/server/grammar/patterns.ts`.
+
+A catalog, the grammar it reads and the stylesheet that paints it are an **idiom**, and the tool offers one per
+app. To add one: name it in `src/shared/idioms.ts` (its name, the id its surfaces are created with, its
+stylesheets in the order they layer), give it a grammar, a catalog file and the code that draws the patterns in
+`src/server/idioms.ts`, bundle its stylesheet in `src/web/kit/idioms.ts`, have `src/server/grammar/export.ts`
+write its catalog file, and record what it draws (`RECORD=1 node --import tsx --test
+src/server/grammar/regression.test.ts`). `src/server/grammar/patterns-ios.ts` is the example: the kit's patterns
+with a `page` of its own, and `src/web/kit/ios.css` over `kit.css`.

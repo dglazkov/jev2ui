@@ -5,8 +5,9 @@
 // file's word for everything. Each example says how it should come out, and was
 // labelled before it was run. One Jev request per example; no Gemini.
 //
-//   npm run probe:grammar                                 grammar/screen.md
+//   npm run probe:grammar                                 grammar/screen.md, against the kit's catalog
 //   npm run probe:grammar -- grammar/examples/email.md    any graph
+//   npm run probe:grammar -- --catalog ios                against another idiom's catalog (shared/idioms.ts)
 //   npm run probe:grammar -- -v                           plus what was overruled, and why
 //
 // Then, without asking anything more, each rule is taken out of the file in turn,
@@ -16,10 +17,17 @@ import { resolve } from "node:path";
 import { askJev, JEV_MODEL } from "../server/models.js";
 import { checkGrammar, printAtom, printRule, walk } from "../server/grammar/format.js";
 import { loadGrammar } from "../server/grammar/load.js";
+import { checkBindings } from "../server/grammar/make.js";
+import { IDIOMS } from "../server/idioms.js";
+import { IDIOMS as NAMED, idiomNamed } from "../shared/idioms.js";
 import { JEV, holdsIn, questionsOf, readGrammar, yieldOf, type Reading } from "../server/grammar/read.js";
 
-const verbose = process.argv.includes("-v");
-const file = process.argv.slice(2).find((arg) => !arg.startsWith("-"));
+const args = process.argv.slice(2);
+const verbose = args.includes("-v");
+const said = args[args.indexOf("--catalog") + 1];
+if (args.includes("--catalog") && idiomNamed(said) !== said) throw new Error(`no idiom is called "${said}"; the idioms are ${Object.keys(NAMED).join(", ")}`);
+const idiom = IDIOMS[idiomNamed(said)];
+const file = args.find((arg, i) => !arg.startsWith("-") && args[i - 1] !== "--catalog");
 const grammar = loadGrammar(file ? resolve(file) : "screen.md");
 const questions = questionsOf(grammar);
 const key = grammar.stateKey ?? grammar.name;
@@ -28,7 +36,11 @@ console.log(`Jev: ${JEV_MODEL}; ${Object.keys(questions).length} questions read 
 const { errors, warnings } = checkGrammar(grammar);
 for (const problem of errors) console.log(`  error: ${problem}`);
 for (const problem of warnings) console.log(`  warning: ${problem}`);
-if (errors.length) process.exit(1);
+// And against the catalog that is to draw it: a part no pattern draws, a field no slot takes, a knob turned to what it cannot be.
+const bound = checkBindings(grammar, idiom.graph.catalog);
+for (const problem of bound.errors) console.log(`  error (${idiom.id} catalog): ${problem}`);
+for (const problem of bound.warnings) console.log(`  warning (${idiom.id} catalog): ${problem}`);
+if (errors.length || bound.errors.length) process.exit(1);
 console.log();
 
 const dials: string[] = [];

@@ -338,7 +338,12 @@ bar of destinations, a sticky call to action, a dialog), named by the kinds' que
 named by what they mean, not by any widget, so that another catalog can draw them its own way. The kind of a
 form's field is the one decision still made by code older than the kit (`design.ts`), and the file's lint says
 so. The tool reads `grammar/screen.md` and `grammar/kit.md` on every run (`src/server/mock/graph.ts`): editing a
-criterion, a rule, a part's fields, a chain or a kind's frame changes what it makes. To write one,
+criterion, a rule, a part's fields, a chain or a kind's frame changes what it makes. A grammar, a catalog and a
+stylesheet are an **idiom**, and an app is imagined in one: the tool's own, or iOS (`grammar/ios/catalog.md`,
+`src/server/grammar/patterns-ios.ts`, `src/web/kit/ios.css`), which reads the same grammar and draws the frame
+the Human Interface Guidelines' way, with a large title, a tab bar and an alert, over the same components. The
+choice is made per app in the design panel, travels in an `X-Idiom` header, and is saved with the app
+(`src/server/idioms.ts`, `src/shared/idioms.ts`). To write a grammar,
 see [docs/writing-a-grammar.md](docs/writing-a-grammar.md). `paint.md` is still written out from `design-mix.ts`, which has not made the
 move. The format, the results, the pictures and what resisted are in [docs/grammar.md](docs/grammar.md).
 
@@ -517,6 +522,7 @@ npm run eval -- "Book a haircut" -v   # one prompt, printing decisions and messa
 npm run probe:grammar                 # the graph in grammar/screen.md, run on its own examples and held against readPlan
 npm run probe:grammar -- grammar/examples/email.md   # any graph file
 npm run probe:draw -- grammar/examples/email.md "Your one-time sign-in code"   # any graph file, drawn into out/grammar/
+npm run probe:draw -- grammar/screen.md "Settings for a podcast app" --catalog ios   # drawn by another idiom's catalog
 ```
 
 `GEMINI_MODEL` (default `gemini-3.5-flash-lite`) and `JEV_MODEL` (default `jev-latest`) can be overridden
@@ -714,9 +720,10 @@ src/server/theme.ts         tokens and the reading, as the kit's --k-* variables
 src/shared/kit.ts           the kit: component schemas of the A2UI fork, shared by server and renderer
 src/server/mock/plan.ts     the shape of a plan, what is taken of one a browser sent back, and what a design overrules
 src/server/mock/screen.ts   what the writers are told
-grammar/                    the tool's graph, screen.md, which it reads; kit.md (the catalog its parts name), paint.md, icons.md and subjects.md, written out from code by npm run grammar:export; examples/email.md
+grammar/                    the tool's graph, screen.md, which it reads; kit.md (the catalog its parts name), ios/catalog.md (the iOS idiom's), paint.md, icons.md and subjects.md, written out from code by npm run grammar:export; examples/email.md
 src/server/mock/graph.ts    the tool's graph read once, and what code still knows by name: the kinds of screen, the options a browser may send back, a plan read back into a reading
-src/server/grammar/         format.ts reads, writes and checks a graph file; read.ts asks it and reads the answers; make.ts turns what a part is made of into a writer's schema and a tree; fill.ts tries a chain of sources; decide.ts asks what is decided once the words exist; patterns.ts is the kit as a catalog; export.ts writes the tool's own files; screen-plan.ts renames a reading into a ScreenPlan
+src/server/grammar/         format.ts reads, writes and checks a graph file; read.ts asks it and reads the answers; make.ts turns what a part is made of into a writer's schema and a tree; fill.ts tries a chain of sources; decide.ts asks what is decided once the words exist; patterns.ts is the kit as a catalog, patterns-ios.ts the iOS idiom's; export.ts writes the tool's own files; screen-plan.ts renames a reading into a ScreenPlan
+src/server/idioms.ts        the idioms (a grammar, a catalog and the code that draws it, each read once) and which one a request is imagined in, from its X-Idiom header
 src/probe/grammar.ts        a graph file run on its own examples; screen.md held against readPlan
 src/probe/grammar-draw.ts   a graph file drawn: Jev reads, the file gives the tree, the schemas and the chains, Gemini writes, bakes and paints, the kit renders (out/grammar/)
 src/server/mock/refine.ts   the one decision about written words the file does not say yet: which control a form's field gets
