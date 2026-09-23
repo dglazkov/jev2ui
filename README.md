@@ -610,6 +610,27 @@ read the old figure. What is left rides back in a header and shows as a meter be
 reach the database (no rules are published for it); `src/server/store.ts` is the three REST calls used.
 Photographs are served to anyone: an `<img>` cannot say who is asking, and their names are hashes.
 
+### Bringing your own keys: the list first, keys second
+
+Someone the list grants nothing, signed out or signed in and on no line of it, is not turned away: the gate
+offers **Use your own API keys**, a Jev key from console.typesafe.ai and a Gemini key from Google AI Studio.
+The browser tries them once (`POST /api/keys`, one Jev question with an obvious answer and a count of tokens
+at Gemini, which costs nothing; each verdict is `ok` or the service's own words), keeps them in
+`localStorage` if both work, and sends them as `X-Jev-Key` and `X-Gemini-Key` with every request that
+reaches a model (`src/web/session.ts`). The server reads them off the headers, hands them down the same
+`AsyncLocalStorage` the endpoint rides (`src/server/models.ts`), and builds the clients around them; nothing
+writes them anywhere, no trace or log or answer carries them, and a failing key is reported as the person's
+(`Gemini didn't accept your Gemini API key, or the request: …`), never fallen back from to the house's.
+
+The order is the list first, keys second: a name the list grants is answered with the house's keys and counted,
+whatever headers came with it, and the account page says so if the browser holds keys; keys count only where
+the list grants nothing, and then nobody is counted, there is no daily limit, and the request is answered by
+jev whatever `X-System-One` said, since gev is the house's. Someone signed in with keys of their own may
+save and share, since an app needs an owner and they have a name; someone signed out with keys may not
+(**Save** and **Share** say to sign in), and sees no Library. Settings has a Keys page (check, replace,
+remove; removing goes back to the gate) for as long as the keys are what pays. Baked components run in a
+frame with an opaque origin and the baker refuses code that names storage, so they cannot read the keys.
+
 ### Saving and sharing: an app is a document, and a link opens it
 
 The session is the browser's, so saving one is the browser sending all of it (`src/shared/saved.ts`): the
@@ -759,7 +780,7 @@ src/server/auth.ts      who is asking (a Firebase ID token), what the access lis
 src/server/store.ts     Firestore over REST: the access list, the day's counts, saved apps
 src/shared/saved.ts     an app, saved: the whole session as a document, its turns included
 src/server/apps.ts      saved apps in Firestore: whose they are, who may open them
-src/web/settings.ts     settings: the account, light or dark, jev or gev, and the access list, for admins
+src/web/settings.ts     settings: the account, the person's own keys, light or dark, jev or gev, and the access list, for admins
 src/web/session.ts      signing in with Google; the gate that stands in for the tool; fetch that says who is asking, and which endpoint is to answer
 src/web/chrome.ts       what the tool's own chrome is made of: a symbol, the mark, a face, light or dark (chrome.css)
 src/server/main.ts      the deployed server: the routes and the built front end (vite.config.ts mounts them in dev)

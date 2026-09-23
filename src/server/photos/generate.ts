@@ -11,7 +11,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
-import { GoogleGenAI } from "@google/genai";
+import { geminiClient, geminiFailed } from "../models.js";
 import { SUBJECTS, type SubjectName } from "./subjects.js";
 import { tokens, type Photo } from "./library.js";
 
@@ -50,7 +50,6 @@ export interface Brief {
   app?: string;
 }
 
-let gemini: GoogleGenAI | undefined;
 let running = 0;
 const waiting: Array<() => void> = [];
 const making = new Map<string, Promise<Photo>>();
@@ -71,9 +70,8 @@ async function make(id: string, brief: Brief): Promise<Photo> {
   if (running >= AT_ONCE) await new Promise<void>((go) => waiting.push(go));
   running++;
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("GEMINI_API_KEY is not set (expected in .env)");
-    gemini ??= new GoogleGenAI({ apiKey });
+    // The house's key, or the key the person whose screen this is brought (models.ts).
+    const gemini = geminiClient();
     // The description is of a screen, and a model shown one draws a phone. It is there for the setting and nothing else.
     // The style is a rule over the app's description and not a free choice, so that eight pictures in a list, and every screen after it, look like one illustrator's work.
     const drawn = [
@@ -90,7 +88,7 @@ async function make(id: string, brief: Brief): Promise<Photo> {
       "Realistic and in natural colour. No text, lettering, logos, watermarks, borders or user interface anywhere in the image.",
     ];
     const prompt = (brief.drawn ? drawn : shot).join("\n");
-    const response = await gemini.models.generateContent({ model: IMAGE_MODEL, contents: prompt, config: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: brief.ratio } } });
+    const response = await gemini.models.generateContent({ model: IMAGE_MODEL, contents: prompt, config: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: brief.ratio } } }).catch((error: unknown) => Promise.reject(geminiFailed(error)));
     const image = response.candidates?.[0]?.content?.parts?.find((part) => part.inlineData?.data)?.inlineData;
     if (!image?.data) throw new Error(`${IMAGE_MODEL} returned no image for "${brief.of}"`);
     const ext = image.mimeType === "image/jpeg" ? "jpg" : image.mimeType === "image/webp" ? "webp" : "png";

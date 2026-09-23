@@ -20,7 +20,7 @@ interface Listing {
   dailyRuns: number;
 }
 
-export type Section = "account" | "appearance" | "models" | "access";
+export type Section = "account" | "keys" | "appearance" | "models" | "access";
 export const DEVICES = { phone: 390, tablet: 768, desktop: 1180 } as const;
 export type Device = keyof typeof DEVICES;
 export const DEVICE_ICONS: Record<Device, string> = { phone: "smartphone", tablet: "tablet_mac", desktop: "desktop_windows" };
@@ -71,7 +71,14 @@ export class Settings extends LitElement {
   }
 
   private get sections(): Section[] {
-    return [...(session.state === "in" ? (["account"] as const) : []), "appearance", ...(session.makes && session.endpoints.length > 1 ? (["models"] as const) : []), ...(session.role === "admin" ? (["access"] as const) : [])];
+    // Keys are a section only while they are what pays: signed out or a stranger. Signed in and on the list, they are ignored, and the account says so.
+    return [
+      ...(session.state === "in" || session.state === "stranger" ? (["account"] as const) : []),
+      ...(session.ownKeys ? (["keys"] as const) : []),
+      "appearance",
+      ...(session.state === "in" && session.endpoints.length > 1 ? (["models"] as const) : []),
+      ...(session.role === "admin" ? (["access"] as const) : []),
+    ];
   }
 
   protected updated() {
@@ -120,6 +127,23 @@ export class Settings extends LitElement {
   private renderAccount() {
     const runs = session.runs;
     const limited = runs && runs.daily !== UNLIMITED;
+    // A stranger with keys: signed in, not on the list, paying their own way.
+    if (session.state === "stranger") {
+      return html`
+        <h3>Account</h3>
+        <p class="lede">You're signed in with Google. Apparite stores your name with the apparitions that you save.</p>
+        <div class="card who">
+          ${face(session, "big")}
+          <div><b>${session.name}</b><small>${session.email}</small></div>
+          <span class="role">${icon("key", "xs")}Own keys</span>
+        </div>
+        <div class="card quota">
+          <p><b>No daily run limit</b></p>
+          <p class="hint">${session.email} isn't on the access list, so Apparite generates screens with your own keys instead of its own capacity. Change or remove them under Keys.</p>
+        </div>
+        <button class="btn" @click=${() => session.signOut()}>${icon("logout", "s")}Sign out</button>
+      `;
+    }
     return html`
       <h3>Account</h3>
       <p class="lede">You're signed in with Google. Apparite stores your name with the apparitions that you save, and counts the screens that you generate each day.</p>
@@ -135,7 +159,79 @@ export class Settings extends LitElement {
           : html`<p><b>No daily run limit</b></p>`}
         <p class="hint">Generating one screen uses one run. Changing an apparition's design uses no runs. Your runs reset at midnight UTC.</p>
       </div>
+      ${session.keys
+        ? html`<div class="card setting">
+            <div>
+              <b>${icon("key", "xs")} Your own API keys are saved in this browser</b>
+              <small>Apparite doesn't use them while you're signed in with an account that's on the access list. They're used again if you sign out.</small>
+            </div>
+            <button class="btn" @click=${() => session.forget()}>${icon("delete", "s")}Remove keys</button>
+          </div>`
+        : nothing}
       <button class="btn" @click=${() => session.signOut()}>${icon("logout", "s")}Sign out</button>
+    `;
+  }
+
+  // --- Keys -----------------------------------------------------------------------
+
+  /** The key that is being replaced, with a field of its own open. */
+  @state() private replacing: "" | "jev" | "gemini" = "";
+
+  private async replace(form: HTMLFormElement) {
+    const which = this.replacing as "jev" | "gemini";
+    const said = String(new FormData(form).get("key") ?? "").trim();
+    if (!said) return;
+    if (await session.keep({ ...session.keys!, [which]: said })) this.replacing = "";
+  }
+
+  private renderKey(which: "jev" | "gemini", name: string, does: string, where: [string, string]) {
+    const checked = session.checked;
+    const key = session.keys![which];
+    const status = !checked ? nothing : checked[which] === "ok" ? html`<span class="key-ok">${icon("check_circle", "xs")}Works</span>` : html`<span class="key-bad">${icon("error", "xs")}${checked[which]}</span>`;
+    return html`<div class="card setting">
+      <div><b>${name}</b><small>${does} <a href=${where[1]} target="_blank" rel="noopener">${where[0]}</a></small></div>
+      ${this.replacing === which
+        ? html`<form
+            class="key-value"
+            @submit=${(e: Event) => {
+              e.preventDefault();
+              void this.replace(e.target as HTMLFormElement);
+            }}
+          >
+            <label class="field grow">${icon("key", "s")}<input name="key" required placeholder=${`New ${name}`} autocomplete="off" spellcheck="false" aria-label=${`New ${name}`} ?disabled=${session.checking} /></label>
+            <button class="btn small primary" type="submit" ?disabled=${session.checking}>${session.checking ? "Checking…" : "Check and save"}</button>
+            <button class="btn small" type="button" ?disabled=${session.checking} @click=${() => (this.replacing = "")}>Cancel</button>
+          </form>`
+        : html`<div class="key-value">
+            <code>${key.slice(0, 8)}…${key.slice(-4)}</code>${status}
+            <button class="btn small" @click=${() => (this.replacing = which)}>${icon("edit", "s")}Replace</button>
+          </div>`}
+    </div>`;
+  }
+
+  private renderKeys() {
+    const checked = session.checked;
+    const bad = checked && (checked.jev !== "ok" || checked.gemini !== "ok");
+    return html`
+      <h3>Keys</h3>
+      <p class="lede">
+        Apparite generates screens with your own keys, so there's no daily run limit. Jev decides each screen's layout, and Gemini writes its content and draws its
+        pictures. Your keys stay in this browser: Apparite sends them with each request that generates a screen, and doesn't store or log them.
+      </p>
+      ${session.error ? html`<p class="note bad">${session.error}</p>` : nothing}
+      ${bad ? html`<p class="note bad">A key didn't work when Apparite checked it at ${checked!.at}. Generating a screen will fail until you replace it.</p> ` : nothing}
+      ${this.renderKey("jev", "Jev API key", "Decides each screen.", ["console.typesafe.ai", "https://console.typesafe.ai/"])}
+      ${this.renderKey("gemini", "Gemini API key", "Writes each screen's content.", ["Google AI Studio", "https://aistudio.google.com/apikey"])}
+      <div class="row">
+        <button class="btn" ?disabled=${session.checking} @click=${() => void session.check(session.keys!).catch(() => undefined)}>${icon("network_check", "s")}${session.checking ? "Checking…" : "Check keys"}</button>
+        <button class="btn" @click=${() => session.forget()}>${icon("delete", "s")}Remove keys</button>
+        ${checked && !bad ? html`<span class="hint">Checked at ${checked.at}: both keys work.</span>` : nothing}
+      </div>
+      <p class="hint">
+        Each service bills your account for what Apparite generates: one Jev request per design decision, and one Gemini request per screen. Removing the keys signs you
+        out of nothing; it only takes Apparite back to the sign-in page.
+        ${session.state === "out" ? html`To save and share apparitions, sign in with Google. Signing in doesn't remove your keys.` : nothing}
+      </p>
     `;
   }
 
@@ -328,7 +424,7 @@ export class Settings extends LitElement {
   render() {
     const sections = this.sections;
     const section = sections.includes(this.section) ? this.section : sections[0]!;
-    const names: Record<Section, [string, string]> = { account: ["account_circle", "Account"], appearance: ["contrast", "Appearance"], models: ["neurology", "Model service"], access: ["shield_person", "Access"] };
+    const names: Record<Section, [string, string]> = { account: ["account_circle", "Account"], keys: ["key", "Keys"], appearance: ["contrast", "Appearance"], models: ["neurology", "Model service"], access: ["shield_person", "Access"] };
     return html`
       <nav class="snav" aria-label="Settings">
         <h2>Settings</h2>
@@ -337,7 +433,7 @@ export class Settings extends LitElement {
             html`<button class="mi" aria-current=${one === section} @click=${() => this.go(one)}>${icon(names[one][0])}${names[one][1]}${one === "access" ? html`<span class="tag">Admin</span>` : nothing}</button>`,
         )}
       </nav>
-      <div class="pane">${section === "account" ? this.renderAccount() : section === "access" ? this.renderAccess() : section === "models" ? this.renderModels() : this.renderAppearance()}</div>
+      <div class="pane">${section === "account" ? this.renderAccount() : section === "keys" ? this.renderKeys() : section === "access" ? this.renderAccess() : section === "models" ? this.renderModels() : this.renderAppearance()}</div>
     `;
   }
 }

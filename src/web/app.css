@@ -2043,3 +2043,69 @@ app-map .empty .wrong {
     display: none;
   }
 }
+
+/* --- Bring your own keys: the bar and settings ----------------------------- */
+
+.runs.own {
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px 0 8px;
+  color: var(--ink);
+  background: var(--wash);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+}
+
+.key-value {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.key-value code {
+  padding: 4px 8px;
+  font-size: 12px;
+  background: var(--wash);
+  border-radius: var(--r-s);
+}
+
+.key-ok,
+.key-bad {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  max-width: 260px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.key-bad {
+  color: var(--bad);
+}
+
+.pane .row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 0 0 14px;
+}
+
+.card.setting > div > b .i {
+  vertical-align: -2px;
+}
+
+.visitor .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gate .key-bad {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin: -4px 0 0;
+  font-size: 12px;
+  color: var(--bad);
+}

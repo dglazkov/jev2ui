@@ -11,6 +11,22 @@ import { face, icon, mark } from "./chrome.js";
 type Auth = import("firebase/auth").Auth;
 
 const STORED_ENDPOINT = "jev2ui.endpoint";
+const STORED_KEYS = "jev2ui.keys";
+
+/** A pair of keys of the person's own: Jev decides, Gemini writes. Kept in this browser and nowhere else. */
+export interface Keys {
+  jev: string;
+  gemini: string;
+}
+
+function storedKeys(): Keys | undefined {
+  try {
+    const said = JSON.parse(localStorage.getItem(STORED_KEYS) ?? "null");
+    return said && typeof said.jev === "string" && typeof said.gemini === "string" && said.jev && said.gemini ? { jev: said.jev, gemini: said.gemini } : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 class Session {
   /** `open` is a server that asks nobody to sign in. */
@@ -54,7 +70,16 @@ class Session {
       // A server on a developer's machine has no sign-in, and so none of what a signed-in person sees. `?as=admin` (or maker,
       // stranger, out) stands in for one there, and only there: the server is asked nothing differently for it.
       const as = import.meta.env.DEV && !firebase ? new URLSearchParams(location.search).get("as") : null;
-      if (as) return this.set({ state: as === "out" || as === "stranger" ? as : "in", name: "Ada Lovelace", email: "ada@example.com", role: as === "admin" ? "admin" : "maker", runs: as === "out" || as === "stranger" ? undefined : as === "admin" ? { left: "unlimited", daily: "unlimited" } : { left: "17", daily: "25" } });
+      if (as) {
+        // `keys` (signed out, own keys), `stranger-keys`, `maker-keys` (on the list, keys remembered), `entering` (the gate's key form); `&check=ok|bad` stands in a check.
+        const [who, withKeys] = (as === "keys" ? "out-keys" : as).split("-") as [string, string | undefined];
+        if (withKeys) this.keys = { jev: "tsk_live_9f2a7b31c41e", gemini: "AIzaSyD4k1xQw8k" };
+        if (who === "entering") this.entering = true;
+        const checked = new URLSearchParams(location.search).get("check");
+        if (checked) this.checked = checked === "bad" ? { at: "just now", jev: "ok", gemini: "API key not valid. Please pass a valid API key." } : { at: "just now", jev: "ok", gemini: "ok" };
+        const state = who === "out" || who === "stranger" || who === "entering" ? (who === "entering" ? "out" : who) : "in";
+        return this.set({ state, name: "Ada Lovelace", email: "ada@example.com", role: who === "admin" ? "admin" : who === "maker" ? "maker" : "", runs: state !== "in" ? undefined : who === "admin" ? { left: "unlimited", daily: "unlimited" } : { left: "17", daily: "25" } });
+      }
       if (!firebase) return this.set({ state: "open" });
       // Only a server with sign-in has the browser fetch Firebase at all.
       const [{ initializeApp }, { getAuth, onAuthStateChanged }] = await Promise.all([import("firebase/app"), import("firebase/auth")]);
@@ -83,9 +108,68 @@ class Session {
     this.set({});
   }
 
-  /** Whether the person may have things made: on the list, or on a server with no list. */
+  /** The person's own keys, if this browser holds any (server/models.ts says what they are for). */
+  keys: Keys | undefined = storedKeys();
+  /** What the last check of the keys said: `ok`, or the service's words. */
+  checked: { at: string; jev: string; gemini: string } | undefined;
+  /** A check is under way. */
+  checking = false;
+  /** The gate is showing the key form. */
+  entering = false;
+
+  /** Whether the person's own keys are what pays: they have keys, and the list grants them nothing. The list comes first, as on the server. */
+  get ownKeys() {
+    return !!this.keys && (this.state === "out" || this.state === "stranger");
+  }
+
+  /** Whether the person may have things made: on the list, on a server with no list, or paying with their own keys. */
   get makes() {
-    return this.state === "in" || this.state === "open";
+    return this.state === "in" || this.state === "open" || this.ownKeys;
+  }
+
+  enter(entering: boolean) {
+    this.entering = entering;
+    this.set({ error: "" });
+  }
+
+  /** Asks the server to try each key once, and says what each service said. */
+  async check(keys: Keys): Promise<{ jev: string; gemini: string }> {
+    this.checking = true;
+    this.set({ error: "" });
+    try {
+      const response = await fetch("/api/keys", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(keys) });
+      if (!response.ok) throw new Error(await response.text());
+      const said = (await response.json()) as { jev: string; gemini: string };
+      this.checked = { at: new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }), ...said };
+      return said;
+    } finally {
+      this.checking = false;
+      this.set({});
+    }
+  }
+
+  /** Checks the keys and, if both work, keeps them in this browser. Says whether they were kept. */
+  async keep(keys: Keys): Promise<boolean> {
+    keys = { jev: keys.jev.trim(), gemini: keys.gemini.trim() };
+    try {
+      const said = await this.check(keys);
+      if (said.jev !== "ok" || said.gemini !== "ok") return false;
+    } catch (error) {
+      this.set({ error: (error as Error).message });
+      return false;
+    }
+    this.keys = keys;
+    localStorage.setItem(STORED_KEYS, JSON.stringify(keys));
+    this.entering = false;
+    this.set({});
+    return true;
+  }
+
+  forget() {
+    this.keys = undefined;
+    this.checked = undefined;
+    localStorage.removeItem(STORED_KEYS);
+    this.set({});
   }
 
   async signIn() {
@@ -107,7 +191,12 @@ class Session {
   /** `fetch`, saying who is asking, which endpoint is to answer and which idiom to imagine in; and noting what the answer says is left of today's runs. */
   async fetch(path: string, init: RequestInit = {}): Promise<Response> {
     const token = await this.auth?.currentUser?.getIdToken();
-    const response = await fetch(path, { ...init, headers: { ...init.headers, "X-System-One": this.endpoint, "X-Idiom": this.idiom, ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+    // The keys go only where they are what pays; the server ignores them for anyone the list grants, and so does this.
+    const keys = this.ownKeys ? this.keys! : undefined;
+    const response = await fetch(path, {
+      ...init,
+      headers: { ...init.headers, "X-System-One": this.endpoint, "X-Idiom": this.idiom, ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(keys ? { "X-Jev-Key": keys.jev, "X-Gemini-Key": keys.gemini } : {}) },
+    });
     const left = response.headers.get("X-Runs-Left");
     if (left !== null) this.set({ runs: { left, daily: response.headers.get("X-Runs-Daily") ?? "" } });
     return response;
@@ -115,7 +204,7 @@ class Session {
 
   /** What to show instead of the tool: what it is and a way in, or nothing, since the person may pass. */
   gate(): TemplateResult | undefined {
-    if (this.state === "in" || this.state === "open") return undefined;
+    if (this.makes) return undefined;
     const google = html`<svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true">
       <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.2C12.4 13.7 17.7 9.5 24 9.5z" />
       <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
@@ -128,17 +217,47 @@ class Session {
           <p class="brand">${mark()}<b>Apparite</b></p>
           <h1>Describe what you want.<br />Get an apparition.<br />Keep changing it.</h1>
           <p class="lede">An apparition is a mock that looks like an app. Describe a screen, tap through the apparition that Apparite generates, and change it with every message. Explore an idea before you build it.</p>
-          ${this.state === "out" ? html`<button class="google" @click=${() => this.signIn()}>${google}Sign in with Google</button>` : nothing}
-          ${this.state === "stranger"
-            ? html`<div class="stranger">
-                  ${face(this)}
-                  <p><b>${this.name || this.email}</b>${this.email} isn't on the access list. To get access, ask the person who shared Apparite with you to add your address.</p>
+          ${this.entering
+            ? html`<form
+                class="keys"
+                @submit=${(e: Event) => {
+                  e.preventDefault();
+                  const form = new FormData(e.target as HTMLFormElement);
+                  void this.keep({ jev: String(form.get("jev")), gemini: String(form.get("gemini")) });
+                }}
+              >
+                <p><b>Use your own keys</b>Apparite generates screens with two services. Jev decides each screen's layout, and Gemini writes its content.</p>
+                <label class="field grow">${icon("key", "s")}<input name="jev" required placeholder="Jev API key" autocomplete="off" spellcheck="false" aria-label="Jev API key" ?disabled=${this.checking} /></label>
+                ${this.checked && this.checked.jev !== "ok" ? html`<p class="key-bad">${icon("error", "xs")}${this.checked.jev}</p>` : nothing}
+                <a class="get" href="https://console.typesafe.ai/" target="_blank" rel="noopener">Get a Jev key at console.typesafe.ai${icon("open_in_new", "xs")}</a>
+                <label class="field grow">${icon("key", "s")}<input name="gemini" required placeholder="Gemini API key" autocomplete="off" spellcheck="false" aria-label="Gemini API key" ?disabled=${this.checking} /></label>
+                ${this.checked && this.checked.gemini !== "ok" ? html`<p class="key-bad">${icon("error", "xs")}${this.checked.gemini}</p>` : nothing}
+                <a class="get" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get a Gemini key at Google AI Studio${icon("open_in_new", "xs")}</a>
+                <div class="row">
+                  <button class="btn primary" type="submit" ?disabled=${this.checking}>${icon(this.checking ? "hourglass_top" : "check", "s")}${this.checking ? "Checking…" : "Check keys and start"}</button>
+                  <button class="btn" type="button" ?disabled=${this.checking} @click=${() => this.enter(false)}>Back</button>
                 </div>
-                <button class="google" @click=${() => this.signOut().then(() => this.signIn())}>${google}Use another account</button>`
-            : nothing}
+                <p class="fine">${icon("lock", "s")}<span>Your keys stay in this browser. Apparite sends them with each request that generates a screen, and doesn't store or log them. You can change or remove them in Settings.</span></p>
+              </form>`
+            : html`
+                ${this.state === "out" ? html`<button class="google" @click=${() => this.signIn()}>${google}Sign in with Google</button>` : nothing}
+                ${this.state === "stranger"
+                  ? html`<div class="stranger">
+                        ${face(this)}
+                        <p><b>${this.name || this.email}</b>${this.email} isn't on the access list. To get access, ask the person who shared Apparite with you to add your address.</p>
+                      </div>
+                      <button class="google" @click=${() => this.signOut().then(() => this.signIn())}>${google}Use another account</button>`
+                  : nothing}
+                ${this.state === "out" || this.state === "stranger"
+                  ? html`<p class="or"><span>or</span></p>
+                      <button class="btn own" @click=${() => this.enter(true)}>${icon("key", "s")}Use your own API keys</button>`
+                  : nothing}
+              `}
           ${this.state === "loading" ? html`<p class="fine">${icon("hourglass_top", "s")}Loading…</p>` : nothing}
           ${this.error ? html`<p class="note bad">${this.error}</p>` : nothing}
-          <p class="fine">${icon("info", "s")}<span>Generating screens uses model capacity, so everyone on the access list has a daily run limit. You don't need to sign in to open an apparition that someone shared with you.</span></p>
+          ${this.entering
+            ? nothing
+            : html`<p class="fine">${icon("info", "s")}<span>Generating screens uses model capacity, so everyone on the access list has a daily run limit. With your own keys, there's no limit. You don't need to sign in to open an apparition that someone shared with you.</span></p>`}
         </div>
         <div class="gate-show" aria-hidden="true">
           <div class="device phone"><img src="/gate-screen.jpg" alt="" /></div>

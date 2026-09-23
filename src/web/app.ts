@@ -257,7 +257,7 @@ export class App extends LitElement {
   private readAddress = () => {
     const [view, section] = location.hash.slice(1).split("/");
     this.view = view === "design" || view === "library" || view === "settings" || view === "stage" ? view : "chat";
-    if (section === "account" || section === "appearance" || section === "models" || section === "access") this.section = section;
+    if (section === "account" || section === "keys" || section === "appearance" || section === "models" || section === "access") this.section = section;
     this.menu = "";
   };
 
@@ -1234,10 +1234,16 @@ export class App extends LitElement {
           This apparition has ${this.saved?.screens} ${this.saved?.screens === 1 ? "screen" : "screens"}, created by ${this.saved?.owner || "another user"}. Tap through the preview: every screen that was generated is included. To see how a screen was generated, select the info icon.
         </p>
         ${session.state === "out"
-          ? html`<p class="hint">To create or change apparitions, sign in with an account that's on the access list.</p>
-              <button class="btn primary" @click=${() => session.signIn()}>${icon("login", "s")}Sign in with Google</button>`
+          ? html`<p class="hint">To create or change apparitions, sign in with an account that's on the access list, or use your own API keys.</p>
+              <div class="row">
+                <button class="btn primary" @click=${() => session.signIn()}>${icon("login", "s")}Sign in with Google</button>
+                <button class="btn" @click=${() => session.enter(true)}>${icon("key", "s")}Use your own keys</button>
+              </div>`
           : nothing}
-        ${session.state === "stranger" ? html`<p class="hint">You're signed in as ${session.email}, which isn't on the access list. To create or change apparitions, ask an admin to add your address.</p>` : nothing}
+        ${session.state === "stranger"
+          ? html`<p class="hint">You're signed in as ${session.email}, which isn't on the access list. To create or change apparitions, ask an admin to add your address, or use your own API keys.</p>
+              <button class="btn" @click=${() => session.enter(true)}>${icon("key", "s")}Use your own keys</button>`
+          : nothing}
       </section>
     `;
   }
@@ -1304,7 +1310,7 @@ export class App extends LitElement {
     return html`<nav class="rail" aria-label="Main navigation">
       ${session.makes ? html`<button class="new" title="New apparition" aria-label="New apparition" @click=${() => this.fresh()}>${icon("add")}</button>` : nothing}
       ${item("chat", "chat_bubble", "Chat")} ${item("stage", "smartphone", "Preview", "narrow-only")} ${session.makes ? item("design", "palette", "Design") : nothing}
-      ${session.state === "in" ? item("library", "grid_view", "Library") : nothing}
+      ${session.state === "in" || session.state === "stranger" ? item("library", "grid_view", "Library") : nothing}
       <span class="grow"></span>
       ${item("settings", "settings", "Settings")}
     </nav>`;
@@ -1337,7 +1343,11 @@ export class App extends LitElement {
                   : nothing}`
         : nothing}
       <span class="grow"></span>
-      ${bench && this.app && session.state === "in"
+      ${bench && this.app && session.state === "out" && session.ownKeys
+        ? html`<button class="btn" disabled title="To save this apparition, sign in with Google. Signing in doesn't remove your keys.">${icon("bookmark", "s")}<span>Save</span></button>
+            <button class="btn primary" disabled title="To share this apparition, sign in with Google.">${icon("link", "s")}<span>Share</span></button>`
+        : nothing}
+      ${bench && this.app && (session.state === "in" || session.state === "stranger")
         ? html`<button class="btn" ?disabled=${!painted || here!.running || this.busy || Boolean(saved?.mine)} @click=${() => this.save(false)} title="Save this apparition, with every screen and message, so that you can open it later.">
               ${icon("bookmark", saved?.mine ? "s fill" : "s")}<span>${saved?.mine ? "Saved" : "Save"}</span>
             </button>
@@ -1346,10 +1356,11 @@ export class App extends LitElement {
               : html`<button class="btn primary" ?disabled=${!painted || here!.running || this.busy} @click=${() => this.save(true)} title="Save this apparition and create a link. Anyone with the link can open it without signing in.">${icon("link", "s")}<span>Share</span></button>`}`
         : nothing}
       ${limited ? html`<span class="runs ${runs.left === "0" ? "spent" : ""}" title="You have ${runs.left} of ${runs.daily} runs left today. Generating one screen uses one run."><span class="meter"><i style="width:${(100 * Number(runs.left)) / Math.max(1, Number(runs.daily))}%"></i></span>${runs.left} runs left</span>` : nothing}
-      ${session.state === "in"
+      ${session.ownKeys ? html`<button class="runs own" title="Apparite generates screens with your own API keys. Change or remove them in Settings." @click=${() => this.go("settings", "keys")}>${icon("key", "s")}Your keys</button>` : nothing}
+      ${session.state === "in" || session.state === "stranger"
         ? html`<button class="facebtn" aria-label="Account" aria-expanded=${this.menu === "account"} @click=${() => (this.menu = this.menu === "account" ? "" : "account")}>${face(session)}</button>`
         : session.state === "out"
-          ? html`<button class="btn" @click=${() => session.signIn()}>${icon("login", "s")}<span>Sign in</span></button>`
+          ? html`<button class="btn" title=${session.ownKeys ? "Sign in to save and share apparitions" : ""} @click=${() => session.signIn()}>${icon("login", "s")}<span>Sign in</span></button>`
           : nothing}
     </header>`;
   }
@@ -1361,10 +1372,13 @@ export class App extends LitElement {
       <div class="who">
         ${face(session, "big")}
         <div><b>${session.name}</b><small>${session.email}</small></div>
-        <span class="role ${session.role}">${titled(session.role)}</span>
+        <span class="role ${session.role}">${session.ownKeys ? "Own keys" : titled(session.role)}</span>
       </div>
       <div class="quota">
-        ${limited
+        ${session.ownKeys
+          ? html`<p><b>No daily run limit</b></p>
+              <p class="hint">Apparite generates screens with your own API keys.</p>`
+          : limited
           ? html`<p>You have <b>${runs.left} of ${runs.daily}</b> runs left today.</p>
               <div class="meter ${runs.left === "0" ? "spent" : ""}"><i style="width:${(100 * Number(runs.left)) / Math.max(1, Number(runs.daily))}%"></i></div>
               <p class="hint">Generating one screen uses one run. Your runs reset at midnight UTC.</p>`
@@ -1437,8 +1451,9 @@ export class App extends LitElement {
       </div>
       ${this.unmade && !session.makes
         ? html`<p class="notice">
-            ${icon("lock", "s")}<span>No one has generated the screen that “${this.unmade}” leads to. To generate it, sign in.</span>
+            ${icon("lock", "s")}<span>No one has generated the screen that “${this.unmade}” leads to. To generate it, sign in, or use your own API keys.</span>
             ${session.state === "out" ? html`<button class="btn small" @click=${() => session.signIn()}>Sign in</button>` : nothing}
+            <button class="btn small" @click=${() => session.enter(true)}>Use your own keys</button>
           </p>`
         : nothing}
       ${stale && session.makes ? html`<p class="notice">${icon("info", "s")}<span>The current design uses a different layout for this screen.</span><button class="btn small" @click=${() => this.regenerate()}>Regenerate</button></p>` : nothing}

@@ -189,7 +189,8 @@ async function savedApps(load: Load, id: string, req: IncomingMessage, res: Serv
   if (!id && req.method === "GET") return json({ apps: await apps.mine(person) });
   const grant = await auth.access(person);
   if (!id && req.method === "POST") {
-    if (!grant) return refuse(403, "To save an apparition, your address must be on the access list.");
+    // Saving needs a name, which a signed-in person has whatever the list says; the models it cost were paid by the list or by their own keys.
+    if (!grant && !ownKeysNamed(req)) return refuse(403, "To save an apparition, your address must be on the access list, or you must use your own API keys.");
     const saved = await apps.save(person, await readJson(req, LARGEST_APP).catch(() => undefined));
     return "wrong" in saved ? refuse(400, `Can't save this apparition: ${saved.wrong}`) : json(saved);
   }
@@ -200,6 +201,21 @@ async function savedApps(load: Load, id: string, req: IncomingMessage, res: Serv
   }
   if (id && req.method === "DELETE") return (await apps.forget(id, person, grant?.role === "admin")) ? json({ id }) : refuse(404, "You don't have an apparition with that ID.");
   refuse(405, "This endpoint doesn't support that request method.");
+}
+
+/**
+ * The keys a request brought of its own, if it brought both (models.ts says what they are for). They are read here and
+ * handed on, and appear nowhere else: not in a log, a trace, or an answer.
+ */
+function ownKeysNamed(req: IncomingMessage): { jev: string; gemini: string } | undefined {
+  const one = (name: string) => {
+    const said = req.headers[name];
+    const key = (Array.isArray(said) ? said[0] : said)?.trim() ?? "";
+    return /^[\w.-]{16,256}$/.test(key) ? key : "";
+  };
+  const jev = one("x-jev-key");
+  const gemini = one("x-gemini-key");
+  return jev && gemini ? { jev, gemini } : undefined;
 }
 
 /** Who is asking, and what the list grants them; `auth` is the module that said so (auth.ts). */
@@ -223,22 +239,37 @@ export function api(load: Load) {
     // A photograph is asked for by an <img>, which cannot say who is asking. Its name is a hash, and serving it costs nothing.
     if (url.pathname.startsWith("/api/photo/")) return await photo(load, url.pathname.slice("/api/photo/".length), res), true;
     const saved = url.pathname.match(/^\/api\/apps(?:\/([^/]*))?$/);
-    if (!saved && !["/api/config", "/api/me", "/api/access", "/api/design", "/api/turn", "/api/resolve", "/api/generate"].includes(url.pathname)) return false;
+    if (!saved && !["/api/config", "/api/me", "/api/keys", "/api/access", "/api/design", "/api/turn", "/api/resolve", "/api/generate"].includes(url.pathname)) return false;
     const auth = await load("auth");
     if (saved) return await savedApps(load, saved[1] ?? "", req, res, auth), true;
     const json = (value: unknown) => (res.setHeader("Content-Type", "application/json"), res.end(JSON.stringify(value)));
     const models = await load("models");
     if (url.pathname === "/api/config") return json({ firebase: auth.firebase, endpoints: models.endpoints() }), true;
+    // Whether a pair of keys works is anyone's to ask: they are the asker's keys, and the answer costs the house nothing.
+    if (url.pathname === "/api/keys") {
+      if (req.method !== "POST") return (res.statusCode = 405), res.end("Use POST."), true;
+      const { jev, gemini } = await readJson(req).catch(() => ({}));
+      if (typeof jev !== "string" || typeof gemini !== "string" || !jev.trim() || !gemini.trim()) return (res.statusCode = 400), res.end("Send a Jev API key and a Gemini API key."), true;
+      return json(await models.checkKeys({ jev: jev.trim(), gemini: gemini.trim() })), true;
+    }
 
+    // The list first, keys second: a name the list grants is answered with the house's keys and counted, whatever else
+    // the request carried; keys of the person's own count only where the list grants nothing (models.ts).
     let asking: Asking | undefined;
+    let keys: ReturnType<typeof ownKeysNamed>;
     if (auth.firebase) {
       const person = await auth.whoIs(req.headers.authorization);
-      if (!person) return (res.statusCode = 401), res.end("Sign in to continue."), true;
-      const grant = await auth.access(person);
+      const grant = person && (await auth.access(person));
       // Signed in and on no line of the list is something to tell the person, not an error: /api/me says so.
-      if (url.pathname === "/api/me") return await allowance(res, grant && { auth, person, grant }), json({ email: person.email, role: grant?.role ?? null }), true;
-      if (!grant) return (res.statusCode = 403), res.end(`${person.email ?? "This account"} isn't on the access list.`), true;
-      asking = { auth, person, grant };
+      if (url.pathname === "/api/me") {
+        if (!person) return (res.statusCode = 401), res.end("Sign in to continue."), true;
+        return await allowance(res, grant ? { auth, person, grant } : undefined), json({ email: person.email, role: grant?.role ?? null }), true;
+      }
+      if (grant) asking = { auth, person, grant };
+      else if (!(keys = ownKeysNamed(req))) {
+        if (!person) return (res.statusCode = 401), res.end("Sign in to continue, or use your own API keys."), true;
+        return (res.statusCode = 403), res.end(`${person.email ?? "This account"} isn't on the access list.`), true;
+      }
     } else if (url.pathname === "/api/me") return json({ role: "maker" }), true;
 
     if (url.pathname === "/api/access") {
@@ -263,7 +294,7 @@ export function api(load: Load) {
           await allowance(res, asking);
           await turn(load, req, res);
         } else await generate(load, url, req, res, asking);
-      }),
+      }, keys),
     );
     return true;
   };
