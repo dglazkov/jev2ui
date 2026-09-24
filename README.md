@@ -152,9 +152,10 @@ in the same app, in the same second and a half.
 4. **The browser keeps the session** (`src/web/app.ts`): a graph of screens keyed by the link that made them,
    and a back stack. A tap followed before shows the screen it made then, so the prototype holds still while
    it is explored. A dialog (the kit's `confirm`, an iOS alert or action sheet) is laid over the screen it came
-   from, and over that screen again whenever it is shown, from the map, the chat or a saved link; its Cancel
-   goes back, and so does any of its buttons that the app map says leads to the dialog itself, since every
-   button of an alert closes it.
+   from, and over that screen again whenever it is shown, from the map, the chat or a saved link. Which of its
+   buttons only closes it (Cancel, Not now, Keep editing) is the grammar's question, `dismisses`, and the kit
+   taps that button as a back arrow; any of its other buttons that the app map says leads to the dialog itself
+   closes it too, since every button of an alert does.
    Switches and checkboxes flip in place. The strip above the device lists every screen made so far, and ↻
    makes the current page again from the same request, forgetting whatever was reached from the old one.
 

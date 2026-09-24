@@ -13915,7 +13915,8 @@
     "on",
     "variant",
     "delta",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -14749,12 +14750,14 @@
        "action_0": "Downloads"
       },
       "questions": [
-       "destructive"
+       "destructive",
+       "dismisses_0"
       ],
       "decorated": [
        {
         "label": "Downloads",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": true
        }
       ],
       "decisions": [
@@ -14769,6 +14772,12 @@
         "question": "Downloads",
         "answer": "primary",
         "p": 1
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Downloads",
+        "answer": "yes",
+        "p": 0.8356763732153922
        }
       ]
      }
@@ -14782,7 +14791,8 @@
     "tone",
     "control",
     "variant",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -15426,12 +15436,14 @@
        "action_0": "Theme"
       },
       "questions": [
-       "destructive"
+       "destructive",
+       "dismisses_0"
       ],
       "decorated": [
        {
         "label": "Theme",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": true
        }
       ],
       "decisions": [
@@ -15446,6 +15458,12 @@
         "question": "Theme",
         "answer": "primary",
         "p": 1
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Theme",
+        "answer": "yes",
+        "p": 0.7401654154527932
        }
       ]
      }
@@ -15980,7 +15998,8 @@
     "on",
     "variant",
     "delta",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -16609,16 +16628,20 @@
       },
       "questions": [
        "destructive",
-       "main"
+       "main",
+       "dismisses_0",
+       "dismisses_1"
       ],
       "decorated": [
        {
         "label": "Autoplay",
-        "variant": "danger"
+        "variant": "danger",
+        "closes": true
        },
        {
         "label": "Language",
-        "variant": "secondary"
+        "variant": "secondary",
+        "closes": false
        }
       ],
       "decisions": [
@@ -16646,6 +16669,18 @@
         "question": "Language",
         "answer": "secondary",
         "p": 0.9265401362363621
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Autoplay",
+        "answer": "yes",
+        "p": 0.8867581721860915
+       },
+       {
+        "id": "dismisses_1",
+        "question": "Language",
+        "answer": "no",
+        "p": 0.293270462192595
        }
       ]
      }
@@ -17302,7 +17337,8 @@
     "on",
     "variant",
     "delta",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -17693,16 +17729,20 @@
       },
       "questions": [
        "destructive",
-       "main"
+       "main",
+       "dismisses_0",
+       "dismisses_1"
       ],
       "decorated": [
        {
         "label": "Autoplay",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": true
        },
        {
         "label": "Theme",
-        "variant": "secondary"
+        "variant": "secondary",
+        "closes": false
        }
       ],
       "decisions": [
@@ -17729,6 +17769,18 @@
         "question": "Theme",
         "answer": "secondary",
         "p": 0.9962661477560417
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Autoplay",
+        "answer": "yes",
+        "p": 0.9785036619286984
+       },
+       {
+        "id": "dismisses_1",
+        "question": "Theme",
+        "answer": "no",
+        "p": 0.04146883892826736
        }
       ]
      }
@@ -17745,7 +17797,8 @@
     "on",
     "variant",
     "delta",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -18497,16 +18550,20 @@
       },
       "questions": [
        "destructive",
-       "main"
+       "main",
+       "dismisses_0",
+       "dismisses_1"
       ],
       "decorated": [
        {
         "label": "10 seconds",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": false
        },
        {
         "label": "Delete account",
-        "variant": "secondary"
+        "variant": "secondary",
+        "closes": false
        }
       ],
       "decisions": [
@@ -18533,6 +18590,18 @@
         "question": "Delete account",
         "answer": "secondary",
         "p": 0.9767383107125862
+       },
+       {
+        "id": "dismisses_0",
+        "question": "10 seconds",
+        "answer": "no",
+        "p": 0.065825768513605
+       },
+       {
+        "id": "dismisses_1",
+        "question": "Delete account",
+        "answer": "no",
+        "p": 0.3692570165731013
        }
       ]
      }
@@ -18547,7 +18616,8 @@
     "control",
     "variant",
     "delta",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -18930,12 +19000,14 @@
        "action_0": "10 seconds"
       },
       "questions": [
-       "destructive"
+       "destructive",
+       "dismisses_0"
       ],
       "decorated": [
        {
         "label": "10 seconds",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": false
        }
       ],
       "decisions": [
@@ -18950,6 +19022,12 @@
         "question": "10 seconds",
         "answer": "primary",
         "p": 1
+       },
+       {
+        "id": "dismisses_0",
+        "question": "10 seconds",
+        "answer": "no",
+        "p": 0.45547851431183517
        }
       ]
      }
@@ -18965,7 +19043,8 @@
     "control",
     "on",
     "variant",
-    "delta"
+    "delta",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -19202,12 +19281,14 @@
        "action_0": "Paid"
       },
       "questions": [
-       "destructive"
+       "destructive",
+       "dismisses_0"
       ],
       "decorated": [
        {
         "label": "Paid",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": false
        }
       ],
       "decisions": [
@@ -19222,6 +19303,12 @@
         "question": "Paid",
         "answer": "primary",
         "p": 1
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Paid",
+        "answer": "no",
+        "p": 0.0045030147302895784
        }
       ]
      }
@@ -20308,7 +20395,8 @@
     "on",
     "variant",
     "delta",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -20869,12 +20957,14 @@
        "action_0": "Theme"
       },
       "questions": [
-       "destructive"
+       "destructive",
+       "dismisses_0"
       ],
       "decorated": [
        {
         "label": "Theme",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": false
        }
       ],
       "decisions": [
@@ -20889,6 +20979,12 @@
         "question": "Theme",
         "answer": "primary",
         "p": 1
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Theme",
+        "answer": "no",
+        "p": 0.03687488124705851
        }
       ]
      }
@@ -20904,7 +21000,8 @@
     "on",
     "variant",
     "delta",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -21379,12 +21476,14 @@
        "action_0": "Notifications"
       },
       "questions": [
-       "destructive"
+       "destructive",
+       "dismisses_0"
       ],
       "decorated": [
        {
         "label": "Notifications",
-        "variant": "danger"
+        "variant": "danger",
+        "closes": false
        }
       ],
       "decisions": [
@@ -21400,6 +21499,12 @@
         "question": "Notifications",
         "answer": "yes",
         "p": 0.8628133498132229
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Notifications",
+        "answer": "no",
+        "p": 0.3763868270907551
        }
       ]
      }
@@ -21414,7 +21519,8 @@
     "on",
     "variant",
     "delta",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -21740,12 +21846,14 @@
        "action_0": "Downloads"
       },
       "questions": [
-       "destructive"
+       "destructive",
+       "dismisses_0"
       ],
       "decorated": [
        {
         "label": "Downloads",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": false
        }
       ],
       "decisions": [
@@ -21760,6 +21868,12 @@
         "question": "Downloads",
         "answer": "primary",
         "p": 1
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Downloads",
+        "answer": "no",
+        "p": 0.4509361849632114
        }
       ]
      }
@@ -21775,7 +21889,8 @@
     "on",
     "variant",
     "delta",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -22298,16 +22413,20 @@
       },
       "questions": [
        "destructive",
-       "main"
+       "main",
+       "dismisses_0",
+       "dismisses_1"
       ],
       "decorated": [
        {
         "label": "Notifications",
-        "variant": "secondary"
+        "variant": "secondary",
+        "closes": false
        },
        {
         "label": "Delete account",
-        "variant": "danger"
+        "variant": "danger",
+        "closes": true
        }
       ],
       "decisions": [
@@ -22335,6 +22454,18 @@
         "question": "Notifications",
         "answer": "secondary",
         "p": 0.6968161071448633
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Notifications",
+        "answer": "no",
+        "p": 0.16975313401781023
+       },
+       {
+        "id": "dismisses_1",
+        "question": "Delete account",
+        "answer": "yes",
+        "p": 0.8031777373980731
        }
       ]
      }
@@ -22348,7 +22479,8 @@
     "tone",
     "icon",
     "variant",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -22787,16 +22919,20 @@
       },
       "questions": [
        "destructive",
-       "main"
+       "main",
+       "dismisses_0",
+       "dismisses_1"
       ],
       "decorated": [
        {
         "label": "Sign out",
-        "variant": "secondary"
+        "variant": "secondary",
+        "closes": false
        },
        {
         "label": "Paid",
-        "variant": "danger"
+        "variant": "danger",
+        "closes": true
        }
       ],
       "decisions": [
@@ -22824,6 +22960,18 @@
         "question": "Sign out",
         "answer": "secondary",
         "p": 0.9961458159568574
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Sign out",
+        "answer": "no",
+        "p": 0.009962712181732059
+       },
+       {
+        "id": "dismisses_1",
+        "question": "Paid",
+        "answer": "yes",
+        "p": 0.7993899283464998
        }
       ]
      }
@@ -22839,7 +22987,8 @@
     "control",
     "variant",
     "delta",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -23315,12 +23464,14 @@
        "action_0": "Delayed"
       },
       "questions": [
-       "destructive"
+       "destructive",
+       "dismisses_0"
       ],
       "decorated": [
        {
         "label": "Delayed",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": false
        }
       ],
       "decisions": [
@@ -23335,6 +23486,12 @@
         "question": "Delayed",
         "answer": "primary",
         "p": 1
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Delayed",
+        "answer": "no",
+        "p": 0.329114758875221
        }
       ]
      }
@@ -23349,7 +23506,8 @@
     "control",
     "on",
     "variant",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -23722,16 +23880,20 @@
       },
       "questions": [
        "destructive",
-       "main"
+       "main",
+       "dismisses_0",
+       "dismisses_1"
       ],
       "decorated": [
        {
         "label": "Paid",
-        "variant": "secondary"
+        "variant": "secondary",
+        "closes": false
        },
        {
         "label": "Delayed",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": false
        }
       ],
       "decisions": [
@@ -23758,6 +23920,18 @@
         "question": "Delayed",
         "answer": "primary",
         "p": 0.5799392396019211
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Paid",
+        "answer": "no",
+        "p": 0.493495621252805
+       },
+       {
+        "id": "dismisses_1",
+        "question": "Delayed",
+        "answer": "no",
+        "p": 0.1463229786604643
        }
       ]
      }
@@ -23774,7 +23948,8 @@
     "on",
     "variant",
     "delta",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -24424,16 +24599,20 @@
       },
       "questions": [
        "destructive",
-       "main"
+       "main",
+       "dismisses_0",
+       "dismisses_1"
       ],
       "decorated": [
        {
         "label": "Paid",
-        "variant": "secondary"
+        "variant": "secondary",
+        "closes": true
        },
        {
         "label": "Downloads",
-        "variant": "danger"
+        "variant": "danger",
+        "closes": false
        }
       ],
       "decisions": [
@@ -24461,6 +24640,18 @@
         "question": "Paid",
         "answer": "secondary",
         "p": 0.9661629288449655
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Paid",
+        "answer": "yes",
+        "p": 0.954360052710399
+       },
+       {
+        "id": "dismisses_1",
+        "question": "Downloads",
+        "answer": "no",
+        "p": 0.1807342206593603
        }
       ]
      }
@@ -25188,7 +25379,8 @@
     "on",
     "variant",
     "delta",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -25579,16 +25771,20 @@
       },
       "questions": [
        "destructive",
-       "main"
+       "main",
+       "dismisses_0",
+       "dismisses_1"
       ],
       "decorated": [
        {
         "label": "About",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": true
        },
        {
         "label": "Paid",
-        "variant": "secondary"
+        "variant": "secondary",
+        "closes": false
        }
       ],
       "decisions": [
@@ -25615,6 +25811,18 @@
         "question": "Paid",
         "answer": "secondary",
         "p": 0.6247529408465585
+       },
+       {
+        "id": "dismisses_0",
+        "question": "About",
+        "answer": "yes",
+        "p": 0.632494741352275
+       },
+       {
+        "id": "dismisses_1",
+        "question": "Paid",
+        "answer": "no",
+        "p": 0.49921562732197344
        }
       ]
      }
@@ -26207,7 +26415,8 @@
     "icon",
     "on",
     "variant",
-    "delta"
+    "delta",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -26797,16 +27006,20 @@
       },
       "questions": [
        "destructive",
-       "main"
+       "main",
+       "dismisses_0",
+       "dismisses_1"
       ],
       "decorated": [
        {
         "label": "Autoplay",
-        "variant": "danger"
+        "variant": "danger",
+        "closes": false
        },
        {
         "label": "About",
-        "variant": "secondary"
+        "variant": "secondary",
+        "closes": true
        }
       ],
       "decisions": [
@@ -26834,6 +27047,18 @@
         "question": "About",
         "answer": "secondary",
         "p": 0.9989196631425489
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Autoplay",
+        "answer": "no",
+        "p": 0.0770868849940598
+       },
+       {
+        "id": "dismisses_1",
+        "question": "About",
+        "answer": "yes",
+        "p": 0.5414325764868408
        }
       ]
      }
@@ -26849,7 +27074,8 @@
     "on",
     "variant",
     "delta",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -27342,12 +27568,14 @@
        "action_0": "Delete account"
       },
       "questions": [
-       "destructive"
+       "destructive",
+       "dismisses_0"
       ],
       "decorated": [
        {
         "label": "Delete account",
-        "variant": "danger"
+        "variant": "danger",
+        "closes": true
        }
       ],
       "decisions": [
@@ -27363,6 +27591,12 @@
         "question": "Delete account",
         "answer": "yes",
         "p": 0.9145330698229373
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Delete account",
+        "answer": "yes",
+        "p": 0.5101267753634602
        }
       ]
      }
@@ -27378,7 +27612,8 @@
     "control",
     "variant",
     "delta",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -27693,12 +27928,14 @@
        "action_0": "Delete account"
       },
       "questions": [
-       "destructive"
+       "destructive",
+       "dismisses_0"
       ],
       "decorated": [
        {
         "label": "Delete account",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": false
        }
       ],
       "decisions": [
@@ -27713,6 +27950,12 @@
         "question": "Delete account",
         "answer": "primary",
         "p": 1
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Delete account",
+        "answer": "no",
+        "p": 0.26571177667938173
        }
       ]
      }
@@ -27727,7 +27970,8 @@
     "control",
     "on",
     "variant",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -28010,16 +28254,20 @@
       },
       "questions": [
        "destructive",
-       "main"
+       "main",
+       "dismisses_0",
+       "dismisses_1"
       ],
       "decorated": [
        {
         "label": "Downloads",
-        "variant": "danger"
+        "variant": "danger",
+        "closes": false
        },
        {
         "label": "Autoplay",
-        "variant": "secondary"
+        "variant": "secondary",
+        "closes": true
        }
       ],
       "decisions": [
@@ -28047,6 +28295,18 @@
         "question": "Autoplay",
         "answer": "secondary",
         "p": 0.9999731306115546
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Downloads",
+        "answer": "no",
+        "p": 0.4641658319160342
+       },
+       {
+        "id": "dismisses_1",
+        "question": "Autoplay",
+        "answer": "yes",
+        "p": 0.7165912112686783
        }
       ]
      }
@@ -28059,7 +28319,8 @@
    "bound": [
     "icon",
     "variant",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -28310,16 +28571,20 @@
       },
       "questions": [
        "destructive",
-       "main"
+       "main",
+       "dismisses_0",
+       "dismisses_1"
       ],
       "decorated": [
        {
         "label": "High",
-        "variant": "danger"
+        "variant": "danger",
+        "closes": true
        },
        {
         "label": "High",
-        "variant": "secondary"
+        "variant": "secondary",
+        "closes": false
        }
       ],
       "decisions": [
@@ -28347,6 +28612,18 @@
         "question": "High",
         "answer": "secondary",
         "p": 0.8928543254144485
+       },
+       {
+        "id": "dismisses_0",
+        "question": "High",
+        "answer": "yes",
+        "p": 0.6807973713148385
+       },
+       {
+        "id": "dismisses_1",
+        "question": "High",
+        "answer": "no",
+        "p": 0.2915448686107993
        }
       ]
      }
@@ -28361,7 +28638,8 @@
     "control",
     "on",
     "variant",
-    "delta"
+    "delta",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -28721,12 +28999,14 @@
        "action_0": "Notifications"
       },
       "questions": [
-       "destructive"
+       "destructive",
+       "dismisses_0"
       ],
       "decorated": [
        {
         "label": "Notifications",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": true
        }
       ],
       "decisions": [
@@ -28741,6 +29021,12 @@
         "question": "Notifications",
         "answer": "primary",
         "p": 1
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Notifications",
+        "answer": "yes",
+        "p": 0.5745570852886885
        }
       ]
      }
@@ -28756,7 +29042,8 @@
     "on",
     "variant",
     "delta",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -29499,16 +29786,20 @@
       },
       "questions": [
        "destructive",
-       "main"
+       "main",
+       "dismisses_0",
+       "dismisses_1"
       ],
       "decorated": [
        {
         "label": "Theme",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": false
        },
        {
         "label": "Sign out",
-        "variant": "secondary"
+        "variant": "secondary",
+        "closes": false
        }
       ],
       "decisions": [
@@ -29535,6 +29826,18 @@
         "question": "Sign out",
         "answer": "secondary",
         "p": 0.9386997754774548
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Theme",
+        "answer": "no",
+        "p": 0.4628980786073953
+       },
+       {
+        "id": "dismisses_1",
+        "question": "Sign out",
+        "answer": "no",
+        "p": 0.39413444395177066
        }
       ]
      }
@@ -29548,7 +29851,8 @@
     "tone",
     "control",
     "variant",
-    "delta"
+    "delta",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -29925,16 +30229,20 @@
       },
       "questions": [
        "destructive",
-       "main"
+       "main",
+       "dismisses_0",
+       "dismisses_1"
       ],
       "decorated": [
        {
         "label": "10 seconds",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": true
        },
        {
         "label": "10 seconds",
-        "variant": "secondary"
+        "variant": "secondary",
+        "closes": true
        }
       ],
       "decisions": [
@@ -29961,6 +30269,18 @@
         "question": "10 seconds",
         "answer": "secondary",
         "p": 0.7543157969320903
+       },
+       {
+        "id": "dismisses_0",
+        "question": "10 seconds",
+        "answer": "yes",
+        "p": 0.537709676893428
+       },
+       {
+        "id": "dismisses_1",
+        "question": "10 seconds",
+        "answer": "yes",
+        "p": 0.766203242354095
        }
       ]
      }
@@ -29975,7 +30295,8 @@
     "on",
     "variant",
     "delta",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -30284,12 +30605,14 @@
        "action_0": "Sign out"
       },
       "questions": [
-       "destructive"
+       "destructive",
+       "dismisses_0"
       ],
       "decorated": [
        {
         "label": "Sign out",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": true
        }
       ],
       "decisions": [
@@ -30304,6 +30627,12 @@
         "question": "Sign out",
         "answer": "primary",
         "p": 1
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Sign out",
+        "answer": "yes",
+        "p": 0.8150287696626037
        }
       ]
      }
@@ -30835,7 +31164,8 @@
     "tone",
     "control",
     "variant",
-    "delta"
+    "delta",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -31174,16 +31504,20 @@
       },
       "questions": [
        "destructive",
-       "main"
+       "main",
+       "dismisses_0",
+       "dismisses_1"
       ],
       "decorated": [
        {
         "label": "About",
-        "variant": "secondary"
+        "variant": "secondary",
+        "closes": true
        },
        {
         "label": "Autoplay",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": true
        }
       ],
       "decisions": [
@@ -31210,6 +31544,18 @@
         "question": "Autoplay",
         "answer": "primary",
         "p": 0.5570266511144683
+       },
+       {
+        "id": "dismisses_0",
+        "question": "About",
+        "answer": "yes",
+        "p": 0.6373702632263303
+       },
+       {
+        "id": "dismisses_1",
+        "question": "Autoplay",
+        "answer": "yes",
+        "p": 0.8366328303236514
        }
       ]
      }
@@ -31225,7 +31571,8 @@
     "control",
     "variant",
     "delta",
-    "/banner/tone"
+    "/banner/tone",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -31520,12 +31867,14 @@
        "action_0": "Autoplay"
       },
       "questions": [
-       "destructive"
+       "destructive",
+       "dismisses_0"
       ],
       "decorated": [
        {
         "label": "Autoplay",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": true
        }
       ],
       "decisions": [
@@ -31540,6 +31889,12 @@
         "question": "Autoplay",
         "answer": "primary",
         "p": 1
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Autoplay",
+        "answer": "yes",
+        "p": 0.6672393153421581
        }
       ]
      }
@@ -31554,7 +31909,8 @@
     "control",
     "on",
     "variant",
-    "delta"
+    "delta",
+    "closes"
    ],
    "asked": {
     "groups": [
@@ -32065,12 +32421,14 @@
        "action_0": "Delayed"
       },
       "questions": [
-       "destructive"
+       "destructive",
+       "dismisses_0"
       ],
       "decorated": [
        {
         "label": "Delayed",
-        "variant": "primary"
+        "variant": "primary",
+        "closes": false
        }
       ],
       "decisions": [
@@ -32085,6 +32443,12 @@
         "question": "Delayed",
         "answer": "primary",
         "p": 1
+       },
+       {
+        "id": "dismisses_0",
+        "question": "Delayed",
+        "answer": "no",
+        "p": 0.4990397884976119
        }
       ]
      }

@@ -56,6 +56,8 @@ function made() {
     };
     const icons = rng() < 0.7;
     const bound = new Set(["tone", "icon", "control", "on", "variant", "delta", "/banner/tone"].filter(() => rng() < 0.8));
+    // A button's role is drawn wherever its variant is, and drawing no more numbers keeps the rest of the recording as it was.
+    if (bound.has("variant")) bound.add("closes");
     const asked = Object.fromEntries(
       Object.entries(content).map(([part, value]) => [
         part,
@@ -134,5 +136,5 @@ test("every part of the file is drawn by something and every question of it is a
     }
   }
   assert.deepEqual([...drawn].sort(), [...blocks].sort());
-  for (const path of ["list:/list/items", "list:tone", "list:icon", "groups:control", "groups:icon", "stats:delta", "facts:strong", "custom:/custom/use", "actions:variant", "form:kind"]) assert.ok(seen.has(path), path);
+  for (const path of ["list:/list/items", "list:tone", "list:icon", "groups:control", "groups:icon", "stats:delta", "facts:strong", "custom:/custom/use", "actions:variant", "actions:closes", "form:kind"]) assert.ok(seen.has(path), path);
 });

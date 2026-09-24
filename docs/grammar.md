@@ -617,7 +617,7 @@ From the idioms:
     title of the screen behind is the journey's, which the frame is not told.
 47. **An alert's buttons come in the writer's order.** HIG puts cancel on the left and the confirming action on the
     right, and stacks three or more: rules about the count and the roles of a part's elements, which the pattern
-    cannot read yet. The iOS alert draws the two side by side as written.
+    cannot read yet. The iOS alert draws the two side by side as written. (Which one is Cancel is now decided: 59.)
 48. **The symbols are Material's in every idiom.** SF Symbols are not on the web, and a catalog's symbol set is not
     a thing the format says yet.
 49. *(Gone, 2026-09-23: an app keeps its idiom, so nothing on the page switches under a baked component.)*
@@ -706,8 +706,10 @@ From iOS as its own graph:
     root" is a knob the frame does not have yet.
 59. **Cancel is the last button because the writer is told so.** HIG's rules for an alert's and an action sheet's
     buttons (cancel last, the confirming one first, three or more stacked, destructive red) are a writer's note,
-    a stylesheet `:has(> :nth-child(3))` and the `main`/`destructive` questions; nothing in the graph can say
-    "one of the buttons is Cancel" (47 stands, half met).
+    a stylesheet `:has(> :nth-child(3))` and the `main`/`destructive` questions. Which button is Cancel is the
+    graph's to say since 2026-09-23: `dismisses`, asked of each button once it is written, decides its `closes`,
+    and the kit taps a button that closes as a back arrow, so the browser no longer guesses from English labels.
+    Where that button goes is still the writer's (47 stands, half met).
 60. **The frame's word is capitalised by the pattern.** `trailing done` yields `Done`; a grammar cannot say the
     word as the person reads it, only the knob's name.
 61. **`ios_share` and `more_horiz` are Material's names for Apple's symbols.** The bar's action yields a symbol

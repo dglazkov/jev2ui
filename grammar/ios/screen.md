@@ -415,6 +415,7 @@ HIG: one filled button for the thing the person came to do; an alert's buttons s
   - when kind is choices — Two to four choices, and then always one more button labelled 'Cancel', last.
   - `label` as label — Button label, one to three words.
   - `variant` as variant, decided by main
+  - `closes` as closes, decided by dismisses
 
 #### destructive (once written)
 
@@ -431,6 +432,15 @@ HIG: one filled button per screen; the rest are plain.
 
 + `primary` It is the one.
 - `secondary` It is one of the others.
+
+#### dismisses (of each action in actions)
+
+HIG: a button with the cancel role closes the alert, action sheet or sheet it is on and does nothing else; every alert that asks for a decision has one.
+
+> Does tapping {action} only close what it is on and go back, with nothing done?
+
++ Cancel, Close, Not now, No thanks, Never mind, Keep editing, Go back; an OK that only acknowledges a message.
+- Delete, Save, Confirm, Allow, Restore, Sign out, Buy, Continue, Share, or one of the choices of an action sheet: it does what the screen is about.
 
 ## person → opening
 

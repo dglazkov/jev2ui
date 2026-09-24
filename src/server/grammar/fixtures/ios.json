@@ -209,6 +209,9 @@
        "variant": {
         "path": "variant"
        },
+       "closes": {
+        "path": "closes"
+       },
        "event": "action"
       }
      ]
@@ -381,6 +384,9 @@
      },
      "variant": {
       "path": "variant"
+     },
+     "closes": {
+      "path": "closes"
      },
      "event": "action"
     }
@@ -822,6 +828,9 @@
        "variant": {
         "path": "variant"
        },
+       "closes": {
+        "path": "closes"
+       },
        "event": "action"
       }
      ]
@@ -976,6 +985,9 @@
      "variant": {
       "path": "variant"
      },
+     "closes": {
+      "path": "closes"
+     },
      "event": "action"
     }
    ]
@@ -1098,6 +1110,9 @@
        },
        "variant": {
         "path": "variant"
+       },
+       "closes": {
+        "path": "closes"
        },
        "event": "action"
       }
@@ -1261,6 +1276,9 @@
      "variant": {
       "path": "variant"
      },
+     "closes": {
+      "path": "closes"
+     },
      "event": "action"
     }
    ]
@@ -1383,6 +1401,9 @@
        },
        "variant": {
         "path": "variant"
+       },
+       "closes": {
+        "path": "closes"
        },
        "event": "action"
       }
@@ -1545,6 +1566,9 @@
      },
      "variant": {
       "path": "variant"
+     },
+     "closes": {
+      "path": "closes"
      },
      "event": "action"
     }
@@ -1934,6 +1958,9 @@
        "variant": {
         "path": "variant"
        },
+       "closes": {
+        "path": "closes"
+       },
        "event": "action"
       }
      ]
@@ -2069,6 +2096,9 @@
      },
      "variant": {
       "path": "variant"
+     },
+     "closes": {
+      "path": "closes"
      },
      "event": "action"
     }
@@ -2415,6 +2445,9 @@
        "variant": {
         "path": "variant"
        },
+       "closes": {
+        "path": "closes"
+       },
        "event": "action"
       }
      ]
@@ -2551,6 +2584,9 @@
      },
      "variant": {
       "path": "variant"
+     },
+     "closes": {
+      "path": "closes"
      },
      "event": "action"
     }
@@ -2765,6 +2801,9 @@
        "variant": {
         "path": "variant"
        },
+       "closes": {
+        "path": "closes"
+       },
        "event": "action"
       }
      ]
@@ -2937,6 +2976,9 @@
      },
      "variant": {
       "path": "variant"
+     },
+     "closes": {
+      "path": "closes"
      },
      "event": "action"
     }
@@ -3562,6 +3604,9 @@
        "variant": {
         "path": "variant"
        },
+       "closes": {
+        "path": "closes"
+       },
        "event": "action"
       }
      ]
@@ -3708,6 +3753,9 @@
      "variant": {
       "path": "variant"
      },
+     "closes": {
+      "path": "closes"
+     },
      "event": "action"
     }
    ]
@@ -3830,6 +3878,9 @@
        },
        "variant": {
         "path": "variant"
+       },
+       "closes": {
+        "path": "closes"
        },
        "event": "action"
       }
@@ -3967,6 +4018,9 @@
      },
      "variant": {
       "path": "variant"
+     },
+     "closes": {
+      "path": "closes"
      },
      "event": "action"
     }
@@ -4620,6 +4674,9 @@
        "variant": {
         "path": "variant"
        },
+       "closes": {
+        "path": "closes"
+       },
        "event": "action"
       }
      ]
@@ -4756,6 +4813,9 @@
      },
      "variant": {
       "path": "variant"
+     },
+     "closes": {
+      "path": "closes"
      },
      "event": "action"
     }

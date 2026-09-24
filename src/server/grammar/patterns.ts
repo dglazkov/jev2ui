@@ -352,13 +352,13 @@ const PATTERNS: Pattern[] = [
   {
     name: "actions",
     card: "One or two buttons that act on the whole of what is shown, the main one marked.",
-    slots: slots("- `actions` required\n  - `label` required\n  - `variant` — primary, secondary, text or danger"),
+    slots: slots("- `actions` required\n  - `label` required\n  - `variant` — primary, secondary, text or danger\n  - `closes` — yes if a tap only closes what the button is on and goes back, as Cancel does"),
     knobs: {},
     draw: (id, b) => {
       const actions = need(b.each("actions"), "actions", "actions");
       return [
         { id, component: "Cluster", gap: "sm", justify: "end", children: { path: actions.path, componentId: `${id}_action` } },
-        made({ id: `${id}_action`, component: "Button", label: bind(actions.bound.one("label")), variant: bind(actions.bound.one("variant")), event: "action" }),
+        made({ id: `${id}_action`, component: "Button", label: bind(actions.bound.one("label")), variant: bind(actions.bound.one("variant")), closes: bind(actions.bound.one("closes")), event: "action" }),
       ];
     },
   },

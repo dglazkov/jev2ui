@@ -106,6 +106,8 @@ export const KIT = {
     label: str,
     /** primary | secondary | text | danger. Bindable, because which button is primary is decided from the labels. */
     variant: str.optional(),
+    /** A tap only closes what the button is on and goes back, as Cancel does. Bindable, because which button that is is decided from the labels. */
+    closes: bool.optional(),
     icon: str.optional(),
     full: z.boolean().optional(),
     small: z.boolean().optional(),

@@ -389,6 +389,7 @@ among [icons](icons.md)
 - `actions` 1–2, as actions — One or two buttons, most important first.
   - `label` as label — Button label, one to three words.
   - `variant` as variant, decided by main
+  - `closes` as closes, decided by dismisses
 
 #### destructive (once written)
 
@@ -402,6 +403,15 @@ One primary action per screen: Material, HIG and Polaris all agree.
 
 + `primary` It is the one.
 - `secondary` It is one of the others.
+
+#### dismisses (of each action in actions)
+
+Material: a dialog's dismissive action closes it and changes nothing. HIG: the cancel role.
+
+> Does tapping {action} only close what it is on and go back, with nothing done?
+
++ Cancel, Close, Not now, No thanks, Never mind, Keep editing, Go back; an OK that only acknowledges a message.
+- Delete, Save, Confirm, Allow, Restore, Sign out, Buy, Continue, Share: it does what the screen is about.
 
 ## person → opening
 

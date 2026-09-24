@@ -486,6 +486,7 @@ export class KitSurface extends LitElement {
     const classes = `k-button k-${this.value(c.variant, s) ?? "secondary"} ${c.full ? "k-full" : ""} ${c.small ? "k-small" : ""}`;
     const fire = (e: Event) => {
       e.stopPropagation(); // a button on a list item acts on the item; it does not open it
+      if (this.value(c.closes, s) === true) return this.tap("back", this.value(c.label, s), s);
       this.tap(c.event ?? "action", this.value(c.label, s), s, { variant: this.value(c.variant, s), source: c.id === "form_submit" ? "submit:form_submit" : `${c.event ?? "action"}:${s?.base ?? c.id}` });
     };
     return html`<button class=${classes} style=${this.flex(c)} @click=${fire}>${this.icon(this.value(c.icon, s))}<span>${this.words(c.label, s, 70)}</span></button>`;

@@ -194,6 +194,7 @@ One or two buttons that act on the whole of what is shown, the main one marked.
 - `actions` required
   - `label` required
   - `variant` — primary, secondary, text or danger
+  - `closes` — yes if a tap only closes what the button is on and goes back, as Cancel does
 
 ## Sources
 
