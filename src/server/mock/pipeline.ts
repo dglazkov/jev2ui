@@ -307,10 +307,12 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
     const parts = partsOf(grammar, reading);
     const pattern = framePatternOf(patterns, grammar);
     const knobs = () => (pattern ? frameKnobsOf(grammar, reading!, pattern.knobs) : {});
+    // A knob a question of yes or no turns is true or false; one a trait or a named option sets is "yes" or "no".
+    const onMain = () => frame.navigation === "yes" || frame.navigation === true;
     frame = knobs();
     const custom = parts.filter((node) => node.filled).map((node) => customOf(graph, node, reading!));
     if (startingApp) {
-      architecture = initialArchitecture(described, { archetype: reading.kind, topLevel: frame.navigation === "yes", ...(custom.length ? { custom: { use: custom[0].contract.use } } : {}) }, planned.answers);
+      architecture = initialArchitecture(described, { archetype: reading.kind, topLevel: onMain(), ...(custom.length ? { custom: { use: custom[0].contract.use } } : {}) }, planned.answers);
       if (architecture.map.home === "first" && mainScreen) {
         reading.values[mainScreen.name] = true;
         frame = knobs();
@@ -358,7 +360,7 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
 
     // The app's navigation is established once; every main screen after that shows the same one.
     const nav = architectureRequest ? undefined : journey?.nav;
-    const mainScreenNow = frame.navigation === "yes";
+    const mainScreenNow = onMain();
     if (nav && mainScreenNow) {
       const active = nav.items.findIndex((item) => item.label === journey!.via.label);
       run.send({ updateDataModel: { surfaceId, path: "/nav", value: { items: nav.items, active: Math.max(0, active) } } });
