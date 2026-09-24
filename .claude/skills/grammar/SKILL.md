@@ -80,6 +80,6 @@ Whole-list rule: a part whose only written root field is a list named like the p
 - Tests and probes may give the design's facts (`DESIGN_SAYS` in fixtures.ts = nothing ruled out, or `designSays(rng)`); given nothing, nothing is ruled out.
 - iOS frame: `AppBar.trailing` (a word), `leading: cancel`, `Screen.presentation: sheet|actionsheet|fullscreen`; kind traits like `presentation sheet, leading cancel, trailing done, title large`. HIG button order is a writer note + CSS `:has`, not a rule.
 - Still the tool's by name: a content node `header` (written first) and `nav` (where the journey's destinations land); the IA's activity table knows the kit's kinds; `BAKED.contract` is typed in the kit's words (`customOf` maps to the nearest).
-- Only one idiom's stylesheet is on the page at a time (same class names); a screen made before a switch keeps its frame until regenerated.
+- Only one idiom's stylesheet is on the page at a time (same class names). An app keeps the idiom it was made in; there is no switch over an app's screens (the grammar is a preset in the bar that new apps are made in), so never write a grammar to be compatible with another.
 - Trace labels come from question text; per-element decisions are labelled by the element.
 - Form-field kind (`design.ts`) is still code; lint warns `"kind" is decided, and nothing says by what question` on `screen.md` — known.

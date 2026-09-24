@@ -426,8 +426,13 @@ the stylesheet that paints it in the browser. The tool's own is `screen.md`, `ki
 they are named in one table on each side (`src/shared/idioms.ts` for what both know, `src/server/idioms.ts` for the
 files and the code, `src/web/kit/idioms.ts` for the sheets), and which one a request is imagined in is the request's
 to say, in an `X-Idiom` header, carried the way the endpoint that answers System One is carried (`models.ts`). The
-idiom is chosen per app, in the design panel beside the design system; remembered for the next app; saved with the
-app and restored with it (`SAVED_APP.idiom`; an app saved before there was a choice is the kit's). The page is
+person chooses it in the bar, where it is a step of the path to the app, and calls it the grammar: a preset that
+new apps are made in, changed about once a session and remembered between visits. An app keeps the idiom it was
+made in for as long as it lives; choosing another while one is open starts a new app, and opening a saved app
+made in another shows that one and leaves the preset be. It is saved with the app and restored with it
+(`SAVED_APP.idiom`; an app saved before there was a choice is the kit's), and kept beside it for the library. It
+was first a toggle in the design panel, over an app that had screens already; that rewarded a grammar that
+survived the switch, which is to say one that copied the tool's (item 63), and it is gone (2026-09-23). The page is
 painted in one idiom at a time, and every baked component's frame is handed the same sheets.
 
 *The first cut proved the catalog half and not the grammar half.* It added iOS as a catalog over the same
@@ -462,8 +467,8 @@ it stood for is read off the grammar by what its fields and questions say:
 The tests hold that: what the old plan would have been, made of the new reading through the old `planOf`, is what was
 recorded, for 195 of 200 readings, the five others being the portrait rule; every recorded tree is what it was but
 for one, a details part without a total whose `strong` is no longer bound; what is decided once the words exist is
-byte for byte what it was; and `examples/email.md` is now an idiom of the tool's (`email`, by header and probe; not offered in the panel, since it is no way to imagine an app), which is
-the check that cannot be faked: a grammar with no phone, no kinds of screen and no plan, run by the served tool.
+byte for byte what it was. (`examples/email.md` was run as an idiom for a day, by header and probe. It is not one
+now: the tool imagines apps, and an email is not an app. The file stays as a test of the format.)
 
 Live, through the served app: a checkout whose bill adds up and ends bold; a profile with its portrait; a walker's
 picture carried from the feed to the page it opens; a pomodoro timer baked; a feed generated again with a notice
@@ -615,10 +620,8 @@ From the idioms:
     cannot read yet. The iOS alert draws the two side by side as written.
 48. **The symbols are Material's in every idiom.** SF Symbols are not on the web, and a catalog's symbol set is not
     a thing the format says yet.
-49. **A baked component restarts on a switch.** Its frame's document is its stylesheet, so a change of idiom is a
-    reload; a running timer starts over.
-50. **Which idiom a saved app's screens were drawn in** is one field for the whole app, and a screen made before
-    a switch is recorded as the app's idiom, not its own.
+49. *(Gone, 2026-09-23: an app keeps its idiom, so nothing on the page switches under a baked component.)*
+50. *(Gone, 2026-09-23: one field for the whole app is right, since every screen of an app is read by its idiom.)*
 
 From the tool reading the file:
 
@@ -693,8 +696,7 @@ From the reading:
 56. **The shelf's contract is still typed in the tool's words** (`use`, `size`, `linked`, in `BAKED`): a grammar
     whose contract question has other options is read to the nearest of them (item 19 stands), and the renderer
     still reads `/custom/name` by name (item 20 stands) although the slot's path is now the part's.
-57. **An email in a phone.** The Email idiom draws in the device frame, with the tool's chrome around it, and its
-    writers are told they write "a screen"; the tool's shell is still an app's.
+57. *(Withdrawn, 2026-09-23: it was about the email idiom, which is gone.)*
 
 From iOS as its own graph:
 
@@ -718,9 +720,9 @@ From iOS as its own graph:
 
 ## Next, in the order that seems right
 
-1. **One idiom that is not a phone at all** (Slack Block Kit, a terminal), to see what a graph with no screen, no
-   bar and no tab bar does to the tool's shell (54, 55, 57): the email was the first of these and it drew in a
-   phone.
+1. **An app grammar that is not a phone's** (a Mac or Windows app, a watch), written from its own guidelines and
+   sharing nothing it does not have to with `screen.md`, to see what windows or glances do to the tool's shell:
+   the device frame, and the examples offered, should come from the grammar (54, 55).
 2. **A trunk two dialects import** (63): the content questions once, and `screen.md` and `ios/screen.md` each a
    kinds question, a frame and rules over it. The format has `among [set](file.md)` for options; it has nothing
    for questions.

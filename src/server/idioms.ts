@@ -3,14 +3,13 @@
 // An idiom is a grammar that reads the description, a catalog that draws what it
 // says (a file, and the code behind it that draws each pattern), and a stylesheet
 // the browser paints it with (shared/idioms.ts, web/kit/idioms.ts). The tool's own
-// is grammar/screen.md drawn by the kit (grammar/kit.md, grammar/patterns.ts); another
-// idiom may read the same grammar and draw it its own way, since the frame's knobs
-// and the patterns' slots are what a grammar says and a catalog interprets
-// (docs/grammar.md).
+// is grammar/screen.md drawn by the kit (grammar/kit.md, grammar/patterns.ts); iOS is
+// grammar/ios/screen.md, a graph of its own drawn by a frame with iOS's knobs.
 //
 // Which one is the person's to say, in a header on every request, the way the
 // endpoint that answers System One is (models.ts): everything the request sets
-// going is imagined in that one alone, however deep and however late.
+// going is imagined in that one alone, however deep and however late. The browser
+// sends the one the app was made in, which never changes for that app.
 
 import { AsyncLocalStorage } from "node:async_hooks";
 import { IDIOMS as NAMED, idiomNamed as idOf, type IdiomId } from "../shared/idioms.js";
@@ -37,7 +36,6 @@ const OF: Record<IdiomId, { grammar: string; catalog: string; patterns: Catalog 
   kit: { grammar: "screen.md", catalog: "kit.md", patterns: KIT_PATTERNS },
   // A graph of its own, written from the Human Interface Guidelines, drawn by a frame with iOS's knobs.
   ios: { grammar: "ios/screen.md", catalog: "ios/catalog.md", patterns: IOS_PATTERNS },
-  email: { grammar: "examples/email.md", catalog: "kit.md", patterns: KIT_PATTERNS },
 };
 
 const read = new Map<IdiomId, Idiom>();

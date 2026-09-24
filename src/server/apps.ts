@@ -22,6 +22,7 @@ const about = (id: string, data: Record<string, any>, person: Person | undefined
   title: String(data.title ?? ""),
   name: String(data.name ?? ""),
   palette: Array.isArray(data.palette) ? data.palette.map(String) : [],
+  ...(typeof data.idiom === "string" ? { idiom: data.idiom } : {}),
   owner: String(data.ownerName || data.ownerEmail || ""),
   visibility: data.visibility === "link" ? "link" : "private",
   created: String(data.created ?? ""),
@@ -52,10 +53,10 @@ export async function save(person: Person, sent: unknown): Promise<{ id: string 
 
   // Saved before, it is there already, and may have been shared since: leave what is beside it alone.
   if (!(await read(`apps/${id}`))) {
-    // What the library draws a tile from: the first screen's title, and the colours the app is painted with.
+    // What the library draws a tile from: the first screen's title, the colours the app is painted with, and the grammar it was made in.
     const vars = ((app.design.report as { theme?: { vars?: Record<string, string> } } | undefined)?.theme?.vars ?? {}) as Record<string, string>;
     const palette = ["--k-page", "--k-card", "--k-text", "--k-accent", "--k-border"].map((name) => String(vars[name] ?? "").slice(0, 80));
-    const beside = { owner: person.uid, ownerEmail: person.email ?? "", ownerName: person.name ?? "", title: app.app.slice(0, 160), name: (screens[0]?.title ?? "").slice(0, 160), palette: palette.every(Boolean) ? palette : [], visibility: "private", created: new Date().toISOString(), screens: screens.length };
+    const beside = { owner: person.uid, ownerEmail: person.email ?? "", ownerName: person.name ?? "", title: app.app.slice(0, 160), name: (screens[0]?.title ?? "").slice(0, 160), palette: palette.every(Boolean) ? palette : [], idiom: app.idiom ?? "kit", visibility: "private", created: new Date().toISOString(), screens: screens.length };
     await commit([{ path: `apps/${id}`, data: beside }, ...parts.map((part) => ({ path: `apps/${id}/parts/${part.name}`, data: { json: part.json } }))]);
   }
   return { id };
@@ -78,7 +79,7 @@ export async function open(id: string, person: Person | undefined): Promise<{ ab
 
 /** What the person has saved, newest first. */
 export async function mine(person: Person): Promise<SavedAbout[]> {
-  const found = await where("apps", "owner", person.uid, ["owner", "ownerEmail", "ownerName", "title", "name", "palette", "visibility", "created", "screens"]);
+  const found = await where("apps", "owner", person.uid, ["owner", "ownerEmail", "ownerName", "title", "name", "palette", "idiom", "visibility", "created", "screens"]);
   return found.map(({ id, data }) => about(id, data, person)).sort((a, b) => b.created.localeCompare(a.created));
 }
 

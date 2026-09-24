@@ -93,6 +93,8 @@ export interface SavedAbout {
   /** The title of its first screen, and the colours it is painted with (page, card, text, accent, border): what a tile in the library is drawn from. Apps saved before there were tiles have neither. */
   name: string;
   palette: string[];
+  /** The grammar it was made in (shared/idioms.ts). Apps saved before the library knew it name none. */
+  idiom?: string;
   owner: string;
   visibility: Visibility;
   created: string;

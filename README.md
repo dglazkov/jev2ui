@@ -346,9 +346,12 @@ stylesheet are an **idiom**, and an app is imagined in one: the tool's own; iOS 
 graph of its own written from the Human Interface Guidelines, whose kinds are how a screen is presented — a tab's
 root, a pushed screen, a sheet with Cancel and Done, an alert, an action sheet, a full-screen cover — drawn by
 `grammar/ios/catalog.md`, `src/server/grammar/patterns-ios.ts` and `src/web/kit/ios.css` over the same
-components); or, by header only, Email (`grammar/examples/email.md`), a graph with no screens at all, which is there to prove
-the point and is not offered in the panel. The
-choice is made per app in the design panel, travels in an `X-Idiom` header, and is saved with the app
+components). People call it the **grammar**, and choose it in the bar, as a step of the path to the app
+(Apparite › iOS › Habit Tracker): a preset that new apps are made in, changed about once a session and
+remembered between visits. An app keeps the grammar it was made in for as long as it lives, because its
+screens were read by that grammar and no other: choosing another while an app is open starts a new app, and
+opening a saved app made in another grammar shows that grammar without changing the preset. The grammar
+travels in an `X-Idiom` header and is saved with the app, and the library labels and filters apps by it
 (`src/server/idioms.ts`, `src/shared/idioms.ts`). To write a grammar,
 see [docs/writing-a-grammar.md](docs/writing-a-grammar.md). `paint.md` is still written out from `design-mix.ts`, which has not made the
 move. The format, the results, the pictures and what resisted are in [docs/grammar.md](docs/grammar.md).

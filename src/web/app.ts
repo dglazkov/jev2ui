@@ -18,7 +18,7 @@ import { repeat } from "lit/directives/repeat.js";
 import "./kit/surface.js";
 import "./settings.js";
 import { paintIn, stylesOf } from "./kit/idioms.js";
-import { IDIOMS, OFFERED, idiomNamed, type IdiomId } from "../shared/idioms.js";
+import { IDIOMS, IDIOM_IDS, idiomNamed, isIdiom, type IdiomId } from "../shared/idioms.js";
 import type { KitSurface } from "./kit/surface.js";
 import { named, type A2uiMessage, type Decision, type Endpoint, type PipelineEvent, type RunStats } from "../shared/events.js";
 import type { DesignReport, Theme } from "../shared/design.js";
@@ -82,9 +82,8 @@ interface Snack {
 const AUTO = "auto";
 const CUSTOM = "custom";
 const STORED_DESIGN = "jev2ui.design.md";
-/** The idiom the last app was imagined in: what the next one starts in. */
+/** The grammar new apps are made in, kept between visits: the person changes it about once a session. */
 const STORED_IDIOM = "jev2ui.idiom";
-const IDIOM_SYMBOLS: Record<IdiomId, string> = { kit: "widgets", ios: "phone_iphone", email: "mail" };
 /** Every device is this tall at most; a phone is always. */
 const DEVICE_HEIGHTS: Record<Device, number> = { phone: 780, tablet: 1024, desktop: 760 };
 
@@ -121,6 +120,7 @@ interface Screen {
 
 /** Everything a turn can change, as it stood before the turn. Screens are replaced and never edited once made, so a copy of the map is enough. */
 interface Before {
+  idiom: IdiomId;
   architecture?: Architecture;
   architectureError: string;
   app: string;
@@ -180,8 +180,17 @@ export class App extends LitElement {
   @state() private fit = 1;
   private fitting: ResizeObserver | undefined;
 
-  /** The idiom this app is imagined in: which grammar reads it, which catalog draws it and which stylesheet paints it (shared/idioms.ts). */
-  @state() private idiom: IdiomId = OFFERED.includes(idiomNamed(localStorage.getItem(STORED_IDIOM))) ? idiomNamed(localStorage.getItem(STORED_IDIOM)) : "kit";
+  /** The grammar new apps are made in (shared/idioms.ts): the person's to choose, in the bar. Opening an app made in another leaves it be. */
+  @state() private preset: IdiomId = idiomNamed(localStorage.getItem(STORED_IDIOM));
+  /**
+   * The grammar this app was made in: which grammar reads it, which catalog draws it and which stylesheet paints it. An
+   * app keeps it for as long as it lives, since its screens were read by that grammar and no other. With no app, the preset.
+   */
+  @state() private idiom: IdiomId = idiomNamed(localStorage.getItem(STORED_IDIOM));
+  /** Which grammar's apps the library shows: every one's, unless one is chosen. */
+  @state() private filtered: IdiomId | "" = "";
+  /** How far from the left the grammar in the bar is, for its menu to open under it. */
+  private grammarAt = 0;
   @state() private choice: string = AUTO;
   @state() private markdown = "";
   @state() private report: DesignReport | undefined;
@@ -357,7 +366,7 @@ export class App extends LitElement {
   // --- Turns ------------------------------------------------------------------
 
   private asItStands(): Before {
-    return { architecture: this.architecture, architectureError: this.architectureError, app: this.app, nav: this.nav, screens: new Map(this.screens), stack: [...this.stack], nextId: this.nextId, choice: this.choice, markdown: this.markdown, seed: this.seed, change: this.change, report: this.report };
+    return { idiom: this.idiom, architecture: this.architecture, architectureError: this.architectureError, app: this.app, nav: this.nav, screens: new Map(this.screens), stack: [...this.stack], nextId: this.nextId, choice: this.choice, markdown: this.markdown, seed: this.seed, change: this.change, report: this.report };
   }
 
   /** Every turn starts here: what stood before it is kept, so that it can be undone. */
@@ -385,7 +394,7 @@ export class App extends LitElement {
     this.stop(new Set(turn.before.screens.values()));
     this.designRequest++;
     const b = turn.before;
-    Object.assign(this, { architecture: b.architecture, architectureError: b.architectureError, app: b.app, nav: b.nav, screens: b.screens, stack: b.stack, nextId: b.nextId, choice: b.choice, markdown: b.markdown, seed: b.seed, change: b.change, report: b.report });
+    Object.assign(this, { idiom: b.idiom, architecture: b.architecture, architectureError: b.architectureError, app: b.app, nav: b.nav, screens: b.screens, stack: b.stack, nextId: b.nextId, choice: b.choice, markdown: b.markdown, seed: b.seed, change: b.change, report: b.report });
     if (b.report) loadFonts(b.report.theme);
     for (const screen of this.made) if (screen.links) screen.links = Object.fromEntries(Object.entries(screen.links).filter(([, id]) => this.architecture?.map.nodes.some((n) => n.id === id)));
     this.turns = this.turns.slice(0, -1);
@@ -490,14 +499,14 @@ export class App extends LitElement {
     void this.run(this.again(old, message, blocks && { plan: old.plan!, blocks }), turn, kept);
   }
 
-  /** Clears the bench for another app. What was there is gone unless it was saved, so the way back is offered for a moment. */
-  private fresh() {
+  /** Clears the bench for another app, in the preset grammar. What was there is gone unless it was saved, so the way back is offered for a moment; `undone` puts back whatever else the caller changed. */
+  private fresh(undone?: () => void) {
     this.menu = "";
     if (!this.app) return this.go("chat");
     const was = { ...this.asItStands(), turns: this.turns, saved: this.saved, search: location.search };
     this.stop();
     this.designRequest++;
-    Object.assign(this, { architecture: undefined, architectureError: "", app: "", nav: undefined, screens: new Map(), stack: [], turns: [], change: {}, seed: 0, report: undefined, saved: undefined, unmade: "" });
+    Object.assign(this, { idiom: this.preset, architecture: undefined, architectureError: "", app: "", nav: undefined, screens: new Map(), stack: [], turns: [], change: {}, seed: 0, report: undefined, saved: undefined, unmade: "" });
     if (this.choice === AUTO) this.markdown = "";
     history.replaceState(null, "", location.pathname);
     this.view = "chat";
@@ -506,6 +515,7 @@ export class App extends LitElement {
         label: "Undo",
         run: () => {
           const { turns, saved, search, ...before } = was;
+          undone?.();
           Object.assign(this, before, { turns, saved });
           if (before.report) loadFonts(before.report.theme);
           history.replaceState(null, "", location.pathname + search);
@@ -519,6 +529,8 @@ export class App extends LitElement {
   /** A new description starts a new app, with a design of its own. */
   private create(prompt: string, turn: Turn) {
     this.stop();
+    // A new app is made in the preset grammar, whichever grammar the app it replaces was made in.
+    this.idiom = session.idiom = this.preset;
     this.app = prompt;
     this.architecture = undefined;
     this.architectureError = "";
@@ -555,15 +567,21 @@ export class App extends LitElement {
     else if (turn) turn.outcome = "changed";
   }
 
-  /** Imagines the app in another idiom from here on: the screens already made keep their layout until they are made again, and are painted the new way meanwhile. */
-  private imagineIn(idiom: IdiomId) {
-    if (idiom === this.idiom) return;
-    const turn = this.app ? this.begin("button", `Switched to the ${IDIOMS[idiom].name} idiom`) : undefined;
-    this.idiom = idiom;
-    localStorage.setItem(STORED_IDIOM, idiom);
-    if (turn) turn.outcome = "changed";
-    this.movedOn();
-    if (this.made.length) this.tell("Screens generated before this keep their layout until you regenerate them.");
+  /**
+   * Sets the grammar new apps are made in. An app keeps the grammar it was made in, so choosing another while one is
+   * open starts a new app in it; undoing that puts the preset back too.
+   */
+  private pick(id: IdiomId) {
+    this.menu = "";
+    const was = this.preset;
+    this.preset = id;
+    localStorage.setItem(STORED_IDIOM, id);
+    if (!this.app) this.idiom = id;
+    else if (id !== this.idiom)
+      this.fresh(() => {
+        this.preset = was;
+        localStorage.setItem(STORED_IDIOM, was);
+      });
   }
 
   /** Another draw from what Jev thinks suits the brief. The screens stay, and so does whatever the person asked for; the rest of the paint changes. */
@@ -1137,10 +1155,6 @@ export class App extends LitElement {
             ? html`<button class="btn small" ?disabled=${!this.app || this.designBusy} @click=${() => this.remix()} title="Generate a different design from the same ratings. The changes that you asked for are kept.">${icon("casino", "s")}Remix</button>`
             : nothing}
         </header>
-        <div class="segmented wide" role="radiogroup" aria-label="Idiom">
-          ${[...OFFERED, ...(OFFERED.includes(this.idiom) ? [] : [this.idiom])].map((id) => html`<button role="radio" aria-checked=${this.idiom === id} @click=${() => this.imagineIn(id)}>${icon(IDIOM_SYMBOLS[id], "s")}${IDIOMS[id].name}</button>`)}
-        </div>
-        <p class="hint">${this.idiom === "kit" ? "Screens use the tool's own components, laid out and painted by the design." : `Screens are laid out and painted the way ${IDIOMS[this.idiom].name} does it, in the design's palette.`}</p>
         <div class="segmented wide" role="radiogroup" aria-label="Design system">
           ${options.map((o) => html`<button role="radio" aria-checked=${this.choice === o.id} @click=${() => this.choose(o.id)}>${icon(o.symbol, "s")}${o.name}</button>`)}
         </div>
@@ -1177,20 +1191,31 @@ export class App extends LitElement {
       const date = new Date(created);
       return Date.now() - date.getTime() < 86_400_000 && date.getDate() === new Date().getDate() ? "today" : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
     };
+    // The grammars the library holds, not every grammar there is: a filter only once there are two to tell apart.
+    const held = IDIOM_IDS.filter((id) => this.library.some((one) => one.idiom === id));
+    const only = held.includes(this.filtered as IdiomId) ? this.filtered : "";
+    const shown = only ? this.library.filter((one) => one.idiom === only) : this.library;
     return html`
       <section class="library">
         <h2>Library <small>${this.library.length ? `${this.library.length} ${this.library.length === 1 ? "apparition" : "apparitions"}, with every screen and message` : ""}</small></h2>
+        ${held.length > 1
+          ? html`<div class="segmented grammar-filter" role="radiogroup" aria-label="Grammar">
+              <button role="radio" aria-checked=${!only} @click=${() => (this.filtered = "")}>All <span class="count">${this.library.length}</span></button>
+              ${held.map((id) => html`<button role="radio" aria-checked=${only === id} @click=${() => (this.filtered = id)}>${icon(IDIOMS[id].symbol, "s")}${IDIOMS[id].name} <span class="count">${this.library.filter((one) => one.idiom === id).length}</span></button>`)}
+            </div>`
+          : nothing}
         <div class="grid">
           ${session.makes
             ? html`<button class="tile new" @click=${() => this.fresh()}>
-                <span>${icon("add_circle")}<b>New apparition</b><small>Describe an app, or start from an example.</small></span>
+                <span>${icon("add_circle")}<b>New ${IDIOMS[this.preset].name} apparition</b><small>Describe ${IDIOMS[this.preset].app}, or start from an example.</small></span>
               </button>`
             : nothing}
-          ${this.library.map((one) => {
+          ${shown.map((one) => {
             const [page, card, text, accent, border] = one.palette ?? [];
             const paint = page ? `--p:${page};--c:${card};--t:${text};--a:${accent};--b:${border}` : "";
             const shared = one.visibility === "link";
             return html`<div class="tile" aria-current=${one.id === this.saved?.id}>
+              ${isIdiom(one.idiom) ? html`<span class="tile-grammar">${icon(IDIOMS[one.idiom].symbol, "xs")}${IDIOMS[one.idiom].name}</span>` : nothing}
               <button class="shot" title=${one.title} aria-label="Open ${one.name || one.title}" @click=${() => this.openSaved(one.id)}>
                 <span class="mini" style=${paint}><i class="t"></i><i class="a"></i><i class="r"></i><i class="r"></i><i class="r"></i><i class="n"></i></span>
               </button>
@@ -1261,7 +1286,7 @@ export class App extends LitElement {
                 (turn, i) => this.renderTurn(turn, i === this.turns.length - 1),
               )
             : html`<div class="opening">
-                <h2>What do you want to make?</h2>
+                <h2>What ${IDIOMS[this.idiom].name} app do you want to make?</h2>
                 <p>Describe an app, or a single screen. Apparite generates an apparition beside this conversation: a mock that looks like an app, so that you can explore the idea before you build it. To change the apparition, describe the change or tap an element in it.</p>
                 ${session.makes ? html`<div class="examples">${EXAMPLES.map(([symbol, text]) => html`<button ?disabled=${this.busy} @click=${() => this.say(text)}>${icon(symbol)}<span>${text}</span>${icon("north_west", "xs")}</button>`)}</div>` : nothing}
               </div>`}
@@ -1278,8 +1303,8 @@ export class App extends LitElement {
               <div class="box">
                 <textarea
                   rows="2"
-                  aria-label=${this.app ? "Describe a change" : "Describe an app or a screen"}
-                  placeholder=${this.app ? "Describe a change, or describe another app" : "Describe an app, or one screen of an app"}
+                  aria-label=${this.app ? "Describe a change" : `Describe ${IDIOMS[this.idiom].app} or a screen`}
+                  placeholder=${this.app ? "Describe a change, or describe another app" : `Describe ${IDIOMS[this.idiom].app}, or one screen of it`}
                   .value=${this.draft}
                   @input=${(e: InputEvent) => (this.draft = (e.target as HTMLTextAreaElement).value)}
                   @keydown=${(e: KeyboardEvent) => {
@@ -1325,6 +1350,7 @@ export class App extends LitElement {
     const saved = this.saved;
     return html`<header class="topbar">
       <a class="brand" href="/" title="Apparite" @click=${(e: Event) => (e.preventDefault(), this.go("chat"))}>${mark()}<b>Apparite</b></a>
+      ${bench ? this.renderGrammar() : nothing}
       ${bench && this.app
         ? html`${icon("chevron_right", "crumb")}
             <span class="appname" title=${this.app}>${this.appName || "Untitled apparition"}</span>
@@ -1363,6 +1389,54 @@ export class App extends LitElement {
           ? html`<button class="btn" title=${session.ownKeys ? "Sign in to save and share apparitions" : ""} @click=${() => session.signIn()}>${icon("login", "s")}<span>Sign in</span></button>`
           : nothing}
     </header>`;
+  }
+
+  /** The grammar of what is on the bench, as a step of the path to it: the app's own, or with no app the one new apps are made in. */
+  private renderGrammar() {
+    const shown = IDIOMS[this.idiom];
+    const preset = IDIOMS[this.preset];
+    const name = this.appName || "This apparition";
+    const title = !this.app
+      ? `New apparitions are made as ${preset.app}. To use another grammar, select it here.`
+      : this.idiom === this.preset
+        ? `${name} is ${shown.app} and stays one. To make new apparitions with another grammar, select it here.`
+        : `${name} was made as ${shown.app} and stays one. New apparitions are made as ${preset.app}.`;
+    return html`${icon("chevron_right", "crumb")}
+      <button
+        class="grammar-crumb"
+        aria-haspopup="menu"
+        aria-expanded=${this.menu === "grammar"}
+        title=${title}
+        @click=${(e: Event) => {
+          this.grammarAt = (e.currentTarget as HTMLElement).getBoundingClientRect().left;
+          this.menu = this.menu === "grammar" ? "" : "grammar";
+        }}
+      >
+        ${icon(shown.symbol, "s")}${shown.name}${icon("expand_more", "s")}
+      </button>`;
+  }
+
+  /** The grammars there are, grouped by what they run on once there are several kinds. Over an app, it says what choosing one does to it. */
+  private renderGrammarMenu() {
+    const families = [...new Set(IDIOM_IDS.map((id) => IDIOMS[id].family))];
+    const name = this.appName || "This apparition";
+    return html`<div class="pop grammars" role="menu" aria-label="Grammar" style="left:${Math.max(8, this.grammarAt - 6)}px">
+      ${this.app
+        ? html`<p class="grammar-note">
+            <b>${name} stays ${IDIOMS[this.idiom].app}.</b> Choosing another grammar starts a new apparition.
+            ${this.saved?.mine ? "This one stays in your library." : "To keep this one, save it first."}
+            ${this.preset !== this.idiom ? html`New apparitions are made as ${IDIOMS[this.preset].app}.` : nothing}
+          </p>`
+        : nothing}
+      ${families.map(
+        (family) => html`${families.length > 1 ? html`<div class="grammar-family">${family}</div>` : nothing}
+          ${IDIOM_IDS.filter((id) => IDIOMS[id].family === family).map(
+            (id) => html`<button class="mi" role="menuitemradio" aria-checked=${id === this.idiom} aria-current=${id === this.idiom} @click=${() => this.pick(id)}>
+              ${icon(IDIOMS[id].symbol)}${IDIOMS[id].name}<small>${IDIOMS[id].line}</small>${id === this.idiom ? icon("check", "s tick") : nothing}
+            </button>`,
+          )}`,
+      )}
+    </div>`;
   }
 
   private renderAccountMenu() {
@@ -1516,6 +1590,7 @@ export class App extends LitElement {
       </div>
       ${this.menu ? html`<div class="scrim" @click=${() => (this.menu = "")}></div>` : nothing}
       ${this.menu === "account" ? this.renderAccountMenu() : nothing}
+      ${this.menu === "grammar" ? this.renderGrammarMenu() : nothing}
       ${this.renderSnack()}
     `;
   }

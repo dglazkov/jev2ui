@@ -435,10 +435,11 @@ and joins the library.
 
 ## Run your grammar in the tool
 
-The tool runs any grammar, not only its own: an **idiom** is a grammar, a catalog and a stylesheet, and
-the person picks one per app in the design panel. `grammar/ios/screen.md` is one, a graph of its own
-written from the Human Interface Guidelines, and `examples/email.md` is another (not offered in the panel; `X-Idiom: email`), which is how you
-know a grammar with no screens, no navigation and no plan runs end to end. To add yours: name it in
+The tool runs any app grammar, not only its own: an **idiom** is a grammar, a catalog and a stylesheet.
+People call it the grammar and choose it in the bar, as a preset that new apps are made in; an app keeps the
+one it was made in for life, so a grammar never has to survive being switched to over screens another grammar
+read, and has no reason to copy `screen.md`. `grammar/ios/screen.md` is one, a graph of its own written from
+the Human Interface Guidelines. To add yours: name it in
 `src/shared/idioms.ts` (its name, the id its surfaces are created with, its stylesheets in the order they
 layer), give it a grammar, a catalog file and the code that draws the patterns in `src/server/idioms.ts`,
 bundle its stylesheet in `src/web/kit/idioms.ts`, have `src/server/grammar/export.ts` write its catalog

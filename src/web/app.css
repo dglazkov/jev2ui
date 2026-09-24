@@ -2109,3 +2109,96 @@ app-map .empty .wrong {
   font-size: 12px;
   color: var(--bad);
 }
+
+/* --- The grammar: a step of the path in the bar, and the menu it opens ------------------- */
+
+.grammar-crumb {
+  display: inline-flex;
+  flex: none;
+  gap: 5px;
+  align-items: center;
+  height: 32px;
+  padding: 0 6px 0 8px;
+  font-weight: 600;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  border-radius: var(--r-s);
+}
+
+.grammar-crumb .i {
+  color: var(--muted);
+}
+
+.grammar-crumb:hover,
+.grammar-crumb[aria-expanded="true"] {
+  background: var(--wash);
+}
+
+.pop.grammars {
+  position: fixed;
+  top: 52px;
+  width: 344px;
+}
+
+.pop.grammars .mi small {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--faint);
+}
+
+.pop.grammars .mi .tick {
+  margin-left: 6px;
+  color: var(--accent);
+}
+
+.grammar-note {
+  margin: 4px 4px 6px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+  white-space: normal;
+  background: var(--wash);
+  border-radius: var(--r-s);
+}
+
+.grammar-note b {
+  color: var(--ink);
+}
+
+.grammar-family {
+  padding: 10px 10px 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.segmented.grammar-filter {
+  margin: -6px 0 20px;
+}
+
+.segmented.grammar-filter .count {
+  opacity: 0.6;
+}
+
+/* Which grammar made an app, over its tile's picture; a click goes through it to the picture. */
+.tile-grammar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1;
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding: 2px 9px 2px 7px;
+  font-size: 12px;
+  font-weight: 500;
+  pointer-events: none;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+}
