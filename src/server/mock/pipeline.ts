@@ -184,7 +184,9 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
       });
       for (const one of asked) {
         if (only && !only(one.outer)) continue;
-        const about = one.outer !== undefined && Array.isArray(value) ? `rows of "${firstWords(value[one.outer])}"` : `read the ${part}`;
+        const list = node.children.map(laterOf).find((l) => l?.outer)?.outer?.list;
+        const rows: any[] | undefined = Array.isArray(value) ? value : list ? (value as any)?.[list] : undefined;
+        const about = one.outer !== undefined && Array.isArray(rows) ? `rows of "${firstWords(rows[one.outer])}"` : `read the ${part}`;
         refine(
           part,
           (async () => {
@@ -235,7 +237,14 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
       // group waits for the rest; otherwise once the part is complete. A refinement re-sends the part, which calls its hook
       // again: everything asked once the words exist is asked once.
       const laters = node.children.map(laterOf).filter((l) => l);
-      if (laters.length) on.push(laters.some((l) => l?.outer) ? asTheyComplete((_, g, all) => later(node.name, all, (outer) => outer === g)) : once((value) => later(node.name, value)));
+      const outer = laters.find((l) => l?.outer)?.outer;
+      if (outer) {
+        // The outer list is the part (the kit's groups), or a field of it (Windows's sections): its elements are counted, and
+        // what is asked of them is asked of the part as it then stands.
+        let latest: any;
+        const each = asTheyComplete((_, g) => later(node.name, latest, (at) => at === g));
+        on.push((value, complete) => ((latest = value), each(Array.isArray(value) ? value : value?.[outer.list], complete)));
+      } else if (laters.length) on.push(once((value) => later(node.name, value)));
       // The kind of a form's field is still decided by code older than the kit (refine.ts, design.ts).
       if (node.target === "form") on.push((form, complete) => fields(form?.[node.fields.find((f) => f.role === "fields")?.name ?? "fields"], complete));
       // What a pattern works out from what was written, once all of it is: the row of a bill the others add up to.

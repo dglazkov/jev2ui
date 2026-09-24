@@ -140,6 +140,8 @@ export function buildTheme(design: Design, read: DesignRead): Theme {
     "--k-space-xl": px(Math.min(toPx(system.spacing.get("xl")) ?? lg * 1.5, 64)),
     "--k-margin": px(Math.min(Math.max(toPx(system.spacing.get("margin")) ?? md, 14), 28)),
     "--k-card-pad": px(Math.min(dimension(card?.get("padding")) ?? md, 28)),
+    // How airy the design is, as a number: 1 is a spacing unit of 8 px. An idiom with fixed sizes of its own scales by it (windows.css: compact or standard).
+    "--k-air": String(Math.round((sm / 8) * 100) / 100),
   });
   const buttonPad = dimension(button?.get("padding"));
   if (buttonPad !== undefined) vars["--k-button-pad"] = `${px(Math.min(buttonPad, 18) * 0.75)} ${px(Math.min(buttonPad, 18) * 1.5)}`;

@@ -1,9 +1,11 @@
 /*
  * The Windows idiom's looks, over nothing of the kit's: a page of a Windows 11 app in its window, painted the way
  * Microsoft's guidance paints one. What Windows fixes is said here: the Mica ground and the layers above it, strokes
- * rather than shadows, 4 px corners on controls and 8 px on windows and dialogs, the type ramp, the navigation pane
- * that folds at 1008 and 640 px. What the design decides is only the accent and whether the app is light or dark,
- * which arrive as `--k-accent` and `color-scheme` (src/server/theme.ts). The frame it paints is the one
+ * rather than shadows, the shapes of the controls, the type ramp for everything but a page's title, the navigation
+ * pane that folds at 1008 and 640 px. What the design decides is what Windows lets an app choose: its accent, light or
+ * dark, the tint Mica takes from a wallpaper, the two corner radii, standard or compact density, the face of a page's
+ * title, and how its pictures are treated, which arrive as the `--k-*` variables and `color-scheme` (src/server/theme.ts).
+ * Its depth (strokes, not shadows) and whether things sit in cards stay Windows's. The frame it paints is the one
  * src/server/grammar/patterns-windows.ts draws, with the components of src/web/windows/components.ts.
  *
  * `body` is for a baked component's frame (sandbox.ts).
@@ -11,10 +13,29 @@
 
 ui-surface,
 body {
+  /*
+   * The accent, ramped the way Fluent ramps it: the fill, and its hover and pressed shades; what is written on it; and
+   * the accent as text, which WinUI darkens on a light app and lightens on a dark one so that a pale or deep accent still
+   * reads. It starts from the design's legible accent (`--k-accent-ink`), which is its text colour when the accent is too pale.
+   */
   --w-accent: var(--k-accent, #005fb8);
+  --w-accent-2: color-mix(in srgb, var(--w-accent) 90%, transparent);
+  --w-accent-3: color-mix(in srgb, var(--w-accent) 80%, transparent);
   --w-on-accent: var(--k-on-accent, #ffffff);
-  --w-mica: light-dark(#f3f3f3, #202020);
-  --w-layer: light-dark(#f9f9f9, #272727);
+  --w-ink: var(--k-accent-ink, var(--w-accent));
+  --w-accent-text: light-dark(color-mix(in oklab, var(--w-ink) 78%, black), color-mix(in oklab, var(--w-ink) 72%, white));
+  /* Mica takes its tint from the desktop's wallpaper; the design's page colour stands in for the wallpaper, faintly. */
+  --w-tint: var(--k-page, light-dark(#f3f3f3, #202020));
+  --w-mica: color-mix(in oklab, light-dark(#f3f3f3, #202020), var(--w-tint) 35%);
+  --w-layer: color-mix(in oklab, light-dark(#f9f9f9, #272727), var(--w-tint) 25%);
+  /* Windows's two corner radii, which an app may set: on controls, and on what is layered over the window. The design's roundness sets both, short of pills. */
+  --w-radius: clamp(0px, calc(var(--k-radius-md, 8px) / 2), 8px);
+  --w-radius-overlay: clamp(0px, var(--k-radius-md, 8px), 12px);
+  /* Microsoft's two densities: standard, and compact for an app that packs its screens (the design's spacing, `--k-air`). */
+  --w-density: clamp(0.8, var(--k-air, 1), 1);
+  --w-margin: calc(40px * clamp(0.6, var(--k-air, 1), 1.4));
+  /* The design's display face sets a page's title and a picture's caption, where a brand shows; Windows's own sets the rest. */
+  --w-brand-font: var(--k-display-font, var(--w-display-font));
   --w-card: light-dark(rgb(255 255 255 / 0.7), rgb(255 255 255 / 0.0512));
   --w-card-stroke: light-dark(rgb(0 0 0 / 0.0578), rgb(0 0 0 / 0.1));
   --w-stroke: light-dark(rgb(0 0 0 / 0.0578), rgb(255 255 255 / 0.0698));
@@ -28,8 +49,8 @@ body {
   --w-control-stroke: light-dark(rgb(0 0 0 / 0.0578), rgb(255 255 255 / 0.0698));
   --w-control-bottom: light-dark(rgb(0 0 0 / 0.1622), rgb(255 255 255 / 0.0698));
   --w-text-bottom: light-dark(rgb(0 0 0 / 0.4458), rgb(255 255 255 / 0.5442));
-  --w-dialog-top: light-dark(#ffffff, #2b2b2b);
-  --w-dialog-base: light-dark(#f3f3f3, #202020);
+  --w-dialog-top: color-mix(in oklab, light-dark(#ffffff, #2b2b2b), var(--w-tint) 8%);
+  --w-dialog-base: var(--w-mica);
   --w-smoke: rgb(0 0 0 / 0.3);
   --w-font: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", Selawik, system-ui, sans-serif;
   --w-display-font: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", Selawik, system-ui, sans-serif;
@@ -57,7 +78,7 @@ ui-surface button {
 .w-bodyStrong { font-size: 14px; line-height: 20px; font-weight: 600; }
 .w-bodyLarge { font-size: 18px; line-height: 24px; }
 .w-subtitle { font: 600 20px/28px var(--w-display-font); }
-.w-title { font: 600 28px/36px var(--w-display-font); }
+.w-title { font: 600 28px/36px var(--w-brand-font); }
 .w-titleLarge { font: 600 40px/52px var(--w-display-font); }
 .w-display { font: 600 68px/92px var(--w-display-font); }
 
@@ -101,7 +122,7 @@ ui-surface button {
   width: 40px;
   height: 36px;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--w-radius);
   background: none;
   cursor: pointer;
 }
@@ -122,7 +143,7 @@ ui-surface button {
   width: 16px;
   height: 16px;
   margin: 0 4px 0 8px;
-  border-radius: 4px;
+  border-radius: 3px;
   background: var(--w-accent);
   color: var(--w-on-accent);
   font-size: 10px;
@@ -156,7 +177,7 @@ ui-surface button {
   padding: 0 10px 0 12px;
   border: 1px solid var(--w-control-stroke);
   border-bottom-color: var(--w-text-bottom);
-  border-radius: 4px;
+  border-radius: var(--w-radius);
   background: var(--w-control);
   color: var(--w-text-2);
   font-size: 14px;
@@ -204,7 +225,7 @@ ui-surface button {
   max-width: 220px;
   height: 32px;
   padding: 0 6px 0 12px;
-  border-radius: 8px 8px 0 0;
+  border-radius: var(--w-radius-overlay) var(--w-radius-overlay) 0 0;
   white-space: nowrap;
 }
 
@@ -220,7 +241,7 @@ ui-surface button {
   place-items: center;
   width: 24px;
   height: 24px;
-  border-radius: 4px;
+  border-radius: var(--w-radius);
 }
 
 .w-tab-add {
@@ -245,13 +266,13 @@ ui-surface button {
 
 .w-mode-left .w-layer {
   border-left: 1px solid var(--w-stroke);
-  border-top-left-radius: 8px;
+  border-top-left-radius: var(--w-radius-overlay);
 }
 
 .w-page {
   box-sizing: border-box;
   max-width: 1100px;
-  padding: 28px 40px 48px;
+  padding: calc(28px * var(--w-density)) var(--w-margin) 48px;
 }
 
 .w-mode-menubar .w-page,
@@ -282,7 +303,7 @@ ui-surface button {
   width: 40px;
   height: 36px;
   margin: 0 0 4px;
-  border-radius: 4px;
+  border-radius: var(--w-radius);
 }
 
 .w-navitems {
@@ -301,9 +322,9 @@ ui-surface button {
   display: flex;
   align-items: center;
   gap: 16px;
-  height: 36px;
+  height: calc(36px * var(--w-density));
   padding: 0 12px 0 14px;
-  border-radius: 4px;
+  border-radius: var(--w-radius);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -345,7 +366,7 @@ ui-surface button {
 
 .w-topnav .w-navitem {
   gap: 8px;
-  height: 36px;
+  height: calc(36px * var(--w-density));
   padding: 0 12px;
 }
 
@@ -411,7 +432,7 @@ ui-surface button {
 
 .w-menu {
   padding: 4px 10px;
-  border-radius: 4px;
+  border-radius: var(--w-radius);
 }
 
 .w-menu:hover {
@@ -456,10 +477,10 @@ ui-surface button {
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 36px;
+  height: calc(36px * var(--w-density));
   padding: 0 11px;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--w-radius);
   background: none;
   cursor: pointer;
 }
@@ -473,12 +494,12 @@ ui-surface button {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 32px;
+  min-height: calc(32px * var(--w-density));
   box-sizing: border-box;
   padding: 0 12px;
   border: 1px solid var(--w-control-stroke);
   border-bottom-color: var(--w-control-bottom);
-  border-radius: 4px;
+  border-radius: var(--w-radius);
   background: var(--w-control);
   font-size: 14px;
   white-space: nowrap;
@@ -497,7 +518,11 @@ ui-surface button {
 }
 
 .w-button.w-accent:hover {
-  background: color-mix(in srgb, var(--w-accent) 90%, var(--w-mica));
+  background: var(--w-accent-2);
+}
+
+.w-button.w-accent:active {
+  background: var(--w-accent-3);
 }
 
 .w-horizontal > .w-button {
@@ -519,7 +544,7 @@ ui-surface button {
   min-height: 48px;
   padding: 0 4px 0 16px;
   border: 1px solid var(--w-card-stroke);
-  border-radius: 4px;
+  border-radius: var(--w-radius);
   background: light-dark(rgb(246 246 246 / 0.5), rgb(255 255 255 / 0.0326));
 }
 
@@ -527,7 +552,7 @@ ui-surface button {
 .w-infobar.w-warning { background: light-dark(#fff4ce, #433519); }
 .w-infobar.w-error { background: light-dark(#fde7e9, #442726); }
 
-.w-infoicon .k-icon { font-size: 18px; font-variation-settings: "FILL" 1; color: var(--w-accent); }
+.w-infoicon .k-icon { font-size: 18px; font-variation-settings: "FILL" 1; color: var(--w-accent-text); }
 .w-success .w-infoicon .k-icon { color: light-dark(#0f7b0f, #6ccb5f); }
 .w-warning .w-infoicon .k-icon { color: light-dark(#9d5d00, #fce100); }
 .w-error .w-infoicon .k-icon { color: light-dark(#c42b1c, #ff99a4); }
@@ -547,7 +572,7 @@ ui-surface button {
   place-items: center;
   width: 38px;
   height: 38px;
-  border-radius: 4px;
+  border-radius: var(--w-radius);
 }
 
 /* --- Breadcrumbs and views -------------------------------------------------------- */
@@ -584,7 +609,7 @@ ui-surface button {
 .w-selector {
   position: relative;
   padding: 10px 12px;
-  border-radius: 4px;
+  border-radius: var(--w-radius);
   color: var(--w-text-2);
 }
 
@@ -633,6 +658,28 @@ ui-surface button {
   opacity: 1;
 }
 
+/* The pictures are the app's content, not Windows's: they take the design's treatment (src/server/theme.ts). */
+.w-item-picture img,
+.w-flip-picture img {
+  filter: var(--k-image-filter, none);
+  mix-blend-mode: var(--k-image-blend, normal);
+}
+
+.w-item-picture[data-state="pictured"],
+.w-flip-picture[data-state="pictured"] {
+  background: var(--k-image-ground, light-dark(#e6e6e6, #333333));
+}
+
+.w-item-picture[data-state="pictured"]::after,
+.w-flip-picture[data-state="pictured"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--k-image-wash, transparent);
+  mix-blend-mode: var(--k-image-wash-blend, normal);
+  pointer-events: none;
+}
+
 .w-item-picture .k-picture-stand,
 .w-flip-picture .k-picture-stand {
   position: absolute;
@@ -646,7 +693,7 @@ ui-surface button {
 .w-flipview {
   position: relative;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: var(--w-radius-overlay);
   aspect-ratio: 21 / 8;
 }
 
@@ -661,9 +708,9 @@ ui-surface button {
   bottom: 28px;
   max-width: 60%;
   padding: 8px 12px;
-  border-radius: 4px;
+  border-radius: var(--w-radius);
   background: light-dark(rgb(255 255 255 / 0.85), rgb(32 32 32 / 0.85));
-  font: 600 20px/28px var(--w-display-font);
+  font: 600 20px/28px var(--w-brand-font);
 }
 
 .w-flip-arrow {
@@ -674,7 +721,7 @@ ui-surface button {
   place-items: center;
   width: 16px;
   height: 38px;
-  border-radius: 4px;
+  border-radius: var(--w-radius);
   background: light-dark(rgb(255 255 255 / 0.7), rgb(32 32 32 / 0.7));
 }
 
@@ -745,7 +792,7 @@ ui-surface button {
   height: 18px;
   box-sizing: border-box;
   border: 1px solid var(--w-text-2);
-  border-radius: 4px;
+  border-radius: var(--w-radius);
   background: var(--w-control);
 }
 
@@ -753,7 +800,7 @@ ui-surface button {
   flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--w-card-stroke);
-  border-radius: 8px;
+  border-radius: var(--w-radius-overlay);
   background: var(--w-card);
 }
 
@@ -807,9 +854,9 @@ ui-surface button {
 .w-row {
   align-items: center;
   gap: 12px;
-  min-height: 48px;
+  min-height: calc(48px * var(--w-density));
   padding: 0 12px;
-  border-radius: 4px;
+  border-radius: var(--w-radius);
 }
 
 .w-row:hover {
@@ -825,7 +872,7 @@ ui-surface button {
 
 .w-item-symbol .k-icon {
   font-size: 20px;
-  color: var(--w-accent);
+  color: var(--w-accent-text);
 }
 
 .w-layout-grid .w-items {
@@ -845,7 +892,7 @@ ui-surface button {
   flex: 1 1 auto;
   height: 150px;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--w-radius);
 }
 
 .w-layout-flow .w-tile .w-item-picture {
@@ -878,9 +925,9 @@ ui-surface button {
   grid-template-columns: var(--w-template);
   align-items: center;
   gap: 12px;
-  min-height: 32px;
+  min-height: calc(32px * var(--w-density));
   padding: 0 12px;
-  border-radius: 4px;
+  border-radius: var(--w-radius);
   cursor: pointer;
 }
 
@@ -924,7 +971,7 @@ ui-surface button {
   min-height: 460px;
   overflow: hidden;
   border: 1px solid var(--w-card-stroke);
-  border-radius: 8px;
+  border-radius: var(--w-radius-overlay);
   background: var(--w-card);
 }
 
@@ -940,8 +987,8 @@ ui-surface button {
   position: relative;
   display: flex;
   gap: 12px;
-  padding: 10px 12px;
-  border-radius: 4px;
+  padding: calc(10px * var(--w-density)) 12px;
+  border-radius: var(--w-radius);
   cursor: pointer;
 }
 
@@ -973,7 +1020,7 @@ ui-surface button {
   height: 32px;
   border-radius: 50%;
   background: color-mix(in srgb, var(--w-accent) 18%, var(--w-layer));
-  color: var(--w-accent);
+  color: var(--w-accent-text);
   font-size: 12px;
   font-weight: 600;
 }
@@ -1080,11 +1127,11 @@ ui-surface button {
   display: flex;
   align-items: center;
   gap: 16px;
-  min-height: 68px;
+  min-height: calc(68px * var(--w-density));
   box-sizing: border-box;
-  padding: 12px 16px;
+  padding: calc(12px * var(--w-density)) 16px;
   border: 1px solid var(--w-card-stroke);
-  border-radius: 4px;
+  border-radius: var(--w-radius);
   background: var(--w-card);
 }
 
@@ -1152,7 +1199,7 @@ ui-surface button {
 }
 
 .w-toggle.w-on {
-  border-color: var(--w-accent);
+  border-color: var(--w-accent-text);
   background: var(--w-accent);
 }
 
@@ -1170,18 +1217,18 @@ ui-surface button {
   justify-content: space-between;
   gap: 12px;
   min-width: 140px;
-  height: 32px;
+  height: calc(32px * var(--w-density));
   box-sizing: border-box;
   padding: 0 10px 0 12px;
   border: 1px solid var(--w-control-stroke);
   border-bottom-color: var(--w-control-bottom);
-  border-radius: 4px;
+  border-radius: var(--w-radius);
   background: var(--w-control);
   color: var(--w-text);
 }
 
 .w-expander-head {
-  border-radius: 4px 4px 0 0;
+  border-radius: var(--w-radius) var(--w-radius) 0 0;
 }
 
 .w-expander-row {
@@ -1192,11 +1239,11 @@ ui-surface button {
 }
 
 .w-expander-row:last-child {
-  border-radius: 0 0 4px 4px;
+  border-radius: 0 0 var(--w-radius) var(--w-radius);
 }
 
 .w-link {
-  color: var(--w-accent);
+  color: var(--w-accent-text);
   cursor: pointer;
 }
 
@@ -1222,12 +1269,12 @@ ui-surface button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 32px;
+  min-height: calc(32px * var(--w-density));
   box-sizing: border-box;
-  padding: 5px 10px 5px 11px;
+  padding: calc(5px * var(--w-density)) 10px calc(5px * var(--w-density)) 11px;
   border: 1px solid var(--w-control-stroke);
   border-bottom-color: var(--w-text-bottom);
-  border-radius: 4px;
+  border-radius: var(--w-radius);
   background: var(--w-control);
 }
 
@@ -1249,7 +1296,7 @@ ui-surface button {
   height: 20px;
   box-sizing: border-box;
   border: 1px solid var(--w-text-2);
-  border-radius: 4px;
+  border-radius: var(--w-radius);
   background: var(--w-control);
 }
 
@@ -1304,7 +1351,7 @@ ui-surface button {
   min-width: min(320px, 100%);
   overflow: hidden;
   border: 1px solid light-dark(rgb(117 117 117 / 0.4), rgb(117 117 117 / 0.4));
-  border-radius: 8px;
+  border-radius: var(--w-radius-overlay);
   background: var(--w-dialog-top);
   box-shadow: 0 32px 64px rgb(0 0 0 / 0.1876), 0 2px 21px rgb(0 0 0 / 0.1474);
 }

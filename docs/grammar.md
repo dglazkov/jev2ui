@@ -840,8 +840,17 @@ From Windows:
 72. **The symbols are Material's** (48 stands) and the type is Segoe UI Variable only where it is installed.
 73. **List/details is one screen.** The list and the open item are one writer's; opening another makes a new screen of
     the same kind with that one open, and the list is written again (#21 has the question of two screens on one page).
-74. **The design gives Windows only its accent and light or dark.** The stylesheet fixes the rest (Mica, strokes, radii,
-    type), so a DESIGN.md's greys and typefaces are overruled without a word (43, from the other side).
+74. *(Met on 2026-09-24: the design reaches Windows wherever Windows lets an app choose.)* The design first gave
+    Windows only its accent and light or dark, so a remix hardly changed a Windows app. Now `windows.css` takes, from
+    the same `--k-*` variables: the accent as Fluent ramps it (fill, hover and pressed shades, and a text shade from the
+    design's legible accent, so a pale one still reads); the page colour as the tint Mica takes from a wallpaper; the
+    roundness as Windows's two corner radii, capped short of pills; the spacing as Microsoft's two densities (a new
+    token, `--k-air`, 1 for a unit of 8 px); the display face on a page's title and a picture's caption; and the
+    photographs' treatment. Depth (strokes, not shadows), cards and the shapes of the controls stay Windows's. Four
+    remixes of one settings page, before and after, and three presses of Remix in the served app, show them.
+80. **A question asked of each element of an outer list assumed the list was the part** (the kit's `groups` is), so
+    Windows's settings, whose groups are a field of the part, were never asked what control each setting takes and all
+    came out as links. The pipeline now counts the outer list wherever it is (found live, 2026-09-24).
 75. **The baker's four uses** (`watch`, `pick`, `adjust`, `read`) are the options of `canvas_use`, because the shelf's
     contract is typed in them (56 stands).
 76. **The pipeline's keys** (`first_screen`, `reached_by`) are in the grammar's context, and the pipeline gives the
