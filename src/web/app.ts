@@ -144,6 +144,9 @@ interface Turn extends Omit<SavedTurn, "outcome" | "decisions"> {
 
 /** A button that backs out of a dialog goes back; it does not lead anywhere new. */
 const BACKS_OUT = /^(cancel|close|back|dismiss|not now|no\b|never mind|keep|go back|done|ok)/i;
+/** Whether a tap closes the dialog it is on: a button that says so, or any but the dialog's main one. */
+const closes = (here: Screen, detail: { kind: string; label: string; variant?: string }) =>
+  (detail.kind === "action" || detail.kind === "submit") && here.dialog && (BACKS_OUT.test(detail.label) || detail.variant === "secondary");
 /** Top-bar actions that act in place. */
 const IN_PLACE = new Set(["favorite", "more_vert", "share"]);
 const EDITED = "Edited your DESIGN.md";
@@ -641,9 +644,21 @@ export class App extends LitElement {
   }
 
   private show(screen: Screen) {
-    this.stack = [screen];
+    const under = screen.dialog ? this.underneath(screen) : undefined;
+    this.stack = under ? [under, screen] : [screen];
     this.unmade = "";
     this.tick++;
+  }
+
+  /**
+   * The screen a dialog sits over: the one the app map says it goes back to, or else the one it was opened from. Shown
+   * again, from the map, the chat or a link, it sits over that screen as it did when it was first opened.
+   */
+  private underneath(dialog: Screen): Screen | undefined {
+    const back = this.architecture?.map.nodes.find((n) => n.id === dialog.destination)?.actions.find((a) => a.kind === "back")?.target;
+    const opener = Number(dialog.key.match(/^(\d+):/)?.[1]);
+    const under = (back ? boundScreens(this.made).get(back) : undefined) ?? this.made.find((screen) => screen.id === opener);
+    return under && under !== dialog && !under.dialog ? under : undefined;
   }
 
   /** What a tap does: go back, show the screen this tap made before, or have a new one made. Only the last is a turn. */
@@ -653,7 +668,7 @@ export class App extends LitElement {
     if (here.destination) return void this.followDestination(detail);
     const kind = (detail.kind === "item" && detail.variant !== undefined ? "itemAction" : detail.kind) as Via["kind"];
     if (kind === "appbar" && IN_PLACE.has(detail.label)) return;
-    const backsOut = kind === "back" || ((kind === "action" || kind === "submit") && here.dialog && (BACKS_OUT.test(detail.label) || detail.variant === "secondary"));
+    const backsOut = kind === "back" || closes(here, detail);
     if (backsOut && this.stack.length > 1) {
       this.stack = this.stack.slice(0, -1);
       return void this.tick++;
@@ -676,16 +691,18 @@ export class App extends LitElement {
   }
 
   /** Identity decisions are serialized; registered in-flight destinations are visible to the next decision. */
-  private async followDestination(detail: { kind: string; label: string; data?: Record<string, unknown>; source?: string; group?: string; component?: string }) {
+  private async followDestination(detail: { kind: string; label: string; data?: Record<string, unknown>; variant?: string; source?: string; group?: string; component?: string }) {
     const here = this.current, map = this.architecture;
     if (!here?.destination || !map || this.reading || this.resolving) return;
     if (map.status === "reviewing" && !map.catalog) return this.tell("The app map is still being reviewed.");
-    const kind = detail.kind as Via["kind"];
+    // A dialog's Cancel closes it, as a back arrow closes a screen: it leads nowhere new.
+    const closing = closes(here, detail);
+    const kind = (closing ? "back" : detail.kind) as Via["kind"];
     if (kind === "appbar" && IN_PLACE.has(detail.label)) return;
     if (kind === "back" && this.stack.length > 1) {
       this.stack = this.stack.slice(0, -1); this.mapSelected = this.current!.destination!; this.tick++; return;
     }
-    const source = detail.source ?? `${kind}:${detail.label}`;
+    const source = closing ? "back" : detail.source ?? `${kind}:${detail.label}`;
     const direct = here.links?.[source] ?? (source.startsWith("nav:") && map.map.nodes.some((n) => n.id === source.slice(4)) ? source.slice(4) : kind === "back" ? map.map.nodes.find((n) => n.id === here.destination)?.actions.find((a) => a.kind === "back")?.target : undefined);
     if (direct) return this.visitDestination(direct, { ...detail, kind });
     if (!session.makes) return void (this.unmade = detail.label);
@@ -783,6 +800,12 @@ export class App extends LitElement {
     // A resolved route names the canonical screen. Generated labels and legacy subject hints
     // are presentation data, not a second identity check on an already-bound destination.
     this.mapSelected = destination;
+    // A tap that leads to the screen it is on stays there. On a dialog it is done with it: every button of an alert closes it (HIG).
+    if (existing === here && via && !turn) {
+      if (here.dialog) this.stack = this.stack.length > 1 ? this.stack.slice(0, -1) : [this.underneath(here) ?? here];
+      this.mapSelected = this.current!.destination ?? destination;
+      return void this.tick++;
+    }
     if (existing) {
       if (turn) Object.assign(turn, { outcome: "changed", screen: existing.id, text: `Opened the existing ${node.label} screen.` });
       return this.show(existing);
@@ -964,6 +987,10 @@ export class App extends LitElement {
     }
     this.nextId = Math.max(...byId.keys()) + 1;
     this.stack = app.stack.map((id) => byId.get(id)!).filter(Boolean);
+    // Saved showing a dialog, it opens over the screen beneath it, even if that screen was not kept on the stack.
+    const top = this.stack.at(-1);
+    const under = this.stack.length === 1 && top?.dialog ? this.underneath(top) : undefined;
+    if (under) this.stack = [under, top!];
     // An app saved before there was a conversation has the one turn it must have had.
     this.turns = (app.turns as unknown as Turn[] | undefined) ?? [{ id: 1, source: "typed", said: app.app, outcome: "made", lines: [], decisions: [], screen: app.screens[0].id }];
     this.nextTurn = Math.max(...this.turns.map((turn) => turn.id)) + 1;
