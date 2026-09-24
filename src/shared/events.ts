@@ -30,6 +30,8 @@ export type PipelineEvent =
   | { type: "design"; at: number; report: DesignReport; markdown?: string }
   /** The reading the screen was built from: its kind, its parts and every answer as the graph read it; what it would take to build it again as it is (shared/turn.ts, `ScreenEdit`). */
   | { type: "plan"; at: number; plan: { kind: string; blocks: string[]; values: Record<string, boolean | string | number>; p: Record<string, number> } }
+  /** What the frame the screen is drawn in is, as the browser needs to know it whatever the catalog: whether it sits over the screen it was opened from (a dialog), and whether it is one of the app's main screens, the ones its destinations lead to. */
+  | { type: "frame"; at: number; over: boolean; main: boolean }
   | { type: "a2ui"; message: A2uiMessage; at: number }
   | {
       type: "trace";

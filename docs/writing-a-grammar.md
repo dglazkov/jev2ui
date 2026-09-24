@@ -442,10 +442,22 @@ read, and has no reason to copy `screen.md`. `grammar/ios/screen.md` is one, a g
 the Human Interface Guidelines. To add yours: name it in
 `src/shared/idioms.ts` (its name, the id its surfaces are created with, its stylesheets in the order they
 layer), give it a grammar, a catalog file and the code that draws the patterns in `src/server/idioms.ts`,
-bundle its stylesheet in `src/web/kit/idioms.ts`, have `src/server/grammar/export.ts` write its catalog
-file if it has its own, and record what it draws (`RECORD=1 node --import tsx --test
-src/server/grammar/regression.test.ts`). Two things are still the tool's and not the grammar's: a content
-node called `header` is written first, and one called `nav` is where the app's destinations land.
+give it its own set of components (below), bundle its stylesheet in `src/web/kit/idioms.ts`, have
+`src/server/grammar/export.ts` write its catalog file if it has its own, and record what it draws (`RECORD=1 node
+--import tsx --test src/server/grammar/regression.test.ts`). Two things are still the tool's and not the grammar's:
+a content node called `header` is written first, and one called `nav` is where the app's destinations land.
+
+The components a catalog's patterns draw with are its own, not additions to the kit's. A set is their schemas and
+which of their props name other components (a `ComponentSet`, in a file of its own under `src/shared/`, registered
+under the idiom in `src/shared/sets.ts`), and how each is drawn: a function per component, called on the surface
+every screen is drawn on (`src/web/surface.ts`), registered in `src/web/sets.ts`. The surface lends a drawing
+what every set needs: `this.value` and `this.words` read a binding (shimmering until the words arrive),
+`this.node` and `this.kids` draw what a component contains (a template is stamped once per element), `this.tap`
+reports a tap to the host, and `this.baked` is the slot a baked component runs in. The server checks what a
+screen sends against the set its surface names, and the browser draws it by the same name. A frame pattern also
+says, with `over`, when the frame sits over the screen it was opened from, as a dialog does. A set can take
+another's and change a few: `src/shared/ios.ts` and `src/web/kit/ios.ts` are the kit's with a screen and a bar of
+iOS's own.
 
 ## Change the tool's own grammar
 
@@ -500,5 +512,6 @@ app. To add one: name it in `src/shared/idioms.ts` (its name, the id its surface
 stylesheets in the order they layer), give it a grammar, a catalog file and the code that draws the patterns in
 `src/server/idioms.ts`, bundle its stylesheet in `src/web/kit/idioms.ts`, have `src/server/grammar/export.ts`
 write its catalog file, and record what it draws (`RECORD=1 node --import tsx --test
-src/server/grammar/regression.test.ts`). `src/server/grammar/patterns-ios.ts` is the example: the kit's patterns
-with a `page` of its own, and `src/web/kit/ios.css` over `kit.css`.
+src/server/grammar/regression.test.ts`), and give it its own set of components (see "Run your grammar in the
+tool"). `src/server/grammar/patterns-ios.ts` is the example: the kit's patterns with a `page` of its own, drawn
+with the kit's components and a screen and bar of iOS's own, and `src/web/kit/ios.css` over `kit.css`.

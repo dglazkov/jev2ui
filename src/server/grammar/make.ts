@@ -10,7 +10,7 @@
 // Nothing here knows what a list is. What a list looks like is the catalog's business
 // (patterns.ts); which of the writer's words is the headline is the graph's.
 
-import type { KitComponent } from "../../shared/kit.js";
+import type { Component } from "../../shared/components.js";
 import { sourcesOf } from "./fill.js";
 import { idOf, pathIn, walk, type Atom, type Field, type Grammar, type Node, type Source } from "./format.js";
 import { holdsIn, yieldOf, type Reading, type Value } from "./read.js";
@@ -90,8 +90,10 @@ export interface Pattern {
   /** Its slots, as fields: a name, whether it is required, what it is for; nested where a slot is a list of things. */
   slots: Field[];
   knobs: Record<string, Knob>;
-  /** `parts` are given to a frame: the parts drawn already, in the order they come. */
-  draw(id: string, bound: Bound, knobs: Record<string, Value>, look: Look, parts?: DrawnPart[]): KitComponent[];
+  /** `parts` are given to a frame: the parts drawn already, in the order they come. The components are the catalog's own set's (shared/sets.ts). */
+  draw(id: string, bound: Bound, knobs: Record<string, Value>, look: Look, parts?: DrawnPart[]): Component[];
+  /** Of a frame: whether, set so, it sits over the screen it was opened from (a dialog, an alert) rather than in its place. The browser is told, and draws the one over the other. */
+  over?(knobs: Record<string, Value>): boolean;
   /** What the pattern works out from what was written, by slot, for a field that says `computed`: the elements of the list the slot is in, with the slot filled. */
   computed?: Record<string, (elements: any[]) => any[]>;
 }
@@ -135,7 +137,7 @@ export function knobsOf(grammar: Grammar, node: Node, reading: Reading): Record<
   return { ...knobs, ...node.fixed };
 }
 
-export function treeOf(catalog: Catalog, grammar: Grammar, node: Node, reading: Reading, look: Look): KitComponent[] {
+export function treeOf(catalog: Catalog, grammar: Grammar, node: Node, reading: Reading, look: Look): Component[] {
   const pattern = node.target ? catalog[node.target] : undefined;
   return pattern ? pattern.draw(node.name, boundOf(node, reading), knobsOf(grammar, node, reading), look) : [];
 }
@@ -199,7 +201,7 @@ export function framePatternOf(catalog: Catalog, grammar: Grammar): Pattern | un
 }
 
 /** The frame around the parts, drawn by the pattern the kinds' question names; nothing, for a graph that names none. */
-export function frameOf(catalog: Catalog, grammar: Grammar, reading: Reading, look: Look, parts: DrawnPart[]): KitComponent[] | undefined {
+export function frameOf(catalog: Catalog, grammar: Grammar, reading: Reading, look: Look, parts: DrawnPart[]): Component[] | undefined {
   const kinds = kindsOf(grammar);
   const pattern = kinds?.target ? catalog[kinds.target] : undefined;
   if (!pattern) return undefined;
@@ -207,7 +209,7 @@ export function frameOf(catalog: Catalog, grammar: Grammar, reading: Reading, lo
 }
 
 /** Where the data that a tree reads is: every path some component is bound to. A field nothing is bound to is not drawn, and Jev is not asked about it. */
-export function boundIn(components: KitComponent[]): Set<string> {
+export function boundIn(components: Component[]): Set<string> {
   const paths = new Set<string>();
   const into = (value: unknown): void => {
     if (!value || typeof value !== "object") return;

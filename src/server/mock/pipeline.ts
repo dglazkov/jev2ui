@@ -336,6 +336,9 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
     for (const node of contentNodes(grammar)) drawn.set(node.name, boundIn(framed));
     run.send({ createSurface: { surfaceId, catalogId } });
     run.send({ updateComponents: { surfaceId, components: [...framed, ...trees.flatMap(([, tree]) => tree)] } });
+    // The browser is told what the frame is, since what it is drawn with is the catalog's: over another screen, or a main one.
+    const over = Boolean(pattern?.over?.(frame));
+    run.frame({ over, main: onMain() && !over });
 
     // A picture at the top of a part (the lead photograph) is of what the header names: the description will not do, since
     // it lists what is on the screen, and a picture of that is a picture of a phone. The one a tapped item carried is it.

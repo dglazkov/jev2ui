@@ -104,8 +104,8 @@ export function sandboxDocument(definition: Definition, styles = kitCss): string
     html = `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${CSP}">
 <link rel="stylesheet" href="${SYMBOLS}">
 <style>${styles}</style>
-<style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}kit-surface{display:block;height:100%}#root{position:relative;box-sizing:border-box;width:100%;height:100%;overflow:hidden}</style>
-</head><body><kit-surface><div id="root"></div></kit-surface>
+<style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}ui-surface{display:block;height:100%}#root{position:relative;box-sizing:border-box;width:100%;height:100%;overflow:hidden}</style>
+</head><body><ui-surface><div id="root"></div></ui-surface>
 <script>(${inline(host.toString())})()</script>
 <script>${inline(definition.source)}</script>
 </body></html>`;

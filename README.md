@@ -65,7 +65,7 @@ archetype         which canonical layout this is: feed, dashboard, detail, guide
 The first three levels depend only on the prompt, so they are one Jev request of 30 questions, and the
 whole tree is on screen at around 200 ms, shimmering where words will go; a list, a group or a form whose first row
 is not written yet holds its place with a few rows of shimmer that nothing can tap, so a writer that stalls leaves the
-screen unfinished rather than missing its body (`src/web/kit/surface.ts`). Order is never asked: it belongs to the
+screen unfinished rather than missing its body (`src/web/surface.ts`). Order is never asked: it belongs to the
 archetype, which is where best practice lives. The fourth level is asked as each group, list or field completes
 in Gemini's stream (`src/server/grammar/decide.ts`). Those answers are written into the *data model* beside the words they are
 about (`/groups/1/rows/2/control = "switch"`) and the tree binds to them, so a template stays a template however
@@ -252,8 +252,13 @@ of choosing makes a rich screen out of those. The kit has molecules, with anatom
 | Text roles: display, headline, title, body, label, caption | the DESIGN.md typography scale itself |
 | Icon | any of 185 Material Symbols |
 
-The schemas are shared: the server validates every message against them, and a small light-DOM renderer
-(`src/web/kit/`) draws them. Owning the renderer is also what lets a DESIGN.md carry over whole (below).
+The schemas are shared: the server validates every message against them, and a small light-DOM renderer draws
+them. Owning the renderer is also what lets a DESIGN.md carry over whole (below). The kit is one set of components
+among others: each idiom's catalog brings its own (`src/shared/sets.ts`), and the surface a screen is created with
+says whose (`createSurface.catalogId`). What every set shares is the envelope, bindings, templates, taps and the
+slot a baked component runs in (`src/shared/components.ts`, and `src/web/surface.ts`, which draws with the set's
+own drawing from `src/web/sets.ts`); the kit's own are `src/shared/kit.ts` and `src/web/kit/components.ts`, and
+iOS's are the kit's with a screen and a navigation bar of iOS's own (`src/shared/ios.ts`, `src/web/kit/ios.ts`).
 
 `npm run eval -- --only mock` over 13 prompts: 13 of 13 valid trees with a mixed design and with Broadsheet,
 first components at 159–289 ms, complete in 0.9–2.2 s.
@@ -351,8 +356,8 @@ again are all read off the grammar, so a grammar that asks other questions runs 
 stylesheet are an **idiom**, and an app is imagined in one: the tool's own; iOS (`grammar/ios/screen.md`, a
 graph of its own written from the Human Interface Guidelines, whose kinds are how a screen is presented — a tab's
 root, a pushed screen, a sheet with Cancel and Done, an alert, an action sheet, a full-screen cover — drawn by
-`grammar/ios/catalog.md`, `src/server/grammar/patterns-ios.ts` and `src/web/kit/ios.css` over the same
-components). People call it the **grammar**, and choose it in the bar, as a step of the path to the app
+`grammar/ios/catalog.md`, `src/server/grammar/patterns-ios.ts` and `src/web/kit/ios.css` over the kit's
+components, with a screen and a navigation bar of its own). People call it the **grammar**, and choose it in the bar, as a step of the path to the app
 (Apparite › iOS › Habit Tracker): a preset that new apps are made in, changed about once a session and
 remembered between visits. An app keeps the grammar it was made in for as long as it lives, because its
 screens were read by that grammar and no other: choosing another while an app is open starts a new app, and
@@ -753,7 +758,9 @@ src/server/design-md.ts     parse a DESIGN.md; Jev reads its prose for colour ro
 src/server/design-mix.ts    no DESIGN.md: Jev's Scores become OKLCH colours, radii and spacing, written out as one
 src/server/design-source.ts a supplied or mixed design, worked out once and reused
 src/server/theme.ts         tokens and the reading, as the kit's --k-* variables
-src/shared/kit.ts           the kit: component schemas of the A2UI fork, shared by server and renderer
+src/shared/components.ts    what every set of components shares: the value schemas, the baked component, what a set is
+src/shared/sets.ts          which set of components a surface speaks, by its catalog id
+src/shared/kit.ts           the kit: its component schemas, shared by server and renderer; ios.ts, iOS's, the kit's with a frame of its own
 src/server/mock/screen.ts   what the writers are told
 grammar/                    the tool's graph, screen.md, which it reads; ios/screen.md, the iOS idiom's own graph; kit.md (the catalog the parts name), ios/catalog.md (the iOS idiom's), paint.md, icons.md and subjects.md, written out from code by npm run grammar:export; examples/email.md
 src/server/mock/graph.ts    the tool's graph read once, and what code still knows by name: the kinds of screen, the options a browser may send back, a plan read back into a reading
@@ -768,7 +775,9 @@ src/server/mock/link.ts     from a tap to the description of the screen it leads
 src/shared/journey.ts       what the browser tells the server about how the person got here
 src/server/mock/icons.ts    the Material Symbols grammar/icons.md is written out from
 src/server/mock/pipeline.ts the mock pipeline
-src/web/kit/                the kit's renderer and stylesheet
+src/web/surface.ts          the surface every screen is drawn on: data, bindings, templates, taps, the slot a baked component runs in; surface.css paints what it draws itself
+src/web/sets.ts             how each set of components is drawn, by catalog id
+src/web/kit/                the kit's drawing (components.ts) and iOS's (ios.ts), their stylesheets, and the sandbox
 src/server/job-profile.ts   questions about the person, and the profile read from the answers
 src/server/job-patterns.ts  rules from job to pattern; each pattern's parts and component tree
 src/server/jobs.ts          the jobs pipeline

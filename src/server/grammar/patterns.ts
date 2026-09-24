@@ -65,6 +65,7 @@ const PATTERNS: Pattern[] = [
       intro: { takes: YES_NO, is: "a line of introduction under the bar, from the subtitle: for a kind of screen its bar does not name" },
       symbol: { takes: [], is: "the symbol of what the screen is about, shown by a dialog and by an outcome, or none" },
     },
+    over: (knobs) => knobs.dialog === "yes" || knobs.dialog === true,
     draw: (id, b, knobs, look, parts = []) => {
       const yes = (knob: string) => knobs[knob] === "yes" || knobs[knob] === true;
       const named = (knob: string) => (knobs[knob] === undefined || knobs[knob] === "none" ? undefined : String(knobs[knob]));

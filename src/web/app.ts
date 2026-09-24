@@ -15,15 +15,15 @@ import { LitElement, html, nothing, type TemplateResult } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { repeat } from "lit/directives/repeat.js";
-import "./kit/surface.js";
+import "./surface.js";
 import "./settings.js";
 import { paintIn, stylesOf } from "./kit/idioms.js";
 import { IDIOMS, IDIOM_IDS, idiomNamed, isIdiom, type IdiomId } from "../shared/idioms.js";
-import type { KitSurface } from "./kit/surface.js";
+import type { Surface } from "./surface.js";
 import { named, type A2uiMessage, type Decision, type Endpoint, type PipelineEvent, type RunStats } from "../shared/events.js";
 import type { DesignReport, Theme } from "../shared/design.js";
 import type { Journey, Via } from "../shared/journey.js";
-import type { Baked } from "../shared/kit.js";
+import type { Baked } from "../shared/components.js";
 import type { SavedAbout, SavedApp, SavedTurn, Visibility } from "../shared/saved.js";
 import { receiptOf, type Option, type PaintChange, type ScreenAbout, type TurnRequest, type TurnResponse } from "../shared/turn.js";
 import { session, streamEvents } from "./session.js";
@@ -327,7 +327,7 @@ export class App extends LitElement {
     // The page is painted in the app's idiom, and every request says which it is.
     paintIn(this.idiom);
     session.idiom = this.idiom;
-    for (const surface of this.querySelectorAll<KitSurface>("kit-surface")) {
+    for (const surface of this.querySelectorAll<Surface>("ui-surface")) {
       surface.theme = this.report?.theme;
       surface.stylesheet = stylesOf(this.idiom);
       surface.navigationIcons = navigationIcons;
@@ -660,6 +660,8 @@ export class App extends LitElement {
   private follow(detail: { kind: string; label: string; data?: Record<string, unknown>; index?: number; variant?: string; component?: string; source?: string }) {
     const here = this.current;
     if (!here) return;
+    // A button that acts on the whole screen carries what the screen showed, but not its pictures or the app's destinations.
+    if ((detail.kind === "action" || detail.kind === "submit") && detail.data) detail = { ...detail, data: JSON.parse(JSON.stringify(detail.data, (key, value) => (key === "imageUrl" || key === "nav" ? undefined : value))) };
     if (here.destination) return void this.followDestination(detail);
     const kind = (detail.kind === "item" && detail.variant !== undefined ? "itemAction" : detail.kind) as Via["kind"];
     if (kind === "appbar" && IN_PLACE.has(detail.label)) return;
@@ -872,15 +874,15 @@ export class App extends LitElement {
             screen.plan = event.plan;
             screen.archetype = event.plan.kind;
             break;
+          case "frame":
+            // What the frame is, as the server read it: its components are the catalog's, and the shell reads none of them.
+            screen.dialog = event.over;
+            screen.topLevel = event.main;
+            break;
           case "a2ui": {
             screen.messages.push(event.message);
             const message = event.message as Record<string, any>;
-            const root = message.updateComponents?.components.find((c: any) => c.id === "root");
-            if (root) {
-              screen.firstPaintMs ??= event.at;
-              screen.dialog = Boolean(root.dialog);
-              screen.topLevel = Boolean(root.navBar);
-            }
+            if (message.updateComponents) screen.firstPaintMs ??= event.at;
             const data = message.updateDataModel;
             if (data?.path === "/header" && data.value?.title) screen.title = data.value.title;
             // The first screen with a navigation bar establishes it for the app, symbols included once they arrive.
@@ -1557,11 +1559,11 @@ export class App extends LitElement {
       <div class="holder" ?hidden=${onMap}>
         <!-- Drawn at its own size and then made to fit, so that what is seen is the whole device and not as much of it as there is room for. -->
         <div class="device ${this.device}" style="width:${DEVICES[this.device]}px;zoom:${this.fit}">
-          <div class="screen" style=${styleMap({ ...frame, height: `${DEVICE_HEIGHTS[this.device]}px` })} @kit-tap=${(e: CustomEvent) => this.follow(e.detail)} @kit-custom-error=${(e: CustomEvent) => this.broke(e.detail)}>
+          <div class="screen" style=${styleMap({ ...frame, height: `${DEVICE_HEIGHTS[this.device]}px` })} @ui-tap=${(e: CustomEvent) => this.follow(e.detail)} @ui-custom-error=${(e: CustomEvent) => this.broke(e.detail)}>
             ${repeat(
               layers,
               (screen) => screen.id,
-              (screen, i) => html`<kit-surface class="layer ${screen.dialog && i > 0 ? "over" : ""}" data-screen=${screen.id} ?inert=${i < layers.length - 1}></kit-surface>`,
+              (screen, i) => html`<ui-surface class="layer ${screen.dialog && i > 0 ? "over" : ""}" data-screen=${screen.id} ?inert=${i < layers.length - 1}></ui-surface>`,
             )}
             ${painted ? nothing : html`<p class="empty">${here?.running ? html`<span class="dots"><i></i><i></i><i></i></span>Planning the screen…` : html`${icon("draw")}Your preview appears here. Tap any element to explore it.`}</p>`}
           </div>

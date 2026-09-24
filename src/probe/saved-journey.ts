@@ -27,7 +27,7 @@ export function savedPlace(screen: SavedScreen): Place {
     const update = message.updateDataModel as { path?: string; value: unknown } | undefined;
     if (!update) continue;
     const keys = (update.path ?? "/").split("/").filter(Boolean);
-    // Match KitSurface's replace-at-path semantics, with no mutation of the saved stream.
+    // Match the surface's replace-at-path semantics (src/web/surface.ts), with no mutation of the saved stream.
     if (keys.some((key) => ["__proto__", "constructor", "prototype"].includes(key))) throw new Error("Unsafe data path in saved screen");
     const value = structuredClone(update.value);
     if (!keys.length) { data = (value ?? {}) as Record<string, unknown>; continue; }

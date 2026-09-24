@@ -30,7 +30,7 @@
 
 import { createHash } from "node:crypto";
 import { choice } from "@typesafe-ai/sdk";
-import { BAKED, type Baked } from "../../shared/kit.js";
+import { BAKED, type Baked } from "../../shared/components.js";
 import { BAKER_MODEL, bakeGeminiJson, streamGeminiJson } from "../models.js";
 import type { Run } from "../run.js";
 import { fill } from "../grammar/fill.js";
@@ -321,7 +321,7 @@ export const CUSTOM_SOURCES = {
 };
 
 /** What reaches the screen: the component whole and its data, or, when nothing could be had, word that the slot is to close. */
-export function sendCustom(run: Run, surfaceId: string, filling: Filling | undefined, path = "/custom") {
+export function sendCustom(run: Run, surfaceId: string, filling: Filling | undefined, path: string) {
   // The slot closes up and the rest of the screen stands: every other block was valid before this one was tried.
   if (!filling) return void run.send({ updateDataModel: { surfaceId, path, value: { failed: true } } });
   // Whole, even when it came off the shelf: a screen's messages say everything about it, and the browser's shelf is read from them.

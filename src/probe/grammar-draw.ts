@@ -24,7 +24,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
-import type { KitComponent } from "../shared/kit.js";
+import type { Component } from "../shared/components.js";
 import { IDIOMS as NAMED, idiomNamed } from "../shared/idioms.js";
 import { loadDesign } from "../server/design-source.js";
 import { streamGeminiJson } from "../server/models.js";
@@ -88,7 +88,7 @@ const header = grammar.nodes.find((node) => node.name === "header" && !node.ques
 const trees = parts.map((node) => [node.name, treeOf(patterns, grammar, node, reading, look)] as const);
 const frame = frameOf(patterns, grammar, reading, look, trees.map(([name, tree]) => ({ name, root: tree[0].id })));
 if (!frame) throw new Error(`${file} names no frame for its kinds: say "→ page" after the heading of the kinds`);
-const components: KitComponent[] = [...frame, ...trees.flatMap(([, tree]) => tree)];
+const components: Component[] = [...frame, ...trees.flatMap(([, tree]) => tree)];
 run.send({ createSurface: { surfaceId, catalogId } });
 run.send({ updateComponents: { surfaceId, components } });
 console.log(`${since()}  the tree: ${components.length} components, before a word is written`);
@@ -187,10 +187,10 @@ await baking;
 
 const messages = [...run.sent];
 const problems = validateMessages(messages as never);
-console.log(problems.length ? `INVALID:\n${problems.join("\n")}` : `valid: ${messages.length} messages, every component checked against the kit's schemas`);
+console.log(problems.length ? `INVALID:\n${problems.join("\n")}` : `valid: ${messages.length} messages, every component checked against its catalog's set`);
 
 const bundle = await build({
-  stdin: { contents: `import "./src/web/kit/surface.ts";\ndocument.querySelector("kit-surface").sync(window.MESSAGES);`, resolveDir: root, loader: "ts" },
+  stdin: { contents: `import "./src/web/surface.ts";\ndocument.querySelector("ui-surface").sync(window.MESSAGES);`, resolveDir: root, loader: "ts" },
   bundle: true,
   format: "esm",
   write: false,
@@ -215,15 +215,15 @@ const html = `<!doctype html>
 <title>${grammar.name}: ${text.replace(/[<&]/g, "")}</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=block" />
 ${fonts}
-<style>${NAMED[idiom.id].stylesheets.map((sheet) => readFileSync(resolve(root, "src/web/kit", sheet), "utf8")).join("\n")}
+<style>${[resolve(root, "src/web/surface.css"), ...NAMED[idiom.id].stylesheets.map((sheet) => resolve(root, "src/web/kit", sheet))].map((sheet) => readFileSync(sheet, "utf8")).join("\n")}
 body { margin: 0; background: #d9d9de; display: grid; place-items: start center; padding: 32px; }
 .mock { ${vars} color-scheme: ${theme.colorScheme}; font-family: ${theme.fontFamily}; background: var(--k-page); width: 420px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 40px rgb(0 0 0 / 0.18); }
 </style>
-<div class="mock"><kit-surface></kit-surface></div>
+<div class="mock"><ui-surface></ui-surface></div>
 <script>window.MESSAGES = ${JSON.stringify(messages).replace(/</g, "\\u003c")};</script>
 <script type="module">
 ${bundle.outputFiles[0].text.replace(/<\/script/g, "<\\/script")}
-document.querySelector("kit-surface").theme = ${JSON.stringify(theme).replace(/</g, "\\u003c")};
+document.querySelector("ui-surface").theme = ${JSON.stringify(theme).replace(/</g, "\\u003c")};
 </script>
 `;
 const out = resolve(root, "out/grammar");

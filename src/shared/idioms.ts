@@ -4,7 +4,8 @@
 // it (docs/grammar.md). The server has the grammar, the catalog and the code behind it (server/idioms.ts); the
 // browser has the stylesheets (web/kit/idioms.ts), in src/web/kit, layered in the order named: an idiom that draws
 // with the kit's components paints over the kit's sheet. What they share is the names, and the id the surface is
-// created with, which says whose catalog its components are drawn by.
+// created with, which says whose catalog its components are drawn by, and so which set of components it speaks
+// (sets.ts).
 //
 // A person picks one for the apps they are about to make, about once a session; an app keeps the one it was made in
 // for as long as it lives (web/app.ts). People see it called a grammar.
@@ -23,6 +24,3 @@ export const idiomNamed = (said: unknown): IdiomId => (typeof said === "string" 
 
 /** Whether it names an idiom there is, as a saved app's may not: one saved before there was a choice names none. */
 export const isIdiom = (said: unknown): said is IdiomId => typeof said === "string" && said in IDIOMS;
-
-/** Whether a surface created with this id speaks the kit's components, whichever idiom's catalog they are drawn by. */
-export const isKitCatalog = (catalogId: unknown): boolean => IDIOM_IDS.some((id) => IDIOMS[id].catalogId === catalogId);

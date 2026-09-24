@@ -5,8 +5,9 @@
 // sheet, a full-screen cover, an alert, an action sheet), whether its title is large
 // or inline, what leads the bar (a chevron, the word Cancel, a close button) and what
 // word acts at its trailing edge (Done, Save, Edit). grammar/ios/screen.md is written
-// to them. The rest of the idiom is the stylesheet's (src/web/kit/ios.css), over the
-// same components, so what is baked into a slot is painted with it too.
+// to them. It draws with iOS's set of components (shared/ios.ts): the kit's, with a
+// screen and a navigation bar of its own. The rest of the idiom is the stylesheet's
+// (src/web/kit/ios.css), so what is baked into a slot is painted with it too.
 //
 // grammar/ios/catalog.md is written out from this by `npm run grammar:export`.
 
@@ -47,6 +48,8 @@ const PAGE: Pattern = {
     intro: { takes: YES_NO, is: "a line of introduction under the title, from the subtitle: for a kind of screen its title does not explain" },
     symbol: { takes: [], is: "the symbol of what the screen is about, shown by an outcome, or none. An alert shows none" },
   },
+  // An alert is centred over the screen and an action sheet rises over it; the rest take its place, a sheet and a cover as well.
+  over: (knobs) => knobs.presentation === "alert" || knobs.presentation === "actionsheet",
   draw: (id, b, knobs, look, parts = []) => {
     const yes = (knob: string) => knobs[knob] === "yes" || knobs[knob] === true;
     const named = (knob: string) => (knobs[knob] === undefined || knobs[knob] === "none" ? undefined : String(knobs[knob]));
@@ -132,7 +135,7 @@ export const IOS_PATTERNS: Catalog = { ...KIT_PATTERNS, page: PAGE };
 export function iosCatalog(): Grammar {
   return catalogOf(
     "ios",
-    "What the tool can draw the way iOS lays a screen out, for a graph to name. The patterns are the kit's (kit.md), drawn with the same components and painted by the idiom's stylesheet; the frame is the Human Interface Guidelines' and has knobs of its own: how the screen is presented (pushed, a sheet, a full-screen cover, an alert, an action sheet), a large or an inline title, what leads the bar and what word acts at its end. Written out from src/server/grammar/patterns-ios.ts by `npm run grammar:export`.",
+    "What the tool can draw the way iOS lays a screen out, for a graph to name. The patterns are the kit's (kit.md), drawn with the kit's components but for a screen and a bar of iOS's own, and painted by the idiom's stylesheet; the frame is the Human Interface Guidelines' and has knobs of its own: how the screen is presented (pushed, a sheet, a full-screen cover, an alert, an action sheet), a large or an inline title, what leads the bar and what word acts at its end. Written out from src/server/grammar/patterns-ios.ts by `npm run grammar:export`.",
     IOS_PATTERNS,
   );
 }

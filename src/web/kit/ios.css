@@ -7,10 +7,10 @@
  * is the one src/server/grammar/patterns-ios.ts draws: a navigation bar, a large
  * title on a main screen, a tab bar, an alert.
  *
- * `body` is for a baked component's frame (sandbox.ts), which has no kit-surface.
+ * `body` is for a baked component's frame (sandbox.ts), which has no ui-surface.
  */
 
-kit-surface,
+ui-surface,
 body {
   --k-display-font: -apple-system, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --k-headline-font: var(--k-display-font);

@@ -25,7 +25,8 @@ RECORD=1 node --import tsx --test src/server/grammar/regression.test.ts   # afte
 There are two kinds of file. A **graph** (`screen.md`, `paint.md`, `examples/email.md`) is somebody's decisions:
 what is asked, how the answers are read, what each part is made of. A **catalog** (`kit.md`, `ios/catalog.md`) is
 what a renderer can draw. A graph names the catalog's patterns; neither contains the other. A graph, a catalog and a
-stylesheet together are an **idiom** (step 7): the way an app is imagined, and the app's to choose.
+stylesheet together are an **idiom** (step 7): the way an app is imagined, and the app's to choose. The catalog's code
+brings its own set of components to draw with (step 9).
 
 ## The format
 
@@ -512,6 +513,41 @@ extra needs, and the fix was the shape, not the words: on iOS search is *expecte
 page lost its hero because `probe:grammar` gave no design and "no photographs" was the default (51): the givens are
 now phrased as what a design rules out.
 
+**Step 9: each idiom brings its own components** (#25). Until then there was one set of components, the kit's (`KIT`
+in `src/shared/kit.ts`): the server checked every screen against it whatever catalog the screen said it spoke, and one
+element drew it. An idiom whose components differ could only add to the kit's, and iOS had (a presentation on the
+screen, a word at the end of the bar, Cancel leading it). That would have made the kit the union of every design
+system, and a grammar written to differ in structure (#22, Windows) would have drawn with the same pieces as every
+other. The renderer already fell into two halves, and the line now runs between them:
+
+- what every set shares is said once (`src/shared/components.ts`: the value schemas, the baked component and its
+  message, what a set is) and drawn once (`src/web/surface.ts`, `<ui-surface>`: the data model, bindings, a template
+  stamped over nothing until its array arrives, taps, the slot a baked component runs in). Nothing in it names a
+  component, a part or a path: a slot says where what fills it is (its `use`) and where what is picked in it goes
+  (its `selection`), a group tells the rows in it which section they are in, and what a button's tap leaves behind
+  (the pictures, the app's destinations) is the host's to strip;
+- a catalog brings its set: the schemas and the props that name other components (`src/shared/sets.ts`, by catalog
+  id), and a drawing, a function per component (`src/web/sets.ts`). The surface a screen is created with says which,
+  so the server checks it and the browser draws it by the same id. The kit's are `kit.ts` and
+  `web/kit/components.ts`; iOS's are the kit's with a screen and a bar of its own (`shared/ios.ts`, `web/kit/ios.ts`),
+  and `kit.ts` has nothing of iOS's;
+- the browser is told what the frame is by the server, from the frame pattern, in a `frame` event: whether it sits
+  over the screen it was opened from (`Pattern.over`) and whether it is a main screen (the `navigation` knob, as
+  before). It used to read the kit's `Screen.dialog` and `Screen.navBar`;
+- what the surface draws itself (unwritten text, symbols, the slot) is painted by `src/web/surface.css`, which every
+  idiom's sheets are layered over; the dim behind a dialog moved from the shell's sheet to the kit's, keyed on the
+  surface being marked `over`.
+
+The tests hold that every idiom's frames are trees its own set accepts, and that a catalog of three components the kit
+does not have (`Window`, `Column`, `Line`) draws a grammar of its own, is checked against its own set, and is refused
+under the kit's id (`components.test.ts`). Live: ten screens of both idioms, captured from the served app before the
+change and drawn by the surface after it, came out the same HTML and the same pixels (a baked timer's frame differs
+only in being handed `surface.css` first). The frame event agreed with the old reading of the root on ten fresh
+screens. In the served app, in both idioms: a feed tapped through to a profile with its portrait carried, and back; a
+settings row reporting its section; a confirmation over its screen, dimmed, closed by Cancel; a baked seat plan's picks
+carried to the next screen through the slot's own `selection`. And the three made-up components were drawn by the
+served app's own surface, shimmering before their words and reporting a tap.
+
 ## What resisted
 
 What the export could not say, or could only say by growing the format:
@@ -569,7 +605,8 @@ From the chains:
 19. **The baker speaks of screens.** Its brief says "it is a … screen" and what the kit draws around it, and a
     baked component's contract is typed as the screen graph's (`use`, `size`, `linked`). `probe:draw` hands it
     the email as a screen, with the contract said in words. A brought graph's contract should be its own.
-20. **One slot, called custom.** The renderer reads `/custom/name` and writes `/custom/selection`. The email's
+20. *(Fixed in step 9: a slot says where what fills it is and where what is picked in it goes, by its own bindings.)*
+    **One slot, called custom.** The renderer read `/custom/name` and wrote `/custom/selection`. The email's
     `code` draws, but a choice made in it would be written under another part's name.
 21. **What a picture is of** is the words nearest its field: the item's first two, else the header. That is
     `itemWords` as a convention of `probe:draw`, said nowhere.
@@ -599,7 +636,8 @@ From the frame:
 
 From the idioms:
 
-42. **One idiom's paint at a time.** Both idioms draw the kit's components under the kit's class names, so their
+42. *(Half gone in step 9: an idiom brings its own set of components, with class names of its own if it likes. The kit
+    and iOS still share the kit's.)* **One idiom's paint at a time.** Both idioms draw the kit's components under the kit's class names, so their
     stylesheets cannot both be on; the page is painted in the app's idiom, and a view that showed two idioms side
     by side would need the sheets scoped. The idiom is the app's, but the paint is the page's.
 43. **The mix does not know what an idiom fixes.** Jev's mix has no system typeface, no 10 pt radius and no "no
@@ -610,7 +648,8 @@ From the idioms:
 44. **An idiom's grammar had to keep `screen.md`'s ids** (fixed in step 7's second cut; an idiom's grammar can now
     ask anything, and `examples/email.md` runs in the tool). The iOS idiom still shares the grammar, and that is
     what #20 is now for.
-45. **Three names the frame contract does not cover** are still literal between a pattern and the renderer:
+45. *(Since step 9 the `/custom/*` paths are gone, and `form_submit` and a destination's names are the kit's drawing
+    knowing the kit's patterns, within one catalog, not the renderer's.)* **Three names the frame contract does not cover** are still literal between a pattern and the renderer:
     `form_submit`, the `/custom/*` paths, and a destination's `destination`, `label`, `icon` (41). The iOS catalog
     honours them by reusing the kit's patterns, not by any check.
 46. **Back carries no title.** An `AppBar`'s leading is an enum, and "Back" is a word the stylesheet writes; the
@@ -694,8 +733,8 @@ From the reading:
     uses to activities; another grammar's kinds fall to "Interact with the subject". The chat's words for a part
     fall back to the part's own question.
 56. **The shelf's contract is still typed in the tool's words** (`use`, `size`, `linked`, in `BAKED`): a grammar
-    whose contract question has other options is read to the nearest of them (item 19 stands), and the renderer
-    still reads `/custom/name` by name (item 20 stands) although the slot's path is now the part's.
+    whose contract question has other options is read to the nearest of them (item 19 stands). The renderer no longer
+    reads `/custom/name` (step 9: the slot is wherever the part is).
 57. *(Withdrawn, 2026-09-23: it was about the email idiom, which is gone.)*
 
 From iOS as its own graph:
@@ -720,6 +759,19 @@ From iOS as its own graph:
     the same in two files; a change to one is not a change to the other. A trunk two dialects import is what
     the copy is asking for.
 
+From each idiom bringing its components:
+
+64. **The tap is a protocol, and it is the kit's.** Its kinds (`item`, `row`, `nav`, `appbar`, `action`, `submit`,
+    `back`, `part`), a `source` made of a data path, a `group`, a `variant`: the app map, `link.ts` and a saved app's
+    links read them. Another set's components have to tap in these words to be followed; a command bar's command or a
+    tree's node is one of them or the protocol grows.
+65. **What the surface draws itself is in the kit's words**: unwritten text is a `k-skel`, a symbol a Material Symbol
+    under `k-icon` (48 stands). `surface.css` paints them for every set; a set that wants them otherwise overrides it.
+66. **A screen whose catalog has no drawing is drawn as the kit's**, as every screen was before there was a choice: the
+    older pipelines' screens, in A2UI's basic catalog, still go through it and draw what the kit's drawing knows.
+67. **The shell still reaches into the kit's classes once**: the room for a phone's status bar above an app bar
+    (`.device.phone .k-appbar`). Which device an idiom is drawn on is #22's.
+
 ## Next, in the order that seems right
 
 1. **An app grammar that is not a phone's** (a Mac or Windows app, a watch), written from its own guidelines and
@@ -728,7 +780,7 @@ From iOS as its own graph:
 2. **A trunk two dialects import** (63): the content questions once, and `screen.md` and `ios/screen.md` each a
    kinds question, a frame and rules over it. The format has `among [set](file.md)` for options; it has nothing
    for questions.
-3. **An idiom's own components**: Material Web (`@material/web`, Lit, with a custom-elements manifest the catalog
+3. **An idiom's own components** (the seam is step 9; no idiom has used it for a set that shares nothing yet): Material Web (`@material/web`, Lit, with a custom-elements manifest the catalog
    file could be generated from), where the renderer stops being one element.
 4. **`paint.md` read by the tool** (36), and with it a DESIGN.md with holes for an idiom to fix (43).
 5. **A contract of the graph's own** for the baker and the shelf (19, 56), and more than one slot (20).

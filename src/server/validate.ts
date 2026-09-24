@@ -1,12 +1,11 @@
 import { A2uiMessageSchema } from "@a2ui/web_core/v0_9";
 import { BASIC_COMPONENTS } from "@a2ui/web_core/v0_9/basic_catalog";
-import { DEFINE_COMPONENT, KIT, kitRefs } from "../shared/kit.js";
-import { isKitCatalog } from "../shared/idioms.js";
+import { DEFINE_COMPONENT, type ComponentSet } from "../shared/components.js";
+import { setOf } from "../shared/sets.js";
 import type { A2uiMessage } from "../shared/events.js";
 
-type Schema = { safeParse(value: unknown): { success: true } | { success: false; error: { issues: Array<{ path: PropertyKey[]; message: string }> } } };
+type Schema = ComponentSet["schemas"][string];
 const BASIC = new Map<string, Schema>(BASIC_COMPONENTS.map((c) => [c.name, c.schema as Schema]));
-const KIT_SCHEMAS = new Map<string, Schema>(Object.entries(KIT));
 
 /** Keys that hold references to other components, per component type. */
 function basicRefs(c: Record<string, any>): string[] {
@@ -28,25 +27,25 @@ function basicRefs(c: Record<string, any>): string[] {
 export function validateMessages(messages: A2uiMessage[]): string[] {
   const errors: string[] = [];
   const defined = new Map<string, Record<string, any>>();
-  // The surface says which catalog it speaks: A2UI's basic one, or an idiom's, whose components are the kit's (the envelope is the same).
-  const kit = messages.some((m) => isKitCatalog((m as any).createSurface?.catalogId));
-  const SCHEMAS = kit ? KIT_SCHEMAS : BASIC;
-  const childRefs = kit ? kitRefs : basicRefs;
+  // The surface says which catalog it speaks: an idiom's, whose set of components is its own (sets.ts), or A2UI's basic one. The envelope is the same.
+  const set = messages.map((m) => setOf((m as any).createSurface?.catalogId)).find(Boolean);
+  const SCHEMAS: ReadonlyMap<string, Schema> = set ? new Map(Object.entries(set.schemas)) : BASIC;
+  const childRefs = set ? set.refs : basicRefs;
 
-  // Custom components: every slot that names a definition must get one before the run ends.
+  // Baked components: every slot that names a definition must get one before the run ends. What a slot names is the data at its `use`.
   const definitions = new Set<string>();
-  const used = new Map<string, string>();
+  const named = new Map<string, string>();
 
   messages.forEach((message, i) => {
-    // The kit's one addition to the envelope.
-    if (kit && "defineComponent" in message) {
+    // Our one addition to the envelope, in every set.
+    if (set && "defineComponent" in message) {
       const parsed = DEFINE_COMPONENT.safeParse(message.defineComponent);
       if (parsed.success) definitions.add(parsed.data.id);
       else for (const issue of parsed.error.issues.slice(0, 3)) errors.push(`message[${i}] defineComponent.${issue.path.join(".")}: ${issue.message}`);
       return;
     }
-    const custom = (message as any).updateDataModel;
-    if (kit && custom?.path === "/custom" && typeof custom.value?.use === "string") used.set("/custom", custom.value.use);
+    const data = (message as any).updateDataModel;
+    if (set && typeof data?.value?.use === "string") named.set(`${data.path ?? ""}/use`, data.value.use);
     const envelope = A2uiMessageSchema.safeParse(message);
     if (!envelope.success) {
       for (const issue of envelope.error.issues.slice(0, 3)) {
@@ -77,7 +76,10 @@ export function validateMessages(messages: A2uiMessage[]): string[] {
     }
   });
 
-  for (const [path, use] of used) if (!definitions.has(use)) errors.push(`${path}: uses undefined custom component "${use}"`);
+  for (const c of defined.values()) {
+    const use = typeof c.use?.path === "string" ? named.get(c.use.path) : undefined;
+    if (use && !definitions.has(use)) errors.push(`${c.use.path.replace(/\/use$/, "")}: uses undefined custom component "${use}"`);
+  }
   if (defined.size > 0 && !defined.has("root")) errors.push('no component with id "root"');
   for (const [id, c] of defined) {
     for (const ref of childRefs(c)) {

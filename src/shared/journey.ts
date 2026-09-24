@@ -2,7 +2,7 @@
 // (the app, the screens made so far, the way back); the server is told only
 // what it needs to make the next screen belong to the same app.
 
-import type { Baked } from "./kit.js";
+import type { Baked } from "./components.js";
 
 /** What was tapped. `data` is the data-model object behind it: the list item, the settings row. */
 export interface Via {

@@ -1015,23 +1015,16 @@ button.vis:hover {
   padding-top: 28px;
 }
 
-/* Screens are layers: a new page slides over the last, a dialog fades in above the screen it came from. */
-kit-surface.layer {
+/* Screens are layers: a new page slides over the last, a dialog fades in above the screen it came from. A surface over
+   another is marked `over`, and how it lets what is under it show is the idiom's to paint (kit.css). */
+ui-surface.layer {
   position: absolute;
   inset: 0;
   animation: screen-in 0.22s ease-out;
 }
 
-kit-surface.layer.over {
+ui-surface.layer.over {
   animation: dialog-in 0.18s ease-out;
-}
-
-kit-surface.layer.over .k-screen {
-  background: none;
-}
-
-kit-surface.layer.over .k-scroll {
-  background: color-mix(in srgb, #000 45%, transparent);
 }
 
 @keyframes screen-in {

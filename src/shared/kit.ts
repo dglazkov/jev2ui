@@ -1,14 +1,8 @@
-// The kit: the component catalog of the mock pipeline. A humble fork of A2UI.
+// The kit: the tool's own components, the set the kit idiom draws with. A humble fork of A2UI.
 //
-// Kept from A2UI: a surface is a flat list of components addressed by id,
-// structure (updateComponents) is separate from content (updateDataModel),
-// any value can be bound to a data path, and a container can stamp a template
-// once per element of an array. That split is what lets structure ship before
-// a word has been written.
-//
-// Changed: the vocabulary. A2UI's basic catalog stops at atoms (Text, Row,
-// Card). These are molecules, with the anatomy other people have already
-// worked out:
+// What a surface is (a flat list of components by id, structure apart from content, bindings, templates) is every
+// set's, and is said in components.ts. What is the kit's is the vocabulary. A2UI's basic catalog stops at atoms
+// (Text, Row, Card). These are molecules, with the anatomy other people have already worked out:
 //   layout      Stack, Cluster, Grid, Reel            Every Layout's primitives
 //   list item   leading / overline, headline,         Material 3 lists
 //               supporting / meta, trailing
@@ -18,28 +12,19 @@
 //   Banner      tone, icon, title, text               Polaris
 //   Text roles  display … caption                     the DESIGN.md typography scale itself
 //
-// Added: a catalog that grows while it is in use. A `Custom` component is a slot
-// for something no catalog has (a map, a timer face, a seating plan). What fills
-// it arrives later, in a `defineComponent` message, the way the pixels of an
-// Image arrive after the box that holds them. Which definition a slot uses is
-// data (`use` is bound), so the tree still ships before anything is baked.
+// `Custom` is the slot a baked component arrives in (components.ts): which definition fills it is data (`use` is
+// bound), so the tree still ships before anything is baked.
 //
-// The schemas are shared: the server validates what it emits against them,
-// and the renderer (src/web/kit) draws them.
+// Another idiom brings a set of its own (ios.ts takes these and redraws the frame); nothing here is any other
+// idiom's. The server checks what it sends against the set its surface names (sets.ts), and the browser draws the
+// kit's with src/web/kit/components.ts.
 
 import { z } from "zod";
+import { bool, bound, childRefs, children, id, num, str, type ComponentSet } from "./components.js";
 import { IDIOMS } from "./idioms.js";
 
 /** The id a surface is created with when the kit's own idiom draws it. Another idiom's catalog has its own (idioms.ts). */
 export const KIT_CATALOG_ID = IDIOMS.kit.catalogId;
-
-const bound = z.object({ path: z.string() }).strict();
-const str = z.union([z.string(), bound]);
-const num = z.union([z.number(), bound]);
-const bool = z.union([z.boolean(), bound]);
-const id = z.string();
-/** Explicit children, or one template stamped per element of the array at `path`. */
-const children = z.union([z.array(id), z.object({ path: z.string(), componentId: id }).strict()]);
 
 export const SPACE = ["none", "xs", "sm", "md", "lg", "xl"] as const;
 export const TEXT_ROLES = ["display", "headline", "title", "body", "label", "caption"] as const;
@@ -53,10 +38,9 @@ const weight = z.number().optional();
 
 export const KIT = {
   // --- Frame ---------------------------------------------------------------
-  /** `presentation` is how the screen arrived, for an idiom whose screens are presented in more than one way (iOS: a sheet, an action sheet, a full-screen cover); `dialog` is the alert. */
-  Screen: z.object({ appBar: id.optional(), body: id, sticky: id.optional(), navBar: id.optional(), dialog: z.boolean().optional(), presentation: z.enum(["sheet", "actionsheet", "fullscreen"]).optional() }),
-  /** `trailing` is a word at the bar's trailing edge that acts (Done, Save, Edit), beside or instead of the symbols in `actions`; `cancel` leads with the word. */
-  AppBar: z.object({ title: str.optional(), leading: z.enum(["none", "back", "close", "menu", "cancel"]).optional(), actions: z.array(z.string()).max(3).optional(), trailing: str.optional() }),
+  /** `dialog` is a card over the screen, with no bar. */
+  Screen: z.object({ appBar: id.optional(), body: id, sticky: id.optional(), navBar: id.optional(), dialog: z.boolean().optional() }),
+  AppBar: z.object({ title: str.optional(), leading: z.enum(["none", "back", "close", "menu"]).optional(), actions: z.array(z.string()).max(3).optional() }),
   /** `icon` is where each destination's symbol is, relative to the destination; without it, the bar looks under `icon`. */
   NavBar: z.object({ items: bound, active: num.optional(), icons: z.boolean().optional(), icon: bound.optional() }),
   StickyBar: z.object({ child: id }),
@@ -121,40 +105,14 @@ export const KIT = {
 
 for (const [name, schema] of Object.entries(KIT)) (KIT as any)[name] = schema.strict();
 
-/**
- * A baked component, whole: its source to run in a sandbox (src/web/kit/sandbox.ts), and what it takes to use it
- * again on another screen (src/server/mock/bake.ts). `card` says when, in the words a Choice would offer Jev;
- * `dataSchema` is what a writer fills; `contract` is what Jev asked for when it was baked.
- *
- * Its `id` is a hash of what it is (the source and the schema), so it means the same component wherever it turns
- * up: on another screen, in another session, in a saved app that somebody else opens. Nothing hands ids out.
- */
-export const BAKED = z
-  .object({
-    id: z.string().regex(/^[a-f0-9]{16}$/),
-    name: z.string().max(80),
-    card: z.string().max(400),
-    source: z.string().max(60_000),
-    dataSchema: z.record(z.unknown()),
-    contract: z.object({ use: z.enum(["watch", "pick", "adjust", "read"]), size: z.enum(["strip", "wide", "square", "tall"]), linked: z.boolean() }).strict(),
-  })
-  .strict();
-export type Baked = z.infer<typeof BAKED>;
-
-/**
- * The message that extends the catalog. It carries the whole component and not only what the renderer runs, so the
- * messages of a screen are everything there is to know about it: the app's shelf is the components its screens define.
- */
-export const DEFINE_COMPONENT = BAKED.extend({ surfaceId: z.string() }).strict();
-
 export type KitName = keyof typeof KIT;
 export type KitComponent = { id: string; component: KitName } & Record<string, unknown>;
 
 /** Props that name other components, for checking that every reference resolves. */
 export function kitRefs(c: Record<string, any>): string[] {
-  const refs: unknown[] = [c.child, c.appBar, c.body, c.sticky, c.navBar, c.leading, c.trailing, c.below];
-  if (Array.isArray(c.children)) refs.push(...c.children);
-  else if (c.children?.componentId) refs.push(c.children.componentId);
+  const refs: unknown[] = [...childRefs(c), c.appBar, c.body, c.sticky, c.navBar, c.leading, c.trailing, c.below];
   // `leading` is an enum on AppBar and `trailing` a word, not references; on a ListItem both are.
   return refs.filter((r): r is string => typeof r === "string" && !(c.component === "AppBar" && (r === c.leading || r === c.trailing)));
 }
+
+export const KIT_SET: ComponentSet = { schemas: KIT, refs: kitRefs };

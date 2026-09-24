@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import type { Baked } from "../../shared/kit.js";
+import type { Baked } from "../../shared/components.js";
 import { bakeCustom, customOf, calls as bakeCalls } from "../mock/bake.js";
 import { Pictures, calls as pictureCalls, type Wanted } from "../mock/pictures.js";
 import type { Run } from "../run.js";

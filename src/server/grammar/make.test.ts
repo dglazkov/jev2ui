@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { KIT, kitRefs, type KitComponent } from "../../shared/kit.js";
+import type { Component, ComponentSet } from "../../shared/components.js";
+import { KIT_SET } from "../../shared/kit.js";
+import { setOf } from "../../shared/sets.js";
 import { IDIOMS } from "../idioms.js";
 import { DESIGN_SAYS, answersTo, random } from "./fixtures.js";
 import { idOf, parseGrammar, walk, type Field, type Grammar, type Node } from "./format.js";
@@ -19,7 +21,7 @@ const named = (grammar: Grammar, name: string): Node => {
 };
 
 /** A tree without its ids: what is drawn, and not what the pieces happen to be called. */
-function nest(components: KitComponent[], root: string): unknown {
+function nest(components: Component[], root: string): unknown {
   const byId = new Map(components.map((c) => [c.id, c]));
   const go = (id: string): unknown => {
     const { id: _, ...c } = byId.get(id) as Record<string, any>;
@@ -89,16 +91,18 @@ test("what is drawn from a file is a tree the kit accepts, whatever was answered
       const ids = new Set(components.map((c) => c.id));
       assert.equal(ids.size, components.length, `${file}: two components with one id`);
       for (const { id, component, ...props } of components) {
-        const parsed = KIT[component].safeParse(props);
+        const parsed = KIT_SET.schemas[component].safeParse(props);
         assert.ok(parsed.success, `${file}: ${id} (${component}) ${parsed.success ? "" : JSON.stringify(parsed.error.issues[0])}`);
-        for (const ref of kitRefs({ component, ...props })) assert.ok(ids.has(ref), `${file}: ${id} points at "${ref}", which is not there`);
+        for (const ref of KIT_SET.refs({ component, ...props })) assert.ok(ids.has(ref), `${file}: ${id} points at "${ref}", which is not there`);
       }
     }
   }
 });
 
-test("every idiom draws the grammar it reads: its catalog binds, and the frame it makes of any answers is a tree the kit accepts", () => {
+test("every idiom draws the grammar it reads: its catalog binds, and the frame it makes of any answers is a tree its own set of components accepts", () => {
   for (const idiom of Object.values(IDIOMS)) {
+    const set = setOf(idiom.catalogId);
+    if (!set) assert.fail(`${idiom.id}: no set of components under ${idiom.catalogId}`);
     const { grammar, catalog } = idiom.graph;
     assert.deepEqual(checkBindings(grammar, catalog).errors, [], idiom.id);
     const questions = questionsOf(grammar);
@@ -114,9 +118,11 @@ test("every idiom draws the grammar it reads: its catalog binds, and the frame i
       const ids = new Set(components.map((c) => c.id));
       assert.equal(ids.size, components.length, `${idiom.id}: two components with one id`);
       for (const { id, component, ...props } of components) {
-        const parsed = KIT[component].safeParse(props);
+        const schema: ComponentSet["schemas"][string] | undefined = set.schemas[component];
+        assert.ok(schema, `${idiom.id}: ${id} is a "${component}", which its set does not have`);
+        const parsed = schema.safeParse(props);
         assert.ok(parsed.success, `${idiom.id}: ${id} (${component}) ${parsed.success ? "" : JSON.stringify(parsed.error.issues[0])}`);
-        for (const ref of kitRefs({ component, ...props })) assert.ok(ids.has(ref), `${idiom.id}: ${id} points at "${ref}", which is not there`);
+        for (const ref of set.refs({ component, ...props })) assert.ok(ids.has(ref), `${idiom.id}: ${id} points at "${ref}", which is not there`);
       }
       seen.add(frame.map((c) => c.id).join(","));
     }

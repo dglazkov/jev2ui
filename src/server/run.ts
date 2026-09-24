@@ -99,6 +99,11 @@ export class Run {
     this.push({ type: "plan", at: this.at, plan });
   }
 
+  /** What the frame is, for the browser: its components are the catalog's own, and it reads none of them. */
+  frame(frame: Omit<Extract<PipelineEvent, { type: "frame" }>, "type" | "at">) {
+    this.push({ type: "frame", at: this.at, ...frame });
+  }
+
   design(report: DesignReport, markdown?: string) {
     this.push({ type: "design", at: this.at, report, ...(markdown ? { markdown } : {}) });
   }

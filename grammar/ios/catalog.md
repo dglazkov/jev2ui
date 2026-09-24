@@ -1,6 +1,6 @@
 # ios
 
-What the tool can draw the way iOS lays a screen out, for a graph to name. The patterns are the kit's (kit.md), drawn with the same components and painted by the idiom's stylesheet; the frame is the Human Interface Guidelines' and has knobs of its own: how the screen is presented (pushed, a sheet, a full-screen cover, an alert, an action sheet), a large or an inline title, what leads the bar and what word acts at its end. Written out from src/server/grammar/patterns-ios.ts by `npm run grammar:export`.
+What the tool can draw the way iOS lays a screen out, for a graph to name. The patterns are the kit's (kit.md), drawn with the kit's components but for a screen and a bar of iOS's own, and painted by the idiom's stylesheet; the frame is the Human Interface Guidelines' and has knobs of its own: how the screen is presented (pushed, a sheet, a full-screen cover, an alert, an action sheet), a large or an inline title, what leads the bar and what word acts at its end. Written out from src/server/grammar/patterns-ios.ts by `npm run grammar:export`.
 
 ## page
 
