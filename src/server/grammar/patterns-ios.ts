@@ -49,6 +49,7 @@ const PAGE: Pattern = {
     symbol: { takes: [], is: "the symbol of what the screen is about, shown by an outcome, or none. An alert shows none" },
   },
   // An alert is centred over the screen and an action sheet rises over it; the rest take its place, a sheet and a cover as well.
+  roles: { title: "title", destinations: "destinations", main: "navigation" },
   over: (knobs) => knobs.presentation === "alert" || knobs.presentation === "actionsheet",
   draw: (id, b, knobs, look, parts = []) => {
     const yes = (knob: string) => knobs[knob] === "yes" || knobs[knob] === true;

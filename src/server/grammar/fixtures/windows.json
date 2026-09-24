@@ -1,0 +1,5626 @@
+{
+ "parts": [
+  {
+   "seed": 2000,
+   "look": {
+    "imagery": true,
+    "icons": true,
+    "contained": true
+   },
+   "reading": {
+    "kind": "settings",
+    "blocks": [
+     "setting_sections",
+     "about"
+    ],
+    "values": {
+     "silhouette": "top",
+     "app_search": false,
+     "section": true,
+     "page_type": "settings",
+     "has_infobar": false,
+     "has_commandbar": false,
+     "has_breadcrumb": false,
+     "has_selector": false,
+     "has_flipview": false,
+     "has_shelf": false,
+     "has_items": false,
+     "items_look": "stack",
+     "multi_select": false,
+     "has_table": false,
+     "row_select": false,
+     "has_listdetails": false,
+     "has_description": false,
+     "has_properties": false,
+     "has_page_actions": false,
+     "has_fields": false,
+     "has_setting_sections": true,
+     "has_about": true,
+     "has_message": false,
+     "has_responses": false,
+     "second_response": false,
+     "has_editor": false,
+     "fixed_width": false,
+     "has_canvas": false,
+     "canvas_use": "adjust",
+     "slide_subject": "family",
+     "tile_subject": "play"
+    }
+   },
+   "parts": {
+    "setting_sections": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "setting_sections": {
+        "type": "object",
+        "properties": {
+         "sections": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "heading": {
+             "type": "string",
+             "description": "The group's heading, e.g. 'Appearance', 'Notifications', 'Account'."
+            },
+            "settings": {
+             "type": "array",
+             "items": {
+              "type": "object",
+              "properties": {
+               "name": {
+                "type": "string",
+                "description": "The setting's name, e.g. 'App theme', 'Start with Windows'."
+               },
+               "description": {
+                "type": "string",
+                "description": "What it does, in a line."
+               },
+               "value": {
+                "type": "string",
+                "description": "Its current value, if it has one, e.g. 'Dark', 'English (United States)'; or a button's label, e.g. 'Sign out', 'Clear'."
+               },
+               "on": {
+                "type": "boolean",
+                "description": "Whether it is on, if it is turned on or off."
+               }
+              },
+              "required": [
+               "name",
+               "description",
+               "on"
+              ],
+              "propertyOrdering": [
+               "name",
+               "description",
+               "value",
+               "on"
+              ]
+             },
+             "description": "The settings in it.",
+             "maxItems": 5,
+             "minItems": 2
+            }
+           },
+           "required": [
+            "heading",
+            "settings"
+           ],
+           "propertyOrdering": [
+            "heading",
+            "settings"
+           ]
+          },
+          "description": "The groups, each under a short heading.",
+          "maxItems": 4,
+          "minItems": 2
+         }
+        },
+        "required": [
+         "sections"
+        ],
+        "propertyOrdering": [
+         "sections"
+        ]
+       }
+      },
+      "required": [
+       "setting_sections"
+      ],
+      "propertyOrdering": [
+       "setting_sections"
+      ]
+     },
+     "tree": [
+      {
+       "id": "setting_sections",
+       "component": "StackPanel",
+       "spacing": 28,
+       "children": {
+        "path": "/setting_sections/sections",
+        "componentId": "setting_sections_section"
+       }
+      },
+      {
+       "id": "setting_sections_section",
+       "component": "SettingsSection",
+       "header": {
+        "path": "heading"
+       },
+       "children": {
+        "path": "settings",
+        "componentId": "setting_sections_card"
+       }
+      },
+      {
+       "id": "setting_sections_card",
+       "component": "SettingsCard",
+       "header": {
+        "path": "name"
+       },
+       "description": {
+        "path": "description"
+       },
+       "icon": {
+        "path": "symbol"
+       },
+       "control": {
+        "path": "control"
+       },
+       "value": {
+        "path": "value"
+       },
+       "on": {
+        "path": "on"
+       }
+      }
+     ]
+    },
+    "about": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "about": {
+        "type": "object",
+        "properties": {
+         "name": {
+          "type": "string",
+          "description": "The app's name."
+         },
+         "version": {
+          "type": "string",
+          "description": "Its version, e.g. 'Version 2.4.1'."
+         },
+         "links": {
+          "type": "array",
+          "items": {
+           "type": "string",
+           "description": "A few words."
+          },
+          "description": "What is inside, e.g. 'Send feedback', 'Privacy statement', 'Terms of use'.",
+          "maxItems": 3,
+          "minItems": 2
+         }
+        },
+        "required": [
+         "name",
+         "version",
+         "links"
+        ],
+        "propertyOrdering": [
+         "name",
+         "version",
+         "links"
+        ]
+       }
+      },
+      "required": [
+       "about"
+      ],
+      "propertyOrdering": [
+       "about"
+      ]
+     },
+     "tree": [
+      {
+       "id": "about",
+       "component": "SettingsExpander",
+       "header": {
+        "path": "/about/name"
+       },
+       "description": {
+        "path": "/about/version"
+       },
+       "icon": "info",
+       "links": {
+        "path": "/about/links"
+       }
+      }
+     ]
+    }
+   },
+   "content": {
+    "titles": {
+     "type": "object",
+     "properties": {
+      "titles": {
+       "type": "object",
+       "properties": {
+        "app": {
+         "type": "string",
+         "description": "The app's name as its title bar shows it, one or two words."
+        },
+        "page": {
+         "type": "string",
+         "description": "The page's title, at most four words: what this place in the app is called, e.g. 'Inbox', 'Library', 'Orders', 'Settings'; one thing's name only when the page is about that one thing. A dialog's title is its question, e.g. 'Delete this file?'; a document's is its file name, e.g. 'Untitled.txt'."
+        }
+       },
+       "required": [
+        "app",
+        "page"
+       ],
+       "propertyOrdering": [
+        "app",
+        "page"
+       ]
+      }
+     },
+     "required": [
+      "titles"
+     ],
+     "propertyOrdering": [
+      "titles"
+     ]
+    },
+    "pane": {
+     "type": "object",
+     "properties": {
+      "pane": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One or two words."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's sections, in the order the navigation lists them.",
+         "maxItems": 8,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the section this page is in."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "pane"
+     ],
+     "propertyOrdering": [
+      "pane"
+     ]
+    },
+    "menubar": null,
+    "tabstrip": null
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Window",
+     "mode": "top",
+     "titleBar": "root_titlebar",
+     "navigation": "root_navigation",
+     "body": "root_page"
+    },
+    {
+     "id": "root_titlebar",
+     "component": "TitleBar",
+     "title": {
+      "path": "/titles/app"
+     },
+     "back": "off"
+    },
+    {
+     "id": "root_navigation",
+     "component": "NavigationView",
+     "mode": "top",
+     "items": {
+      "path": "/pane/items"
+     },
+     "label": {
+      "path": "label"
+     },
+     "icon": {
+      "path": "icon"
+     },
+     "settings": false,
+     "footer": true
+    },
+    {
+     "id": "root_page",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "root_header",
+      "setting_sections",
+      "about"
+     ]
+    },
+    {
+     "id": "root_header",
+     "component": "TextBlock",
+     "style": "title",
+     "text": {
+      "path": "/titles/page"
+     }
+    },
+    {
+     "id": "setting_sections",
+     "component": "StackPanel",
+     "spacing": 28,
+     "children": {
+      "path": "/setting_sections/sections",
+      "componentId": "setting_sections_section"
+     }
+    },
+    {
+     "id": "setting_sections_section",
+     "component": "SettingsSection",
+     "header": {
+      "path": "heading"
+     },
+     "children": {
+      "path": "settings",
+      "componentId": "setting_sections_card"
+     }
+    },
+    {
+     "id": "setting_sections_card",
+     "component": "SettingsCard",
+     "header": {
+      "path": "name"
+     },
+     "description": {
+      "path": "description"
+     },
+     "icon": {
+      "path": "symbol"
+     },
+     "control": {
+      "path": "control"
+     },
+     "value": {
+      "path": "value"
+     },
+     "on": {
+      "path": "on"
+     }
+    },
+    {
+     "id": "about",
+     "component": "SettingsExpander",
+     "header": {
+      "path": "/about/name"
+     },
+     "description": {
+      "path": "/about/version"
+     },
+     "icon": "info",
+     "links": {
+      "path": "/about/links"
+     }
+    }
+   ]
+  },
+  {
+   "seed": 2001,
+   "look": {
+    "imagery": false,
+    "icons": false,
+    "contained": false
+   },
+   "reading": {
+    "kind": "data_grid",
+    "blocks": [
+     "infobar",
+     "commandbar",
+     "table"
+    ],
+    "values": {
+     "silhouette": "menubar",
+     "app_search": false,
+     "section": true,
+     "page_type": "data_grid",
+     "has_infobar": true,
+     "has_commandbar": true,
+     "has_breadcrumb": false,
+     "has_selector": false,
+     "has_flipview": false,
+     "has_shelf": false,
+     "has_items": false,
+     "items_look": "stack",
+     "multi_select": false,
+     "has_table": true,
+     "row_select": true,
+     "has_listdetails": false,
+     "has_description": false,
+     "has_properties": false,
+     "has_page_actions": false,
+     "has_fields": false,
+     "has_setting_sections": false,
+     "has_about": false,
+     "has_message": false,
+     "has_responses": false,
+     "second_response": false,
+     "has_editor": false,
+     "fixed_width": false,
+     "has_canvas": false,
+     "canvas_use": "adjust",
+     "slide_subject": "adventure",
+     "tile_subject": "art"
+    }
+   },
+   "parts": {
+    "infobar": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "infobar": {
+        "type": "object",
+        "properties": {
+         "title": {
+          "type": "string",
+          "description": "What changed, in a few words, e.g. 'You're offline', 'Update available'."
+         },
+         "message": {
+          "type": "string",
+          "description": "One sentence: what it means, or what to do about it."
+         },
+         "action": {
+          "type": "string",
+          "description": "The label of a button, if there is one thing to do, e.g. 'Retry', 'Install', 'Renew'."
+         }
+        },
+        "required": [
+         "title",
+         "message"
+        ],
+        "propertyOrdering": [
+         "title",
+         "message",
+         "action"
+        ]
+       }
+      },
+      "required": [
+       "infobar"
+      ],
+      "propertyOrdering": [
+       "infobar"
+      ]
+     },
+     "tree": [
+      {
+       "id": "infobar",
+       "component": "InfoBar",
+       "title": {
+        "path": "/infobar/title"
+       },
+       "message": {
+        "path": "/infobar/message"
+       },
+       "severity": {
+        "path": "/infobar/severity"
+       },
+       "action": {
+        "path": "/infobar/action"
+       }
+      }
+     ]
+    },
+    "commandbar": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "commandbar": {
+        "type": "object",
+        "properties": {
+         "commands": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "label": {
+             "type": "string",
+             "description": "The command's label."
+            }
+           },
+           "required": [
+            "label"
+           ],
+           "propertyOrdering": [
+            "label"
+           ]
+          },
+          "description": "The commands, in order of importance, each a single word where it can be, e.g. 'New', 'Delete', 'Share', 'Sort'.",
+          "maxItems": 8,
+          "minItems": 3
+         }
+        },
+        "required": [
+         "commands"
+        ],
+        "propertyOrdering": [
+         "commands"
+        ]
+       }
+      },
+      "required": [
+       "commandbar"
+      ],
+      "propertyOrdering": [
+       "commandbar"
+      ]
+     },
+     "tree": [
+      {
+       "id": "commandbar",
+       "component": "CommandBar",
+       "commands": {
+        "path": "/commandbar/commands"
+       },
+       "label": {
+        "path": "label"
+       },
+       "overflow": {
+        "path": "overflow"
+       }
+      }
+     ]
+    },
+    "table": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "table": {
+        "type": "object",
+        "properties": {
+         "columns": {
+          "type": "array",
+          "items": {
+           "type": "string",
+           "description": "One or two words."
+          },
+          "description": "The column headings, the record's name first, e.g. 'Name', 'Date modified', 'Type', 'Size'.",
+          "maxItems": 6,
+          "minItems": 3
+         },
+         "rows": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "cells": {
+             "type": "array",
+             "items": {
+              "type": "string",
+              "description": "Short: a name, a date, a number with its unit, a word of status."
+             },
+             "description": "One value for each column, in the columns' order.",
+             "maxItems": 6,
+             "minItems": 3
+            }
+           },
+           "required": [
+            "cells"
+           ],
+           "propertyOrdering": [
+            "cells"
+           ]
+          },
+          "description": "The records, one to a row.",
+          "maxItems": 10,
+          "minItems": 5
+         }
+        },
+        "required": [
+         "columns",
+         "rows"
+        ],
+        "propertyOrdering": [
+         "columns",
+         "rows"
+        ]
+       }
+      },
+      "required": [
+       "table"
+      ],
+      "propertyOrdering": [
+       "table"
+      ]
+     },
+     "tree": [
+      {
+       "id": "table",
+       "component": "TableView",
+       "columns": {
+        "path": "/table/columns"
+       },
+       "rows": {
+        "path": "/table/rows"
+       },
+       "cells": {
+        "path": "cells"
+       },
+       "selection": "multiple"
+      }
+     ]
+    }
+   },
+   "content": {
+    "titles": {
+     "type": "object",
+     "properties": {
+      "titles": {
+       "type": "object",
+       "properties": {
+        "app": {
+         "type": "string",
+         "description": "The app's name as its title bar shows it, one or two words."
+        },
+        "page": {
+         "type": "string",
+         "description": "The page's title, at most four words: what this place in the app is called, e.g. 'Inbox', 'Library', 'Orders', 'Settings'; one thing's name only when the page is about that one thing. A dialog's title is its question, e.g. 'Delete this file?'; a document's is its file name, e.g. 'Untitled.txt'."
+        }
+       },
+       "required": [
+        "app",
+        "page"
+       ],
+       "propertyOrdering": [
+        "app",
+        "page"
+       ]
+      }
+     },
+     "required": [
+      "titles"
+     ],
+     "propertyOrdering": [
+      "titles"
+     ]
+    },
+    "pane": null,
+    "menubar": {
+     "type": "object",
+     "properties": {
+      "menubar": {
+       "type": "object",
+       "properties": {
+        "menus": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "description": "One word."
+         },
+         "description": "The menu bar's menus, in order, e.g. 'File', 'Edit', 'View', 'Help'.",
+         "maxItems": 6,
+         "minItems": 3
+        }
+       },
+       "required": [
+        "menus"
+       ],
+       "propertyOrdering": [
+        "menus"
+       ]
+      }
+     },
+     "required": [
+      "menubar"
+     ],
+     "propertyOrdering": [
+      "menubar"
+     ]
+    },
+    "tabstrip": null
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Window",
+     "mode": "menubar",
+     "titleBar": "root_titlebar",
+     "menuBar": "root_menubar",
+     "body": "root_page"
+    },
+    {
+     "id": "root_titlebar",
+     "component": "TitleBar",
+     "title": {
+      "path": "/titles/app"
+     },
+     "document": {
+      "path": "/titles/page"
+     },
+     "back": "none"
+    },
+    {
+     "id": "root_menubar",
+     "component": "MenuBar",
+     "items": {
+      "path": "/menubar/menus"
+     }
+    },
+    {
+     "id": "root_page",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "root_header",
+      "infobar",
+      "commandbar",
+      "table"
+     ]
+    },
+    {
+     "id": "root_header",
+     "component": "TextBlock",
+     "style": "title",
+     "text": {
+      "path": "/titles/page"
+     }
+    },
+    {
+     "id": "infobar",
+     "component": "InfoBar",
+     "title": {
+      "path": "/infobar/title"
+     },
+     "message": {
+      "path": "/infobar/message"
+     },
+     "severity": {
+      "path": "/infobar/severity"
+     },
+     "action": {
+      "path": "/infobar/action"
+     }
+    },
+    {
+     "id": "commandbar",
+     "component": "CommandBar",
+     "commands": {
+      "path": "/commandbar/commands"
+     },
+     "label": {
+      "path": "label"
+     },
+     "overflow": {
+      "path": "overflow"
+     }
+    },
+    {
+     "id": "table",
+     "component": "TableView",
+     "columns": {
+      "path": "/table/columns"
+     },
+     "rows": {
+      "path": "/table/rows"
+     },
+     "cells": {
+      "path": "cells"
+     },
+     "selection": "multiple"
+    }
+   ]
+  },
+  {
+   "seed": 2002,
+   "look": {
+    "imagery": true,
+    "icons": true,
+    "contained": true
+   },
+   "reading": {
+    "kind": "details",
+    "blocks": [
+     "flipview",
+     "description",
+     "properties"
+    ],
+    "values": {
+     "silhouette": "menubar",
+     "app_search": false,
+     "section": false,
+     "page_type": "details",
+     "has_infobar": false,
+     "has_commandbar": false,
+     "has_breadcrumb": false,
+     "has_selector": false,
+     "has_flipview": true,
+     "has_shelf": false,
+     "has_items": false,
+     "items_look": "stack",
+     "multi_select": false,
+     "has_table": false,
+     "row_select": false,
+     "has_listdetails": false,
+     "has_description": true,
+     "has_properties": true,
+     "has_page_actions": false,
+     "has_fields": false,
+     "has_setting_sections": false,
+     "has_about": false,
+     "has_message": false,
+     "has_responses": false,
+     "second_response": false,
+     "has_editor": false,
+     "fixed_width": false,
+     "has_canvas": false,
+     "canvas_use": "adjust",
+     "slide_subject": "landmark",
+     "tile_subject": "stay"
+    }
+   },
+   "parts": {
+    "flipview": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "flipview": {
+        "type": "object",
+        "properties": {
+         "slides": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "caption": {
+             "type": "string",
+             "description": "A few words over the picture: a title, a tagline."
+            }
+           },
+           "required": [
+            "caption"
+           ],
+           "propertyOrdering": [
+            "caption"
+           ]
+          },
+          "description": "What each picture is of.",
+          "maxItems": 5,
+          "minItems": 2
+         }
+        },
+        "required": [
+         "slides"
+        ],
+        "propertyOrdering": [
+         "slides"
+        ]
+       }
+      },
+      "required": [
+       "flipview"
+      ],
+      "propertyOrdering": [
+       "flipview"
+      ]
+     },
+     "tree": [
+      {
+       "id": "flipview",
+       "component": "FlipView",
+       "items": {
+        "path": "/flipview/slides"
+       },
+       "picture": {
+        "path": "imageUrl"
+       },
+       "caption": {
+        "path": "caption"
+       },
+       "placeholder": "undefined"
+      }
+     ]
+    },
+    "description": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "description": {
+        "type": "object",
+        "properties": {
+         "text": {
+          "type": "string",
+          "description": "One or two short paragraphs."
+         }
+        },
+        "required": [
+         "text"
+        ],
+        "propertyOrdering": [
+         "text"
+        ]
+       }
+      },
+      "required": [
+       "description"
+      ],
+      "propertyOrdering": [
+       "description"
+      ]
+     },
+     "tree": [
+      {
+       "id": "description",
+       "component": "RichTextBlock",
+       "text": {
+        "path": "/description/text"
+       }
+      }
+     ]
+    },
+    "properties": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "properties": {
+        "type": "object",
+        "properties": {
+         "heading": {
+          "type": "string",
+          "description": "A heading above them, e.g. 'Details', 'Additional information', 'Specifications'."
+         },
+         "properties": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "name": {
+             "type": "string",
+             "description": "What it is, e.g. 'Size', 'Released', 'Publisher'."
+            },
+            "value": {
+             "type": "string",
+             "description": "Its value, short."
+            }
+           },
+           "required": [
+            "name",
+            "value"
+           ],
+           "propertyOrdering": [
+            "name",
+            "value"
+           ]
+          },
+          "description": "The facts.",
+          "maxItems": 8,
+          "minItems": 3
+         }
+        },
+        "required": [
+         "heading",
+         "properties"
+        ],
+        "propertyOrdering": [
+         "heading",
+         "properties"
+        ]
+       }
+      },
+      "required": [
+       "properties"
+      ],
+      "propertyOrdering": [
+       "properties"
+      ]
+     },
+     "tree": [
+      {
+       "id": "properties",
+       "component": "PropertyGrid",
+       "header": {
+        "path": "/properties/heading"
+       },
+       "items": {
+        "path": "/properties/properties"
+       },
+       "name": {
+        "path": "name"
+       },
+       "value": {
+        "path": "value"
+       }
+      }
+     ]
+    }
+   },
+   "content": {
+    "titles": {
+     "type": "object",
+     "properties": {
+      "titles": {
+       "type": "object",
+       "properties": {
+        "app": {
+         "type": "string",
+         "description": "The app's name as its title bar shows it, one or two words."
+        },
+        "page": {
+         "type": "string",
+         "description": "The page's title, at most four words: what this place in the app is called, e.g. 'Inbox', 'Library', 'Orders', 'Settings'; one thing's name only when the page is about that one thing. A dialog's title is its question, e.g. 'Delete this file?'; a document's is its file name, e.g. 'Untitled.txt'."
+        }
+       },
+       "required": [
+        "app",
+        "page"
+       ],
+       "propertyOrdering": [
+        "app",
+        "page"
+       ]
+      }
+     },
+     "required": [
+      "titles"
+     ],
+     "propertyOrdering": [
+      "titles"
+     ]
+    },
+    "pane": null,
+    "menubar": {
+     "type": "object",
+     "properties": {
+      "menubar": {
+       "type": "object",
+       "properties": {
+        "menus": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "description": "One word."
+         },
+         "description": "The menu bar's menus, in order, e.g. 'File', 'Edit', 'View', 'Help'.",
+         "maxItems": 6,
+         "minItems": 3
+        }
+       },
+       "required": [
+        "menus"
+       ],
+       "propertyOrdering": [
+        "menus"
+       ]
+      }
+     },
+     "required": [
+      "menubar"
+     ],
+     "propertyOrdering": [
+      "menubar"
+     ]
+    },
+    "tabstrip": null
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Window",
+     "mode": "menubar",
+     "titleBar": "root_titlebar",
+     "menuBar": "root_menubar",
+     "body": "root_page"
+    },
+    {
+     "id": "root_titlebar",
+     "component": "TitleBar",
+     "title": {
+      "path": "/titles/app"
+     },
+     "document": {
+      "path": "/titles/page"
+     },
+     "back": "none"
+    },
+    {
+     "id": "root_menubar",
+     "component": "MenuBar",
+     "items": {
+      "path": "/menubar/menus"
+     }
+    },
+    {
+     "id": "root_page",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "root_header",
+      "flipview",
+      "description",
+      "properties"
+     ]
+    },
+    {
+     "id": "root_header",
+     "component": "TextBlock",
+     "style": "title",
+     "text": {
+      "path": "/titles/page"
+     }
+    },
+    {
+     "id": "flipview",
+     "component": "FlipView",
+     "items": {
+      "path": "/flipview/slides"
+     },
+     "picture": {
+      "path": "imageUrl"
+     },
+     "caption": {
+      "path": "caption"
+     },
+     "placeholder": "undefined"
+    },
+    {
+     "id": "description",
+     "component": "RichTextBlock",
+     "text": {
+      "path": "/description/text"
+     }
+    },
+    {
+     "id": "properties",
+     "component": "PropertyGrid",
+     "header": {
+      "path": "/properties/heading"
+     },
+     "items": {
+      "path": "/properties/properties"
+     },
+     "name": {
+      "path": "name"
+     },
+     "value": {
+      "path": "value"
+     }
+    }
+   ]
+  },
+  {
+   "seed": 2003,
+   "look": {
+    "imagery": true,
+    "icons": true,
+    "contained": true
+   },
+   "reading": {
+    "kind": "list_details",
+    "blocks": [
+     "commandbar",
+     "listdetails"
+    ],
+    "values": {
+     "silhouette": "left",
+     "app_search": false,
+     "section": true,
+     "page_type": "list_details",
+     "has_infobar": false,
+     "has_commandbar": true,
+     "has_breadcrumb": false,
+     "has_selector": false,
+     "has_flipview": false,
+     "has_shelf": false,
+     "has_items": false,
+     "items_look": "stack",
+     "multi_select": false,
+     "has_table": false,
+     "row_select": false,
+     "has_listdetails": true,
+     "has_description": false,
+     "has_properties": false,
+     "has_page_actions": false,
+     "has_fields": false,
+     "has_setting_sections": false,
+     "has_about": false,
+     "has_message": false,
+     "has_responses": false,
+     "second_response": false,
+     "has_editor": false,
+     "fixed_width": false,
+     "has_canvas": false,
+     "canvas_use": "adjust",
+     "slide_subject": "abstract",
+     "tile_subject": "story"
+    }
+   },
+   "parts": {
+    "commandbar": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "commandbar": {
+        "type": "object",
+        "properties": {
+         "commands": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "label": {
+             "type": "string",
+             "description": "The command's label."
+            }
+           },
+           "required": [
+            "label"
+           ],
+           "propertyOrdering": [
+            "label"
+           ]
+          },
+          "description": "The commands, in order of importance, each a single word where it can be, e.g. 'New', 'Delete', 'Share', 'Sort'.",
+          "maxItems": 8,
+          "minItems": 3
+         }
+        },
+        "required": [
+         "commands"
+        ],
+        "propertyOrdering": [
+         "commands"
+        ]
+       }
+      },
+      "required": [
+       "commandbar"
+      ],
+      "propertyOrdering": [
+       "commandbar"
+      ]
+     },
+     "tree": [
+      {
+       "id": "commandbar",
+       "component": "CommandBar",
+       "commands": {
+        "path": "/commandbar/commands"
+       },
+       "label": {
+        "path": "label"
+       },
+       "icon": {
+        "path": "icon"
+       },
+       "overflow": {
+        "path": "overflow"
+       }
+      }
+     ]
+    },
+    "listdetails": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "listdetails": {
+        "type": "object",
+        "properties": {
+         "items": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "name": {
+             "type": "string",
+             "description": "Who or what: a sender, a contact's name, a note's title."
+            },
+            "summary": {
+             "type": "string",
+             "description": "One line: a subject, a phone number, the first words."
+            },
+            "time": {
+             "type": "string",
+             "description": "A time or a date, e.g. '10:42', 'Yesterday', 'Mon'."
+            }
+           },
+           "required": [
+            "name",
+            "summary",
+            "time"
+           ],
+           "propertyOrdering": [
+            "name",
+            "summary",
+            "time"
+           ]
+          },
+          "description": "The items, newest or most important first. The first is the one open beside the list.",
+          "maxItems": 10,
+          "minItems": 5
+         },
+         "heading": {
+          "type": "string",
+          "description": "The open item's title or subject."
+         },
+         "byline": {
+          "type": "string",
+          "description": "Who and when, in a line, e.g. 'Sarah Chen · Today at 10:42'."
+         },
+         "body": {
+          "type": "string",
+          "description": "The open item in full: two or three short paragraphs."
+         }
+        },
+        "required": [
+         "items",
+         "heading",
+         "byline",
+         "body"
+        ],
+        "propertyOrdering": [
+         "items",
+         "heading",
+         "byline",
+         "body"
+        ]
+       }
+      },
+      "required": [
+       "listdetails"
+      ],
+      "propertyOrdering": [
+       "listdetails"
+      ]
+     },
+     "tree": [
+      {
+       "id": "listdetails",
+       "component": "ListDetailsView",
+       "items": {
+        "path": "/listdetails/items"
+       },
+       "name": {
+        "path": "name"
+       },
+       "summary": {
+        "path": "summary"
+       },
+       "meta": {
+        "path": "time"
+       },
+       "heading": {
+        "path": "/listdetails/heading"
+       },
+       "byline": {
+        "path": "/listdetails/byline"
+       },
+       "body": {
+        "path": "/listdetails/body"
+       }
+      }
+     ]
+    }
+   },
+   "content": {
+    "titles": {
+     "type": "object",
+     "properties": {
+      "titles": {
+       "type": "object",
+       "properties": {
+        "app": {
+         "type": "string",
+         "description": "The app's name as its title bar shows it, one or two words."
+        },
+        "page": {
+         "type": "string",
+         "description": "The page's title, at most four words: what this place in the app is called, e.g. 'Inbox', 'Library', 'Orders', 'Settings'; one thing's name only when the page is about that one thing. A dialog's title is its question, e.g. 'Delete this file?'; a document's is its file name, e.g. 'Untitled.txt'."
+        }
+       },
+       "required": [
+        "app",
+        "page"
+       ],
+       "propertyOrdering": [
+        "app",
+        "page"
+       ]
+      }
+     },
+     "required": [
+      "titles"
+     ],
+     "propertyOrdering": [
+      "titles"
+     ]
+    },
+    "pane": {
+     "type": "object",
+     "properties": {
+      "pane": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One or two words."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's sections, in the order the navigation lists them.",
+         "maxItems": 8,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the section this page is in."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "pane"
+     ],
+     "propertyOrdering": [
+      "pane"
+     ]
+    },
+    "menubar": null,
+    "tabstrip": null
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Window",
+     "mode": "left",
+     "titleBar": "root_titlebar",
+     "navigation": "root_navigation",
+     "body": "root_page"
+    },
+    {
+     "id": "root_titlebar",
+     "component": "TitleBar",
+     "title": {
+      "path": "/titles/app"
+     },
+     "back": "off"
+    },
+    {
+     "id": "root_navigation",
+     "component": "NavigationView",
+     "mode": "left",
+     "items": {
+      "path": "/pane/items"
+     },
+     "label": {
+      "path": "label"
+     },
+     "icon": {
+      "path": "icon"
+     },
+     "selected": {
+      "path": "/pane/active"
+     },
+     "settings": true
+    },
+    {
+     "id": "root_page",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "root_header",
+      "commandbar",
+      "listdetails"
+     ]
+    },
+    {
+     "id": "root_header",
+     "component": "TextBlock",
+     "style": "title",
+     "text": {
+      "path": "/titles/page"
+     }
+    },
+    {
+     "id": "commandbar",
+     "component": "CommandBar",
+     "commands": {
+      "path": "/commandbar/commands"
+     },
+     "label": {
+      "path": "label"
+     },
+     "icon": {
+      "path": "icon"
+     },
+     "overflow": {
+      "path": "overflow"
+     }
+    },
+    {
+     "id": "listdetails",
+     "component": "ListDetailsView",
+     "items": {
+      "path": "/listdetails/items"
+     },
+     "name": {
+      "path": "name"
+     },
+     "summary": {
+      "path": "summary"
+     },
+     "meta": {
+      "path": "time"
+     },
+     "heading": {
+      "path": "/listdetails/heading"
+     },
+     "byline": {
+      "path": "/listdetails/byline"
+     },
+     "body": {
+      "path": "/listdetails/body"
+     }
+    }
+   ]
+  },
+  {
+   "seed": 2004,
+   "look": {
+    "imagery": true,
+    "icons": true,
+    "contained": false
+   },
+   "reading": {
+    "kind": "content_grid",
+    "blocks": [
+     "selector",
+     "items"
+    ],
+    "values": {
+     "silhouette": "tabs",
+     "app_search": false,
+     "section": false,
+     "page_type": "content_grid",
+     "has_infobar": false,
+     "has_commandbar": false,
+     "has_breadcrumb": false,
+     "has_selector": true,
+     "has_flipview": false,
+     "has_shelf": false,
+     "has_items": true,
+     "items_look": "grid",
+     "multi_select": false,
+     "has_table": false,
+     "row_select": false,
+     "has_listdetails": false,
+     "has_description": false,
+     "has_properties": false,
+     "has_page_actions": false,
+     "has_fields": false,
+     "has_setting_sections": false,
+     "has_about": false,
+     "has_message": false,
+     "has_responses": false,
+     "second_response": false,
+     "has_editor": false,
+     "fixed_width": false,
+     "has_canvas": false,
+     "canvas_use": "adjust",
+     "slide_subject": "cat",
+     "tile_subject": "bicycle"
+    }
+   },
+   "parts": {
+    "selector": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "selector": {
+        "type": "object",
+        "properties": {
+         "views": {
+          "type": "array",
+          "items": {
+           "type": "string",
+           "description": "One or two words."
+          },
+          "description": "The views, the first selected.",
+          "maxItems": 4,
+          "minItems": 2
+         }
+        },
+        "required": [
+         "views"
+        ],
+        "propertyOrdering": [
+         "views"
+        ]
+       }
+      },
+      "required": [
+       "selector"
+      ],
+      "propertyOrdering": [
+       "selector"
+      ]
+     },
+     "tree": [
+      {
+       "id": "selector",
+       "component": "SelectorBar",
+       "items": {
+        "path": "/selector/views"
+       }
+      }
+     ]
+    },
+    "items": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "items": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "properties": {
+          "name": {
+           "type": "string",
+           "description": "Its name."
+          },
+          "detail": {
+           "type": "string",
+           "description": "One line: an artist, a size, a date, a price, who it is from."
+          }
+         },
+         "required": [
+          "name",
+          "detail"
+         ],
+         "propertyOrdering": [
+          "name",
+          "detail"
+         ]
+        },
+        "description": "The things.",
+        "maxItems": 12,
+        "minItems": 4
+       }
+      },
+      "required": [
+       "items"
+      ],
+      "propertyOrdering": [
+       "items"
+      ]
+     },
+     "tree": [
+      {
+       "id": "items",
+       "component": "ItemsView",
+       "layout": "grid",
+       "children": {
+        "path": "/items",
+        "componentId": "items_item"
+       }
+      },
+      {
+       "id": "items_item",
+       "component": "ItemContainer",
+       "name": {
+        "path": "name"
+       },
+       "detail": {
+        "path": "detail"
+       },
+       "picture": {
+        "path": "imageUrl"
+       },
+       "placeholder": "undefined"
+      }
+     ]
+    }
+   },
+   "content": {
+    "titles": {
+     "type": "object",
+     "properties": {
+      "titles": {
+       "type": "object",
+       "properties": {
+        "app": {
+         "type": "string",
+         "description": "The app's name as its title bar shows it, one or two words."
+        },
+        "page": {
+         "type": "string",
+         "description": "The page's title, at most four words: what this place in the app is called, e.g. 'Inbox', 'Library', 'Orders', 'Settings'; one thing's name only when the page is about that one thing. A dialog's title is its question, e.g. 'Delete this file?'; a document's is its file name, e.g. 'Untitled.txt'."
+        }
+       },
+       "required": [
+        "app",
+        "page"
+       ],
+       "propertyOrdering": [
+        "app",
+        "page"
+       ]
+      }
+     },
+     "required": [
+      "titles"
+     ],
+     "propertyOrdering": [
+      "titles"
+     ]
+    },
+    "pane": null,
+    "menubar": null,
+    "tabstrip": {
+     "type": "object",
+     "properties": {
+      "tabstrip": {
+       "type": "object",
+       "properties": {
+        "documents": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "description": "A name of a few words."
+         },
+         "description": "What is open, one tab each, the one shown first, e.g. 'PowerShell', 'Ubuntu', 'Command Prompt'.",
+         "maxItems": 5,
+         "minItems": 2
+        }
+       },
+       "required": [
+        "documents"
+       ],
+       "propertyOrdering": [
+        "documents"
+       ]
+      }
+     },
+     "required": [
+      "tabstrip"
+     ],
+     "propertyOrdering": [
+      "tabstrip"
+     ]
+    }
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Window",
+     "mode": "tabs",
+     "titleBar": "root_titlebar",
+     "body": "root_page"
+    },
+    {
+     "id": "root_titlebar",
+     "component": "TitleBar",
+     "title": {
+      "path": "/titles/app"
+     },
+     "back": "none",
+     "tabs": {
+      "path": "/tabstrip/documents"
+     }
+    },
+    {
+     "id": "root_page",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "root_header",
+      "selector",
+      "items"
+     ]
+    },
+    {
+     "id": "root_header",
+     "component": "TextBlock",
+     "style": "title",
+     "text": {
+      "path": "/titles/page"
+     }
+    },
+    {
+     "id": "selector",
+     "component": "SelectorBar",
+     "items": {
+      "path": "/selector/views"
+     }
+    },
+    {
+     "id": "items",
+     "component": "ItemsView",
+     "layout": "grid",
+     "children": {
+      "path": "/items",
+      "componentId": "items_item"
+     }
+    },
+    {
+     "id": "items_item",
+     "component": "ItemContainer",
+     "name": {
+      "path": "name"
+     },
+     "detail": {
+      "path": "detail"
+     },
+     "picture": {
+      "path": "imageUrl"
+     },
+     "placeholder": "undefined"
+    }
+   ]
+  },
+  {
+   "seed": 2005,
+   "look": {
+    "imagery": true,
+    "icons": true,
+    "contained": false
+   },
+   "reading": {
+    "kind": "document",
+    "blocks": [
+     "editor"
+    ],
+    "values": {
+     "silhouette": "top",
+     "app_search": false,
+     "section": true,
+     "page_type": "document",
+     "has_infobar": false,
+     "has_commandbar": false,
+     "has_breadcrumb": false,
+     "has_selector": false,
+     "has_flipview": false,
+     "has_shelf": false,
+     "has_items": false,
+     "items_look": "stack",
+     "multi_select": false,
+     "has_table": false,
+     "row_select": false,
+     "has_listdetails": false,
+     "has_description": false,
+     "has_properties": false,
+     "has_page_actions": false,
+     "has_fields": false,
+     "has_setting_sections": false,
+     "has_about": false,
+     "has_message": false,
+     "has_responses": false,
+     "second_response": false,
+     "has_editor": true,
+     "fixed_width": true,
+     "has_canvas": false,
+     "canvas_use": "adjust",
+     "slide_subject": "water",
+     "tile_subject": "portrait"
+    }
+   },
+   "parts": {
+    "editor": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "editor": {
+        "type": "object",
+        "properties": {
+         "lines": {
+          "type": "array",
+          "items": {
+           "type": "string",
+           "description": "One line."
+          },
+          "description": "The document's text, one line each, an empty string for a blank line.",
+          "maxItems": 24,
+          "minItems": 10
+         }
+        },
+        "required": [
+         "lines"
+        ],
+        "propertyOrdering": [
+         "lines"
+        ]
+       }
+      },
+      "required": [
+       "editor"
+      ],
+      "propertyOrdering": [
+       "editor"
+      ]
+     },
+     "tree": [
+      {
+       "id": "editor",
+       "component": "RichEditBox",
+       "lines": {
+        "path": "/editor/lines"
+       },
+       "mono": true
+      }
+     ]
+    }
+   },
+   "content": {
+    "titles": {
+     "type": "object",
+     "properties": {
+      "titles": {
+       "type": "object",
+       "properties": {
+        "app": {
+         "type": "string",
+         "description": "The app's name as its title bar shows it, one or two words."
+        },
+        "page": {
+         "type": "string",
+         "description": "The page's title, at most four words: what this place in the app is called, e.g. 'Inbox', 'Library', 'Orders', 'Settings'; one thing's name only when the page is about that one thing. A dialog's title is its question, e.g. 'Delete this file?'; a document's is its file name, e.g. 'Untitled.txt'."
+        }
+       },
+       "required": [
+        "app",
+        "page"
+       ],
+       "propertyOrdering": [
+        "app",
+        "page"
+       ]
+      }
+     },
+     "required": [
+      "titles"
+     ],
+     "propertyOrdering": [
+      "titles"
+     ]
+    },
+    "pane": {
+     "type": "object",
+     "properties": {
+      "pane": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One or two words."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's sections, in the order the navigation lists them.",
+         "maxItems": 8,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the section this page is in."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "pane"
+     ],
+     "propertyOrdering": [
+      "pane"
+     ]
+    },
+    "menubar": null,
+    "tabstrip": null
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Window",
+     "mode": "top",
+     "titleBar": "root_titlebar",
+     "navigation": "root_navigation",
+     "body": "root_page"
+    },
+    {
+     "id": "root_titlebar",
+     "component": "TitleBar",
+     "title": {
+      "path": "/titles/app"
+     },
+     "back": "off"
+    },
+    {
+     "id": "root_navigation",
+     "component": "NavigationView",
+     "mode": "top",
+     "items": {
+      "path": "/pane/items"
+     },
+     "label": {
+      "path": "label"
+     },
+     "icon": {
+      "path": "icon"
+     },
+     "selected": {
+      "path": "/pane/active"
+     },
+     "settings": false
+    },
+    {
+     "id": "root_page",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "editor"
+     ]
+    },
+    {
+     "id": "editor",
+     "component": "RichEditBox",
+     "lines": {
+      "path": "/editor/lines"
+     },
+     "mono": true
+    }
+   ]
+  },
+  {
+   "seed": 2006,
+   "look": {
+    "imagery": false,
+    "icons": true,
+    "contained": true
+   },
+   "reading": {
+    "kind": "details",
+    "blocks": [
+     "breadcrumb",
+     "flipview",
+     "properties"
+    ],
+    "values": {
+     "silhouette": "menubar",
+     "app_search": false,
+     "section": false,
+     "page_type": "details",
+     "has_infobar": false,
+     "has_commandbar": false,
+     "has_breadcrumb": true,
+     "has_selector": false,
+     "has_flipview": true,
+     "has_shelf": false,
+     "has_items": false,
+     "items_look": "stack",
+     "multi_select": false,
+     "has_table": false,
+     "row_select": false,
+     "has_listdetails": false,
+     "has_description": false,
+     "has_properties": true,
+     "has_page_actions": false,
+     "has_fields": false,
+     "has_setting_sections": false,
+     "has_about": false,
+     "has_message": false,
+     "has_responses": false,
+     "second_response": false,
+     "has_editor": false,
+     "fixed_width": false,
+     "has_canvas": false,
+     "canvas_use": "adjust",
+     "slide_subject": "work",
+     "tile_subject": "work"
+    }
+   },
+   "parts": {
+    "breadcrumb": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "breadcrumb": {
+        "type": "object",
+        "properties": {
+         "crumbs": {
+          "type": "array",
+          "items": {
+           "type": "string",
+           "description": "One to three words."
+          },
+          "description": "The levels from the top down to this page, this page last, e.g. 'Documents', 'Projects', '2026'.",
+          "maxItems": 5,
+          "minItems": 3
+         }
+        },
+        "required": [
+         "crumbs"
+        ],
+        "propertyOrdering": [
+         "crumbs"
+        ]
+       }
+      },
+      "required": [
+       "breadcrumb"
+      ],
+      "propertyOrdering": [
+       "breadcrumb"
+      ]
+     },
+     "tree": [
+      {
+       "id": "breadcrumb",
+       "component": "BreadcrumbBar",
+       "items": {
+        "path": "/breadcrumb/crumbs"
+       }
+      }
+     ]
+    },
+    "flipview": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "flipview": {
+        "type": "object",
+        "properties": {
+         "slides": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "caption": {
+             "type": "string",
+             "description": "A few words over the picture: a title, a tagline."
+            }
+           },
+           "required": [
+            "caption"
+           ],
+           "propertyOrdering": [
+            "caption"
+           ]
+          },
+          "description": "What each picture is of.",
+          "maxItems": 5,
+          "minItems": 2
+         }
+        },
+        "required": [
+         "slides"
+        ],
+        "propertyOrdering": [
+         "slides"
+        ]
+       }
+      },
+      "required": [
+       "flipview"
+      ],
+      "propertyOrdering": [
+       "flipview"
+      ]
+     },
+     "tree": [
+      {
+       "id": "flipview",
+       "component": "FlipView",
+       "items": {
+        "path": "/flipview/slides"
+       },
+       "picture": {
+        "path": "imageUrl"
+       },
+       "caption": {
+        "path": "caption"
+       },
+       "placeholder": "undefined"
+      }
+     ]
+    },
+    "properties": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "properties": {
+        "type": "object",
+        "properties": {
+         "heading": {
+          "type": "string",
+          "description": "A heading above them, e.g. 'Details', 'Additional information', 'Specifications'."
+         },
+         "properties": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "name": {
+             "type": "string",
+             "description": "What it is, e.g. 'Size', 'Released', 'Publisher'."
+            },
+            "value": {
+             "type": "string",
+             "description": "Its value, short."
+            }
+           },
+           "required": [
+            "name",
+            "value"
+           ],
+           "propertyOrdering": [
+            "name",
+            "value"
+           ]
+          },
+          "description": "The facts.",
+          "maxItems": 8,
+          "minItems": 3
+         }
+        },
+        "required": [
+         "heading",
+         "properties"
+        ],
+        "propertyOrdering": [
+         "heading",
+         "properties"
+        ]
+       }
+      },
+      "required": [
+       "properties"
+      ],
+      "propertyOrdering": [
+       "properties"
+      ]
+     },
+     "tree": [
+      {
+       "id": "properties",
+       "component": "PropertyGrid",
+       "header": {
+        "path": "/properties/heading"
+       },
+       "items": {
+        "path": "/properties/properties"
+       },
+       "name": {
+        "path": "name"
+       },
+       "value": {
+        "path": "value"
+       }
+      }
+     ]
+    }
+   },
+   "content": {
+    "titles": {
+     "type": "object",
+     "properties": {
+      "titles": {
+       "type": "object",
+       "properties": {
+        "app": {
+         "type": "string",
+         "description": "The app's name as its title bar shows it, one or two words."
+        },
+        "page": {
+         "type": "string",
+         "description": "The page's title, at most four words: what this place in the app is called, e.g. 'Inbox', 'Library', 'Orders', 'Settings'; one thing's name only when the page is about that one thing. A dialog's title is its question, e.g. 'Delete this file?'; a document's is its file name, e.g. 'Untitled.txt'."
+        }
+       },
+       "required": [
+        "app",
+        "page"
+       ],
+       "propertyOrdering": [
+        "app",
+        "page"
+       ]
+      }
+     },
+     "required": [
+      "titles"
+     ],
+     "propertyOrdering": [
+      "titles"
+     ]
+    },
+    "pane": null,
+    "menubar": {
+     "type": "object",
+     "properties": {
+      "menubar": {
+       "type": "object",
+       "properties": {
+        "menus": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "description": "One word."
+         },
+         "description": "The menu bar's menus, in order, e.g. 'File', 'Edit', 'View', 'Help'.",
+         "maxItems": 6,
+         "minItems": 3
+        }
+       },
+       "required": [
+        "menus"
+       ],
+       "propertyOrdering": [
+        "menus"
+       ]
+      }
+     },
+     "required": [
+      "menubar"
+     ],
+     "propertyOrdering": [
+      "menubar"
+     ]
+    },
+    "tabstrip": null
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Window",
+     "mode": "menubar",
+     "titleBar": "root_titlebar",
+     "menuBar": "root_menubar",
+     "body": "root_page"
+    },
+    {
+     "id": "root_titlebar",
+     "component": "TitleBar",
+     "title": {
+      "path": "/titles/app"
+     },
+     "document": {
+      "path": "/titles/page"
+     },
+     "back": "none"
+    },
+    {
+     "id": "root_menubar",
+     "component": "MenuBar",
+     "items": {
+      "path": "/menubar/menus"
+     }
+    },
+    {
+     "id": "root_page",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "root_header",
+      "breadcrumb",
+      "flipview",
+      "properties"
+     ]
+    },
+    {
+     "id": "root_header",
+     "component": "TextBlock",
+     "style": "title",
+     "text": {
+      "path": "/titles/page"
+     }
+    },
+    {
+     "id": "breadcrumb",
+     "component": "BreadcrumbBar",
+     "items": {
+      "path": "/breadcrumb/crumbs"
+     }
+    },
+    {
+     "id": "flipview",
+     "component": "FlipView",
+     "items": {
+      "path": "/flipview/slides"
+     },
+     "picture": {
+      "path": "imageUrl"
+     },
+     "caption": {
+      "path": "caption"
+     },
+     "placeholder": "undefined"
+    },
+    {
+     "id": "properties",
+     "component": "PropertyGrid",
+     "header": {
+      "path": "/properties/heading"
+     },
+     "items": {
+      "path": "/properties/properties"
+     },
+     "name": {
+      "path": "name"
+     },
+     "value": {
+      "path": "value"
+     }
+    }
+   ]
+  },
+  {
+   "seed": 2007,
+   "look": {
+    "imagery": true,
+    "icons": true,
+    "contained": true
+   },
+   "reading": {
+    "kind": "dialog",
+    "blocks": [
+     "message",
+     "responses"
+    ],
+    "values": {
+     "silhouette": "top",
+     "app_search": true,
+     "section": false,
+     "page_type": "dialog",
+     "has_infobar": false,
+     "has_commandbar": false,
+     "has_breadcrumb": false,
+     "has_selector": false,
+     "has_flipview": false,
+     "has_shelf": false,
+     "has_items": false,
+     "items_look": "stack",
+     "multi_select": false,
+     "has_table": false,
+     "row_select": false,
+     "has_listdetails": false,
+     "has_description": false,
+     "has_properties": false,
+     "has_page_actions": false,
+     "has_fields": false,
+     "has_setting_sections": false,
+     "has_about": false,
+     "has_message": true,
+     "has_responses": true,
+     "second_response": true,
+     "has_editor": false,
+     "fixed_width": false,
+     "has_canvas": false,
+     "canvas_use": "adjust",
+     "slide_subject": "stay",
+     "tile_subject": "water"
+    }
+   },
+   "parts": {
+    "message": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "message": {
+        "type": "object",
+        "properties": {
+         "text": {
+          "type": "string",
+          "description": "One or two sentences: what happens, what is lost, or what it means."
+         }
+        },
+        "required": [
+         "text"
+        ],
+        "propertyOrdering": [
+         "text"
+        ]
+       }
+      },
+      "required": [
+       "message"
+      ],
+      "propertyOrdering": [
+       "message"
+      ]
+     },
+     "tree": [
+      {
+       "id": "message",
+       "component": "RichTextBlock",
+       "text": {
+        "path": "/message/text"
+       }
+      }
+     ]
+    },
+    "responses": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "responses": {
+        "type": "object",
+        "properties": {
+         "primary": {
+          "type": "string",
+          "description": "The response that does it, a specific verb, e.g. 'Delete', 'Allow', 'Save', 'Sign out'. Left out if the dialog only tells something."
+         },
+         "secondary": {
+          "type": "string",
+          "description": "The other thing it can do, e.g. \"Don't save\"."
+         },
+         "close": {
+          "type": "string",
+          "description": "The response that changes nothing, e.g. 'Cancel', 'Not now'; 'OK' or 'Close' if the dialog only tells something."
+         }
+        },
+        "required": [
+         "secondary",
+         "close"
+        ],
+        "propertyOrdering": [
+         "primary",
+         "secondary",
+         "close"
+        ]
+       }
+      },
+      "required": [
+       "responses"
+      ],
+      "propertyOrdering": [
+       "responses"
+      ]
+     },
+     "tree": [
+      {
+       "id": "responses",
+       "component": "DialogCommands",
+       "primary": {
+        "path": "/responses/primary"
+       },
+       "secondary": {
+        "path": "/responses/secondary"
+       },
+       "close": {
+        "path": "/responses/close"
+       },
+       "default": {
+        "path": "/responses/default"
+       }
+      }
+     ]
+    }
+   },
+   "content": {
+    "titles": {
+     "type": "object",
+     "properties": {
+      "titles": {
+       "type": "object",
+       "properties": {
+        "app": {
+         "type": "string",
+         "description": "The app's name as its title bar shows it, one or two words."
+        },
+        "page": {
+         "type": "string",
+         "description": "The page's title, at most four words: what this place in the app is called, e.g. 'Inbox', 'Library', 'Orders', 'Settings'; one thing's name only when the page is about that one thing. A dialog's title is its question, e.g. 'Delete this file?'; a document's is its file name, e.g. 'Untitled.txt'."
+        }
+       },
+       "required": [
+        "app",
+        "page"
+       ],
+       "propertyOrdering": [
+        "app",
+        "page"
+       ]
+      }
+     },
+     "required": [
+      "titles"
+     ],
+     "propertyOrdering": [
+      "titles"
+     ]
+    },
+    "pane": null,
+    "menubar": null,
+    "tabstrip": null
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "ContentDialog",
+     "title": {
+      "path": "/titles/page"
+     },
+     "children": [
+      "message",
+      "responses"
+     ]
+    },
+    {
+     "id": "message",
+     "component": "RichTextBlock",
+     "text": {
+      "path": "/message/text"
+     }
+    },
+    {
+     "id": "responses",
+     "component": "DialogCommands",
+     "primary": {
+      "path": "/responses/primary"
+     },
+     "secondary": {
+      "path": "/responses/secondary"
+     },
+     "close": {
+      "path": "/responses/close"
+     },
+     "default": {
+      "path": "/responses/default"
+     }
+    }
+   ]
+  },
+  {
+   "seed": 2008,
+   "look": {
+    "imagery": true,
+    "icons": true,
+    "contained": true
+   },
+   "reading": {
+    "kind": "form",
+    "blocks": [
+     "fields"
+    ],
+    "values": {
+     "silhouette": "left",
+     "app_search": true,
+     "section": true,
+     "page_type": "form",
+     "has_infobar": false,
+     "has_commandbar": false,
+     "has_breadcrumb": false,
+     "has_selector": false,
+     "has_flipview": false,
+     "has_shelf": false,
+     "has_items": false,
+     "items_look": "stack",
+     "multi_select": false,
+     "has_table": false,
+     "row_select": false,
+     "has_listdetails": false,
+     "has_description": false,
+     "has_properties": false,
+     "has_page_actions": false,
+     "has_fields": true,
+     "has_setting_sections": false,
+     "has_about": false,
+     "has_message": false,
+     "has_responses": false,
+     "second_response": false,
+     "has_editor": false,
+     "fixed_width": false,
+     "has_canvas": false,
+     "canvas_use": "adjust",
+     "slide_subject": "bicycle",
+     "tile_subject": "tools"
+    }
+   },
+   "parts": {
+    "fields": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "fields": {
+        "type": "object",
+        "properties": {
+         "fields": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "header": {
+             "type": "string",
+             "description": "The field's header, e.g. 'First name', 'Email', 'Start date'."
+            },
+            "placeholder": {
+             "type": "string",
+             "description": "An example of what goes in it."
+            },
+            "required": {
+             "type": "boolean",
+             "description": "Whether it has to be filled in."
+            },
+            "options": {
+             "type": "array",
+             "items": {
+              "type": "string",
+              "description": "One to three words."
+             },
+             "description": "What can be chosen, when the field is a choice.",
+             "maxItems": 6,
+             "minItems": 2
+            }
+           },
+           "required": [
+            "header",
+            "required"
+           ],
+           "propertyOrdering": [
+            "header",
+            "placeholder",
+            "required",
+            "options"
+           ]
+          },
+          "description": "The fields in order, each with a header above its control.",
+          "maxItems": 7,
+          "minItems": 2
+         },
+         "submit": {
+          "type": "string",
+          "description": "The submitting button's label, a verb, e.g. 'Create account', 'Sign in', 'Book', 'Send'."
+         }
+        },
+        "required": [
+         "fields",
+         "submit"
+        ],
+        "propertyOrdering": [
+         "fields",
+         "submit"
+        ]
+       }
+      },
+      "required": [
+       "fields"
+      ],
+      "propertyOrdering": [
+       "fields"
+      ]
+     },
+     "tree": [
+      {
+       "id": "fields",
+       "component": "StackPanel",
+       "spacing": 24,
+       "children": [
+        "fields_fields",
+        "fields_submit"
+       ]
+      },
+      {
+       "id": "fields_fields",
+       "component": "StackPanel",
+       "spacing": 16,
+       "children": {
+        "path": "/fields/fields",
+        "componentId": "fields_field"
+       }
+      },
+      {
+       "id": "fields_field",
+       "component": "InputControl",
+       "header": {
+        "path": "header"
+       },
+       "control": {
+        "path": "control"
+       },
+       "placeholder": {
+        "path": "placeholder"
+       },
+       "required": {
+        "path": "required"
+       },
+       "options": {
+        "path": "options"
+       }
+      },
+      {
+       "id": "fields_submit",
+       "component": "Button",
+       "label": {
+        "path": "/fields/submit"
+       },
+       "style": "accent",
+       "event": "submit"
+      }
+     ]
+    }
+   },
+   "content": {
+    "titles": {
+     "type": "object",
+     "properties": {
+      "titles": {
+       "type": "object",
+       "properties": {
+        "app": {
+         "type": "string",
+         "description": "The app's name as its title bar shows it, one or two words."
+        },
+        "page": {
+         "type": "string",
+         "description": "The page's title, at most four words: what this place in the app is called, e.g. 'Inbox', 'Library', 'Orders', 'Settings'; one thing's name only when the page is about that one thing. A dialog's title is its question, e.g. 'Delete this file?'; a document's is its file name, e.g. 'Untitled.txt'."
+        }
+       },
+       "required": [
+        "app",
+        "page"
+       ],
+       "propertyOrdering": [
+        "app",
+        "page"
+       ]
+      }
+     },
+     "required": [
+      "titles"
+     ],
+     "propertyOrdering": [
+      "titles"
+     ]
+    },
+    "pane": {
+     "type": "object",
+     "properties": {
+      "pane": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One or two words."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's sections, in the order the navigation lists them.",
+         "maxItems": 8,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the section this page is in."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "pane"
+     ],
+     "propertyOrdering": [
+      "pane"
+     ]
+    },
+    "menubar": null,
+    "tabstrip": null
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Window",
+     "mode": "left",
+     "titleBar": "root_titlebar",
+     "navigation": "root_navigation",
+     "body": "root_page"
+    },
+    {
+     "id": "root_titlebar",
+     "component": "TitleBar",
+     "title": {
+      "path": "/titles/app"
+     },
+     "back": "off",
+     "search": true
+    },
+    {
+     "id": "root_navigation",
+     "component": "NavigationView",
+     "mode": "left",
+     "items": {
+      "path": "/pane/items"
+     },
+     "label": {
+      "path": "label"
+     },
+     "icon": {
+      "path": "icon"
+     },
+     "selected": {
+      "path": "/pane/active"
+     },
+     "settings": true
+    },
+    {
+     "id": "root_page",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "root_header",
+      "fields"
+     ]
+    },
+    {
+     "id": "root_header",
+     "component": "TextBlock",
+     "style": "title",
+     "text": {
+      "path": "/titles/page"
+     }
+    },
+    {
+     "id": "fields",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "fields_fields",
+      "fields_submit"
+     ]
+    },
+    {
+     "id": "fields_fields",
+     "component": "StackPanel",
+     "spacing": 16,
+     "children": {
+      "path": "/fields/fields",
+      "componentId": "fields_field"
+     }
+    },
+    {
+     "id": "fields_field",
+     "component": "InputControl",
+     "header": {
+      "path": "header"
+     },
+     "control": {
+      "path": "control"
+     },
+     "placeholder": {
+      "path": "placeholder"
+     },
+     "required": {
+      "path": "required"
+     },
+     "options": {
+      "path": "options"
+     }
+    },
+    {
+     "id": "fields_submit",
+     "component": "Button",
+     "label": {
+      "path": "/fields/submit"
+     },
+     "style": "accent",
+     "event": "submit"
+    }
+   ]
+  },
+  {
+   "seed": 2009,
+   "look": {
+    "imagery": true,
+    "icons": false,
+    "contained": false
+   },
+   "reading": {
+    "kind": "landing",
+    "blocks": [
+     "infobar",
+     "shelf",
+     "items"
+    ],
+    "values": {
+     "silhouette": "top",
+     "app_search": false,
+     "section": true,
+     "page_type": "landing",
+     "has_infobar": true,
+     "has_commandbar": false,
+     "has_breadcrumb": false,
+     "has_selector": false,
+     "has_flipview": false,
+     "has_shelf": true,
+     "has_items": true,
+     "items_look": "grid",
+     "multi_select": true,
+     "has_table": false,
+     "row_select": false,
+     "has_listdetails": false,
+     "has_description": false,
+     "has_properties": false,
+     "has_page_actions": false,
+     "has_fields": false,
+     "has_setting_sections": false,
+     "has_about": false,
+     "has_message": false,
+     "has_responses": false,
+     "second_response": false,
+     "has_editor": false,
+     "fixed_width": false,
+     "has_canvas": false,
+     "canvas_use": "adjust",
+     "slide_subject": "story",
+     "tile_subject": "desert"
+    }
+   },
+   "parts": {
+    "infobar": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "infobar": {
+        "type": "object",
+        "properties": {
+         "title": {
+          "type": "string",
+          "description": "What changed, in a few words, e.g. 'You're offline', 'Update available'."
+         },
+         "message": {
+          "type": "string",
+          "description": "One sentence: what it means, or what to do about it."
+         },
+         "action": {
+          "type": "string",
+          "description": "The label of a button, if there is one thing to do, e.g. 'Retry', 'Install', 'Renew'."
+         }
+        },
+        "required": [
+         "title",
+         "message"
+        ],
+        "propertyOrdering": [
+         "title",
+         "message",
+         "action"
+        ]
+       }
+      },
+      "required": [
+       "infobar"
+      ],
+      "propertyOrdering": [
+       "infobar"
+      ]
+     },
+     "tree": [
+      {
+       "id": "infobar",
+       "component": "InfoBar",
+       "title": {
+        "path": "/infobar/title"
+       },
+       "message": {
+        "path": "/infobar/message"
+       },
+       "severity": {
+        "path": "/infobar/severity"
+       },
+       "action": {
+        "path": "/infobar/action"
+       }
+      }
+     ]
+    },
+    "shelf": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "shelf": {
+        "type": "object",
+        "properties": {
+         "title": {
+          "type": "string",
+          "description": "The row's name, e.g. 'New and trending', 'Continue watching'."
+         },
+         "tiles": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "name": {
+             "type": "string",
+             "description": "Its name."
+            },
+            "detail": {
+             "type": "string",
+             "description": "One line: who made it, a genre, a price."
+            }
+           },
+           "required": [
+            "name",
+            "detail"
+           ],
+           "propertyOrdering": [
+            "name",
+            "detail"
+           ]
+          },
+          "description": "The things in the row.",
+          "maxItems": 8,
+          "minItems": 4
+         }
+        },
+        "required": [
+         "title",
+         "tiles"
+        ],
+        "propertyOrdering": [
+         "title",
+         "tiles"
+        ]
+       }
+      },
+      "required": [
+       "shelf"
+      ],
+      "propertyOrdering": [
+       "shelf"
+      ]
+     },
+     "tree": [
+      {
+       "id": "shelf",
+       "component": "ScrollView",
+       "header": {
+        "path": "/shelf/title"
+       },
+       "children": {
+        "path": "/shelf/tiles",
+        "componentId": "shelf_tile"
+       }
+      },
+      {
+       "id": "shelf_tile",
+       "component": "ItemContainer",
+       "name": {
+        "path": "name"
+       },
+       "detail": {
+        "path": "detail"
+       },
+       "picture": {
+        "path": "imageUrl"
+       },
+       "placeholder": "undefined"
+      }
+     ]
+    },
+    "items": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "items": {
+        "type": "object",
+        "properties": {
+         "heading": {
+          "type": "string",
+          "description": "A heading above them, in a few words."
+         },
+         "items": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "name": {
+             "type": "string",
+             "description": "Its name."
+            },
+            "detail": {
+             "type": "string",
+             "description": "One line: an artist, a size, a date, a price, who it is from."
+            }
+           },
+           "required": [
+            "name",
+            "detail"
+           ],
+           "propertyOrdering": [
+            "name",
+            "detail"
+           ]
+          },
+          "description": "The things.",
+          "maxItems": 12,
+          "minItems": 4
+         }
+        },
+        "required": [
+         "heading",
+         "items"
+        ],
+        "propertyOrdering": [
+         "heading",
+         "items"
+        ]
+       }
+      },
+      "required": [
+       "items"
+      ],
+      "propertyOrdering": [
+       "items"
+      ]
+     },
+     "tree": [
+      {
+       "id": "items",
+       "component": "ItemsView",
+       "header": {
+        "path": "/items/heading"
+       },
+       "layout": "grid",
+       "selection": "multiple",
+       "children": {
+        "path": "/items/items",
+        "componentId": "items_item"
+       }
+      },
+      {
+       "id": "items_item",
+       "component": "ItemContainer",
+       "name": {
+        "path": "name"
+       },
+       "detail": {
+        "path": "detail"
+       },
+       "picture": {
+        "path": "imageUrl"
+       },
+       "placeholder": "undefined"
+      }
+     ]
+    }
+   },
+   "content": {
+    "titles": {
+     "type": "object",
+     "properties": {
+      "titles": {
+       "type": "object",
+       "properties": {
+        "app": {
+         "type": "string",
+         "description": "The app's name as its title bar shows it, one or two words."
+        },
+        "page": {
+         "type": "string",
+         "description": "The page's title, at most four words: what this place in the app is called, e.g. 'Inbox', 'Library', 'Orders', 'Settings'; one thing's name only when the page is about that one thing. A dialog's title is its question, e.g. 'Delete this file?'; a document's is its file name, e.g. 'Untitled.txt'."
+        }
+       },
+       "required": [
+        "app",
+        "page"
+       ],
+       "propertyOrdering": [
+        "app",
+        "page"
+       ]
+      }
+     },
+     "required": [
+      "titles"
+     ],
+     "propertyOrdering": [
+      "titles"
+     ]
+    },
+    "pane": {
+     "type": "object",
+     "properties": {
+      "pane": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One or two words."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's sections, in the order the navigation lists them.",
+         "maxItems": 8,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the section this page is in."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "pane"
+     ],
+     "propertyOrdering": [
+      "pane"
+     ]
+    },
+    "menubar": null,
+    "tabstrip": null
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Window",
+     "mode": "top",
+     "titleBar": "root_titlebar",
+     "navigation": "root_navigation",
+     "body": "root_page"
+    },
+    {
+     "id": "root_titlebar",
+     "component": "TitleBar",
+     "title": {
+      "path": "/titles/app"
+     },
+     "back": "off"
+    },
+    {
+     "id": "root_navigation",
+     "component": "NavigationView",
+     "mode": "top",
+     "items": {
+      "path": "/pane/items"
+     },
+     "label": {
+      "path": "label"
+     },
+     "selected": {
+      "path": "/pane/active"
+     },
+     "settings": false
+    },
+    {
+     "id": "root_page",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "root_header",
+      "infobar",
+      "shelf",
+      "items"
+     ]
+    },
+    {
+     "id": "root_header",
+     "component": "TextBlock",
+     "style": "title",
+     "text": {
+      "path": "/titles/page"
+     }
+    },
+    {
+     "id": "infobar",
+     "component": "InfoBar",
+     "title": {
+      "path": "/infobar/title"
+     },
+     "message": {
+      "path": "/infobar/message"
+     },
+     "severity": {
+      "path": "/infobar/severity"
+     },
+     "action": {
+      "path": "/infobar/action"
+     }
+    },
+    {
+     "id": "shelf",
+     "component": "ScrollView",
+     "header": {
+      "path": "/shelf/title"
+     },
+     "children": {
+      "path": "/shelf/tiles",
+      "componentId": "shelf_tile"
+     }
+    },
+    {
+     "id": "shelf_tile",
+     "component": "ItemContainer",
+     "name": {
+      "path": "name"
+     },
+     "detail": {
+      "path": "detail"
+     },
+     "picture": {
+      "path": "imageUrl"
+     },
+     "placeholder": "undefined"
+    },
+    {
+     "id": "items",
+     "component": "ItemsView",
+     "header": {
+      "path": "/items/heading"
+     },
+     "layout": "grid",
+     "selection": "multiple",
+     "children": {
+      "path": "/items/items",
+      "componentId": "items_item"
+     }
+    },
+    {
+     "id": "items_item",
+     "component": "ItemContainer",
+     "name": {
+      "path": "name"
+     },
+     "detail": {
+      "path": "detail"
+     },
+     "picture": {
+      "path": "imageUrl"
+     },
+     "placeholder": "undefined"
+    }
+   ]
+  },
+  {
+   "seed": 2010,
+   "look": {
+    "imagery": false,
+    "icons": true,
+    "contained": false
+   },
+   "reading": {
+    "kind": "form",
+    "blocks": [
+     "fields"
+    ],
+    "values": {
+     "silhouette": "left",
+     "app_search": true,
+     "section": false,
+     "page_type": "form",
+     "has_infobar": false,
+     "has_commandbar": false,
+     "has_breadcrumb": false,
+     "has_selector": false,
+     "has_flipview": false,
+     "has_shelf": false,
+     "has_items": false,
+     "items_look": "stack",
+     "multi_select": false,
+     "has_table": false,
+     "row_select": false,
+     "has_listdetails": false,
+     "has_description": false,
+     "has_properties": false,
+     "has_page_actions": false,
+     "has_fields": true,
+     "has_setting_sections": false,
+     "has_about": false,
+     "has_message": false,
+     "has_responses": false,
+     "second_response": false,
+     "has_editor": false,
+     "fixed_width": false,
+     "has_canvas": false,
+     "canvas_use": "adjust",
+     "slide_subject": "plant",
+     "tile_subject": "fashion"
+    }
+   },
+   "parts": {
+    "fields": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "fields": {
+        "type": "object",
+        "properties": {
+         "fields": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "header": {
+             "type": "string",
+             "description": "The field's header, e.g. 'First name', 'Email', 'Start date'."
+            },
+            "placeholder": {
+             "type": "string",
+             "description": "An example of what goes in it."
+            },
+            "required": {
+             "type": "boolean",
+             "description": "Whether it has to be filled in."
+            },
+            "options": {
+             "type": "array",
+             "items": {
+              "type": "string",
+              "description": "One to three words."
+             },
+             "description": "What can be chosen, when the field is a choice.",
+             "maxItems": 6,
+             "minItems": 2
+            }
+           },
+           "required": [
+            "header",
+            "required"
+           ],
+           "propertyOrdering": [
+            "header",
+            "placeholder",
+            "required",
+            "options"
+           ]
+          },
+          "description": "The fields in order, each with a header above its control.",
+          "maxItems": 7,
+          "minItems": 2
+         },
+         "submit": {
+          "type": "string",
+          "description": "The submitting button's label, a verb, e.g. 'Create account', 'Sign in', 'Book', 'Send'."
+         }
+        },
+        "required": [
+         "fields",
+         "submit"
+        ],
+        "propertyOrdering": [
+         "fields",
+         "submit"
+        ]
+       }
+      },
+      "required": [
+       "fields"
+      ],
+      "propertyOrdering": [
+       "fields"
+      ]
+     },
+     "tree": [
+      {
+       "id": "fields",
+       "component": "StackPanel",
+       "spacing": 24,
+       "children": [
+        "fields_fields",
+        "fields_submit"
+       ]
+      },
+      {
+       "id": "fields_fields",
+       "component": "StackPanel",
+       "spacing": 16,
+       "children": {
+        "path": "/fields/fields",
+        "componentId": "fields_field"
+       }
+      },
+      {
+       "id": "fields_field",
+       "component": "InputControl",
+       "header": {
+        "path": "header"
+       },
+       "control": {
+        "path": "control"
+       },
+       "placeholder": {
+        "path": "placeholder"
+       },
+       "required": {
+        "path": "required"
+       },
+       "options": {
+        "path": "options"
+       }
+      },
+      {
+       "id": "fields_submit",
+       "component": "Button",
+       "label": {
+        "path": "/fields/submit"
+       },
+       "style": "accent",
+       "event": "submit"
+      }
+     ]
+    }
+   },
+   "content": {
+    "titles": {
+     "type": "object",
+     "properties": {
+      "titles": {
+       "type": "object",
+       "properties": {
+        "app": {
+         "type": "string",
+         "description": "The app's name as its title bar shows it, one or two words."
+        },
+        "page": {
+         "type": "string",
+         "description": "The page's title, at most four words: what this place in the app is called, e.g. 'Inbox', 'Library', 'Orders', 'Settings'; one thing's name only when the page is about that one thing. A dialog's title is its question, e.g. 'Delete this file?'; a document's is its file name, e.g. 'Untitled.txt'."
+        }
+       },
+       "required": [
+        "app",
+        "page"
+       ],
+       "propertyOrdering": [
+        "app",
+        "page"
+       ]
+      }
+     },
+     "required": [
+      "titles"
+     ],
+     "propertyOrdering": [
+      "titles"
+     ]
+    },
+    "pane": {
+     "type": "object",
+     "properties": {
+      "pane": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One or two words."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's sections, in the order the navigation lists them.",
+         "maxItems": 8,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the section this page is in."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "pane"
+     ],
+     "propertyOrdering": [
+      "pane"
+     ]
+    },
+    "menubar": null,
+    "tabstrip": null
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Window",
+     "mode": "left",
+     "titleBar": "root_titlebar",
+     "navigation": "root_navigation",
+     "body": "root_page"
+    },
+    {
+     "id": "root_titlebar",
+     "component": "TitleBar",
+     "title": {
+      "path": "/titles/app"
+     },
+     "back": "on",
+     "search": true
+    },
+    {
+     "id": "root_navigation",
+     "component": "NavigationView",
+     "mode": "left",
+     "items": {
+      "path": "/pane/items"
+     },
+     "label": {
+      "path": "label"
+     },
+     "icon": {
+      "path": "icon"
+     },
+     "selected": {
+      "path": "/pane/active"
+     },
+     "settings": true
+    },
+    {
+     "id": "root_page",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "root_header",
+      "fields"
+     ]
+    },
+    {
+     "id": "root_header",
+     "component": "TextBlock",
+     "style": "title",
+     "text": {
+      "path": "/titles/page"
+     }
+    },
+    {
+     "id": "fields",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "fields_fields",
+      "fields_submit"
+     ]
+    },
+    {
+     "id": "fields_fields",
+     "component": "StackPanel",
+     "spacing": 16,
+     "children": {
+      "path": "/fields/fields",
+      "componentId": "fields_field"
+     }
+    },
+    {
+     "id": "fields_field",
+     "component": "InputControl",
+     "header": {
+      "path": "header"
+     },
+     "control": {
+      "path": "control"
+     },
+     "placeholder": {
+      "path": "placeholder"
+     },
+     "required": {
+      "path": "required"
+     },
+     "options": {
+      "path": "options"
+     }
+    },
+    {
+     "id": "fields_submit",
+     "component": "Button",
+     "label": {
+      "path": "/fields/submit"
+     },
+     "style": "accent",
+     "event": "submit"
+    }
+   ]
+  },
+  {
+   "seed": 2011,
+   "look": {
+    "imagery": false,
+    "icons": true,
+    "contained": true
+   },
+   "reading": {
+    "kind": "form",
+    "blocks": [
+     "infobar",
+     "fields"
+    ],
+    "values": {
+     "silhouette": "menubar",
+     "app_search": false,
+     "section": true,
+     "page_type": "form",
+     "has_infobar": true,
+     "has_commandbar": false,
+     "has_breadcrumb": false,
+     "has_selector": false,
+     "has_flipview": false,
+     "has_shelf": false,
+     "has_items": false,
+     "items_look": "stack",
+     "multi_select": false,
+     "has_table": false,
+     "row_select": false,
+     "has_listdetails": false,
+     "has_description": false,
+     "has_properties": false,
+     "has_page_actions": false,
+     "has_fields": true,
+     "has_setting_sections": false,
+     "has_about": false,
+     "has_message": false,
+     "has_responses": false,
+     "second_response": false,
+     "has_editor": false,
+     "fixed_width": false,
+     "has_canvas": false,
+     "canvas_use": "adjust",
+     "slide_subject": "home",
+     "tile_subject": "gathering"
+    }
+   },
+   "parts": {
+    "infobar": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "infobar": {
+        "type": "object",
+        "properties": {
+         "title": {
+          "type": "string",
+          "description": "What changed, in a few words, e.g. 'You're offline', 'Update available'."
+         },
+         "message": {
+          "type": "string",
+          "description": "One sentence: what it means, or what to do about it."
+         },
+         "action": {
+          "type": "string",
+          "description": "The label of a button, if there is one thing to do, e.g. 'Retry', 'Install', 'Renew'."
+         }
+        },
+        "required": [
+         "title",
+         "message"
+        ],
+        "propertyOrdering": [
+         "title",
+         "message",
+         "action"
+        ]
+       }
+      },
+      "required": [
+       "infobar"
+      ],
+      "propertyOrdering": [
+       "infobar"
+      ]
+     },
+     "tree": [
+      {
+       "id": "infobar",
+       "component": "InfoBar",
+       "title": {
+        "path": "/infobar/title"
+       },
+       "message": {
+        "path": "/infobar/message"
+       },
+       "severity": {
+        "path": "/infobar/severity"
+       },
+       "action": {
+        "path": "/infobar/action"
+       }
+      }
+     ]
+    },
+    "fields": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "fields": {
+        "type": "object",
+        "properties": {
+         "fields": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "header": {
+             "type": "string",
+             "description": "The field's header, e.g. 'First name', 'Email', 'Start date'."
+            },
+            "placeholder": {
+             "type": "string",
+             "description": "An example of what goes in it."
+            },
+            "required": {
+             "type": "boolean",
+             "description": "Whether it has to be filled in."
+            },
+            "options": {
+             "type": "array",
+             "items": {
+              "type": "string",
+              "description": "One to three words."
+             },
+             "description": "What can be chosen, when the field is a choice.",
+             "maxItems": 6,
+             "minItems": 2
+            }
+           },
+           "required": [
+            "header",
+            "required"
+           ],
+           "propertyOrdering": [
+            "header",
+            "placeholder",
+            "required",
+            "options"
+           ]
+          },
+          "description": "The fields in order, each with a header above its control.",
+          "maxItems": 7,
+          "minItems": 2
+         },
+         "submit": {
+          "type": "string",
+          "description": "The submitting button's label, a verb, e.g. 'Create account', 'Sign in', 'Book', 'Send'."
+         }
+        },
+        "required": [
+         "fields",
+         "submit"
+        ],
+        "propertyOrdering": [
+         "fields",
+         "submit"
+        ]
+       }
+      },
+      "required": [
+       "fields"
+      ],
+      "propertyOrdering": [
+       "fields"
+      ]
+     },
+     "tree": [
+      {
+       "id": "fields",
+       "component": "StackPanel",
+       "spacing": 24,
+       "children": [
+        "fields_fields",
+        "fields_submit"
+       ]
+      },
+      {
+       "id": "fields_fields",
+       "component": "StackPanel",
+       "spacing": 16,
+       "children": {
+        "path": "/fields/fields",
+        "componentId": "fields_field"
+       }
+      },
+      {
+       "id": "fields_field",
+       "component": "InputControl",
+       "header": {
+        "path": "header"
+       },
+       "control": {
+        "path": "control"
+       },
+       "placeholder": {
+        "path": "placeholder"
+       },
+       "required": {
+        "path": "required"
+       },
+       "options": {
+        "path": "options"
+       }
+      },
+      {
+       "id": "fields_submit",
+       "component": "Button",
+       "label": {
+        "path": "/fields/submit"
+       },
+       "style": "accent",
+       "event": "submit"
+      }
+     ]
+    }
+   },
+   "content": {
+    "titles": {
+     "type": "object",
+     "properties": {
+      "titles": {
+       "type": "object",
+       "properties": {
+        "app": {
+         "type": "string",
+         "description": "The app's name as its title bar shows it, one or two words."
+        },
+        "page": {
+         "type": "string",
+         "description": "The page's title, at most four words: what this place in the app is called, e.g. 'Inbox', 'Library', 'Orders', 'Settings'; one thing's name only when the page is about that one thing. A dialog's title is its question, e.g. 'Delete this file?'; a document's is its file name, e.g. 'Untitled.txt'."
+        }
+       },
+       "required": [
+        "app",
+        "page"
+       ],
+       "propertyOrdering": [
+        "app",
+        "page"
+       ]
+      }
+     },
+     "required": [
+      "titles"
+     ],
+     "propertyOrdering": [
+      "titles"
+     ]
+    },
+    "pane": null,
+    "menubar": {
+     "type": "object",
+     "properties": {
+      "menubar": {
+       "type": "object",
+       "properties": {
+        "menus": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "description": "One word."
+         },
+         "description": "The menu bar's menus, in order, e.g. 'File', 'Edit', 'View', 'Help'.",
+         "maxItems": 6,
+         "minItems": 3
+        }
+       },
+       "required": [
+        "menus"
+       ],
+       "propertyOrdering": [
+        "menus"
+       ]
+      }
+     },
+     "required": [
+      "menubar"
+     ],
+     "propertyOrdering": [
+      "menubar"
+     ]
+    },
+    "tabstrip": null
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Window",
+     "mode": "menubar",
+     "titleBar": "root_titlebar",
+     "menuBar": "root_menubar",
+     "body": "root_page"
+    },
+    {
+     "id": "root_titlebar",
+     "component": "TitleBar",
+     "title": {
+      "path": "/titles/app"
+     },
+     "document": {
+      "path": "/titles/page"
+     },
+     "back": "none"
+    },
+    {
+     "id": "root_menubar",
+     "component": "MenuBar",
+     "items": {
+      "path": "/menubar/menus"
+     }
+    },
+    {
+     "id": "root_page",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "root_header",
+      "infobar",
+      "fields"
+     ]
+    },
+    {
+     "id": "root_header",
+     "component": "TextBlock",
+     "style": "title",
+     "text": {
+      "path": "/titles/page"
+     }
+    },
+    {
+     "id": "infobar",
+     "component": "InfoBar",
+     "title": {
+      "path": "/infobar/title"
+     },
+     "message": {
+      "path": "/infobar/message"
+     },
+     "severity": {
+      "path": "/infobar/severity"
+     },
+     "action": {
+      "path": "/infobar/action"
+     }
+    },
+    {
+     "id": "fields",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "fields_fields",
+      "fields_submit"
+     ]
+    },
+    {
+     "id": "fields_fields",
+     "component": "StackPanel",
+     "spacing": 16,
+     "children": {
+      "path": "/fields/fields",
+      "componentId": "fields_field"
+     }
+    },
+    {
+     "id": "fields_field",
+     "component": "InputControl",
+     "header": {
+      "path": "header"
+     },
+     "control": {
+      "path": "control"
+     },
+     "placeholder": {
+      "path": "placeholder"
+     },
+     "required": {
+      "path": "required"
+     },
+     "options": {
+      "path": "options"
+     }
+    },
+    {
+     "id": "fields_submit",
+     "component": "Button",
+     "label": {
+      "path": "/fields/submit"
+     },
+     "style": "accent",
+     "event": "submit"
+    }
+   ]
+  },
+  {
+   "seed": 2012,
+   "look": {
+    "imagery": false,
+    "icons": false,
+    "contained": true
+   },
+   "reading": {
+    "kind": "content_grid",
+    "blocks": [
+     "commandbar",
+     "breadcrumb",
+     "items"
+    ],
+    "values": {
+     "silhouette": "tabs",
+     "app_search": false,
+     "section": false,
+     "page_type": "content_grid",
+     "has_infobar": false,
+     "has_commandbar": true,
+     "has_breadcrumb": true,
+     "has_selector": false,
+     "has_flipview": false,
+     "has_shelf": false,
+     "has_items": true,
+     "items_look": "stack",
+     "multi_select": true,
+     "has_table": false,
+     "row_select": false,
+     "has_listdetails": false,
+     "has_description": false,
+     "has_properties": false,
+     "has_page_actions": false,
+     "has_fields": false,
+     "has_setting_sections": false,
+     "has_about": false,
+     "has_message": false,
+     "has_responses": false,
+     "second_response": false,
+     "has_editor": false,
+     "fixed_width": false,
+     "has_canvas": false,
+     "canvas_use": "adjust",
+     "slide_subject": "art",
+     "tile_subject": "flower"
+    }
+   },
+   "parts": {
+    "commandbar": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "commandbar": {
+        "type": "object",
+        "properties": {
+         "commands": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "label": {
+             "type": "string",
+             "description": "The command's label."
+            }
+           },
+           "required": [
+            "label"
+           ],
+           "propertyOrdering": [
+            "label"
+           ]
+          },
+          "description": "The commands, in order of importance, each a single word where it can be, e.g. 'New', 'Delete', 'Share', 'Sort'.",
+          "maxItems": 8,
+          "minItems": 3
+         }
+        },
+        "required": [
+         "commands"
+        ],
+        "propertyOrdering": [
+         "commands"
+        ]
+       }
+      },
+      "required": [
+       "commandbar"
+      ],
+      "propertyOrdering": [
+       "commandbar"
+      ]
+     },
+     "tree": [
+      {
+       "id": "commandbar",
+       "component": "CommandBar",
+       "commands": {
+        "path": "/commandbar/commands"
+       },
+       "label": {
+        "path": "label"
+       },
+       "overflow": {
+        "path": "overflow"
+       }
+      }
+     ]
+    },
+    "breadcrumb": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "breadcrumb": {
+        "type": "object",
+        "properties": {
+         "crumbs": {
+          "type": "array",
+          "items": {
+           "type": "string",
+           "description": "One to three words."
+          },
+          "description": "The levels from the top down to this page, this page last, e.g. 'Documents', 'Projects', '2026'.",
+          "maxItems": 5,
+          "minItems": 3
+         }
+        },
+        "required": [
+         "crumbs"
+        ],
+        "propertyOrdering": [
+         "crumbs"
+        ]
+       }
+      },
+      "required": [
+       "breadcrumb"
+      ],
+      "propertyOrdering": [
+       "breadcrumb"
+      ]
+     },
+     "tree": [
+      {
+       "id": "breadcrumb",
+       "component": "BreadcrumbBar",
+       "items": {
+        "path": "/breadcrumb/crumbs"
+       }
+      }
+     ]
+    },
+    "items": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "items": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "properties": {
+          "name": {
+           "type": "string",
+           "description": "Its name."
+          },
+          "detail": {
+           "type": "string",
+           "description": "One line: an artist, a size, a date, a price, who it is from."
+          },
+          "meta": {
+           "type": "string",
+           "description": "One short figure at the end of the row: a date, a duration, a size."
+          }
+         },
+         "required": [
+          "name",
+          "detail",
+          "meta"
+         ],
+         "propertyOrdering": [
+          "name",
+          "detail",
+          "meta"
+         ]
+        },
+        "description": "The things.",
+        "maxItems": 12,
+        "minItems": 4
+       }
+      },
+      "required": [
+       "items"
+      ],
+      "propertyOrdering": [
+       "items"
+      ]
+     },
+     "tree": [
+      {
+       "id": "items",
+       "component": "ItemsView",
+       "layout": "stack",
+       "selection": "multiple",
+       "children": {
+        "path": "/items",
+        "componentId": "items_item"
+       }
+      },
+      {
+       "id": "items_item",
+       "component": "ItemContainer",
+       "name": {
+        "path": "name"
+       },
+       "detail": {
+        "path": "detail"
+       },
+       "meta": {
+        "path": "meta"
+       },
+       "placeholder": "undefined"
+      }
+     ]
+    }
+   },
+   "content": {
+    "titles": {
+     "type": "object",
+     "properties": {
+      "titles": {
+       "type": "object",
+       "properties": {
+        "app": {
+         "type": "string",
+         "description": "The app's name as its title bar shows it, one or two words."
+        },
+        "page": {
+         "type": "string",
+         "description": "The page's title, at most four words: what this place in the app is called, e.g. 'Inbox', 'Library', 'Orders', 'Settings'; one thing's name only when the page is about that one thing. A dialog's title is its question, e.g. 'Delete this file?'; a document's is its file name, e.g. 'Untitled.txt'."
+        }
+       },
+       "required": [
+        "app",
+        "page"
+       ],
+       "propertyOrdering": [
+        "app",
+        "page"
+       ]
+      }
+     },
+     "required": [
+      "titles"
+     ],
+     "propertyOrdering": [
+      "titles"
+     ]
+    },
+    "pane": null,
+    "menubar": null,
+    "tabstrip": {
+     "type": "object",
+     "properties": {
+      "tabstrip": {
+       "type": "object",
+       "properties": {
+        "documents": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "description": "A name of a few words."
+         },
+         "description": "What is open, one tab each, the one shown first, e.g. 'PowerShell', 'Ubuntu', 'Command Prompt'.",
+         "maxItems": 5,
+         "minItems": 2
+        }
+       },
+       "required": [
+        "documents"
+       ],
+       "propertyOrdering": [
+        "documents"
+       ]
+      }
+     },
+     "required": [
+      "tabstrip"
+     ],
+     "propertyOrdering": [
+      "tabstrip"
+     ]
+    }
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Window",
+     "mode": "tabs",
+     "titleBar": "root_titlebar",
+     "body": "root_page"
+    },
+    {
+     "id": "root_titlebar",
+     "component": "TitleBar",
+     "title": {
+      "path": "/titles/app"
+     },
+     "back": "none",
+     "tabs": {
+      "path": "/tabstrip/documents"
+     }
+    },
+    {
+     "id": "root_page",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "root_header",
+      "commandbar",
+      "breadcrumb",
+      "items"
+     ]
+    },
+    {
+     "id": "root_header",
+     "component": "TextBlock",
+     "style": "title",
+     "text": {
+      "path": "/titles/page"
+     }
+    },
+    {
+     "id": "commandbar",
+     "component": "CommandBar",
+     "commands": {
+      "path": "/commandbar/commands"
+     },
+     "label": {
+      "path": "label"
+     },
+     "overflow": {
+      "path": "overflow"
+     }
+    },
+    {
+     "id": "breadcrumb",
+     "component": "BreadcrumbBar",
+     "items": {
+      "path": "/breadcrumb/crumbs"
+     }
+    },
+    {
+     "id": "items",
+     "component": "ItemsView",
+     "layout": "stack",
+     "selection": "multiple",
+     "children": {
+      "path": "/items",
+      "componentId": "items_item"
+     }
+    },
+    {
+     "id": "items_item",
+     "component": "ItemContainer",
+     "name": {
+      "path": "name"
+     },
+     "detail": {
+      "path": "detail"
+     },
+     "meta": {
+      "path": "meta"
+     },
+     "placeholder": "undefined"
+    }
+   ]
+  },
+  {
+   "seed": 2013,
+   "look": {
+    "imagery": true,
+    "icons": true,
+    "contained": true
+   },
+   "reading": {
+    "kind": "form",
+    "blocks": [
+     "fields"
+    ],
+    "values": {
+     "silhouette": "top",
+     "app_search": false,
+     "section": true,
+     "page_type": "form",
+     "has_infobar": false,
+     "has_commandbar": false,
+     "has_breadcrumb": false,
+     "has_selector": false,
+     "has_flipview": false,
+     "has_shelf": false,
+     "has_items": false,
+     "items_look": "stack",
+     "multi_select": false,
+     "has_table": false,
+     "row_select": false,
+     "has_listdetails": false,
+     "has_description": false,
+     "has_properties": false,
+     "has_page_actions": false,
+     "has_fields": true,
+     "has_setting_sections": false,
+     "has_about": false,
+     "has_message": false,
+     "has_responses": false,
+     "second_response": false,
+     "has_editor": false,
+     "fixed_width": false,
+     "has_canvas": false,
+     "canvas_use": "adjust",
+     "slide_subject": "care",
+     "tile_subject": "dessert"
+    }
+   },
+   "parts": {
+    "fields": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "fields": {
+        "type": "object",
+        "properties": {
+         "fields": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "header": {
+             "type": "string",
+             "description": "The field's header, e.g. 'First name', 'Email', 'Start date'."
+            },
+            "placeholder": {
+             "type": "string",
+             "description": "An example of what goes in it."
+            },
+            "required": {
+             "type": "boolean",
+             "description": "Whether it has to be filled in."
+            },
+            "options": {
+             "type": "array",
+             "items": {
+              "type": "string",
+              "description": "One to three words."
+             },
+             "description": "What can be chosen, when the field is a choice.",
+             "maxItems": 6,
+             "minItems": 2
+            }
+           },
+           "required": [
+            "header",
+            "required"
+           ],
+           "propertyOrdering": [
+            "header",
+            "placeholder",
+            "required",
+            "options"
+           ]
+          },
+          "description": "The fields in order, each with a header above its control.",
+          "maxItems": 7,
+          "minItems": 2
+         },
+         "submit": {
+          "type": "string",
+          "description": "The submitting button's label, a verb, e.g. 'Create account', 'Sign in', 'Book', 'Send'."
+         }
+        },
+        "required": [
+         "fields",
+         "submit"
+        ],
+        "propertyOrdering": [
+         "fields",
+         "submit"
+        ]
+       }
+      },
+      "required": [
+       "fields"
+      ],
+      "propertyOrdering": [
+       "fields"
+      ]
+     },
+     "tree": [
+      {
+       "id": "fields",
+       "component": "StackPanel",
+       "spacing": 24,
+       "children": [
+        "fields_fields",
+        "fields_submit"
+       ]
+      },
+      {
+       "id": "fields_fields",
+       "component": "StackPanel",
+       "spacing": 16,
+       "children": {
+        "path": "/fields/fields",
+        "componentId": "fields_field"
+       }
+      },
+      {
+       "id": "fields_field",
+       "component": "InputControl",
+       "header": {
+        "path": "header"
+       },
+       "control": {
+        "path": "control"
+       },
+       "placeholder": {
+        "path": "placeholder"
+       },
+       "required": {
+        "path": "required"
+       },
+       "options": {
+        "path": "options"
+       }
+      },
+      {
+       "id": "fields_submit",
+       "component": "Button",
+       "label": {
+        "path": "/fields/submit"
+       },
+       "style": "accent",
+       "event": "submit"
+      }
+     ]
+    }
+   },
+   "content": {
+    "titles": {
+     "type": "object",
+     "properties": {
+      "titles": {
+       "type": "object",
+       "properties": {
+        "app": {
+         "type": "string",
+         "description": "The app's name as its title bar shows it, one or two words."
+        },
+        "page": {
+         "type": "string",
+         "description": "The page's title, at most four words: what this place in the app is called, e.g. 'Inbox', 'Library', 'Orders', 'Settings'; one thing's name only when the page is about that one thing. A dialog's title is its question, e.g. 'Delete this file?'; a document's is its file name, e.g. 'Untitled.txt'."
+        }
+       },
+       "required": [
+        "app",
+        "page"
+       ],
+       "propertyOrdering": [
+        "app",
+        "page"
+       ]
+      }
+     },
+     "required": [
+      "titles"
+     ],
+     "propertyOrdering": [
+      "titles"
+     ]
+    },
+    "pane": {
+     "type": "object",
+     "properties": {
+      "pane": {
+       "type": "object",
+       "properties": {
+        "items": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "label": {
+            "type": "string",
+            "description": "One or two words."
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "propertyOrdering": [
+           "label"
+          ]
+         },
+         "description": "The app's sections, in the order the navigation lists them.",
+         "maxItems": 8,
+         "minItems": 3
+        },
+        "active": {
+         "type": "integer",
+         "description": "Index of the section this page is in."
+        }
+       },
+       "required": [
+        "items",
+        "active"
+       ],
+       "propertyOrdering": [
+        "items",
+        "active"
+       ]
+      }
+     },
+     "required": [
+      "pane"
+     ],
+     "propertyOrdering": [
+      "pane"
+     ]
+    },
+    "menubar": null,
+    "tabstrip": null
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Window",
+     "mode": "top",
+     "titleBar": "root_titlebar",
+     "navigation": "root_navigation",
+     "body": "root_page"
+    },
+    {
+     "id": "root_titlebar",
+     "component": "TitleBar",
+     "title": {
+      "path": "/titles/app"
+     },
+     "back": "off"
+    },
+    {
+     "id": "root_navigation",
+     "component": "NavigationView",
+     "mode": "top",
+     "items": {
+      "path": "/pane/items"
+     },
+     "label": {
+      "path": "label"
+     },
+     "icon": {
+      "path": "icon"
+     },
+     "selected": {
+      "path": "/pane/active"
+     },
+     "settings": false
+    },
+    {
+     "id": "root_page",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "root_header",
+      "fields"
+     ]
+    },
+    {
+     "id": "root_header",
+     "component": "TextBlock",
+     "style": "title",
+     "text": {
+      "path": "/titles/page"
+     }
+    },
+    {
+     "id": "fields",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "fields_fields",
+      "fields_submit"
+     ]
+    },
+    {
+     "id": "fields_fields",
+     "component": "StackPanel",
+     "spacing": 16,
+     "children": {
+      "path": "/fields/fields",
+      "componentId": "fields_field"
+     }
+    },
+    {
+     "id": "fields_field",
+     "component": "InputControl",
+     "header": {
+      "path": "header"
+     },
+     "control": {
+      "path": "control"
+     },
+     "placeholder": {
+      "path": "placeholder"
+     },
+     "required": {
+      "path": "required"
+     },
+     "options": {
+      "path": "options"
+     }
+    },
+    {
+     "id": "fields_submit",
+     "component": "Button",
+     "label": {
+      "path": "/fields/submit"
+     },
+     "style": "accent",
+     "event": "submit"
+    }
+   ]
+  },
+  {
+   "seed": 2014,
+   "look": {
+    "imagery": true,
+    "icons": true,
+    "contained": true
+   },
+   "reading": {
+    "kind": "dialog",
+    "blocks": [
+     "message",
+     "responses"
+    ],
+    "values": {
+     "silhouette": "left",
+     "app_search": true,
+     "section": false,
+     "page_type": "dialog",
+     "has_infobar": false,
+     "has_commandbar": false,
+     "has_breadcrumb": false,
+     "has_selector": false,
+     "has_flipview": false,
+     "has_shelf": false,
+     "has_items": false,
+     "items_look": "stack",
+     "multi_select": false,
+     "has_table": false,
+     "row_select": false,
+     "has_listdetails": false,
+     "has_description": false,
+     "has_properties": false,
+     "has_page_actions": false,
+     "has_fields": false,
+     "has_setting_sections": false,
+     "has_about": false,
+     "has_message": true,
+     "has_responses": true,
+     "second_response": false,
+     "has_editor": false,
+     "fixed_width": false,
+     "has_canvas": false,
+     "canvas_use": "adjust",
+     "slide_subject": "venue",
+     "tile_subject": "abstract"
+    }
+   },
+   "parts": {
+    "message": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "message": {
+        "type": "object",
+        "properties": {
+         "text": {
+          "type": "string",
+          "description": "One or two sentences: what happens, what is lost, or what it means."
+         }
+        },
+        "required": [
+         "text"
+        ],
+        "propertyOrdering": [
+         "text"
+        ]
+       }
+      },
+      "required": [
+       "message"
+      ],
+      "propertyOrdering": [
+       "message"
+      ]
+     },
+     "tree": [
+      {
+       "id": "message",
+       "component": "RichTextBlock",
+       "text": {
+        "path": "/message/text"
+       }
+      }
+     ]
+    },
+    "responses": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "responses": {
+        "type": "object",
+        "properties": {
+         "primary": {
+          "type": "string",
+          "description": "The response that does it, a specific verb, e.g. 'Delete', 'Allow', 'Save', 'Sign out'. Left out if the dialog only tells something."
+         },
+         "close": {
+          "type": "string",
+          "description": "The response that changes nothing, e.g. 'Cancel', 'Not now'; 'OK' or 'Close' if the dialog only tells something."
+         }
+        },
+        "required": [
+         "close"
+        ],
+        "propertyOrdering": [
+         "primary",
+         "close"
+        ]
+       }
+      },
+      "required": [
+       "responses"
+      ],
+      "propertyOrdering": [
+       "responses"
+      ]
+     },
+     "tree": [
+      {
+       "id": "responses",
+       "component": "DialogCommands",
+       "primary": {
+        "path": "/responses/primary"
+       },
+       "close": {
+        "path": "/responses/close"
+       },
+       "default": {
+        "path": "/responses/default"
+       }
+      }
+     ]
+    }
+   },
+   "content": {
+    "titles": {
+     "type": "object",
+     "properties": {
+      "titles": {
+       "type": "object",
+       "properties": {
+        "app": {
+         "type": "string",
+         "description": "The app's name as its title bar shows it, one or two words."
+        },
+        "page": {
+         "type": "string",
+         "description": "The page's title, at most four words: what this place in the app is called, e.g. 'Inbox', 'Library', 'Orders', 'Settings'; one thing's name only when the page is about that one thing. A dialog's title is its question, e.g. 'Delete this file?'; a document's is its file name, e.g. 'Untitled.txt'."
+        }
+       },
+       "required": [
+        "app",
+        "page"
+       ],
+       "propertyOrdering": [
+        "app",
+        "page"
+       ]
+      }
+     },
+     "required": [
+      "titles"
+     ],
+     "propertyOrdering": [
+      "titles"
+     ]
+    },
+    "pane": null,
+    "menubar": null,
+    "tabstrip": null
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "ContentDialog",
+     "title": {
+      "path": "/titles/page"
+     },
+     "children": [
+      "message",
+      "responses"
+     ]
+    },
+    {
+     "id": "message",
+     "component": "RichTextBlock",
+     "text": {
+      "path": "/message/text"
+     }
+    },
+    {
+     "id": "responses",
+     "component": "DialogCommands",
+     "primary": {
+      "path": "/responses/primary"
+     },
+     "close": {
+      "path": "/responses/close"
+     },
+     "default": {
+      "path": "/responses/default"
+     }
+    }
+   ]
+  },
+  {
+   "seed": 2015,
+   "look": {
+    "imagery": true,
+    "icons": false,
+    "contained": true
+   },
+   "reading": {
+    "kind": "list_details",
+    "blocks": [
+     "commandbar",
+     "listdetails"
+    ],
+    "values": {
+     "silhouette": "tabs",
+     "app_search": false,
+     "section": true,
+     "page_type": "list_details",
+     "has_infobar": false,
+     "has_commandbar": true,
+     "has_breadcrumb": false,
+     "has_selector": false,
+     "has_flipview": false,
+     "has_shelf": false,
+     "has_items": false,
+     "items_look": "stack",
+     "multi_select": false,
+     "has_table": false,
+     "row_select": false,
+     "has_listdetails": true,
+     "has_description": false,
+     "has_properties": false,
+     "has_page_actions": false,
+     "has_fields": false,
+     "has_setting_sections": false,
+     "has_about": false,
+     "has_message": false,
+     "has_responses": false,
+     "second_response": false,
+     "has_editor": false,
+     "fixed_width": false,
+     "has_canvas": false,
+     "canvas_use": "adjust",
+     "slide_subject": "fashion",
+     "tile_subject": "music"
+    }
+   },
+   "parts": {
+    "commandbar": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "commandbar": {
+        "type": "object",
+        "properties": {
+         "commands": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "label": {
+             "type": "string",
+             "description": "The command's label."
+            }
+           },
+           "required": [
+            "label"
+           ],
+           "propertyOrdering": [
+            "label"
+           ]
+          },
+          "description": "The commands, in order of importance, each a single word where it can be, e.g. 'New', 'Delete', 'Share', 'Sort'.",
+          "maxItems": 8,
+          "minItems": 3
+         }
+        },
+        "required": [
+         "commands"
+        ],
+        "propertyOrdering": [
+         "commands"
+        ]
+       }
+      },
+      "required": [
+       "commandbar"
+      ],
+      "propertyOrdering": [
+       "commandbar"
+      ]
+     },
+     "tree": [
+      {
+       "id": "commandbar",
+       "component": "CommandBar",
+       "commands": {
+        "path": "/commandbar/commands"
+       },
+       "label": {
+        "path": "label"
+       },
+       "overflow": {
+        "path": "overflow"
+       }
+      }
+     ]
+    },
+    "listdetails": {
+     "schema": {
+      "type": "object",
+      "properties": {
+       "listdetails": {
+        "type": "object",
+        "properties": {
+         "items": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "name": {
+             "type": "string",
+             "description": "Who or what: a sender, a contact's name, a note's title."
+            },
+            "summary": {
+             "type": "string",
+             "description": "One line: a subject, a phone number, the first words."
+            },
+            "time": {
+             "type": "string",
+             "description": "A time or a date, e.g. '10:42', 'Yesterday', 'Mon'."
+            }
+           },
+           "required": [
+            "name",
+            "summary",
+            "time"
+           ],
+           "propertyOrdering": [
+            "name",
+            "summary",
+            "time"
+           ]
+          },
+          "description": "The items, newest or most important first. The first is the one open beside the list.",
+          "maxItems": 10,
+          "minItems": 5
+         },
+         "heading": {
+          "type": "string",
+          "description": "The open item's title or subject."
+         },
+         "byline": {
+          "type": "string",
+          "description": "Who and when, in a line, e.g. 'Sarah Chen · Today at 10:42'."
+         },
+         "body": {
+          "type": "string",
+          "description": "The open item in full: two or three short paragraphs."
+         }
+        },
+        "required": [
+         "items",
+         "heading",
+         "byline",
+         "body"
+        ],
+        "propertyOrdering": [
+         "items",
+         "heading",
+         "byline",
+         "body"
+        ]
+       }
+      },
+      "required": [
+       "listdetails"
+      ],
+      "propertyOrdering": [
+       "listdetails"
+      ]
+     },
+     "tree": [
+      {
+       "id": "listdetails",
+       "component": "ListDetailsView",
+       "items": {
+        "path": "/listdetails/items"
+       },
+       "name": {
+        "path": "name"
+       },
+       "summary": {
+        "path": "summary"
+       },
+       "meta": {
+        "path": "time"
+       },
+       "heading": {
+        "path": "/listdetails/heading"
+       },
+       "byline": {
+        "path": "/listdetails/byline"
+       },
+       "body": {
+        "path": "/listdetails/body"
+       }
+      }
+     ]
+    }
+   },
+   "content": {
+    "titles": {
+     "type": "object",
+     "properties": {
+      "titles": {
+       "type": "object",
+       "properties": {
+        "app": {
+         "type": "string",
+         "description": "The app's name as its title bar shows it, one or two words."
+        },
+        "page": {
+         "type": "string",
+         "description": "The page's title, at most four words: what this place in the app is called, e.g. 'Inbox', 'Library', 'Orders', 'Settings'; one thing's name only when the page is about that one thing. A dialog's title is its question, e.g. 'Delete this file?'; a document's is its file name, e.g. 'Untitled.txt'."
+        }
+       },
+       "required": [
+        "app",
+        "page"
+       ],
+       "propertyOrdering": [
+        "app",
+        "page"
+       ]
+      }
+     },
+     "required": [
+      "titles"
+     ],
+     "propertyOrdering": [
+      "titles"
+     ]
+    },
+    "pane": null,
+    "menubar": null,
+    "tabstrip": {
+     "type": "object",
+     "properties": {
+      "tabstrip": {
+       "type": "object",
+       "properties": {
+        "documents": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "description": "A name of a few words."
+         },
+         "description": "What is open, one tab each, the one shown first, e.g. 'PowerShell', 'Ubuntu', 'Command Prompt'.",
+         "maxItems": 5,
+         "minItems": 2
+        }
+       },
+       "required": [
+        "documents"
+       ],
+       "propertyOrdering": [
+        "documents"
+       ]
+      }
+     },
+     "required": [
+      "tabstrip"
+     ],
+     "propertyOrdering": [
+      "tabstrip"
+     ]
+    }
+   },
+   "screen": [
+    {
+     "id": "root",
+     "component": "Window",
+     "mode": "tabs",
+     "titleBar": "root_titlebar",
+     "body": "root_page"
+    },
+    {
+     "id": "root_titlebar",
+     "component": "TitleBar",
+     "title": {
+      "path": "/titles/app"
+     },
+     "back": "none",
+     "tabs": {
+      "path": "/tabstrip/documents"
+     }
+    },
+    {
+     "id": "root_page",
+     "component": "StackPanel",
+     "spacing": 24,
+     "children": [
+      "root_header",
+      "commandbar",
+      "listdetails"
+     ]
+    },
+    {
+     "id": "root_header",
+     "component": "TextBlock",
+     "style": "title",
+     "text": {
+      "path": "/titles/page"
+     }
+    },
+    {
+     "id": "commandbar",
+     "component": "CommandBar",
+     "commands": {
+      "path": "/commandbar/commands"
+     },
+     "label": {
+      "path": "label"
+     },
+     "overflow": {
+      "path": "overflow"
+     }
+    },
+    {
+     "id": "listdetails",
+     "component": "ListDetailsView",
+     "items": {
+      "path": "/listdetails/items"
+     },
+     "name": {
+      "path": "name"
+     },
+     "summary": {
+      "path": "summary"
+     },
+     "meta": {
+      "path": "time"
+     },
+     "heading": {
+      "path": "/listdetails/heading"
+     },
+     "byline": {
+      "path": "/listdetails/byline"
+     },
+     "body": {
+      "path": "/listdetails/body"
+     }
+    }
+   ]
+  }
+ ]
+}

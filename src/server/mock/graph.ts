@@ -144,3 +144,19 @@ export class Graph {
     };
   }
 }
+
+/**
+ * What an app settles once, on its first screen, and every screen after it is given: the answers to the questions with
+ * the trait `app` (a Windows app's silhouette), of those given, each one the file could have given.
+ */
+export function appAnswers(graph: Graph, values: Record<string, unknown> | undefined): Record<string, Value> {
+  const out: Record<string, Value> = {};
+  if (!values || typeof values !== "object") return out;
+  walk(graph.grammar.nodes, (node) => {
+    if (!node.traits.includes("app") || !node.asking) return;
+    const id = idOf(node);
+    const value = values[id];
+    if (node.asking.type === "noul" ? typeof value === "boolean" : node.asking.type === "choice" && typeof value === "string" && graph.optionsOf(id).includes(value)) out[id] = value as Value;
+  });
+  return out;
+}

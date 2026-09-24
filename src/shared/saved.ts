@@ -21,6 +21,9 @@ export const SAVED_SCREEN = z.object({
   keys: z.array(z.string().max(400)).min(1).max(40),
   title: z.string().max(200),
   archetype: z.string().max(80),
+  /** Where in its data its title is, and the app's destinations if it draws them; one saved before frames said so is the kit's. */
+  titleAt: z.string().max(200).optional(),
+  destinationsAt: z.string().max(200).optional(),
   topLevel: z.boolean(),
   dialog: z.boolean(),
   messages: z.array(MESSAGE).min(1).max(400),
@@ -59,6 +62,8 @@ export const SAVED_APP = z.object({
   /** The description the session started from. */
   app: z.string().min(1).max(4000),
   nav: z.object({ items: z.array(z.object({ label: z.string(), icon: z.string().optional() })) }).optional(),
+  /** What the app settled on its first screen, which every screen after it is given (a Windows app's silhouette). */
+  settled: z.record(z.union([z.boolean(), z.string().max(80), z.number()])).refine((v) => Object.keys(v).length <= 20).optional(),
   design: z.object({ choice: z.string().max(20), markdown: z.string().max(1 << 20), seed: z.number(), change: z.record(z.unknown()).optional(), report: z.record(z.unknown()).optional() }),
   /** The idiom the app was imagined in (shared/idioms.ts); one saved before there was a choice is the kit's. */
   idiom: z.enum(IDIOM_IDS as [IdiomId, ...IdiomId[]]).optional(),

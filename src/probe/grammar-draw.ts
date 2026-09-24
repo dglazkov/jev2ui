@@ -40,7 +40,7 @@ import { fill } from "../server/grammar/fill.js";
 import { idOf, type Field, type Node } from "../server/grammar/format.js";
 import { loadGrammar } from "../server/grammar/load.js";
 import { decide, decorate } from "../server/grammar/decide.js";
-import { boundIn, checkBindings, frameOf, knobsOf, partsOf, schemaOf, treeOf } from "../server/grammar/make.js";
+import { appliesIn, boundIn, checkBindings, contentNodes, framePatternOf, frameOf, knobsOf, partsOf, schemaOf, treeOf } from "../server/grammar/make.js";
 import { JEV, givensOf, holdsIn, questionsOf, readGrammar, yieldOf } from "../server/grammar/read.js";
 
 const args = process.argv.slice(2);
@@ -84,7 +84,10 @@ for (const node of grammar.nodes) {
 
 const look = { contained: designRead.contained, icons: designRead.icons, symbol: "image" };
 // The frame is the file's too: the pattern its kinds name, set by the kind's traits, filled by what is always written.
-const header = grammar.nodes.find((node) => node.name === "header" && !node.question);
+// What is always written: the node that fills the frame's title first among them, and every other one the reading opens.
+const titled = framePatternOf(patterns, grammar)?.roles?.title;
+const contents = contentNodes(grammar).filter((node) => appliesIn(grammar, node, reading) && schemaOf(node, reading));
+const header = contents.find((node) => node.fields.some((field) => field.role === titled)) ?? contents[0];
 const trees = parts.map((node) => [node.name, treeOf(patterns, grammar, node, reading, look)] as const);
 const frame = frameOf(patterns, grammar, reading, look, trees.map(([name, tree]) => ({ name, root: tree[0].id })));
 if (!frame) throw new Error(`${file} names no frame for its kinds: say "→ page" after the heading of the kinds`);
@@ -115,7 +118,8 @@ const write = async (node: Node, agreeWith?: unknown) => {
   show(node);
   console.log(`${since()}  written: "${node.name}"`);
   // What is decided once the words exist, and only of what is drawn.
-  const bound = boundIn(treeOf(patterns, grammar, node, reading, look));
+  // What is always written is drawn by the frame; a part, by its own pattern.
+  const bound = boundIn(contents.includes(node) ? frame : treeOf(patterns, grammar, node, reading, look));
   for (const asking of decide(grammar, node, written[node.name], { description: text, reading, calibration: JEV, needed: (path) => bound.has(path) })) {
     const answers = Object.keys(asking.questions).length ? (await run.askJev(`Jev: read "${node.name}"`, asking.state, asking.questions)).answers : {};
     const { decorations, decisions } = asking.read(answers);
@@ -159,7 +163,7 @@ const looked = (field: Field) => !!field.source?.some((step) => sources.get(step
 const fillPictures = async (node: Node) => {
   for (const field of node.fields) {
     if (looked(field)) {
-      const url = await findPicture(field.source!, words(written.header, header?.fields ?? []) || text, "16:9", [960, 540]);
+      const url = await findPicture(field.source!, words(header ? written[header.name] : undefined, header?.fields ?? []) || text, "16:9", [960, 540]);
       if (url) (written[node.name] = { ...written[node.name], [field.name]: url }), show(node);
     }
     const inside = field.fields.find(looked);
@@ -178,7 +182,7 @@ const fillPictures = async (node: Node) => {
 // Writers cannot see each other, so a bill would not add up: a part with a total waits for the things it is the total of.
 const items = parts.find((node) => node.target === "collection");
 const sums = parts.find((node) => node.fields.some((field) => field.notes.length));
-const writing = Promise.all([...(header ? [header] : []), ...parts.filter((node) => node !== sums || !items)].map((node) => write(node))).then(() => (sums && items ? write(sums, written[items.name]) : undefined));
+const writing = Promise.all([...contents, ...parts.filter((node) => node !== sums || !items)].map((node) => write(node))).then(() => (sums && items ? write(sums, written[items.name]) : undefined));
 // Baking takes seconds and nothing waits on it: it starts with the writers, and its slot shimmers meanwhile.
 const baking = Promise.all(parts.filter((node) => node.filled).map(fillPart));
 await writing;
@@ -215,7 +219,7 @@ const html = `<!doctype html>
 <title>${grammar.name}: ${text.replace(/[<&]/g, "")}</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=block" />
 ${fonts}
-<style>${[resolve(root, "src/web/surface.css"), ...NAMED[idiom.id].stylesheets.map((sheet) => resolve(root, "src/web/kit", sheet))].map((sheet) => readFileSync(sheet, "utf8")).join("\n")}
+<style>${[resolve(root, "src/web/surface.css"), ...NAMED[idiom.id].stylesheets.map((sheet) => resolve(root, "src/web", sheet))].map((sheet) => readFileSync(sheet, "utf8")).join("\n")}
 body { margin: 0; background: #d9d9de; display: grid; place-items: start center; padding: 32px; }
 .mock { ${vars} color-scheme: ${theme.colorScheme}; font-family: ${theme.fontFamily}; background: var(--k-page); width: 420px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 40px rgb(0 0 0 / 0.18); }
 </style>

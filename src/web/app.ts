@@ -49,9 +49,15 @@ const SUGGESTIONS: Array<[string, string]> = [
   ["add_to_queue", "Add a settings page"],
 ];
 
-/** A symbol for each kind of screen (server/mock/plan.ts), and one for a kind this file has not heard of. */
+/** A symbol for some kinds of screen, and the idiom's own symbol for a kind this file has not heard of. */
 const ARCHETYPE_ICONS: Record<string, string> = { feed: "view_agenda", dashboard: "dashboard", detail: "article", guide: "menu_book", settings: "tune", form: "edit_note", checkout: "shopping_cart", result: "task_alt", confirm: "help" };
-const screenIcon = (archetype: string) => ARCHETYPE_ICONS[archetype] ?? "smartphone";
+const screenIcon = (archetype: string, idiom: IdiomId) => ARCHETYPE_ICONS[archetype] ?? IDIOMS[idiom].symbol;
+
+/** A path in a screen's data as the update that writes it and the key in it: `/header/title` is `title` of what is written at `/header`. */
+const split = (path: string): [string, string] => [path.slice(0, path.lastIndexOf("/")) || "/", path.slice(path.lastIndexOf("/") + 1)];
+
+/** Where the app's destinations are in a screen's data, if it draws them, as its frame said; a screen saved before frames said so is the kit's, and draws them on a main screen. */
+const destinationsOf = (screen: { destinationsAt?: string; titleAt?: string; topLevel: boolean }) => screen.destinationsAt ?? (screen.titleAt === undefined && screen.topLevel ? "/nav" : undefined);
 
 /** A symbol for a line of a receipt, going by what the line says was changed. */
 function lineIcon(what: string): string {
@@ -112,6 +118,9 @@ interface Screen {
   firstPaintMs?: number;
   running: boolean;
   builtWith?: string;
+  /** Where in its data the screen's title is, and the app's destinations if it draws them (the frame event); a screen saved before these were said is the kit's. */
+  titleAt?: string;
+  destinationsAt?: string;
   /** The reading the screen was built from, as the server sent it: sent back for the parts that stay when it is generated again. */
   plan?: Extract<PipelineEvent, { type: "plan" }>["plan"];
   /** What it was made from, so that it can be made again; `notes` are what has been said about it since, and `edit` what was settled by saying it. */
@@ -125,6 +134,7 @@ interface Before {
   architectureError: string;
   app: string;
   nav: Journey["nav"];
+  settled: Journey["settled"];
   screens: Map<string, Screen>;
   stack: Screen[];
   nextId: number;
@@ -212,6 +222,8 @@ export class App extends LitElement {
   @state() private onMap = false;
   @state() private mapSelected = "first";
   private nav: Journey["nav"];
+  /** What the app settled on its first screen, which every screen after it is given (a Windows app's silhouette). */
+  private settled: Journey["settled"];
   private screens = new Map<string, Screen>();
   private stack: Screen[] = [];
   private turns: Turn[] = [];
@@ -315,7 +327,12 @@ export class App extends LitElement {
     return [...new Set(this.screens.values())];
   }
 
-  protected willUpdate() {
+  protected willUpdate(changed: Map<string, unknown>) {
+    // An idiom whose frame is a window is shown on a desktop first; the rest on the device the person chose.
+    if (changed.has("idiom")) {
+      const own = (IDIOMS[this.idiom] as { device?: Device }).device;
+      this.device = own ?? firstDevice();
+    }
     // Who is asking decides whether a private app opens, so a link waits until that is known.
     if (this.linked && session.state !== "loading") void this.openSaved(this.linked);
     if (session.state === "in" && this.libraryFor !== session.email) void this.loadLibrary();
@@ -364,7 +381,7 @@ export class App extends LitElement {
   // --- Turns ------------------------------------------------------------------
 
   private asItStands(): Before {
-    return { idiom: this.idiom, architecture: this.architecture, architectureError: this.architectureError, app: this.app, nav: this.nav, screens: new Map(this.screens), stack: [...this.stack], nextId: this.nextId, choice: this.choice, markdown: this.markdown, seed: this.seed, change: this.change, report: this.report };
+    return { idiom: this.idiom, architecture: this.architecture, architectureError: this.architectureError, app: this.app, nav: this.nav, settled: this.settled, screens: new Map(this.screens), stack: [...this.stack], nextId: this.nextId, choice: this.choice, markdown: this.markdown, seed: this.seed, change: this.change, report: this.report };
   }
 
   /** Every turn starts here: what stood before it is kept, so that it can be undone. */
@@ -392,7 +409,7 @@ export class App extends LitElement {
     this.stop(new Set(turn.before.screens.values()));
     this.designRequest++;
     const b = turn.before;
-    Object.assign(this, { idiom: b.idiom, architecture: b.architecture, architectureError: b.architectureError, app: b.app, nav: b.nav, screens: b.screens, stack: b.stack, nextId: b.nextId, choice: b.choice, markdown: b.markdown, seed: b.seed, change: b.change, report: b.report });
+    Object.assign(this, { idiom: b.idiom, architecture: b.architecture, architectureError: b.architectureError, app: b.app, nav: b.nav, settled: b.settled, screens: b.screens, stack: b.stack, nextId: b.nextId, choice: b.choice, markdown: b.markdown, seed: b.seed, change: b.change, report: b.report });
     if (b.report) loadFonts(b.report.theme);
     for (const screen of this.made) if (screen.links) screen.links = Object.fromEntries(Object.entries(screen.links).filter(([, id]) => this.architecture?.map.nodes.some((n) => n.id === id)));
     this.turns = this.turns.slice(0, -1);
@@ -459,7 +476,7 @@ export class App extends LitElement {
             this.visitDestination(answer.destination, { kind: "asked", label: message }, turn);
             break;
           }
-          const screen = this.open(`asked:${turn.id}`, false, { prompt: this.app, journey: { app: this.app, from: { title: here.title, archetype: here.archetype }, via: { kind: "asked", label: message }, ...(this.nav ? { nav: this.nav } : {}) } });
+          const screen = this.open(`asked:${turn.id}`, false, { prompt: this.app, journey: { app: this.app, from: { title: here.title, archetype: here.archetype }, via: { kind: "asked", label: message }, ...this.carried() } });
           this.stack = [...this.stack, screen];
           void this.run(screen, turn);
           break;
@@ -504,7 +521,7 @@ export class App extends LitElement {
     const was = { ...this.asItStands(), turns: this.turns, saved: this.saved, search: location.search };
     this.stop();
     this.designRequest++;
-    Object.assign(this, { idiom: this.preset, architecture: undefined, architectureError: "", app: "", nav: undefined, screens: new Map(), stack: [], turns: [], change: {}, seed: 0, report: undefined, saved: undefined, unmade: "" });
+    Object.assign(this, { idiom: this.preset, architecture: undefined, architectureError: "", app: "", nav: undefined, settled: undefined, screens: new Map(), stack: [], turns: [], change: {}, seed: 0, report: undefined, saved: undefined, unmade: "" });
     if (this.choice === AUTO) this.markdown = "";
     history.replaceState(null, "", location.pathname);
     this.view = "chat";
@@ -537,6 +554,7 @@ export class App extends LitElement {
     this.seed = 0;
     this.change = {};
     this.nav = undefined;
+    this.settled = undefined;
     this.screens = new Map();
     const screen = this.open("start", true, { prompt });
     screen.destination = "first";
@@ -656,6 +674,11 @@ export class App extends LitElement {
     return under && under !== dialog && !under.dialog ? under : undefined;
   }
 
+  /** What every request for a screen of this app carries of the app: its destinations, and what its first screen settled. */
+  private carried() {
+    return { ...(this.nav ? { nav: this.nav } : {}), ...(this.settled ? { settled: this.settled } : {}) };
+  }
+
   /** What a tap does: go back, show the screen this tap made before, or have a new one made. Only the last is a turn. */
   private follow(detail: { kind: string; label: string; data?: Record<string, unknown>; index?: number; variant?: string; component?: string; source?: string }) {
     const here = this.current;
@@ -678,7 +701,7 @@ export class App extends LitElement {
     if (made && !session.makes) return void (this.unmade = via.label);
     this.unmade = "";
     const turn = made ? this.begin("tap", via.kind === "back" ? `Went back from “${here.title}”` : `Tapped “${String(via.data?.title ?? via.label)}”`) : undefined;
-    screen ??= this.open(key, via.kind === "nav", { prompt: this.app, journey: { app: this.app, from: { title: here.title, archetype: here.archetype }, via, ...(this.nav ? { nav: this.nav } : {}) } });
+    screen ??= this.open(key, via.kind === "nav", { prompt: this.app, journey: { app: this.app, from: { title: here.title, archetype: here.archetype }, via, ...this.carried() } });
     // The navigation bar switches between main screens, and a way back from the first screen makes the one it came from. Everything else drills in.
     this.stack = via.kind === "nav" || via.kind === "back" ? [screen] : [...this.stack, screen];
     // The home made by going back from a settings page leads back to that page, not to a second one.
@@ -739,7 +762,8 @@ export class App extends LitElement {
     this.architectureError = "";
     for (const screen of this.made) {
       screen.routes = undefined;
-      if (screen.destination && screen.topLevel) screen.messages.push({ version: "v0.9", updateDataModel: { surfaceId: "main", path: "/nav", value: architectureNav(next, screen.destination) } });
+      const at = destinationsOf(screen);
+      if (screen.destination && at) screen.messages.push({ version: "v0.9", updateDataModel: { surfaceId: "main", path: at, value: architectureNav(next, screen.destination) } });
     }
     this.tick++;
   }
@@ -758,7 +782,7 @@ export class App extends LitElement {
     const aliases = [...this.screens].filter(([, screen]) => screen === old).map(([key]) => key);
     if (!old.destination) forget(old);
     // It may have been the screen that established the navigation bar; if so, it establishes it again.
-    const request = old.request.journey && !old.request.journey.nav ? old.request : { ...old.request, ...(old.request.journey && this.nav ? { journey: { ...old.request.journey, nav: this.nav } } : {}) };
+    const request = !old.request.journey ? old.request : { ...old.request, journey: { ...old.request.journey, ...(!old.request.journey.nav && this.nav ? { nav: this.nav } : {}), ...(!old.request.journey.settled && this.settled ? { settled: this.settled } : {}) } };
     // Made again as it was means made anew: a custom component is baked afresh. Made again with a note, what was baked may well still do.
     const screen = this.open(old.key, old.topLevel, note ? { ...request, fresh: false, notes: [...(request.notes ?? []), note], ...(edit ? { edit } : {}) } : { ...request, fresh: true });
     screen.destination = old.destination;
@@ -776,7 +800,8 @@ export class App extends LitElement {
     for (const screen of this.made) {
       if (!screen.destination || !valid.has(screen.destination)) continue;
       const copy = { ...screen, messages: [...screen.messages], routes: routes[screen.destination] ?? (before ? rebaseRoutes(before, next, screen.destination, screen.routes) : screen.routes) };
-      if (copy.topLevel) copy.messages.push({ version: "v0.9", updateDataModel: { surfaceId: "main", path: "/nav", value: architectureNav(next, screen.destination) } });
+      const at = destinationsOf(copy);
+      if (at) copy.messages.push({ version: "v0.9", updateDataModel: { surfaceId: "main", path: at, value: architectureNav(next, screen.destination) } });
       replaced.set(screen, copy);
     }
     this.screens = new Map([...this.screens].flatMap(([key, screen]) => replaced.has(screen) ? [[key, replaced.get(screen)!] as const] : []));
@@ -807,7 +832,7 @@ export class App extends LitElement {
     }
     if (!session.makes) return void (this.unmade = node.label);
     turn ??= this.begin("tap", `Opened “${node.label}” from the app map`);
-    const screen = this.open(`destination:${destination}`, false, { prompt: this.app, journey: { app: this.app, from: { title: here.title, archetype: here.archetype }, via: via ?? { kind: "asked", label: `Open ${node.label}` } } });
+    const screen = this.open(`destination:${destination}`, false, { prompt: this.app, journey: { app: this.app, from: { title: here.title, archetype: here.archetype }, via: via ?? { kind: "asked", label: `Open ${node.label}` }, ...(this.settled ? { settled: this.settled } : {}) } });
     screen.destination = destination;
     this.stack = via?.kind === "back" || via?.kind === "nav" ? [screen] : [...this.stack, screen];
     this.unmade = "";
@@ -878,15 +903,20 @@ export class App extends LitElement {
             // What the frame is, as the server read it: its components are the catalog's, and the shell reads none of them.
             screen.dialog = event.over;
             screen.topLevel = event.main;
+            screen.titleAt = event.title;
+            screen.destinationsAt = event.destinations;
+            // The app's first screen settles what every screen after it is given.
+            if (event.app && !this.settled) this.settled = event.app;
             break;
           case "a2ui": {
             screen.messages.push(event.message);
             const message = event.message as Record<string, any>;
             if (message.updateComponents) screen.firstPaintMs ??= event.at;
             const data = message.updateDataModel;
-            if (data?.path === "/header" && data.value?.title) screen.title = data.value.title;
-            // The first screen with a navigation bar establishes it for the app, symbols included once they arrive.
-            if (!screen.destination && data?.path === "/nav" && Array.isArray(data.value?.items) && !request.journey?.nav) {
+            const [where, key] = split(screen.titleAt ?? "/header/title");
+            if (data?.path === where && data.value?.[key]) screen.title = data.value[key];
+            // The first screen that draws the app's destinations establishes them for the app, symbols included once they arrive.
+            if (!screen.destination && data?.path && data.path === destinationsOf(screen) && Array.isArray(data.value?.items) && !request.journey?.nav) {
               this.nav = { items: data.value.items };
               const active = data.value.items[data.value.active ?? 0]?.label;
               if (active) this.screens.set(`nav:${active}`, screen);
@@ -950,6 +980,7 @@ export class App extends LitElement {
       architecture: this.architecture ? withRenderedScreens(this.architecture, this.made) : undefined,
       app: this.app,
       ...(this.nav ? { nav: this.nav } : {}),
+      ...(this.settled ? { settled: this.settled } : {}),
       design: { choice: this.choice, markdown: this.markdown, seed: this.seed, change: this.change as Record<string, unknown>, ...(this.report ? { report: this.report as unknown as Record<string, unknown> } : {}) },
       idiom: this.idiom,
       screens: kept.map(({ running, key, ...screen }) => ({ ...screen, keys: [...this.screens].filter(([, other]) => other.id === screen.id).map(([k]) => k) })) as unknown as SavedApp["screens"],
@@ -966,6 +997,7 @@ export class App extends LitElement {
     this.mapSelected = "first";
     this.onMap = false;
     this.nav = app.nav;
+    this.settled = app.settled;
     this.idiom = idiomNamed(app.idiom);
     this.choice = app.design.choice === CUSTOM ? CUSTOM : AUTO;
     this.markdown = app.design.markdown;
@@ -1126,7 +1158,7 @@ export class App extends LitElement {
       </ul>`);
     if (screen)
       reply.push(html`<button class="madecard" aria-current=${screen === this.current} @click=${() => this.show(screen)} title="Show this screen">
-        <span class="glyph ${screen.running ? "working" : ""}">${icon(screenIcon(screen.archetype))}</span>
+        <span class="glyph ${screen.running ? "working" : ""}">${icon(screenIcon(screen.archetype, this.idiom))}</span>
         <span class="words">
           <b>${screen.title || (screen.running ? "Planning the screen…" : "Untitled screen")}</b>
           <small>${[screen.archetype, screen.running ? "generating…" : screen.stats ? `${turn.on ? "regenerated" : "generated"} in ${seconds(screen.stats.totalMs)}` : "", bad ? `${bad} ${bad === 1 ? "error" : "errors"}` : ""].filter(Boolean).join(" · ")}</small>
@@ -1338,7 +1370,7 @@ export class App extends LitElement {
                 ></textarea>
                 <div class="tools">
                   ${this.current?.title
-                    ? html`<span class="about" title="Your message applies to the screen that's showing, unless you name a different one.">${icon(screenIcon(this.current.archetype), "xs")}Editing <b>${this.current.title}</b></span>`
+                    ? html`<span class="about" title="Your message applies to the screen that's showing, unless you name a different one.">${icon(screenIcon(this.current.archetype, this.idiom), "xs")}Editing <b>${this.current.title}</b></span>`
                     : html`<span></span>`}
                   ${this.busy && this.turns.at(-1)?.before
                     ? html`<button type="button" class="send" title="Stop and undo this turn" aria-label="Stop and undo this turn" @click=${() => this.undo()}>${icon("stop", "s fill")}</button>`
@@ -1516,7 +1548,7 @@ export class App extends LitElement {
         </div>
         <nav class="flow" aria-label="Screens">
           ${!here?.destination && made.length > 1
-            ? made.map((screen) => html`<button aria-current=${screen === here} title=${screen.title || "Untitled screen"} @click=${() => this.show(screen)}>${icon(screenIcon(screen.archetype), "xs")}${screen.title || "…"}</button>`)
+            ? made.map((screen) => html`<button aria-current=${screen === here} title=${screen.title || "Untitled screen"} @click=${() => this.show(screen)}>${icon(screenIcon(screen.archetype, this.idiom), "xs")}${screen.title || "…"}</button>`)
             : nothing}
         </nav>
         <div class="acts">
@@ -1573,7 +1605,7 @@ export class App extends LitElement {
         ? html`<app-map
             .architecture=${this.architecture}
             .titles=${Object.fromEntries(made.filter((s) => s.destination && s.title).map((s) => [s.destination!, s.title]))}
-            .icons=${Object.fromEntries(made.filter((s) => s.destination && s.archetype).map((s) => [s.destination!, screenIcon(s.archetype)]))}
+            .icons=${Object.fromEntries(made.filter((s) => s.destination && s.archetype).map((s) => [s.destination!, screenIcon(s.archetype, this.idiom)]))}
             .current=${here?.destination ?? ""}
             .selected=${this.mapSelected}
             .made=${made.filter((s) => !s.running && s.messages.length).flatMap((s) => (s.destination ? [s.destination] : []))}

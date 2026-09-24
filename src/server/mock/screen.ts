@@ -27,11 +27,12 @@ export interface Setting {
   knownScreens?: Array<{ title: string; archetype: string; content: string }>;
 }
 
-export function partPrompt(description: string, part: string, reading: Pick<Reading, "kind" | "blocks"> | null, setting: Setting, agreeWith?: unknown, what = "screen"): string {
+/** `first` is what is written for every screen before anything about it is known: the grammar's, whatever fills its frame's title. */
+export function partPrompt(description: string, part: string, reading: Pick<Reading, "kind" | "blocks"> | null, setting: Setting, agreeWith?: unknown, what = "screen", first = "header"): string {
   const { voice } = setting;
   const journey = setting.app ? `The first screen designed for this app was: ${setting.app}\nThe person got to the screen you are writing for by ${setting.reachedBy}.\n` : "";
   const about = setting.about ? `What the previous screen already showed about this, which this screen must agree with and build on:\n${JSON.stringify(setting.about)}\n` : "";
-  const parts = reading ? `The ${what} is a ${reading.kind} ${what} with these parts: header, ${reading.blocks.join(", ")}.\n` : "";
+  const parts = reading ? `The ${what} is a ${reading.kind} ${what} with these parts: ${first}, ${reading.blocks.join(", ")}.\n` : "";
   // The Overview of a DESIGN.md describes the brand; the words should sound like it.
   // Voice goes first, as background, and the subject goes last, next to the instruction. The other way round, a small
   // model writes about the brand's metaphor (gummies, signal boxes) instead of about the app.

@@ -9,9 +9,10 @@
 import surfaceCss from "../surface.css?inline";
 import kitCss from "./kit.css?inline";
 import iosCss from "./ios.css?inline";
+import windowsCss from "../windows/windows.css?inline";
 import { IDIOMS, type IdiomId } from "../../shared/idioms.js";
 
-const SHEETS: Record<string, string> = { "kit.css": kitCss, "ios.css": iosCss };
+const SHEETS: Record<string, string> = { "kit/kit.css": kitCss, "kit/ios.css": iosCss, "windows/windows.css": windowsCss };
 
 /** The general surface's stylesheet, then the idiom's, in the order named, as one. */
 export function stylesOf(idiom: IdiomId): string {

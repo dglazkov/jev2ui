@@ -8,10 +8,11 @@ import type { Component, Out, Scope, Surface } from "./surface.js";
 import { IDIOMS, type IdiomId } from "../shared/idioms.js";
 import { KIT_DRAWING } from "./kit/components.js";
 import { IOS_DRAWING } from "./kit/ios.js";
+import { WINDOWS_DRAWING } from "./windows/components.js";
 
 export type Drawing = Readonly<Record<string, (this: Surface, c: Component, s: Scope) => Out>>;
 
-const OF: Record<IdiomId, Drawing> = { kit: KIT_DRAWING, ios: IOS_DRAWING };
+const OF: Record<IdiomId, Drawing> = { kit: KIT_DRAWING, ios: IOS_DRAWING, windows: WINDOWS_DRAWING };
 
 const DRAWINGS = new Map<string, Drawing>(Object.entries(OF).map(([idiom, drawing]) => [IDIOMS[idiom as IdiomId].catalogId, drawing]));
 

@@ -27,6 +27,8 @@ export interface Journey {
   via: Via;
   /** The app's main destinations, once some screen has established them. Reused, never rewritten. */
   nav?: { items: Array<{ label: string; icon?: string }> };
+  /** What the app settled on its first screen, which every screen after it is given: a Windows app's silhouette. */
+  settled?: Record<string, boolean | string | number>;
   /** The components baked for the app so far: what its screens define. The server keeps none of them (mock/bake.ts). */
   shelf?: Baked[];
 }

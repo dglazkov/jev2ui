@@ -6,7 +6,7 @@ import { GRAPH, validateMap, type MapAction } from "./ia-graph.js";
 const key = z.string().regex(/^[a-z][a-z0-9_-]{0,39}$/);
 const answer = z.object({ choice: z.string().max(60), probabilities: z.record(z.number().min(0).max(1)) });
 export const ARCHITECTURE = z.object({
-  navigation: z.array(key).min(1).max(5).optional(),
+  navigation: z.array(key).min(1).max(10).optional(),
   catalog: z.array(KNOWN_DESTINATION).max(80).optional(),
   version: z.literal(1), revision: z.number().int().positive(),
   seed: z.object({
@@ -86,7 +86,8 @@ export function architectureIcon(state: Architecture, destination: string): stri
 export function architectureNav(state: Architecture, destination: string) {
   const node = state.map.nodes.find((n) => n.id === destination)!;
   const ids = state.navigation ?? [...new Set([destination, ...node.actions.filter((a) => a.target).map((a) => a.target!)])];
-  const items = orderedNavigation(ids.map((id) => ({ label: state.map.nodes.find((n) => n.id === id)!.label, destination: id, icon: architectureIcon(state, id) }))).slice(0, 5).map(({ item }) => item);
+  // A map made with its own main destinations kept to what its frame has room for; an older one, to a bar of five.
+  const items = orderedNavigation(ids.map((id) => ({ label: state.map.nodes.find((n) => n.id === id)!.label, destination: id, icon: architectureIcon(state, id) }))).slice(0, state.navigation ? undefined : 5).map(({ item }) => item);
   return { items, active: items.findIndex((item) => item.destination === destination) };
 }
 

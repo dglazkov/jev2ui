@@ -18,6 +18,7 @@ npm run probe:grammar -- grammar/examples/email.md      # any graph
 npm run probe:grammar -- --catalog ios                  # linted against another idiom's catalog
 npm run probe:draw -- grammar/examples/email.md "Your one-time sign-in code"   # any graph, drawn; --paint lets pictures be made
 npm run probe:draw -- grammar/screen.md "Settings for a podcast app" --catalog ios   # drawn by another idiom's catalog
+npm run probe:share                                     # what each idiom shares with the others: kinds, parts, questions, patterns, components
 node --import tsx --test src/server/grammar/*.test.ts
 RECORD=1 node --import tsx --test src/server/grammar/regression.test.ts   # after a change to screen.md or a catalog that is meant
 ```
@@ -548,6 +549,57 @@ settings row reporting its section; a confirmation over its screen, dimmed, clos
 carried to the next screen through the slot's own `selection`. And the three made-up components were drawn by the
 served app's own surface, shimmering before their words and reporting a tap.
 
+**Step 10: Windows 11, by the method and not from the kit** (#22). `grammar/windows/screen.md` was written from
+Microsoft's guidance for Windows apps, with the rule that a grammar sharing the other two's kinds, parts, question names,
+patterns or components has failed. So the method was followed from the system's own words:
+
+- *What decides the frame.* Microsoft names four app silhouettes: a navigation pane down the left (Settings), navigation
+  across the top (Photos), a menu bar (Notepad), tabs (Terminal). A silhouette is the app's, not the page's, which neither
+  other grammar had to say: the question has the trait `app`, is asked of an app's first screen, and every screen after it
+  is given the answer (the browser carries it as `journey.settled` and saves it with the app).
+- *The kinds* (`page_type`) are Microsoft's page patterns (landing, list/details, details, forms), Template Studio's
+  content grid and data grid, the settings page, the content dialog, and the document a menu bar or tabs are for.
+- *The questions* are Microsoft's "is this the right control" said as facts about content: five to ten sections or five
+  or fewer; a path more than two levels deep (a BreadcrumbBar); a few views of the same things (a SelectorBar); told apart
+  by words, by look, or by look in their own shapes (an ItemsView's stack, grid or flow); records compared in columns; items
+  switched between often, read beside the list (list/details); several acted on at once; a command used only now and then
+  (behind See more); the app's state, not the person's last act (an InfoBar).
+- *The parts* are WinUI's controls, drawn by a catalog of 19 patterns of its own (`patterns-windows.ts`) with a set of 27
+  components of its own (`shared/windows.ts`, `web/windows/`), painted by `windows.css` over nothing of the kit's: Mica and
+  the layers above it, the type ramp, 4 and 8 px corners, strokes rather than shadows, and the pane that folds at 1008 and
+  640 px. A content dialog's responses are three named slots in Microsoft's fixed order, so which one closes it is
+  structure and is not asked. Settings apply at once, as cards, with About last, and the page selects Settings at the
+  pane's foot.
+
+Twenty-three examples were labelled from real Windows apps before the first run. The first run read 19 of 22 as labelled;
+the three misses were extras kept at 0.73, 0.63 and 0.53 of the 0.75 an extra needs, and, as with iOS's search, two were
+shapes and not words (a breadcrumb is expected on a data grid, a FlipView on a details page) and the third a question
+turned from a change into a state (the InfoBar). Then 22 of 22, 68 claims of 68. One later question was worded backwards
+and came back at even odds for every command (0.52–0.57, all behind See more) until its first clause was the yes.
+
+Measured (`npm run probe:share`): of Windows's 9 kinds, 19 parts, 21 questions, 4 things always written, 19 patterns and
+27 components, it shares with the kit two kinds (`settings`, `form`) and one component (`Button`), and with iOS one kind
+(`settings`) and `Button`. Those are Microsoft's own names for a settings page, its forms page pattern and WinUI's Button;
+nothing under them is shared. For comparison, iOS shares 31 of its 38 questions with the kit, and all of its patterns and
+components.
+
+The tool had to learn four things, each of which had been a name of the kit's:
+
+- *what a frame's slots and knobs are for*, from the frame (`Pattern.roles`: which slot is the screen's title, which the
+  app's destinations, which knob makes a main screen), where the pipeline wrote a node called `header` first, sent
+  destinations to `/nav` and found a main screen by the knob `navigation`. The browser is told where a screen's title and
+  destinations are in the `frame` event (54 is gone);
+- *where the app's destinations go*: wherever the frame draws them, on every page for a pane, where it was only on a main
+  screen, for a bar of tabs (58 half met: a grammar can say it now, by drawing them);
+- *how many main destinations fit*: the grammar's list of them (2–5 tabs, 3–8 sections), where it was five everywhere;
+- *on what device an app is shown first*: an idiom whose frame is a window says `device: "desktop"`.
+
+Live, in the served app: a mail app in the left-pane silhouette, its list and the open message, a tap to another message
+(a new page of the same kind with that one open), back, and Settings at the pane's foot; a text editor with its menu bar
+and "ProjectNotes.txt – TextPad" in the title bar; a photo library with navigation across the top, a tap into a photo and
+back; a file manager whose Delete opens a content dialog over it, closed by Cancel. The silhouette the first page read went
+with every request after it. Kit and iOS were drawn again after the change, frames and headers as before.
+
 ## What resisted
 
 What the export could not say, or could only say by growing the format:
@@ -725,7 +777,8 @@ From the reading:
 53. **Which writer waits for which** is now read, and from a thin signal: a part with a writer's note whose `when`
     holds waits for the part drawn as a `collection`, and is shown its elements. It is what a bill needs and the
     format still has no word for "must agree with".
-54. **`header` and `nav` are still names.** The header is written first because it is called that; the journey's
+54. *(Fixed in step 10: the frame says which of its slots is the title and which the destinations, `Pattern.roles`.)*
+    **`header` and `nav` were names.** The header is written first because it is called that; the journey's
     destinations land at `/nav` because the frame's pattern reads them there; the IA sets the frame's navigation
     by finding the question that turns it. A grammar that called them otherwise would draw, and would not get
     the tool's navigation or its first screen.
@@ -739,7 +792,8 @@ From the reading:
 
 From iOS as its own graph:
 
-58. **The tab bar shows on a tab's root and not on what is pushed onto it.** iOS keeps the tab bar on pushed
+58. *(Half met in step 10: the destinations go wherever the frame draws them, so an iOS frame could draw the tab bar on a pushed screen; it does not yet.)*
+    **The tab bar shows on a tab's root and not on what is pushed onto it.** iOS keeps the tab bar on pushed
     screens; the frame's `navigation` is turned by `tab_root`, and the tool sends the app's destinations only to
     screens whose frame says yes, so a pushed detail has no tab bar. Saying "in a tab" separately from "a tab's
     root" is a knob the frame does not have yet.
@@ -772,11 +826,35 @@ From each idiom bringing its components:
 67. **The shell still reaches into the kit's classes once**: the room for a phone's status bar above an app bar
     (`.device.phone .k-appbar`). Which device an idiom is drawn on is #22's.
 
+From Windows:
+
+68. **An answer that is the app's and not the screen's** needed a trait (`app`) and the browser to carry it. It is given
+    to every screen after the first; nothing checks that a later reading would have agreed.
+69. **The app map's roles are generic** (Explore, Workspace, Status, History, Conversation, Preferences, Help), and a mail
+    app got one section. A pane wants the app's own (Inbox, Drafts, Sent); the grammar's pane writer would write them, but
+    the app map's destinations win.
+70. **A page reached from a section selects nothing in the pane.** Windows keeps the section it was reached from
+    selected; the frame is not told which (62 stands, for the same reason).
+71. **The destinations arrive in the app map's shape**, so the pane's fields have to be called `items`, `label`, `icon`
+    and `active` for its data to land; only their slots (`menu_items`, `content`, `selected`) are Windows's.
+72. **The symbols are Material's** (48 stands) and the type is Segoe UI Variable only where it is installed.
+73. **List/details is one screen.** The list and the open item are one writer's; opening another makes a new screen of
+    the same kind with that one open, and the list is written again (#21 has the question of two screens on one page).
+74. **The design gives Windows only its accent and light or dark.** The stylesheet fixes the rest (Mica, strokes, radii,
+    type), so a DESIGN.md's greys and typefaces are overruled without a word (43, from the other side).
+75. **The baker's four uses** (`watch`, `pick`, `adjust`, `read`) are the options of `canvas_use`, because the shelf's
+    contract is typed in them (56 stands).
+76. **The pipeline's keys** (`first_screen`, `reached_by`) are in the grammar's context, and the pipeline gives the
+    design's facts only to grammars that ask `no_photographs` and its two siblings by name, so Windows is not told them.
+77. **A command is tapped as the app bar's** (kind `appbar`), the protocol's nearest word (64 stands).
+78. **Which of a dialog's responses is the default** is my reading of Microsoft's words (the one Enter takes, so the one
+    safe to take by habit), and the grammar says so where it asks.
+79. **Seen once and not again in three runs:** a first page whose words never showed, though the server sent them.
+
 ## Next, in the order that seems right
 
-1. **An app grammar that is not a phone's** (a Mac or Windows app, a watch), written from its own guidelines and
-   sharing nothing it does not have to with `screen.md`, to see what windows or glances do to the tool's shell:
-   the device frame, and the examples offered, should come from the grammar (54, 55).
+1. **An app grammar that is not a phone's**: Windows is step 10. A watch or a TV next, and the examples the tool offers
+   should come from the grammar (55).
 2. **A trunk two dialects import** (63): the content questions once, and `screen.md` and `ios/screen.md` each a
    kinds question, a frame and rules over it. The format has `among [set](file.md)` for options; it has nothing
    for questions.

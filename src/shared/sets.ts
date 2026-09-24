@@ -8,8 +8,9 @@ import type { ComponentSet } from "./components.js";
 import { IDIOMS, type IdiomId } from "./idioms.js";
 import { IOS_SET } from "./ios.js";
 import { KIT_SET } from "./kit.js";
+import { WINDOWS_SET } from "./windows.js";
 
-const OF: Record<IdiomId, ComponentSet> = { kit: KIT_SET, ios: IOS_SET };
+const OF: Record<IdiomId, ComponentSet> = { kit: KIT_SET, ios: IOS_SET, windows: WINDOWS_SET };
 
 const SETS = new Map<string, ComponentSet>(Object.entries(OF).map(([idiom, set]) => [IDIOMS[idiom as IdiomId].catalogId, set]));
 

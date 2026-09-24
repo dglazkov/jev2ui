@@ -21,6 +21,7 @@ import { parseGrammar, printGrammar, type Grammar, type Node, type Option, type 
 import { GRAMMAR_DIR } from "./load.js";
 import { kitCatalog } from "./patterns.js";
 import { iosCatalog } from "./patterns-ios.js";
+import { windowsCatalog } from "./patterns-windows.js";
 
 interface Extra {
   traits?: string[];
@@ -119,6 +120,7 @@ export function files(): Record<string, string> {
   return {
     "kit.md": printGrammar(kitCatalog()),
     "ios/catalog.md": printGrammar(iosCatalog()),
+    "windows/catalog.md": printGrammar(windowsCatalog()),
     "paint.md": printGrammar(paintGrammar()),
     "icons.md": printGrammar(setOf("icons", ["Material Symbols. The symbols Jev can choose from, wherever a screen, a row, an item or a destination wants one."], ICON_OPTIONS)),
     "subjects.md": printGrammar(

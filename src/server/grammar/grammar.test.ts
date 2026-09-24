@@ -13,12 +13,12 @@ import { readFileSync as read } from "node:fs";
 const { grammar: SCREEN, blocks: BLOCKS, kinds: KINDS } = IDIOMS.kit.graph;
 
 test("the files still written from code are what the code asks and draws: run `npm run grammar:export` after changing a question", () => {
-  assert.deepEqual(Object.keys(files()).sort(), ["icons.md", "ios/catalog.md", "kit.md", "paint.md", "subjects.md"]);
+  assert.deepEqual(Object.keys(files()).sort(), ["icons.md", "ios/catalog.md", "kit.md", "paint.md", "subjects.md", "windows/catalog.md"]);
   for (const [name, text] of Object.entries(files())) assert.equal(readFileSync(`${GRAMMAR_DIR}${name}`, "utf8"), text, `grammar/${name} is stale`);
 });
 
 test("a file read and written again is the same file, screen.md and email.md included", () => {
-  for (const name of [...Object.keys(files()), "screen.md", "ios/screen.md", "examples/email.md"]) {
+  for (const name of [...Object.keys(files()), "screen.md", "ios/screen.md", "windows/screen.md", "examples/email.md"]) {
     const text = readFileSync(`${GRAMMAR_DIR}${name}`, "utf8");
     assert.equal(printGrammar(parseGrammar(text)), text, name);
   }

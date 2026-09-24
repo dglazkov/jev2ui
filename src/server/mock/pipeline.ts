@@ -33,6 +33,7 @@ import { parseDesign } from "../design-md.js";
 import { resized } from "../photos/library.js";
 import { Run, SURFACE_ID } from "../run.js";
 import { idiom } from "../idioms.js";
+import { appAnswers } from "./graph.js";
 import type { PipelineEvent } from "../../shared/events.js";
 import type { Journey } from "../../shared/journey.js";
 import { bakeCustom, customOf, shelfFrom } from "./bake.js";
@@ -44,7 +45,7 @@ import { refineField } from "./refine.js";
 import type { SubjectName } from "../photos/subjects.js";
 import { decide, type Decoration } from "../grammar/decide.js";
 import { laterOf, type Atom, type Field, type Node } from "../grammar/format.js";
-import { appliesIn, boundIn, contentNodes, frameKnobsOf, frameOf, framePatternOf, knobsOf, partsOf, schemaOf, treeOf, wholeOf, type Look } from "../grammar/make.js";
+import { appliesIn, boundIn, contentNodes, filling, frameKnobsOf, frameOf, framePatternOf, knobsOf, partsOf, schemaOf, treeOf, wholeOf, type Look } from "../grammar/make.js";
 import { EMPTY, JEV, givensOf, holdsIn, questionsOf, readGrammar, type Reading, type Value } from "../grammar/read.js";
 
 /** Jev's per-instance answers, kept apart from Gemini's words and merged into them on the way out. */
@@ -80,6 +81,15 @@ export function runMock(described: string, source?: DesignSource, journey?: Jour
   // The idiom the request is imagined in: its grammar is what is asked and read, its patterns draw the answers.
   const { graph, patterns, catalogId } = idiom();
   const { grammar } = graph;
+  // What the tool needs of a frame it finds by the roles the frame's pattern gives its slots and knobs (make.ts), not by
+  // any name: what is written first (whatever fills the title), where the app's destinations go, and which knob makes a
+  // screen one of the app's main ones.
+  const roles = framePatternOf(patterns, grammar)?.roles;
+  const titled = filling(patterns, grammar, "title")!;
+  const destinations = filling(patterns, grammar, "destinations");
+  const mainKnob = roles?.main ?? "navigation";
+  // What an app settles once, on its first screen, and every screen after it is given: the questions with the trait `app`.
+  const settledBefore = appAnswers(graph, journey?.settled);
   const markdown = source && "markdown" in source ? source.markdown : undefined;
   const run = new Run("mock");
   const surfaceId = SURFACE_ID;
@@ -255,13 +265,13 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
       const own = reading ? hooksOf(node) : {};
       return streams.write(
         part,
-        { system: SYSTEM_PROMPT, prompt: partPrompt(prompt, part, reading ?? null, setting, agreeWith, grammar.name), schema: schemaOf(node, reading ?? EMPTY) },
+        { system: SYSTEM_PROMPT, prompt: partPrompt(prompt, part, reading ?? null, setting, agreeWith, grammar.name, titled.name), schema: schemaOf(node, reading ?? EMPTY) },
         { ...own, decorate: (value, complete) => decorations.apply(part, own.decorate ? own.decorate(value, complete) : value) },
       );
     };
 
     // t=0: the header is needed whatever the plan turns out to be.
-    const header: Promise<any> = kept.header ? Promise.resolve(kept.header) : write("header");
+    const header: Promise<any> = kept[titled.name] ? Promise.resolve(kept[titled.name]) : write(titled.name);
     if (to) run.trace({ stage: `Link: ${to.screen}`, ms: 0, detail: `reached by ${to.reachedBy}` });
     const designing = loadDesign(source ?? { brief: journey?.app ?? prompt });
     const screenTask = catalogTask ? [catalogTask, ...notes].join("\n\n") : prompt;
@@ -275,13 +285,14 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
     // What is settled before Jev is asked: by how the person got here, or by what the developer said.
     const arrived: { topLevel?: boolean; among?: string[] } = existing?.state.navigation?.includes(destinationId) && (destinationId !== "first" || existing.state.map.home === "first") ? { topLevel: true } : catalogEntry && to ? { topLevel: to.topLevel, among: to.among } : target ? (destinationId === "first" ? {} : { topLevel: destinationId === "home" }) : to ? { topLevel: to.topLevel, among: to.among } : {};
     // The question whose answer is the frame's navigation: a main screen, or one reached by drilling in.
-    const mainScreen = grammar.nodes.find((node) => node.target === "navigation" && node.asking?.type === "noul");
+    const mainScreen = grammar.nodes.find((node) => node.target === mainKnob && node.asking?.type === "noul");
     // What the design says, given to the graph: its rules say what a design without photographs, symbols or cards does to the screen.
     const given = { ...givensOf(grammar), ...("no_photographs" in givensOf(grammar) ? { no_photographs: !designRead.imagery, no_symbols: !designRead.icons, no_cards: !designRead.contained } : {}) };
     reading = readGrammar(grammar, planned.answers, JEV, {
       ...(settled ? { blocks: settled, ...(was ? { among: was } : {}) } : arrived.among ? { among: arrived.among } : {}),
       values: {
         ...given,
+        ...settledBefore,
         // What stays of the screen keeps the reading it had, for the parts that stay; what is new takes the reading just made.
         ...(edit && settled ? graph.keptOf(edit.plan, settled) : {}),
         ...(arrived.topLevel !== undefined && mainScreen ? { [mainScreen.name]: arrived.topLevel } : {}),
@@ -308,11 +319,13 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
     const pattern = framePatternOf(patterns, grammar);
     const knobs = () => (pattern ? frameKnobsOf(grammar, reading!, pattern.knobs) : {});
     // A knob a question of yes or no turns is true or false; one a trait or a named option sets is "yes" or "no".
-    const onMain = () => frame.navigation === "yes" || frame.navigation === true;
+    const onMain = () => frame[mainKnob] === "yes" || frame[mainKnob] === true;
     frame = knobs();
     const custom = parts.filter((node) => node.filled).map((node) => customOf(graph, node, reading!));
     if (startingApp) {
-      architecture = initialArchitecture(described, { archetype: reading.kind, topLevel: onMain(), ...(custom.length ? { custom: { use: custom[0].contract.use } } : {}) }, planned.answers);
+      // As many main destinations as the grammar's list of them takes: a bar of five, a pane of eight.
+      const most = destinations?.fields.find((field) => field.role === roles?.destinations)?.list?.max ?? 5;
+      architecture = initialArchitecture(described, { archetype: reading.kind, topLevel: onMain(), ...(custom.length ? { custom: { use: custom[0].contract.use } } : {}) }, planned.answers, most);
       if (architecture.map.home === "first" && mainScreen) {
         reading.values[mainScreen.name] = true;
         frame = knobs();
@@ -336,9 +349,19 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
     for (const node of contentNodes(grammar)) drawn.set(node.name, boundIn(framed));
     run.send({ createSurface: { surfaceId, catalogId } });
     run.send({ updateComponents: { surfaceId, components: [...framed, ...trees.flatMap(([, tree]) => tree)] } });
-    // The browser is told what the frame is, since what it is drawn with is the catalog's: over another screen, or a main one.
+    // The browser is told what the frame is, since what it is drawn with is the catalog's: over another screen, or a main
+    // one; where the screen's title and the app's destinations are; and what the app settles once, for every screen after.
     const over = Boolean(pattern?.over?.(frame));
-    run.frame({ over, main: onMain() && !over });
+    const titleField = titled.fields.find((field) => field.role === roles?.title);
+    // The app's destinations go wherever the frame draws them: on a main screen for a bar of tabs, on every page for a pane.
+    const drawsDestinations = !!destinations && [...boundIn(framed)].some((path) => path.startsWith(`/${destinations.name}/`));
+    run.frame({
+      over,
+      main: onMain() && !over,
+      ...(titleField ? { title: `/${titled.name}/${titleField.name}` } : {}),
+      ...(drawsDestinations ? { destinations: `/${destinations!.name}` } : {}),
+      ...(Object.keys(appAnswers(graph, reading.values)).length ? { app: appAnswers(graph, reading.values) } : {}),
+    });
 
     // A picture at the top of a part (the lead photograph) is of what the header names: the description will not do, since
     // it lists what is on the screen, and a picture of that is a picture of a phone. The one a tapped item carried is it.
@@ -363,16 +386,15 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
 
     // The app's navigation is established once; every main screen after that shows the same one.
     const nav = architectureRequest ? undefined : journey?.nav;
-    const mainScreenNow = onMain();
-    if (nav && mainScreenNow) {
+    if (nav && drawsDestinations) {
       const active = nav.items.findIndex((item) => item.label === journey!.via.label);
-      run.send({ updateDataModel: { surfaceId, path: "/nav", value: { items: nav.items, active: Math.max(0, active) } } });
+      run.send({ updateDataModel: { surfaceId, path: `/${destinations!.name}`, value: { items: nav.items, active: Math.max(0, active) } } });
     }
     // What is written: the header, what else is always written where the reading opens it (the navigation, on a main screen
     // whose destinations nobody has settled), and every part a writer is asked for. A part that arrives whole has no writer.
     const written: string[] = [
-      "header",
-      ...contentNodes(grammar).filter((node) => node.name !== "header" && appliesIn(grammar, node, reading!) && !(node.name === "nav" && (nav || architectureRequest)) && schemaOf(node, reading!)).map((node) => node.name),
+      titled.name,
+      ...contentNodes(grammar).filter((node) => node !== titled && appliesIn(grammar, node, reading!) && !(node === destinations && (nav || architectureRequest)) && schemaOf(node, reading!)).map((node) => node.name),
       ...parts.filter((node) => schemaOf(node, reading!)).map((node) => node.name),
     ];
     streams.open(new Set<string>(written));
@@ -380,7 +402,7 @@ ${existing!.state.notes.filter((n) => n.destination === destinationId).map((n) =
     if (draft) {
       const node = draft.map.nodes.find((n) => n.id === destinationId)!;
       if (!draft.catalog) setting.architecture = `Closed app contract: ${JSON.stringify({ responsibility: node.purpose, actions: node.actions, destinations: draft.map.nodes.map(({ id, label, purpose }) => ({ id, label, purpose })) })}\nUse only these navigation responsibilities. Local controls may work in place; do not invent other destinations.\n`;
-      if (mainScreenNow) run.send({ updateDataModel: { surfaceId, path: "/nav", value: architectureNav(draft, destinationId) } });
+      if (drawsDestinations) run.send({ updateDataModel: { surfaceId, path: `/${destinations!.name}`, value: architectureNav(draft, destinationId) } });
     }
     // Baking takes seconds, not milliseconds. It starts now and the slot shimmers, like a picture that has not loaded.
     for (const one of custom) if (kept[one.part] === undefined) streams.spawn(bakeCustom(run, surfaceId, prompt, one, { ...setting, voice: setting.voice || (mixed ? parseDesign(mixed).voice : "") }, shelfFrom(journey?.shelf), fresh));

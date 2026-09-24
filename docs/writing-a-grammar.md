@@ -444,8 +444,18 @@ the Human Interface Guidelines. To add yours: name it in
 layer), give it a grammar, a catalog file and the code that draws the patterns in `src/server/idioms.ts`,
 give it its own set of components (below), bundle its stylesheet in `src/web/kit/idioms.ts`, have
 `src/server/grammar/export.ts` write its catalog file if it has its own, and record what it draws (`RECORD=1 node
---import tsx --test src/server/grammar/regression.test.ts`). Two things are still the tool's and not the grammar's:
-a content node called `header` is written first, and one called `nav` is where the app's destinations land.
+--import tsx --test src/server/grammar/regression.test.ts`). Its stylesheets are named by their path under `src/web`.
+
+Its frame pattern says what its slots and knobs are for, with `roles`: which slot is the screen's title (whatever fills
+it is written first, and the browser reads the title there), which the app's destinations (the app map's land in
+whatever fills it, wherever the frame draws them, as many as that list takes), and which knob makes one of the app's
+main screens. An idiom whose frame is a window says `device: "desktop"` in `src/shared/idioms.ts`.
+
+A question that is the app's and not the screen's has the trait `app`: it is asked of the app's first screen, and every
+screen after it is given the answer. `## silhouette (app) → silhouette` in `grammar/windows/screen.md` is one.
+
+`grammar/windows/screen.md` is an idiom that shares nothing with the tool's own grammar: its own kinds, parts, questions,
+catalog and components. `npm run probe:share` counts what an idiom shares with the others.
 
 The components a catalog's patterns draw with are its own, not additions to the kit's. A set is their schemas and
 which of their props name other components (a `ComponentSet`, in a file of its own under `src/shared/`, registered
@@ -480,7 +490,7 @@ those by hand; a test fails if they go stale.
 | `# name` | The grammar's name, and the key Jev reads the description under. |
 | `> text` (before any heading) | What Jev reads before every question. |
 | `## name` … `###### name` | A question, or a part, or what's always written. Nesting is scope. |
-| `## name (trait, trait)` | Traits: `never padding` on a part; `once written`, `of each x in list`, `among each x in list` on a later question. |
+| `## name (trait, trait)` | Traits: `never padding` on a part; `given` and `app` on a question; `once written`, `of each x in list`, `among each x in list` on a later question. |
 | `## name → target` | Where the answer goes: a knob, a pattern, a token. |
 | `## name → pattern with knob value, knob value` | A pattern, with knobs set for good. |
 | `> question` | What Jev is asked. Two blockquotes with a bare `>` between: context, then question. |

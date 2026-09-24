@@ -357,7 +357,11 @@ stylesheet are an **idiom**, and an app is imagined in one: the tool's own; iOS 
 graph of its own written from the Human Interface Guidelines, whose kinds are how a screen is presented — a tab's
 root, a pushed screen, a sheet with Cancel and Done, an alert, an action sheet, a full-screen cover — drawn by
 `grammar/ios/catalog.md`, `src/server/grammar/patterns-ios.ts` and `src/web/kit/ios.css` over the kit's
-components, with a screen and a navigation bar of its own). People call it the **grammar**, and choose it in the bar, as a step of the path to the app
+components, with a screen and a navigation bar of its own); and Windows 11 (`grammar/windows/screen.md`, written from
+Microsoft's guidance and sharing no parts, questions, patterns or components with the other two: the app's silhouette,
+asked once and given to every page after, a navigation pane or top navigation or a menu bar or tabs, Microsoft's page
+patterns, WinUI's controls, drawn by `src/server/grammar/patterns-windows.ts` with components of its own in
+`src/shared/windows.ts` and `src/web/windows/`, shown in a desktop window). People call it the **grammar**, and choose it in the bar, as a step of the path to the app
 (Apparite › iOS › Habit Tracker): a preset that new apps are made in, changed about once a session and
 remembered between visits. An app keeps the grammar it was made in for as long as it lives, because its
 screens were read by that grammar and no other: choosing another while an app is open starts a new app, and
@@ -778,6 +782,8 @@ src/server/mock/pipeline.ts the mock pipeline
 src/web/surface.ts          the surface every screen is drawn on: data, bindings, templates, taps, the slot a baked component runs in; surface.css paints what it draws itself
 src/web/sets.ts             how each set of components is drawn, by catalog id
 src/web/kit/                the kit's drawing (components.ts) and iOS's (ios.ts), their stylesheets, and the sandbox
+src/web/windows/            Windows's drawing and windows.css
+src/shared/windows.ts       Windows's components, named after WinUI's controls
 src/server/job-profile.ts   questions about the person, and the profile read from the answers
 src/server/job-patterns.ts  rules from job to pattern; each pattern's parts and component tree
 src/server/jobs.ts          the jobs pipeline

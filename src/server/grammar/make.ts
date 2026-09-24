@@ -92,6 +92,12 @@ export interface Pattern {
   knobs: Record<string, Knob>;
   /** `parts` are given to a frame: the parts drawn already, in the order they come. The components are the catalog's own set's (shared/sets.ts). */
   draw(id: string, bound: Bound, knobs: Record<string, Value>, look: Look, parts?: DrawnPart[]): Component[];
+  /**
+   * Of a frame: which of its slots is the screen's title and which the app's destinations, and which of its knobs, when
+   * yes, makes one of the app's main screens. The tool finds what to write first, where the app's destinations go and
+   * which screens are main ones by these, and by no name of its own.
+   */
+  roles?: { title: string; destinations?: string; main?: string };
   /** Of a frame: whether, set so, it sits over the screen it was opened from (a dialog, an alert) rather than in its place. The browser is told, and draws the one over the other. */
   over?(knobs: Record<string, Value>): boolean;
   /** What the pattern works out from what was written, by slot, for a field that says `computed`: the elements of the list the slot is in, with the slot filled. */
@@ -192,6 +198,16 @@ export function frameKnobsOf(grammar: Grammar, reading: Reading, knobs: Record<s
     if (knob in knobs) out[knob] = value;
   }
   return out;
+}
+
+/**
+ * What is always written that fills the slot a frame gives a role (`Pattern.roles`): the screen's title, the app's
+ * destinations. What fills the title is written first; without a frame, the first thing always written is.
+ */
+export function filling(catalog: Catalog, grammar: Grammar, role: "title" | "destinations"): Node | undefined {
+  const slot = framePatternOf(catalog, grammar)?.roles?.[role];
+  const found = slot ? contentNodes(grammar).find((node) => node.fields.some((field) => field.role === slot)) : undefined;
+  return found ?? (role === "title" ? contentNodes(grammar)[0] : undefined);
 }
 
 /** The pattern the kinds' question names for the frame; nothing, for a graph that names none. */

@@ -26,6 +26,7 @@ import { mixDesign, mixQuestions } from "./design-mix.js";
 import { loadDesign } from "./design-source.js";
 import { talk } from "./talk.js";
 import { idiom } from "./idioms.js";
+import { filling } from "./grammar/make.js";
 /** The tool's own parts, as the chat names them; a grammar that has others is read by its parts' questions. */
 type Block = string;
 import { named, type Decision } from "../shared/events.js";
@@ -143,7 +144,7 @@ const askScreen = (question: string) => ({ context: SCREEN_CONTEXT, question });
  * What the message asks of a screen's parts: for every block its kind of screen allows, whether to add it, remove
  * it or leave it; and for every part it has, whether the message is about what that part says.
  */
-export function screenQuestions(allowed: Block[], has: string[]): Questions {
+export function screenQuestions(allowed: Block[], has: string[], titled = "header"): Questions {
   const out: Questions = {};
   for (const block of allowed)
     out[`block_${block}`] = choice(askScreen(`One possible part of this screen is ${blockWords(block)}. What does the message ask for, as to that part?`), {
@@ -152,7 +153,7 @@ export function screenQuestions(allowed: Block[], has: string[]): Questions {
       keep: "The message does not ask to add or to remove this part. It says nothing of it, or is only about its wording or its look.",
     });
   for (const part of has)
-    out[`says_${part}`] = noul(askScreen(`Does the message ask to change what is written in ${part === "header" ? "the screen's title and subtitle" : blockWords(part)}: its wording, length, tone, language, units, or which examples it shows?`), {
+    out[`says_${part}`] = noul(askScreen(`Does the message ask to change what is written in ${part === titled ? "the screen's title and subtitle" : blockWords(part)}: its wording, length, tone, language, units, or which examples it shows?`), {
       true: "Yes: the message is about the words or data of that part, or about the words of the whole screen.",
       false: "No: the message is about something else, or about adding or removing parts, or about the look.",
     });
@@ -216,12 +217,16 @@ export async function readChange(state: Record<string, unknown>, others: ScreenA
 
 /** What a message asks of one screen's parts. Nothing, for a screen whose parts the browser does not know. */
 async function readScreen(screen: ScreenAbout, message: string): Promise<{ add: Block[]; remove: Block[]; rewrite: string[]; decisions: Decision[] }> {
-  const shape = idiom().graph.kinds[screen.archetype];
+  const { graph, patterns } = idiom();
+  const shape = graph.kinds[screen.archetype];
   if (!shape || !screen.blocks) return { add: [], remove: [], rewrite: [], decisions: [] };
   const has = screen.blocks.filter((block): block is Block => shape.order.includes(block as Block));
-  // A lead picture and a custom component have no words of their own to write again.
-  const parts = ["header", ...has.filter((block) => block !== "hero" && block !== "custom")];
-  const { answers } = await askJev({ screen: `"${screen.title}", a ${screen.archetype} screen`, has: has.map((block) => BLOCK_WORDS[block]), message }, screenQuestions(shape.order, parts));
+  // What is written first (the header, a page's titles), then every part that has words of its own: a lead picture, or
+  // a component that arrives whole, has none to write again.
+  const titled = filling(patterns, graph.grammar, "title")?.name ?? "header";
+  const worded = (block: string) => { const node = graph.partNode(block); return !node.filled && node.fields.some((field) => !field.source); };
+  const parts = [titled, ...has.filter(worded)];
+  const { answers } = await askJev({ screen: `"${screen.title}", a ${screen.archetype} screen`, has: has.map((block) => blockWords(block)), message }, screenQuestions(shape.order, parts, titled));
   const decisions: Decision[] = [];
   const add: Block[] = [];
   const remove: Block[] = [];
@@ -234,7 +239,7 @@ async function readScreen(screen: ScreenAbout, message: string): Promise<{ add: 
     if (!must) (asked === "add" ? add : remove).push(block);
   }
   const rewrite = parts.filter((part) => answers[`says_${part}`].noul >= 0.5 && !remove.includes(part as Block));
-  for (const part of rewrite) decisions.push({ id: `says:${part}`, question: `${part === "header" ? "title" : blockName(part)}: other words?`, answer: "asked for", p: answers[`says_${part}`].noul });
+  for (const part of rewrite) decisions.push({ id: `says:${part}`, question: `${part === titled ? "title" : blockName(part)}: other words?`, answer: "asked for", p: answers[`says_${part}`].noul });
   return { add, remove, rewrite, decisions };
 }
 
@@ -332,7 +337,8 @@ export async function readTurn(request: TurnRequest): Promise<TurnResponse> {
     if (lines.length) design = { delta, change, receipt: lines, report, markdown: mixed! };
   }
 
-  const line = (block: string, from: string, to: string) => ({ what: block === "header" ? "title" : blockName(block), from, to });
+  const titled = filling(idiom().patterns, idiom().graph.grammar, "title")?.name ?? "header";
+  const line = (block: string, from: string, to: string) => ({ what: block === titled ? "title" : blockName(block), from, to });
   const screen = {
     id: target.id,
     add: of.add,

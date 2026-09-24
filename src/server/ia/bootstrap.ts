@@ -26,8 +26,11 @@ export function initialNavigationQuestions(): Questions {
 }
 
 /** Assemble registered destinations synchronously from answers already returned with the screen plan. */
-/** `plan` is what the IA reads of the screen's reading: its kind, whether it is a main screen, what its custom part is for. */
-export function initialArchitecture(brief: string, plan: { archetype: string; topLevel: boolean; custom?: { use: string } }, answers: Answers): Architecture {
+/**
+ * `plan` is what the IA reads of the screen's reading: its kind, whether it is a main screen, what its custom part is for.
+ * `most` is how many main destinations the frame has room for, as the grammar says: five tabs in a bar, eight sections in a pane.
+ */
+export function initialArchitecture(brief: string, plan: { archetype: string; topLevel: boolean; custom?: { use: string } }, answers: Answers, most = 5): Architecture {
   const questions = initialNavigationQuestions();
   validateAnswers(answers, questions);
   const seed = plannedSeed(brief, plan), map = anchorMap(seed);
@@ -43,12 +46,12 @@ export function initialArchitecture(brief: string, plan: { archetype: string; to
   const navigation = [map.home];
   const firstRole = candidates.find((c) => answers[`nav_${c.id}`].choice === "first");
   if (!isHome && (plan.topLevel || firstRole)) navigation.push("first");
-  // Keep the existing five-tab limit, choosing the strongest supported sections.
+  // Keep to what the frame has room for, choosing the strongest supported sections.
   const ranked = [...candidates].sort((a, b) => (answers[`nav_${b.id}`].probabilities.separate ?? 0) - (answers[`nav_${a.id}`].probabilities.separate ?? 0));
   for (const c of ranked) {
     const answer = answers[`nav_${c.id}`].choice;
     if (answer === "first") { aliases[c.id] = "first"; continue; }
-    if (answer !== "separate" || navigation.length >= 5) continue;
+    if (answer !== "separate" || navigation.length >= most) continue;
     aliases[c.id] = c.id;
     navigation.push(c.id);
     map.nodes.push({ id: c.id, label: c.label, purpose: c.purpose, actions: [{ id: "back", label: "Home", kind: "back", target: map.home, sourceLink: null }] });

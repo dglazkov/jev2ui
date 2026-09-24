@@ -17,6 +17,7 @@ import { loadGrammar } from "./grammar/load.js";
 import type { Catalog } from "./grammar/make.js";
 import { KIT_PATTERNS } from "./grammar/patterns.js";
 import { IOS_PATTERNS } from "./grammar/patterns-ios.js";
+import { WINDOWS_PATTERNS } from "./grammar/patterns-windows.js";
 import { Graph } from "./mock/graph.js";
 
 export interface Idiom {
@@ -36,6 +37,8 @@ const OF: Record<IdiomId, { grammar: string; catalog: string; patterns: Catalog 
   kit: { grammar: "screen.md", catalog: "kit.md", patterns: KIT_PATTERNS },
   // A graph of its own, written from the Human Interface Guidelines, drawn by a frame with iOS's knobs.
   ios: { grammar: "ios/screen.md", catalog: "ios/catalog.md", patterns: IOS_PATTERNS },
+  // A graph of its own, written from Microsoft's guidance for Windows apps, drawn by a catalog and components of its own.
+  windows: { grammar: "windows/screen.md", catalog: "windows/catalog.md", patterns: WINDOWS_PATTERNS },
 };
 
 const read = new Map<IdiomId, Idiom>();
