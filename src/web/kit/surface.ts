@@ -19,6 +19,8 @@ type Component = { id: string; component: string } & Record<string, any>;
 interface Scope {
   base: string;
   index: number;
+  /** Holds the place of an element that has not been written yet: it shimmers, and there is nothing to tap. */
+  ghost?: boolean;
 }
 type Out = TemplateResult | typeof nothing;
 
@@ -152,6 +154,7 @@ export class KitSurface extends LitElement {
 
   /** Everything a person can tap reports what it is and the data behind it; what happens next is up to the host. */
   private tap(kind: string, label: unknown, scope?: Scope, extra: Record<string, unknown> = {}) {
+    if (scope?.ghost) return;
     // A tap on one thing carries that thing; a button that acts on the whole screen carries what the screen showed.
     const whole = kind === "action" || kind === "submit";
     const data = scope?.base ? this.read(scope.base) : whole ? JSON.parse(JSON.stringify(this.data, (key, value) => (key === "imageUrl" || key === "nav" ? undefined : value))) : undefined;
@@ -164,6 +167,7 @@ export class KitSurface extends LitElement {
 
   /** Switches and checkboxes change their own state in place, so a mock feels alive without a round trip. */
   private flip(scope: Scope) {
+    if (scope.ghost) return;
     const item = this.read(scope.base);
     if (item && typeof item === "object") item.on = !item.on;
     this.requestUpdate();
@@ -200,12 +204,17 @@ export class KitSurface extends LitElement {
 
   // --- Tree ------------------------------------------------------------------
 
-  private kids(children: any, scope: Scope): Out[] {
+  /**
+   * A template is stamped once for each element of its array. Until the first element is written, it is stamped `ghosts`
+   * times over nothing, so that a list is on screen before its words, as the words of a heading are.
+   */
+  private kids(children: any, scope: Scope, ghosts = 3): Out[] {
     if (Array.isArray(children)) return children.map((id) => this.node(id, scope));
     if (!children?.componentId) return [];
     const base = this.absolute(children.path, scope);
     const items = this.read(base);
-    return Array.isArray(items) ? items.map((_, index) => this.node(children.componentId, { base: `${base}/${index}`, index })) : [];
+    if (Array.isArray(items) && items.length) return items.map((_, index) => this.node(children.componentId, { base: `${base}/${index}`, index }));
+    return Array.from({ length: ghosts }, (_, index) => this.node(children.componentId, { base: `${base}/${index}`, index, ghost: true }));
   }
 
   private node(id: string | undefined, scope: Scope): Out {
@@ -292,12 +301,12 @@ export class KitSurface extends LitElement {
   drawCluster(c: Component, s: Scope) {
     const justify = { start: "flex-start", center: "center", end: "flex-end", between: "space-between" }[(c.justify as string) ?? "start"];
     return html`<div class="k-cluster k-gap-${c.gap ?? "sm"}" style="${this.flex(c)}justify-content:${justify};align-items:${c.align ?? "center"}">
-      ${this.kids(c.children, s)}
+      ${this.kids(c.children, s, 1)}
     </div>`;
   }
 
   drawGrid(c: Component, s: Scope) {
-    return html`<div class="k-grid k-gap-${c.gap ?? "sm"}" style="--k-min:${c.min ?? 140}px">${this.kids(c.children, s)}</div>`;
+    return html`<div class="k-grid k-gap-${c.gap ?? "sm"}" style="--k-min:${c.min ?? 140}px">${this.kids(c.children, s, 4)}</div>`;
   }
 
   drawReel(c: Component, s: Scope) {

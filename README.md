@@ -63,7 +63,9 @@ archetype         which canonical layout this is: feed, dashboard, detail, guide
 ```
 
 The first three levels depend only on the prompt, so they are one Jev request of 30 questions, and the
-whole tree is on screen at around 200 ms, shimmering where words will go. Order is never asked: it belongs to the
+whole tree is on screen at around 200 ms, shimmering where words will go; a list, a group or a form whose first row
+is not written yet holds its place with a few rows of shimmer that nothing can tap, so a writer that stalls leaves the
+screen unfinished rather than missing its body (`src/web/kit/surface.ts`). Order is never asked: it belongs to the
 archetype, which is where best practice lives. The fourth level is asked as each group, list or field completes
 in Gemini's stream (`src/server/grammar/decide.ts`). Those answers are written into the *data model* beside the words they are
 about (`/groups/1/rows/2/control = "switch"`) and the tree binds to them, so a template stays a template however
