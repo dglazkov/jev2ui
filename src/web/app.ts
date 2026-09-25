@@ -27,6 +27,8 @@ import type { Baked } from "../shared/components.js";
 import type { SavedAbout, SavedApp, SavedTurn, Visibility } from "../shared/saved.js";
 import { receiptOf, type Option, type PaintChange, type ScreenAbout, type TurnRequest, type TurnResponse } from "../shared/turn.js";
 import { session, streamEvents } from "./session.js";
+import { record } from "./activity.js";
+import type { How } from "../shared/activity.js";
 import { face, icon, mark, titled } from "./chrome.js";
 import { DEVICES, DEVICE_ICONS, firstDevice, type Device, type Section } from "./settings.js";
 
@@ -230,6 +232,11 @@ export class App extends LitElement {
   private nextId = 1;
   private nextTurn = 1;
   private shownTurns = 0;
+  /** The turns begun in this visit, numbered for the activity log (web/activity.ts), with when they began and what the tool took them to mean. */
+  private tracked = new WeakMap<Turn, { n: number; at: number; act?: string }>();
+  private turnsBegun = 0;
+  /** Those whose end has not been logged yet. */
+  private unsettled = new Set<Turn>();
   /** Every screen being made. More than one can be: "move the form to a screen of its own" makes two. */
   private making = new Map<AbortController, Screen>();
   private readingAbort: AbortController | undefined;
@@ -334,11 +341,12 @@ export class App extends LitElement {
       this.device = own ?? firstDevice();
     }
     // Who is asking decides whether a private app opens, so a link waits until that is known.
-    if (this.linked && session.state !== "loading") void this.openSaved(this.linked);
+    if (this.linked && session.state !== "loading") void this.openSaved(this.linked, "link");
     if (session.state === "in" && this.libraryFor !== session.email) void this.loadLibrary();
   }
 
-  protected updated() {
+  protected updated(changed: Map<string, unknown>) {
+    this.logActivity(changed);
     const byId = new Map(this.made.map((screen) => [String(screen.id), screen]));
     const navigationIcons = Object.fromEntries(this.architecture?.map.nodes.map((node) => [node.id, architectureIcon(this.architecture!, node.id)]) ?? []);
     // The page is painted in the app's idiom, and every request says which it is.
@@ -378,16 +386,37 @@ export class App extends LitElement {
     measure();
   }
 
+  /** What the person did that is seen only in what changed: a turn that came out one way or another, a view, a tap that could make nothing. */
+  private logActivity(changed: Map<string, unknown>) {
+    for (const turn of this.unsettled) {
+      const tracked = this.tracked.get(turn)!;
+      // Undone, or cleared for another app: that was logged as what it was.
+      if (!this.turns.includes(turn)) this.unsettled.delete(turn);
+      else if (turn.outcome !== "pending") {
+        this.unsettled.delete(turn);
+        record("turn_end", { turn: tracked.n, outcome: turn.outcome, ...(tracked.act ? { act: tracked.act } : {}), ms: Math.round(performance.now() - tracked.at), ...(turn.outcome === "failed" && /today's runs/.test(turn.text ?? "") ? { reason: "runs" as const } : {}) });
+      }
+    }
+    if ((changed.has("view") && changed.get("view") !== undefined) || (changed.has("section") && changed.get("section") !== undefined && this.view === "settings"))
+      record("view", { view: this.view, ...(this.view === "settings" ? { section: this.section } : {}) });
+    if (changed.has("unmade") && this.unmade) record("unmade_tap", {});
+  }
+
   // --- Turns ------------------------------------------------------------------
 
   private asItStands(): Before {
     return { idiom: this.idiom, architecture: this.architecture, architectureError: this.architectureError, app: this.app, nav: this.nav, settled: this.settled, screens: new Map(this.screens), stack: [...this.stack], nextId: this.nextId, choice: this.choice, markdown: this.markdown, seed: this.seed, change: this.change, report: this.report };
   }
 
-  /** Every turn starts here: what stood before it is kept, so that it can be undone. */
-  private begin(source: Turn["source"], said: string): Turn {
+  /** Every turn starts here: what stood before it is kept, so that it can be undone. `how` is for the activity log, which is not told what was said. */
+  private begin(source: Turn["source"], said: string, how: { how: How; length?: number; chip?: string; via?: string }): Turn {
+    const first = !this.app;
     this.movedOn();
     const turn: Turn = { id: this.nextTurn++, source, said, outcome: "pending", lines: [], decisions: [], before: this.asItStands() };
+    const n = ++this.turnsBegun;
+    this.tracked.set(turn, { n, at: performance.now() });
+    this.unsettled.add(turn);
+    record("turn_start", { turn: n, source, ...how, first, idiom: first ? this.preset : this.idiom, device: this.device, endpoint: session.endpoint });
     this.turns = [...this.turns, turn];
     // The turns are not reactive state, and a chip leaves the box as it was: without this, nothing shows until the server first answers.
     this.tick++;
@@ -404,6 +433,8 @@ export class App extends LitElement {
   private undo() {
     const turn = this.turns.at(-1);
     if (!turn?.before) return;
+    const tracked = this.tracked.get(turn);
+    if (tracked) record("undo", { turn: tracked.n, pending: turn.outcome === "pending", ms: Math.round(performance.now() - tracked.at) });
     // Opening a destination can overlap the previous screen's remaining assets.
     // Undo the new screen while allowing the restored screen to finish its run.
     this.stop(new Set(turn.before.screens.values()));
@@ -418,13 +449,14 @@ export class App extends LitElement {
   }
 
   /** What the person typed, or chose from what the tool offered. The first makes an app; the rest are about the one there is. */
-  private async say(message = this.draft) {
+  private async say(message = this.draft, how: "typed" | "example" | "suggestion" | "option" = "typed") {
     message = message.trim();
     if (!message || this.busy || !session.makes) return;
     this.draft = "";
     const here = this.current;
     const asked = this.turns.at(-1);
-    const turn = this.begin("typed", message);
+    // The tool's own examples and suggestions may be named; what the person typed, and the options Gemini wrote from it, may not.
+    const turn = this.begin("typed", message, { how, ...(how === "typed" ? { length: message.length } : how === "option" ? {} : { chip: message }) });
     if (!this.app || !here) return this.create(message, turn);
 
     this.reading = true;
@@ -446,6 +478,7 @@ export class App extends LitElement {
       const answer = (await response.json()) as TurnResponse;
       // Undone while it was being read: there is nothing to answer.
       if (!this.turns.includes(turn)) return;
+      this.tracked.get(turn)!.act = answer.act;
       turn.decisions = answer.decisions;
       turn.ms = answer.ms;
       turn.endpoint = answer.endpoint;
@@ -515,9 +548,10 @@ export class App extends LitElement {
   }
 
   /** Clears the bench for another app, in the preset grammar. What was there is gone unless it was saved, so the way back is offered for a moment; `undone` puts back whatever else the caller changed. */
-  private fresh(undone?: () => void) {
+  private fresh(from: "rail" | "library" | "grammar", undone?: () => void) {
     this.menu = "";
     if (!this.app) return this.go("chat");
+    record("new_app", { from });
     const was = { ...this.asItStands(), turns: this.turns, saved: this.saved, search: location.search };
     this.stop();
     this.designRequest++;
@@ -575,7 +609,7 @@ export class App extends LitElement {
   /** The design is either Jev's mix for this app or the developer's own DESIGN.md. */
   private choose(choice: string) {
     if (choice === this.choice) return;
-    const turn = this.app ? this.begin("button", choice === AUTO ? `Switched to the ${named(session.endpoint)} design` : "Switched to your DESIGN.md") : undefined;
+    const turn = this.app ? this.begin("button", choice === AUTO ? `Switched to the ${named(session.endpoint)} design` : "Switched to your DESIGN.md", { how: "design" }) : undefined;
     this.choice = choice;
     this.designError = "";
     if (choice === CUSTOM) this.markdown = localStorage.getItem(STORED_DESIGN) ?? this.markdown;
@@ -589,12 +623,13 @@ export class App extends LitElement {
    */
   private pick(id: IdiomId) {
     this.menu = "";
+    record("grammar", { to: id });
     const was = this.preset;
     this.preset = id;
     localStorage.setItem(STORED_IDIOM, id);
     if (!this.app) this.idiom = id;
     else if (id !== this.idiom)
-      this.fresh(() => {
+      this.fresh("grammar", () => {
         this.preset = was;
         localStorage.setItem(STORED_IDIOM, was);
       });
@@ -603,7 +638,7 @@ export class App extends LitElement {
   /** Another draw from what Jev thinks suits the brief. The screens stay, and so does whatever the person asked for; the rest of the paint changes. */
   private remix() {
     if (!this.app) return;
-    const turn = this.begin("button", "Remixed the design");
+    const turn = this.begin("button", "Remixed the design", { how: "remix" });
     this.choice = AUTO;
     this.seed = 1 + Math.floor(Math.random() * 0xfffffff);
     void this.loadDesign(this.designSource, turn);
@@ -612,7 +647,7 @@ export class App extends LitElement {
   private edit(markdown: string) {
     // Typing is one turn however many keys it takes.
     const last = this.turns.at(-1);
-    const turn = !this.app ? undefined : last?.said === EDITED ? last : this.begin("button", EDITED);
+    const turn = !this.app ? undefined : last?.said === EDITED ? last : this.begin("button", EDITED, { how: "design_edit" });
     this.markdown = markdown;
     this.choice = CUSTOM;
     localStorage.setItem(STORED_DESIGN, markdown);
@@ -690,6 +725,7 @@ export class App extends LitElement {
     if (kind === "appbar" && IN_PLACE.has(detail.label)) return;
     // A back arrow goes back, and so does a button the grammar says only closes what it is on (Cancel): the kit taps it as one.
     if (kind === "back" && this.stack.length > 1) {
+      record("walk", { via: "back" });
       this.stack = this.stack.slice(0, -1);
       return void this.tick++;
     }
@@ -700,7 +736,8 @@ export class App extends LitElement {
     // Looking is free; a screen nobody has made yet takes a run, and a run takes a name.
     if (made && !session.makes) return void (this.unmade = via.label);
     this.unmade = "";
-    const turn = made ? this.begin("tap", via.kind === "back" ? `Went back from “${here.title}”` : `Tapped “${String(via.data?.title ?? via.label)}”`) : undefined;
+    const turn = made ? this.begin("tap", via.kind === "back" ? `Went back from “${here.title}”` : `Tapped “${String(via.data?.title ?? via.label)}”`, { how: "tap", via: via.kind }) : undefined;
+    if (!made) record("walk", { via: via.kind });
     screen ??= this.open(key, via.kind === "nav", { prompt: this.app, journey: { app: this.app, from: { title: here.title, archetype: here.archetype }, via, ...this.carried() } });
     // The navigation bar switches between main screens, and a way back from the first screen makes the one it came from. Everything else drills in.
     this.stack = via.kind === "nav" || via.kind === "back" ? [screen] : [...this.stack, screen];
@@ -718,6 +755,7 @@ export class App extends LitElement {
     const kind = detail.kind as Via["kind"];
     if (kind === "appbar" && IN_PLACE.has(detail.label)) return;
     if (kind === "back" && this.stack.length > 1) {
+      record("walk", { via: "back" });
       this.stack = this.stack.slice(0, -1); this.mapSelected = this.current!.destination!; this.tick++; return;
     }
     const source = detail.source ?? `${kind}:${detail.label}`;
@@ -730,7 +768,7 @@ export class App extends LitElement {
     const accept = (next: Architecture, destination: string) => {
       if (abort.signal.aborted || this.architecture !== map || this.current !== here || this.screens.get(here.key) !== here) return;
       const isNew = !boundScreens(this.made).has(destination);
-      const turn = isNew ? this.begin("tap", `Opened “${detail.label}”`) : undefined;
+      const turn = isNew ? this.begin("tap", `Opened “${detail.label}”`, { how: "tap", via: kind }) : undefined;
       here.links = { ...here.links, [source]: destination };
       this.adoptCatalog(next);
       this.resolving = "";
@@ -822,16 +860,18 @@ export class App extends LitElement {
     this.mapSelected = destination;
     // A tap that leads to the screen it is on stays there. On a dialog it is done with it: every button of an alert closes it (HIG).
     if (existing === here && via && !turn) {
+      record("walk", { via: via.kind });
       if (here.dialog) this.stack = this.stack.length > 1 ? this.stack.slice(0, -1) : [this.underneath(here) ?? here];
       this.mapSelected = this.current!.destination ?? destination;
       return void this.tick++;
     }
     if (existing) {
       if (turn) Object.assign(turn, { outcome: "changed", screen: existing.id, text: `Opened the existing ${node.label} screen.` });
+      else record("walk", { via: via?.kind ?? "map" });
       return this.show(existing);
     }
     if (!session.makes) return void (this.unmade = node.label);
-    turn ??= this.begin("tap", `Opened “${node.label}” from the app map`);
+    turn ??= this.begin("tap", `Opened “${node.label}” from the app map`, { how: via ? "tap" : "map", ...(via ? { via: via.kind } : {}) });
     const screen = this.open(`destination:${destination}`, false, { prompt: this.app, journey: { app: this.app, from: { title: here.title, archetype: here.archetype }, via: via ?? { kind: "asked", label: `Open ${node.label}` }, ...(this.settled ? { settled: this.settled } : {}) } });
     screen.destination = destination;
     this.stack = via?.kind === "back" || via?.kind === "nav" ? [screen] : [...this.stack, screen];
@@ -843,7 +883,7 @@ export class App extends LitElement {
   private regenerate() {
     const old = this.current;
     if (!old) return;
-    const turn = this.begin("button", "Regenerated this screen");
+    const turn = this.begin("button", "Regenerated this screen", { how: "regenerate" });
     turn.on = old.title;
     void this.run(this.again(old), turn);
   }
@@ -1031,18 +1071,20 @@ export class App extends LitElement {
     history.replaceState(null, "", location.pathname + location.hash);
   }
 
-  private async openSaved(id: string) {
+  private async openSaved(id: string, from: "link" | "library") {
     this.linked = null;
     try {
       const response = await session.fetch(`/api/apps/${encodeURIComponent(id)}`);
       if (!response.ok) throw new Error(await response.text());
       const { about, app } = (await response.json()) as { about: SavedAbout; app: SavedApp };
+      record("open", { from, ok: true, mine: Boolean(about.mine), screens: app.screens.length });
       this.restore(app);
       this.saved = about;
       history.replaceState(null, "", `?app=${about.id}`);
       this.view = "chat";
       this.menu = "";
     } catch (error) {
+      record("open", { from, ok: false });
       this.bad(error);
     }
   }
@@ -1056,16 +1098,19 @@ export class App extends LitElement {
   /** Saves the session, and with `share` lets anyone who has the link open it; the link goes to the clipboard. */
   private async save(share: boolean) {
     try {
-      const response = await session.fetch("/api/apps", { method: "POST", body: JSON.stringify(this.snapshot()) });
+      const snapshot = this.snapshot();
+      const response = await session.fetch("/api/apps", { method: "POST", body: JSON.stringify(snapshot) });
       if (!response.ok) throw new Error(await response.text());
       const { id } = await response.json();
+      record("save", { share, ok: true, screens: snapshot.screens.length, turns: snapshot.turns?.length ?? 0 });
       if (share) await this.setVisibility(id, "link");
       await this.loadLibrary();
       this.saved = this.library.find((one) => one.id === id);
       history.replaceState(null, "", `?app=${id}${location.hash}`);
-      if (share) await this.copy(this.linkTo(id), "Link copied. Anyone with the link can open this apparition.");
+      if (share) await this.copy("link", this.linkTo(id), "Link copied. Anyone with the link can open this apparition.");
       else this.tell(`Saved “${this.saved?.name || this.appName}”`, { action: { label: "Share", run: () => void this.share(id) } });
     } catch (error) {
+      record("save", { share, ok: false });
       this.bad(error);
     }
   }
@@ -1077,6 +1122,7 @@ export class App extends LitElement {
   private async setVisibility(id: string, visibility: Visibility) {
     const response = await session.fetch(`/api/apps/${id}`, { method: "PATCH", body: JSON.stringify({ visibility }) });
     if (!response.ok) throw new Error(await response.text());
+    record("visibility", { to: visibility });
     this.library = this.library.map((one) => (one.id === id ? { ...one, visibility } : one));
     if (this.saved?.id === id) this.saved = { ...this.saved, visibility };
   }
@@ -1086,7 +1132,7 @@ export class App extends LitElement {
     this.menu = "";
     try {
       await this.setVisibility(id, "link");
-      await this.copy(this.linkTo(id), "Link copied. Anyone with the link can open this apparition.");
+      await this.copy("link", this.linkTo(id), "Link copied. Anyone with the link can open this apparition.");
     } catch (error) {
       this.bad(error);
     }
@@ -1096,16 +1142,18 @@ export class App extends LitElement {
     this.menu = this.deleting = "";
     const response = await session.fetch(`/api/apps/${id}`, { method: "DELETE" });
     if (!response.ok) return this.bad(await response.text());
+    record("delete", {});
     const gone = this.library.find((one) => one.id === id);
     this.library = this.library.filter((one) => one.id !== id);
     if (this.saved?.id === id) this.movedOn();
     this.tell(`Deleted “${gone?.name || gone?.title || "Untitled apparition"}”`);
   }
 
-  private async copy(text: string, said: string) {
+  private async copy(what: "link" | "a2ui" | "css" | "design", text: string, said: string) {
     this.menu = "";
     try {
       await navigator.clipboard.writeText(text);
+      record("copy", { what });
       this.tell(said);
     } catch (error) {
       this.bad(error);
@@ -1157,7 +1205,7 @@ export class App extends LitElement {
         ${turn.lines.map((line) => html`<li>${icon(lineIcon(line.what))}<span><b>${line.what}</b><span class="from">${line.from}</span> ${icon("arrow_forward", "xs")} <span class="to">${line.to}</span></span></li>`)}
       </ul>`);
     if (screen)
-      reply.push(html`<button class="madecard" aria-current=${screen === this.current} @click=${() => this.show(screen)} title="Show this screen">
+      reply.push(html`<button class="madecard" aria-current=${screen === this.current} @click=${() => (record("walk", { via: "card" }), this.show(screen))} title="Show this screen">
         <span class="glyph ${screen.running ? "working" : ""}">${icon(screenIcon(screen.archetype, this.idiom))}</span>
         <span class="words">
           <b>${screen.title || (screen.running ? "Planning the screen…" : "Untitled screen")}</b>
@@ -1170,7 +1218,7 @@ export class App extends LitElement {
     if (turn.text) reply.push(html`<p class=${turn.outcome === "failed" ? "note bad" : "spoken"}>${turn.text}</p>`);
     if (turn.options?.length)
       reply.push(html`<div class="options">
-        ${turn.options.map((option: Option) => html`<button ?disabled=${this.busy || !session.makes} title=${option.instruction} @click=${() => this.say(option.instruction)}>${option.label}</button>`)}
+        ${turn.options.map((option: Option) => html`<button ?disabled=${this.busy || !session.makes} title=${option.instruction} @click=${() => this.say(option.instruction, "option")}>${option.label}</button>`)}
       </div>`);
     if (turn.outcome === "pending" && !screen) reply.push(html`<p class="reading"><span class="dots"><i></i><i></i><i></i></span>Interpreting your message…</p>`);
     const count = turn.decisions.length + (screen?.log.reduce((sum, entry) => sum + (entry.kind === "stage" ? entry.decisions.length : 0), 0) ?? 0);
@@ -1260,7 +1308,7 @@ export class App extends LitElement {
           : nothing}
         <div class="grid">
           ${session.makes
-            ? html`<button class="tile new" @click=${() => this.fresh()}>
+            ? html`<button class="tile new" @click=${() => this.fresh("library")}>
                 <span>${icon("add_circle")}<b>New ${IDIOMS[this.preset].name} apparition</b><small>Describe ${IDIOMS[this.preset].app}, or start from an example.</small></span>
               </button>`
             : nothing}
@@ -1270,7 +1318,7 @@ export class App extends LitElement {
             const shared = one.visibility === "link";
             return html`<div class="tile" aria-current=${one.id === this.saved?.id}>
               ${isIdiom(one.idiom) ? html`<span class="tile-grammar">${icon(IDIOMS[one.idiom].symbol, "xs")}${IDIOMS[one.idiom].name}</span>` : nothing}
-              <button class="shot" title=${one.title} aria-label="Open ${one.name || one.title}" @click=${() => this.openSaved(one.id)}>
+              <button class="shot" title=${one.title} aria-label="Open ${one.name || one.title}" @click=${() => this.openSaved(one.id, "library")}>
                 <span class="mini" style=${paint}><i class="t"></i><i class="a"></i><i class="r"></i><i class="r"></i><i class="r"></i><i class="n"></i></span>
               </button>
               <div class="meta">
@@ -1288,9 +1336,9 @@ export class App extends LitElement {
                             <button class="btn small" @click=${() => (this.menu = "")}>Cancel</button>
                             <button class="btn small danger" @click=${() => this.forget(one.id)}>Delete</button>
                           </div>`
-                      : html`<button class="mi" role="menuitem" @click=${() => this.openSaved(one.id)}>${icon("open_in_new")}Open</button>
+                      : html`<button class="mi" role="menuitem" @click=${() => this.openSaved(one.id, "library")}>${icon("open_in_new")}Open</button>
                           ${shared
-                            ? html`<button class="mi" role="menuitem" @click=${() => this.copy(this.linkTo(one.id), "Link copied")}>${icon("content_copy")}Copy link</button>
+                            ? html`<button class="mi" role="menuitem" @click=${() => this.copy("link", this.linkTo(one.id), "Link copied")}>${icon("content_copy")}Copy link</button>
                                 <button class="mi" role="menuitem" @click=${() => (this.menu = "", this.setVisibility(one.id, "private").then(() => this.tell("Only you can open this apparition now.")).catch(this.bad))}>${icon("lock")}Make private</button>`
                             : html`<button class="mi" role="menuitem" @click=${() => this.share(one.id)}>${icon("link")}Share by link</button>`}
                           <div class="sep"></div>
@@ -1342,7 +1390,7 @@ export class App extends LitElement {
             : html`<div class="opening">
                 <h2>What ${IDIOMS[this.idiom].name} app do you want to make?</h2>
                 <p>Describe an app, or a single screen. Apparite generates an apparition beside this conversation: a mock that looks like an app, so that you can explore the idea before you build it. To change the apparition, describe the change or tap an element in it.</p>
-                ${session.makes ? html`<div class="examples">${EXAMPLES.map(([symbol, text]) => html`<button ?disabled=${this.busy} @click=${() => this.say(text)}>${icon(symbol)}<span>${text}</span>${icon("north_west", "xs")}</button>`)}</div>` : nothing}
+                ${session.makes ? html`<div class="examples">${EXAMPLES.map(([symbol, text]) => html`<button ?disabled=${this.busy} @click=${() => this.say(text, "example")}>${icon(symbol)}<span>${text}</span>${icon("north_west", "xs")}</button>`)}</div>` : nothing}
               </div>`}
         </div>
         ${session.makes
@@ -1353,7 +1401,7 @@ export class App extends LitElement {
                 void this.say();
               }}
             >
-              ${chips.length ? html`<div class="chips">${chips.map(([symbol, text]) => html`<button type="button" ?disabled=${this.busy} @click=${() => this.say(text)}>${icon(symbol, "xs")}${text}</button>`)}</div>` : nothing}
+              ${chips.length ? html`<div class="chips">${chips.map(([symbol, text]) => html`<button type="button" ?disabled=${this.busy} @click=${() => this.say(text, "suggestion")}>${icon(symbol, "xs")}${text}</button>`)}</div>` : nothing}
               <div class="box">
                 <textarea
                   rows="2"
@@ -1387,7 +1435,7 @@ export class App extends LitElement {
     const item = (view: View, symbol: string, name: string, extra = "") =>
       html`<button class=${extra} aria-current=${this.view === view} @click=${() => this.go(view)}>${icon(symbol)}${name}</button>`;
     return html`<nav class="rail" aria-label="Main navigation">
-      ${session.makes ? html`<button class="new" title="New apparition" aria-label="New apparition" @click=${() => this.fresh()}>${icon("add")}</button>` : nothing}
+      ${session.makes ? html`<button class="new" title="New apparition" aria-label="New apparition" @click=${() => this.fresh("rail")}>${icon("add")}</button>` : nothing}
       ${item("chat", "chat_bubble", "Chat")} ${item("stage", "smartphone", "Preview", "narrow-only")} ${session.makes ? item("design", "palette", "Design") : nothing}
       ${session.state === "in" || session.state === "stranger" ? item("library", "grid_view", "Library") : nothing}
       <span class="grow"></span>
@@ -1432,7 +1480,7 @@ export class App extends LitElement {
               ${icon("bookmark", saved?.mine ? "s fill" : "s")}<span>${saved?.mine ? "Saved" : "Save"}</span>
             </button>
             ${saved?.mine && saved.visibility === "link"
-              ? html`<button class="btn primary" @click=${() => this.copy(this.linkTo(saved.id), "Link copied")}>${icon("content_copy", "s")}<span>Copy link</span></button>`
+              ? html`<button class="btn primary" @click=${() => this.copy("link", this.linkTo(saved.id), "Link copied")}>${icon("content_copy", "s")}<span>Copy link</span></button>`
               : html`<button class="btn primary" ?disabled=${!painted || here!.running || this.busy} @click=${() => this.save(true)} title="Save this apparition and create a link. Anyone with the link can open it without signing in.">${icon("link", "s")}<span>Share</span></button>`}`
         : nothing}
       ${limited ? html`<span class="runs ${runs.left === "0" ? "spent" : ""}" title="You have ${runs.left} of ${runs.daily} runs left today. Generating one screen uses one run."><span class="meter"><i style="width:${(100 * Number(runs.left)) / Math.max(1, Number(runs.daily))}%"></i></span>${runs.left} runs left</span>` : nothing}
@@ -1539,8 +1587,8 @@ export class App extends LitElement {
       <div class="toolbar">
         ${mappable
           ? html`<div class="segmented stage-pick" role="radiogroup" aria-label="Stage">
-              <button role="radio" aria-checked=${!onMap} title="Preview" @click=${() => (this.onMap = false)}>${icon("smartphone", "s")}<span>Preview</span></button>
-              <button role="radio" aria-checked=${onMap} title="App map" @click=${() => (this.onMap = true)}>${icon("account_tree", "s")}<span>Map</span></button>
+              <button role="radio" aria-checked=${!onMap} title="Preview" @click=${() => onMap && (record("map", { open: false }), (this.onMap = false))}>${icon("smartphone", "s")}<span>Preview</span></button>
+              <button role="radio" aria-checked=${onMap} title="App map" @click=${() => onMap || (record("map", { open: true }), (this.onMap = true))}>${icon("account_tree", "s")}<span>Map</span></button>
             </div>`
           : nothing}
         <div class="segmented" role="radiogroup" aria-label="Device" ?hidden=${onMap}>
@@ -1548,7 +1596,7 @@ export class App extends LitElement {
         </div>
         <nav class="flow" aria-label="Screens">
           ${!here?.destination && made.length > 1
-            ? made.map((screen) => html`<button aria-current=${screen === here} title=${screen.title || "Untitled screen"} @click=${() => this.show(screen)}>${icon(screenIcon(screen.archetype, this.idiom), "xs")}${screen.title || "…"}</button>`)
+            ? made.map((screen) => html`<button aria-current=${screen === here} title=${screen.title || "Untitled screen"} @click=${() => (record("walk", { via: "tab" }), this.show(screen))}>${icon(screenIcon(screen.archetype, this.idiom), "xs")}${screen.title || "…"}</button>`)
             : nothing}
         </nav>
         <div class="acts">
@@ -1571,9 +1619,9 @@ export class App extends LitElement {
           : nothing}
         ${this.menu === "export"
           ? html`<div class="pop export" role="menu">
-              <button class="mi" role="menuitem" ?disabled=${!painted} @click=${() => this.copy(JSON.stringify(here!.messages, null, 2), "A2UI messages copied")}>${icon("data_object")}Copy A2UI messages</button>
-              <button class="mi" role="menuitem" ?disabled=${!theme} @click=${() => this.copy(this.themeCss(), "Theme CSS copied")}>${icon("css")}Copy theme CSS</button>
-              <button class="mi" role="menuitem" ?disabled=${!this.markdown} @click=${() => this.copy(this.markdown, "DESIGN.md copied")}>${icon("description")}Copy DESIGN.md</button>
+              <button class="mi" role="menuitem" ?disabled=${!painted} @click=${() => this.copy("a2ui", JSON.stringify(here!.messages, null, 2), "A2UI messages copied")}>${icon("data_object")}Copy A2UI messages</button>
+              <button class="mi" role="menuitem" ?disabled=${!theme} @click=${() => this.copy("css", this.themeCss(), "Theme CSS copied")}>${icon("css")}Copy theme CSS</button>
+              <button class="mi" role="menuitem" ?disabled=${!this.markdown} @click=${() => this.copy("design", this.markdown, "DESIGN.md copied")}>${icon("description")}Copy DESIGN.md</button>
             </div>`
           : nothing}
       </div>

@@ -1,4 +1,5 @@
-// The pipelines over HTTP: three JSON routes and one of Server-Sent Events; who may use them; and what they saved.
+// The pipelines over HTTP: three JSON routes and one of Server-Sent Events; who may use them; what they saved; and
+// what people did, for the activity log.
 // Where sign-in is on (auth.ts), each wants to know who is asking and that the
 // list lets them make things, and a run is taken from their allowance for the day.
 //
@@ -13,6 +14,7 @@
 // how a module is loaded.
 
 import { ARCHITECTURE, ARCHITECTURE_REQUEST, SCREEN_BINDINGS } from "../shared/architecture.js";
+import { tidyActivity } from "../shared/activity.js";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { ServerModule } from "./modules.js";
 
@@ -24,6 +26,9 @@ const LARGEST_BODY = 1 << 20;
 
 /** An app that has been tapped through for a while, to be saved. */
 const LARGEST_APP = 8 << 20;
+
+/** A browser sends what the person did twenty actions or so at a time (web/activity.ts). */
+const LARGEST_ACTIVITY = 64 << 10;
 
 async function readJson(req: IncomingMessage, largest = LARGEST_BODY): Promise<any> {
   let body = "";
@@ -203,6 +208,25 @@ async function savedApps(load: Load, id: string, req: IncomingMessage, res: Serv
   refuse(405, "This endpoint doesn't support that request method.");
 }
 
+// POST what people did (shared/activity.ts): each action is written as a line of JSON on stdout, which Cloud Logging
+// keeps and a sink copies to a bucket. Anyone may send, since a visitor who signs nobody in does things too; who they are
+// is read off their token, if they sent one, and never taken from what they say.
+async function activity(req: IncomingMessage, res: ServerResponse, auth: any) {
+  if (req.method !== "POST") return void ((res.statusCode = 405), res.end("Use POST."));
+  const body = await readJson(req, LARGEST_ACTIVITY).catch(() => undefined);
+  const id = (sent: unknown) => (typeof sent === "string" && /^[\w-]{8,64}$/.test(sent) ? sent : undefined);
+  const visitor = id(body?.visitor);
+  const visit = id(body?.visit);
+  if (!visitor || !visit || !Array.isArray(body.events)) return void ((res.statusCode = 400), res.end("Send a visitor, a visit, and a list of events."));
+  const person = auth.firebase ? await auth.whoIs(req.headers.authorization) : undefined;
+  for (const sent of body.events.slice(0, 50)) {
+    const line = tidyActivity(sent);
+    if (line) console.log(JSON.stringify({ kind: "activity", ...line, visitor, visit, ...(person ? { uid: person.uid } : {}) }));
+  }
+  res.statusCode = 204;
+  res.end();
+}
+
 /**
  * The keys a request brought of its own, if it brought both (models.ts says what they are for). They are read here and
  * handed on, and appear nowhere else: not in a log, a trace, or an answer.
@@ -239,9 +263,10 @@ export function api(load: Load) {
     // A photograph is asked for by an <img>, which cannot say who is asking. Its name is a hash, and serving it costs nothing.
     if (url.pathname.startsWith("/api/photo/")) return await photo(load, url.pathname.slice("/api/photo/".length), res), true;
     const saved = url.pathname.match(/^\/api\/apps(?:\/([^/]*))?$/);
-    if (!saved && !["/api/config", "/api/me", "/api/keys", "/api/access", "/api/design", "/api/turn", "/api/resolve", "/api/generate"].includes(url.pathname)) return false;
+    if (!saved && !["/api/config", "/api/me", "/api/keys", "/api/activity", "/api/access", "/api/design", "/api/turn", "/api/resolve", "/api/generate"].includes(url.pathname)) return false;
     const auth = await load("auth");
     if (saved) return await savedApps(load, saved[1] ?? "", req, res, auth), true;
+    if (url.pathname === "/api/activity") return await activity(req, res, auth), true;
     const json = (value: unknown) => (res.setHeader("Content-Type", "application/json"), res.end(JSON.stringify(value)));
     const models = await load("models");
     if (url.pathname === "/api/config") return json({ firebase: auth.firebase, endpoints: models.endpoints() }), true;

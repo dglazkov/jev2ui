@@ -7,6 +7,7 @@ import { html, nothing, type ReactiveControllerHost, type TemplateResult } from 
 import type { Endpoint, PipelineEvent } from "../shared/events.js";
 import type { IdiomId } from "../shared/idioms.js";
 import { face, icon, mark } from "./chrome.js";
+import { record, recordWith } from "./activity.js";
 
 type Auth = import("firebase/auth").Auth;
 
@@ -59,7 +60,9 @@ class Session {
   }
 
   private set(change: Partial<Pick<Session, "state" | "name" | "email" | "picture" | "role" | "error" | "runs" | "endpoints">>) {
+    const was = this.state;
     Object.assign(this, change);
+    if (this.state !== was && this.state !== "loading") record("session", { role: this.role });
     for (const host of this.hosts) host.requestUpdate();
   }
 
@@ -128,6 +131,7 @@ class Session {
   }
 
   enter(entering: boolean) {
+    record("keys", { step: entering ? "form" : "back" });
     this.entering = entering;
     this.set({ error: "" });
   }
@@ -140,6 +144,7 @@ class Session {
       const response = await fetch("/api/keys", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(keys) });
       if (!response.ok) throw new Error(await response.text());
       const said = (await response.json()) as { jev: string; gemini: string };
+      record("keys", { step: "checked", jev: said.jev === "ok" ? "ok" : "bad", gemini: said.gemini === "ok" ? "ok" : "bad" });
       this.checked = { at: new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }), ...said };
       return said;
     } finally {
@@ -160,12 +165,14 @@ class Session {
     }
     this.keys = keys;
     localStorage.setItem(STORED_KEYS, JSON.stringify(keys));
+    record("keys", { step: "saved" });
     this.entering = false;
     this.set({});
     return true;
   }
 
   forget() {
+    record("keys", { step: "removed" });
     this.keys = undefined;
     this.checked = undefined;
     localStorage.removeItem(STORED_KEYS);
@@ -175,22 +182,32 @@ class Session {
   async signIn() {
     if (!this.auth) return;
     const { GoogleAuthProvider, signInWithPopup } = await import("firebase/auth");
+    record("sign_in", { step: "started" });
     try {
       await signInWithPopup(this.auth, new GoogleAuthProvider());
+      record("sign_in", { step: "done" });
     } catch (error) {
       const code = (error as { code?: string }).code ?? "";
-      // Closing the window is not an error worth reporting.
-      if (!/popup-closed|cancelled-popup/.test(code)) this.set({ error: (error as Error).message });
+      // Closing the window is not an error worth reporting, but it is worth counting.
+      const closed = /popup-closed|cancelled-popup/.test(code);
+      record("sign_in", { step: closed ? "cancelled" : "failed" });
+      if (!closed) this.set({ error: (error as Error).message });
     }
   }
 
   async signOut() {
+    record("sign_out", {});
     if (this.auth) await (await import("firebase/auth")).signOut(this.auth);
+  }
+
+  /** The signed-in person's ID token, which proves who is asking; none for anyone else. */
+  async token(): Promise<string | undefined> {
+    return this.auth?.currentUser?.getIdToken();
   }
 
   /** `fetch`, saying who is asking, which endpoint is to answer and which idiom to imagine in; and noting what the answer says is left of today's runs. */
   async fetch(path: string, init: RequestInit = {}): Promise<Response> {
-    const token = await this.auth?.currentUser?.getIdToken();
+    const token = await this.token();
     // The keys go only where they are what pays; the server ignores them for anyone the list grants, and so does this.
     const keys = this.ownKeys ? this.keys! : undefined;
     const response = await fetch(path, {
@@ -270,6 +287,7 @@ class Session {
 }
 
 export const session = new Session();
+recordWith({ token: () => session.token(), context: () => ({ state: session.state, keys: session.ownKeys }) });
 
 /** Server-Sent Events over a POST, which EventSource cannot make (nor can it say who is asking). */
 export async function streamEvents(body: unknown, signal: AbortSignal, onEvent: (event: PipelineEvent) => void) {

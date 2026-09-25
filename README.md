@@ -677,6 +677,44 @@ components are checked exactly as a shelf is (the id must be the hash of the sou
 the lint), and they run where every baked component runs, in a sandboxed frame. The rest is text and trees,
 which the renderer escapes and draws and never runs.
 
+### The activity log: what people did, not what they said
+
+What people do with the tool is written down, for processing elsewhere: arriving, signing in or bringing keys,
+each turn and how it came out, taking one back, walking through what was made, saving, sharing, opening. Not
+clicks: actions, named as the tool knows them. `src/shared/activity.ts` is the list of them and what each
+says, and so the schema of the log.
+
+Nothing a person typed is in it, and nothing a model wrote from what they typed: not the message, not an option
+the tool offered in reply, not the label of what they tapped in a mock. A typed message is its length; a tap is its
+kind (item, nav, back, action…); a message is also what the tool took it to mean (`act`: paint, talk, screen,
+remake, app). The only words are the tool's own, an example or suggestion that was chosen. Keys never come near it.
+
+The browser (`src/web/activity.ts`) queues each action with the time, its order in the visit, and who the page
+thought was there (`state`, `keys`), and sends them to `POST /api/activity` every five seconds, twenty at once, or
+as the page is hidden or left (`fetch` with `keepalive`, which outlives the page and still carries the ID token).
+A browser is an id kept in `localStorage` (`visitor`), so that a visit before signing in and the sign-in after it
+are one person's; a page load is a `visit`. The server writes one line of JSON per action on stdout, adding the
+Firebase `uid` if the request's token proves one; it checks each against the list, and keeps only short strings,
+numbers and yes or no. Anyone may send, as a visitor signs nobody in. On a developer's machine the browser sends
+nothing and writes each action to the console instead.
+
+```json
+{"kind":"activity","event":"turn_end","at":"2026-09-25T04:49:36.597Z","seq":6,"state":"in","keys":false,"turn":2,"outcome":"changed","act":"paint","ms":286,"visitor":"57ea217f-…","visit":"93f2903c-…","uid":"…"}
+```
+
+Cloud Logging keeps the lines with the rest of the service's (30 days), and the sink `activity` copies them as
+they come to the bucket `gs://jev2ui-3281b2-activity`, a file an hour under
+`run.googleapis.com/stdout/YYYY/MM/DD/`, one Cloud Logging entry per line with the action in its `jsonPayload`.
+`gcloud storage cp -r gs://jev2ui-3281b2-activity/ .` takes all of it. The bucket and sink were made by hand:
+
+```sh
+gcloud storage buckets create gs://jev2ui-3281b2-activity --project jev2ui-3281b2 --location us-central1 --uniform-bucket-level-access --public-access-prevention
+gcloud logging sinks create activity storage.googleapis.com/jev2ui-3281b2-activity --project jev2ui-3281b2 \
+  --log-filter='resource.type="cloud_run_revision" AND resource.labels.service_name="jev2ui" AND jsonPayload.kind="activity"'
+gcloud storage buckets add-iam-policy-binding gs://jev2ui-3281b2-activity --project jev2ui-3281b2 \
+  --member="$(gcloud logging sinks describe activity --project jev2ui-3281b2 --format='value(writerIdentity)')" --role=roles/storage.objectCreator
+```
+
 ## Results so far
 
 One run of `npm run eval` (11 prompts, `gemini-3.5-flash-lite`, `jev-1.13.0`, a paid-tier Gemini key).
@@ -754,6 +792,8 @@ rather than a benchmark.
 - A session lives in the page until it is saved: reload and the prototype is gone.
 - Nothing is prefetched; a Jev plan is cheap enough (about 250 ms) to start on hover.
 - Hover and pressed variants in a DESIGN.md are mostly ignored.
+- The activity log is best effort: an action lost on the way is not sent again, a blocker may stop all of them,
+  and anyone can post lines to it. `visitor` is a browser, not a person, until they sign in.
 
 ## Layout
 
@@ -799,11 +839,13 @@ src/server/run.ts       event stream, stats, end-of-run validation
 src/shared/turn.ts      a turn of the chat: what the browser asks about a message, and what it is told to do
 src/server/change.ts    what a message asks to have changed: the kind of turn, relative dials, gated choices
 src/server/talk.ts      what Gemini says when Jev found nothing to do, and the options it offers
-src/server/http.ts      the routes: /api/design, /api/turn, /api/generate (Server-Sent Events), /api/photo, /api/config, /api/me, /api/access, /api/apps
+src/server/http.ts      the routes: /api/design, /api/turn, /api/generate (Server-Sent Events), /api/photo, /api/config, /api/me, /api/access, /api/apps, /api/activity
 src/server/auth.ts      who is asking (a Firebase ID token), what the access list grants them, what is left of their runs today
 src/server/store.ts     Firestore over REST: the access list, the day's counts, saved apps
 src/shared/saved.ts     an app, saved: the whole session as a document, its turns included
 src/server/apps.ts      saved apps in Firestore: whose they are, who may open them
+src/shared/activity.ts  the activity log: every action a line may name, and what it may say
+src/web/activity.ts     what the person did, sent to the server a few actions at a time
 src/web/settings.ts     settings: the account, the person's own keys, light or dark, jev or gev, and the access list, for admins
 src/web/session.ts      signing in with Google; the gate that stands in for the tool; fetch that says who is asking, and which endpoint is to answer
 src/web/chrome.ts       what the tool's own chrome is made of: a symbol, the mark, a face, light or dark (chrome.css)
