@@ -76,6 +76,13 @@ function simple(element: any, fields: Field[]): unknown {
   return scalars.length === 1 && element && typeof element === "object" ? element[scalars[0].name] : element;
 }
 
+/** What an element is called where a person reads it: the first thing written for it, so a setting is its label and not its value. */
+function wordsOf(element: any, fields: Field[]): string {
+  if (!element || typeof element !== "object") return String(element);
+  const first = written(fields).find((field) => !field.list && element[field.name] !== undefined && element[field.name] !== "");
+  return first ? String(element[first.name]) : "";
+}
+
 const at = (content: any, path: Array<string | number>) => path.reduce((value, key) => value?.[key], content);
 const said = (value: unknown) => (typeof value === "boolean" ? (value ? "yes" : "no") : String(value));
 
@@ -157,7 +164,7 @@ export function decide(grammar: Grammar, part: Node, content: unknown, options: 
       };
 
       // In the trace, a decision about an element is labelled by the element as Jev read it ("Auto-download: switch"); one about the part, by its question.
-      const label = (node: Node, row: { element: any }) => (located ? String(simple(row.element, fields)) : (node.question ?? node.name));
+      const label = (node: Node, row: { element: any }) => (located ? wordsOf(row.element, fields) : (node.question ?? node.name));
       // What was answered, element by element (a question about the part as a whole has the same answer for each).
       const rows = (located ? elements : [{ element: content as any, i: 0 }]).map(({ element, i }) => ({
         element,

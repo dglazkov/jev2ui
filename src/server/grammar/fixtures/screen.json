@@ -12951,56 +12951,56 @@
       "decisions": [
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "danger",
         "p": 0.8970569036312743
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "check",
         "p": 0.4852926166725342
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "no",
         "p": 0.059909284580498934
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "yes",
         "p": 0.6841869759373367
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "train",
         "p": 0.025723417229295567
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "list_alt",
         "p": 0.02626428591075467
        }
@@ -13077,56 +13077,56 @@
       "decisions": [
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "check",
         "p": 0.467590605308897
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "switch",
         "p": 0.8032595600996759
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "yes",
         "p": 0.5264931137207896
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "no",
         "p": 0.35322900768369436
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "explore_nearby",
         "p": 0.02561922509865982
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "inventory_2",
         "p": 0.027188575384892364
        }
@@ -13198,49 +13198,49 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "neutral",
         "p": 0.5250170324725552
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "warning",
         "p": 0.4565057900301382
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "success",
         "p": 0.5795313542629605
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "warning",
         "p": 0.7813588699834749
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "queue_music",
         "p": 0.02836045488959454
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "category",
         "p": 0.027002854887539597
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "business",
         "p": 0.024176288058434824
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "pets",
         "p": 0.028810163778709156
        }
@@ -13295,19 +13295,19 @@
       "decisions": [
        {
         "id": "stat_news_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "neutral",
         "p": 0.9614859348238326
        },
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "bad",
         "p": 0.7980319948311435
        },
        {
         "id": "stat_news_2",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "neutral",
         "p": 0.8778305977259175
        }
@@ -13427,19 +13427,19 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "train",
         "p": 0.025723417229295567
        }
@@ -13540,74 +13540,74 @@
       "decisions": [
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "check",
         "p": 0.467590605308897
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "switch",
         "p": 0.8032595600996759
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "nav",
         "p": 0.5183410068068149
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "yes",
         "p": 0.5264931137207896
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "no",
         "p": 0.35322900768369436
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "yes",
         "p": 0.6378208086825907
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "explore_nearby",
         "p": 0.02561922509865982
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "inventory_2",
         "p": 0.027188575384892364
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "inventory_2",
         "p": 0.023371232954527307
        }
@@ -13715,74 +13715,74 @@
       "decisions": [
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "value",
         "p": 1,
         "note": "a row that has a value is not a switch"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "nav",
         "p": 0.7478144766999983
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "danger",
         "p": 0.5561701764734841
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "danger",
         "p": 0.7359028670987993
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "yes",
         "p": 0.6776544020976871
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "yes",
         "p": 0.6654795978683978
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "yes",
         "p": 0.7835744405165315
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "no",
         "p": 0.3865543254651129
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "science",
         "p": 0.024400707944980185
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "image",
         "p": 0.02758913704762267
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "terminal",
         "p": 0.02466880727778228
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "business",
         "p": 0.02714021840555532
        }
@@ -13848,25 +13848,25 @@
       "decisions": [
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "call",
         "p": 0.03082598856181125
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "backpack",
         "p": 0.030304541893227975
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "construction",
         "p": 0.02590237937306135
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "explore_nearby",
         "p": 0.02439387576422035
        }
@@ -14018,57 +14018,57 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "danger",
         "p": 0.8970569036312743
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "check",
         "p": 0.4852926166725342
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "no",
         "p": 0.059909284580498934
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "yes",
         "p": 0.6841869759373367
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "train",
         "p": 0.025723417229295567
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "list_alt",
         "p": 0.02626428591075467
        }
@@ -14182,75 +14182,75 @@
       "decisions": [
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "value",
         "p": 1,
         "note": "a row that has a value is not a switch"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "check",
         "p": 0.467590605308897
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "nav",
         "p": 0.5183410068068149
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "yes",
         "p": 0.5264931137207896
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "no",
         "p": 0.35322900768369436
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "yes",
         "p": 0.6378208086825907
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "explore_nearby",
         "p": 0.02561922509865982
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "inventory_2",
         "p": 0.027188575384892364
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "inventory_2",
         "p": 0.023371232954527307
        }
@@ -14378,93 +14378,93 @@
       "decisions": [
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "value",
         "p": 1,
         "note": "a row that has a value is not a switch"
        },
        {
         "id": "row_control_4",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "nav",
         "p": 0.7478144766999983
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "danger",
         "p": 0.5561701764734841
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "danger",
         "p": 0.7359028670987993
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "yes",
         "p": 0.6776544020976871
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "yes",
         "p": 0.6654795978683978
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "yes",
         "p": 0.7835744405165315
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "no",
         "p": 0.3865543254651129
        },
        {
         "id": "row_on_4",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "yes",
         "p": 0.5750783635303378
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "science",
         "p": 0.024400707944980185
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "image",
         "p": 0.02758913704762267
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "terminal",
         "p": 0.02466880727778228
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "business",
         "p": 0.02714021840555532
        },
        {
         "id": "row_icon_4",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "star",
         "p": 0.024942498115529555
        }
@@ -14540,49 +14540,49 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "warning",
         "p": 0.5090096837320528
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "accent",
         "p": 0.8780371096182511
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "neutral",
         "p": 0.4791892940268445
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "accent",
         "p": 0.5054001407996673
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "trending_up",
         "p": 0.024004607198685128
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "pie_chart",
         "p": 0.023505160747792776
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "dns",
         "p": 0.024691193790717526
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "replay",
         "p": 0.031236439391880057
        }
@@ -14645,19 +14645,19 @@
       "decisions": [
        {
         "id": "stat_news_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "bad",
         "p": 0.5278907486061661
        },
        {
         "id": "stat_news_3",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "neutral",
         "p": 0.958231577470265
        },
        {
         "id": "stat_news_4",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "neutral",
         "p": 0.6159801830924545
        }
@@ -14898,32 +14898,32 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "switch",
         "p": 0.4257286607103904
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "danger",
         "p": 0.4745445927994478
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "switch",
         "p": 0.5297741568754192
        },
        {
         "id": "row_control_4",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "danger",
         "p": 0.55987708694061
        }
@@ -15025,25 +15025,25 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "check",
         "p": 0.45050385170268215
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "check",
         "p": 0.5353888595550481
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "danger",
         "p": 0.5366274038648936
        }
@@ -15150,31 +15150,31 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "nav",
         "p": 0.7478144766999983
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "danger",
         "p": 0.5087897991931634
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "switch",
         "p": 0.7213999474758734
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "check",
         "p": 0.4988741658421392
        },
        {
         "id": "row_control_4",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "switch",
         "p": 0.5685683629329708
        }
@@ -15258,37 +15258,37 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "accent",
         "p": 0.5873084266015031
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "danger",
         "p": 0.6694190192718276
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "neutral",
         "p": 0.4708695233571261
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "neutral",
         "p": 0.3965162457788383
        },
        {
         "id": "item_tone_4",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "accent",
         "p": 0.7716079033438956
        },
        {
         "id": "item_tone_5",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "accent",
         "p": 0.5792097692555404
        }
@@ -15331,7 +15331,7 @@
       "decisions": [
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "bad",
         "p": 0.8525206414063344
        }
@@ -15540,13 +15540,13 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "yes",
         "p": 0.9446248346939683
        }
@@ -15624,38 +15624,38 @@
       "decisions": [
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "nav",
         "p": 0.43614439698408347
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "yes",
         "p": 0.6535708501469344
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "no",
         "p": 0.4263912392780185
        }
@@ -15726,25 +15726,25 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "nav",
         "p": 0.7478144766999983
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "check",
         "p": 0.48823750744283023
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "yes",
         "p": 0.6776544020976871
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "yes",
         "p": 0.1048017842695117
        }
@@ -15834,37 +15834,37 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "neutral",
         "p": 0.904054158321006
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "neutral",
         "p": 0.32118796324749926
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "accent",
         "p": 0.4017491384018733
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "warning",
         "p": 0.8307667304901768
        },
        {
         "id": "item_tone_4",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "neutral",
         "p": 0.5200169328500759
        },
        {
         "id": "item_tone_5",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "danger",
         "p": 0.5836470513333648
        }
@@ -15899,7 +15899,7 @@
       "decisions": [
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "bad",
         "p": 0.9736593186139113
        }
@@ -16092,74 +16092,74 @@
       "decisions": [
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "danger",
         "p": 0.8970569036312743
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "check",
         "p": 0.4852926166725342
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "value",
         "p": 0.43920378491645756
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "no",
         "p": 0.059909284580498934
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "yes",
         "p": 0.6841869759373367
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "no",
         "p": 0.38774060271680355
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "train",
         "p": 0.025723417229295567
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "list_alt",
         "p": 0.02626428591075467
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "school",
         "p": 0.024506806344220523
        }
@@ -16228,19 +16228,19 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "explore_nearby",
         "p": 0.02561922509865982
        }
@@ -16319,37 +16319,37 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "nav",
         "p": 0.7478144766999983
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "danger",
         "p": 0.5561701764734841
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "yes",
         "p": 0.6776544020976871
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "yes",
         "p": 0.6654795978683978
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "science",
         "p": 0.024400707944980185
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "image",
         "p": 0.02758913704762267
        }
@@ -16447,73 +16447,73 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "success",
         "p": 0.3484117840096407
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "neutral",
         "p": 0.5071104332498317
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "danger",
         "p": 0.7399711550303546
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "neutral",
         "p": 0.576139656788388
        },
        {
         "id": "item_tone_4",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "warning",
         "p": 0.483302850735584
        },
        {
         "id": "item_tone_5",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "neutral",
         "p": 0.46745903228002506
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "speed",
         "p": 0.022015763054075602
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "image",
         "p": 0.024379702149827803
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "share",
         "p": 0.02812679573158236
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "person",
         "p": 0.026615537887510612
        },
        {
         "id": "item_icon_4",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "local_cafe",
         "p": 0.03110790304296449
        },
        {
         "id": "item_icon_5",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "group",
         "p": 0.025969882005097
        }
@@ -16572,19 +16572,19 @@
       "decisions": [
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "good",
         "p": 0.4819011012877597
        },
        {
         "id": "stat_news_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "good",
         "p": 0.9881752202258344
        },
        {
         "id": "stat_news_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "neutral",
         "p": 0.7542679417609021
        }
@@ -16779,38 +16779,38 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "nav",
         "p": 0.6977351645801416
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "check",
         "p": 0.5541346295614432
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "no",
         "p": 0.49402425484731793
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "yes",
         "p": 0.7368564943317324
        }
@@ -16906,50 +16906,50 @@
       "decisions": [
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "nav",
         "p": 0.43614439698408347
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "danger",
         "p": 0.49036569525068596
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "yes",
         "p": 0.6535708501469344
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "no",
         "p": 0.4263912392780185
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "no",
         "p": 0.4386532704811543
        }
@@ -17038,37 +17038,37 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "nav",
         "p": 0.7478144766999983
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "check",
         "p": 0.48823750744283023
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "value",
         "p": 0.470277222112131
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "yes",
         "p": 0.6776544020976871
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "yes",
         "p": 0.1048017842695117
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "no",
         "p": 0.47244902001693845
        }
@@ -17134,25 +17134,25 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "danger",
         "p": 0.6927334206971477
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "warning",
         "p": 0.7686005969905332
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "danger",
         "p": 0.5119802088240281
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "danger",
         "p": 0.5930519618146475
        }
@@ -17223,25 +17223,25 @@
       "decisions": [
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "neutral",
         "p": 0.9232456210203841
        },
        {
         "id": "stat_news_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "good",
         "p": 0.8016887514688147
        },
        {
         "id": "stat_news_3",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "good",
         "p": 0.8347218576908619
        },
        {
         "id": "stat_news_4",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "bad",
         "p": 0.96513527503009
        }
@@ -17402,38 +17402,38 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "danger",
         "p": 0.8970569036312743
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "no",
         "p": 0.059909284580498934
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "train",
         "p": 0.025723417229295567
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "list_alt",
         "p": 0.02626428591075467
        }
@@ -17506,57 +17506,57 @@
       "decisions": [
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "value",
         "p": 1,
         "note": "a row that has a value is not a switch"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "check",
         "p": 0.467590605308897
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "yes",
         "p": 0.5264931137207896
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "no",
         "p": 0.35322900768369436
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "explore_nearby",
         "p": 0.02561922509865982
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "inventory_2",
         "p": 0.027188575384892364
        }
@@ -17620,37 +17620,37 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "accent",
         "p": 0.7499257179923727
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "success",
         "p": 0.5847071108841331
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "accent",
         "p": 0.7955838809458455
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "pie_chart",
         "p": 0.022496841488451852
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "skip_next",
         "p": 0.030422872720211117
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "repeat",
         "p": 0.028772008141713438
        }
@@ -17685,7 +17685,7 @@
       "decisions": [
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "bad",
         "p": 0.8441172228881961
        }
@@ -17895,56 +17895,56 @@
       "decisions": [
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "danger",
         "p": 0.8970569036312743
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "check",
         "p": 0.4852926166725342
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "no",
         "p": 0.059909284580498934
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "yes",
         "p": 0.6841869759373367
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "train",
         "p": 0.025723417229295567
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "list_alt",
         "p": 0.02626428591075467
        }
@@ -18052,75 +18052,75 @@
       "decisions": [
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "value",
         "p": 1,
         "note": "a row that has a value is not a switch"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "check",
         "p": 0.467590605308897
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "nav",
         "p": 0.5183410068068149
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "yes",
         "p": 0.5264931137207896
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "no",
         "p": 0.35322900768369436
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "yes",
         "p": 0.6378208086825907
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "explore_nearby",
         "p": 0.02561922509865982
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "inventory_2",
         "p": 0.027188575384892364
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "inventory_2",
         "p": 0.023371232954527307
        }
@@ -18232,73 +18232,73 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "nav",
         "p": 0.7478144766999983
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "danger",
         "p": 0.5561701764734841
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "switch",
         "p": 0.6084066580166065
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "danger",
         "p": 0.7359028670987993
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "yes",
         "p": 0.6776544020976871
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "yes",
         "p": 0.6654795978683978
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "yes",
         "p": 0.7835744405165315
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "no",
         "p": 0.3865543254651129
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "science",
         "p": 0.024400707944980185
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "image",
         "p": 0.02758913704762267
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "terminal",
         "p": 0.02466880727778228
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "business",
         "p": 0.02714021840555532
        }
@@ -18358,37 +18358,37 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "warning",
         "p": 0.7522968207903249
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "danger",
         "p": 0.5522708431825224
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "warning",
         "p": 0.5880875750751997
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "database",
         "p": 0.030231037513594277
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "school",
         "p": 0.02744332078810275
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "speed",
         "p": 0.028237599405396902
        }
@@ -18431,7 +18431,7 @@
       "decisions": [
        {
         "id": "stat_news_3",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "bad",
         "p": 0.787990715541683
        }
@@ -18663,20 +18663,20 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "switch",
         "p": 0.4257286607103904
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "danger",
         "p": 0.4745445927994478
        }
@@ -18764,37 +18764,37 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "danger",
         "p": 0.8408395808890317
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "danger",
         "p": 0.5420527155488348
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "accent",
         "p": 0.7758046393919417
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "accent",
         "p": 0.8794998109702404
        },
        {
         "id": "item_tone_4",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "accent",
         "p": 0.5067266408076299
        },
        {
         "id": "item_tone_5",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "success",
         "p": 0.6206462091013027
        }
@@ -18865,25 +18865,25 @@
       "decisions": [
        {
         "id": "stat_news_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "neutral",
         "p": 0.8668818215274575
        },
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "bad",
         "p": 0.8955899196124922
        },
        {
         "id": "stat_news_2",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "bad",
         "p": 0.5426035229645026
        },
        {
         "id": "stat_news_4",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "bad",
         "p": 0.9968669885214647
        }
@@ -19092,37 +19092,37 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "danger",
         "p": 0.8970569036312743
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "no",
         "p": 0.059909284580498934
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "train",
         "p": 0.025723417229295567
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "list_alt",
         "p": 0.02626428591075467
        }
@@ -19210,61 +19210,61 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "neutral",
         "p": 0.8675709906801325
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "danger",
         "p": 0.614372130956818
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "danger",
         "p": 0.7722446796250032
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "warning",
         "p": 0.8778506704498845
        },
        {
         "id": "item_tone_4",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "warning",
         "p": 0.892797365915988
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "backup",
         "p": 0.028515049951506458
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "thermostat",
         "p": 0.0273813694054295
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "park",
         "p": 0.03119871006825196
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "local_offer",
         "p": 0.028731908015353556
        },
        {
         "id": "item_icon_4",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "storefront",
         "p": 0.025257938508019
        }
@@ -19385,25 +19385,25 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "switch",
         "p": 0.8759022403751998
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "hotel",
         "p": 0.025590022292968258
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "analytics",
         "p": 0.025965973224531973
        }
@@ -19483,49 +19483,49 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "danger",
         "p": 0.5844983109548769
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "nav",
         "p": 0.5393902195913249
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "nav",
         "p": 0.665805878454457
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "travel_explore",
         "p": 0.025579020450298143
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "group",
         "p": 0.026128590981250657
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "restaurant",
         "p": 0.027594643849328818
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "local_cafe",
         "p": 0.024039528996326012
        }
@@ -19601,31 +19601,31 @@
       "decisions": [
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "terminal",
         "p": 0.0279350992661367
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "group",
         "p": 0.024990564282055663
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "bedtime",
         "p": 0.025383066291954644
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "credit_card",
         "p": 0.027889332047153676
        },
        {
         "id": "item_icon_4",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "sort",
         "p": 0.02692650984130335
        }
@@ -19708,19 +19708,19 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "train",
         "p": 0.025723417229295567
        }
@@ -19772,19 +19772,19 @@
       "decisions": [
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "checkroom",
         "p": 0.03014278444098423
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "link",
         "p": 0.02985722108975401
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "shopping_cart",
         "p": 0.02617305028672552
        }
@@ -19900,31 +19900,31 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "neutral",
         "p": 0.4046351655084997
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "warning",
         "p": 0.519452313102121
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "success",
         "p": 0.3282692530894384
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "warning",
         "p": 0.34766456360349296
        },
        {
         "id": "item_tone_4",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "accent",
         "p": 0.4287539677439923
        }
@@ -19967,7 +19967,7 @@
       "decisions": [
        {
         "id": "stat_news_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "bad",
         "p": 0.6402437550754327
        }
@@ -20142,76 +20142,76 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "danger",
         "p": 0.8970569036312743
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "check",
         "p": 0.4852926166725342
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "no",
         "p": 0.059909284580498934
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "yes",
         "p": 0.6841869759373367
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "no",
         "p": 0.38774060271680355
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "train",
         "p": 0.025723417229295567
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "list_alt",
         "p": 0.02626428591075467
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "school",
         "p": 0.024506806344220523
        }
@@ -20277,25 +20277,25 @@
       "decisions": [
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "search",
         "p": 0.024789234632570534
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "directions_bike",
         "p": 0.02867865293002139
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "auto_stories",
         "p": 0.023719346836190994
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "group",
         "p": 0.026487904025744236
        }
@@ -20474,56 +20474,56 @@
       "decisions": [
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "danger",
         "p": 0.8970569036312743
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "check",
         "p": 0.4852926166725342
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "no",
         "p": 0.059909284580498934
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "yes",
         "p": 0.6841869759373367
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "train",
         "p": 0.025723417229295567
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "list_alt",
         "p": 0.02626428591075467
        }
@@ -20610,74 +20610,74 @@
       "decisions": [
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "check",
         "p": 0.467590605308897
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "switch",
         "p": 0.8032595600996759
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "nav",
         "p": 0.5183410068068149
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "yes",
         "p": 0.5264931137207896
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "no",
         "p": 0.35322900768369436
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "yes",
         "p": 0.6378208086825907
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "explore_nearby",
         "p": 0.02561922509865982
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "inventory_2",
         "p": 0.027188575384892364
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "inventory_2",
         "p": 0.023371232954527307
        }
@@ -20763,61 +20763,61 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "accent",
         "p": 0.49568725734574703
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "accent",
         "p": 0.8512298231205656
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "accent",
         "p": 0.6687669510819135
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "success",
         "p": 0.46748641065635654
        },
        {
         "id": "item_tone_4",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "warning",
         "p": 0.5797413249632611
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "rate_review",
         "p": 0.027423593662188946
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "sell",
         "p": 0.029029924366419164
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "newspaper",
         "p": 0.025259271596261415
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "info",
         "p": 0.026859613121449438
        },
        {
         "id": "item_icon_4",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "movie",
         "p": 0.026804778678695466
        }
@@ -20864,7 +20864,7 @@
       "decisions": [
        {
         "id": "stat_news_4",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "neutral",
         "p": 0.9204794249933581
        }
@@ -21079,56 +21079,56 @@
       "decisions": [
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "danger",
         "p": 0.8970569036312743
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "check",
         "p": 0.4852926166725342
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "no",
         "p": 0.059909284580498934
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "yes",
         "p": 0.6841869759373367
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "train",
         "p": 0.025723417229295567
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "list_alt",
         "p": 0.02626428591075467
        }
@@ -21217,74 +21217,74 @@
       "decisions": [
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "check",
         "p": 0.467590605308897
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "switch",
         "p": 0.8032595600996759
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "nav",
         "p": 0.5183410068068149
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "yes",
         "p": 0.5264931137207896
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "no",
         "p": 0.35322900768369436
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "yes",
         "p": 0.6378208086825907
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "explore_nearby",
         "p": 0.02561922509865982
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "inventory_2",
         "p": 0.027188575384892364
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "inventory_2",
         "p": 0.023371232954527307
        }
@@ -21352,25 +21352,25 @@
       "decisions": [
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "movie",
         "p": 0.027452109790525325
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "local_bar",
         "p": 0.02469338161354129
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "emoji_events",
         "p": 0.027445148024421016
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "kitchen",
         "p": 0.033560273581005294
        }
@@ -21588,25 +21588,25 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "nav",
         "p": 0.6977351645801416
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "no",
         "p": 0.49402425484731793
        }
@@ -21697,61 +21697,61 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "nav",
         "p": 0.43614439698408347
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "value",
         "p": 0.727067790746491
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "danger",
         "p": 0.49036569525068596
        },
        {
         "id": "row_control_4",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "nav",
         "p": 0.7969650576420435
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "yes",
         "p": 0.6535708501469344
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "no",
         "p": 0.4263912392780185
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "no",
         "p": 0.4386532704811543
        },
        {
         "id": "row_on_4",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "yes",
         "p": 0.6151418699882925
        }
@@ -21954,26 +21954,26 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "nav",
         "p": 0.6977351645801416
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "no",
         "p": 0.49402425484731793
        }
@@ -22062,62 +22062,62 @@
       "decisions": [
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "nav",
         "p": 0.43614439698408347
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "danger",
         "p": 0.49036569525068596
        },
        {
         "id": "row_control_4",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "nav",
         "p": 0.7969650576420435
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "yes",
         "p": 0.6535708501469344
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "no",
         "p": 0.4263912392780185
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "no",
         "p": 0.4386532704811543
        },
        {
         "id": "row_on_4",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "yes",
         "p": 0.6151418699882925
        }
@@ -22195,31 +22195,31 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "neutral",
         "p": 0.5695850291796737
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "danger",
         "p": 0.47806152925614154
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "neutral",
         "p": 0.8055486147854277
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "danger",
         "p": 0.7603996136500168
        },
        {
         "id": "item_tone_4",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "success",
         "p": 0.620632781053392
        }
@@ -22282,19 +22282,19 @@
       "decisions": [
        {
         "id": "stat_news_0",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "good",
         "p": 0.745706852802488
        },
        {
         "id": "stat_news_3",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "bad",
         "p": 0.9725170490005227
        },
        {
         "id": "stat_news_4",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "bad",
         "p": 0.812628865460445
        }
@@ -22546,50 +22546,50 @@
       "decisions": [
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "switch",
         "p": 0.8759022403751998
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "value",
         "p": 0.731750674103525
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "hotel",
         "p": 0.025590022292968258
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "analytics",
         "p": 0.025965973224531973
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "local_laundry_service",
         "p": 0.02619476369654198
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "work",
         "p": 0.025893550587778758
        }
@@ -22675,61 +22675,61 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "danger",
         "p": 0.6444744461794357
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "danger",
         "p": 0.6531526873969556
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "accent",
         "p": 0.6051405583364631
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "danger",
         "p": 0.5721310009825398
        },
        {
         "id": "item_tone_4",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "success",
         "p": 0.9121381577785824
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "directions_bike",
         "p": 0.026986081034766785
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "smartphone",
         "p": 0.027902165549438532
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "verified_user",
         "p": 0.02362289601307116
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "key",
         "p": 0.02366799361261228
        },
        {
         "id": "item_icon_4",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "queue_music",
         "p": 0.02509550156745274
        }
@@ -22788,19 +22788,19 @@
       "decisions": [
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "neutral",
         "p": 0.8764053812853387
        },
        {
         "id": "stat_news_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "bad",
         "p": 0.6027790272174677
        },
        {
         "id": "stat_news_3",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "bad",
         "p": 0.895522035281907
        }
@@ -23057,64 +23057,64 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_icon_4",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "switch",
         "p": 0.8759022403751998
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "value",
         "p": 0.6652656717834381
        },
        {
         "id": "row_control_4",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "check",
         "p": 0.43558896672828146
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "hotel",
         "p": 0.025590022292968258
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "analytics",
         "p": 0.025965973224531973
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "local_laundry_service",
         "p": 0.02619476369654198
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "work",
         "p": 0.025893550587778758
        }
@@ -23214,73 +23214,73 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "neutral",
         "p": 0.6482670223405033
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "accent",
         "p": 0.9975596156651858
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "accent",
         "p": 0.47966684544179405
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "success",
         "p": 0.5378608676482302
        },
        {
         "id": "item_tone_4",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "danger",
         "p": 0.5443250096166343
        },
        {
         "id": "item_tone_5",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "success",
         "p": 0.5908664808703463
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "train",
         "p": 0.02463708810654023
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "chat",
         "p": 0.026294326018972754
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "directions_bike",
         "p": 0.026745128754211825
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "bluetooth",
         "p": 0.02558827729014771
        },
        {
         "id": "item_icon_4",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "water_drop",
         "p": 0.02644763946474189
        },
        {
         "id": "item_icon_5",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "self_improvement",
         "p": 0.02600335641140894
        }
@@ -23335,19 +23335,19 @@
       "decisions": [
        {
         "id": "stat_news_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "neutral",
         "p": 0.8199890866041237
        },
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "bad",
         "p": 0.5503207096705796
        },
        {
         "id": "stat_news_2",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "bad",
         "p": 0.6473178286003596
        }
@@ -23588,63 +23588,63 @@
       "decisions": [
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "value",
         "p": 1,
         "note": "a row that has a value is not a switch"
        },
        {
         "id": "row_control_4",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "value",
         "p": 1,
         "note": "a row that has a value is not a switch"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "nav",
         "p": 0.6977351645801416
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "check",
         "p": 0.5541346295614432
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "no",
         "p": 0.49402425484731793
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "yes",
         "p": 0.7368564943317324
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "yes",
         "p": 0.8842681529931724
        },
        {
         "id": "row_on_4",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "yes",
         "p": 0.8316243197768927
        }
@@ -23722,31 +23722,31 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "danger",
         "p": 0.5008321084511336
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "warning",
         "p": 0.44857295039348855
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "warning",
         "p": 0.7352878195888306
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "danger",
         "p": 0.41973192286925287
        },
        {
         "id": "item_tone_4",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "accent",
         "p": 0.7421211540007651
        }
@@ -23785,7 +23785,7 @@
       "decisions": [
        {
         "id": "stat_news_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "neutral",
         "p": 0.5273821873720692
        }
@@ -24057,92 +24057,92 @@
       "decisions": [
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "danger",
         "p": 0.8970569036312743
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "check",
         "p": 0.4852926166725342
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "value",
         "p": 0.43920378491645756
        },
        {
         "id": "row_control_4",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "nav",
         "p": 0.8548010520805358
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "no",
         "p": 0.059909284580498934
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "yes",
         "p": 0.6841869759373367
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "no",
         "p": 0.38774060271680355
        },
        {
         "id": "row_on_4",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "yes",
         "p": 0.940812289249152
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "train",
         "p": 0.025723417229295567
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "list_alt",
         "p": 0.02626428591075467
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "school",
         "p": 0.024506806344220523
        },
        {
         "id": "row_icon_4",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "savings",
         "p": 0.02404632007127276
        }
@@ -24253,93 +24253,93 @@
       "decisions": [
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "value",
         "p": 1,
         "note": "a row that has a value is not a switch"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "check",
         "p": 0.467590605308897
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "nav",
         "p": 0.5183410068068149
        },
        {
         "id": "row_control_4",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "nav",
         "p": 0.4638763271310508
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "yes",
         "p": 0.5264931137207896
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "no",
         "p": 0.35322900768369436
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "yes",
         "p": 0.6378208086825907
        },
        {
         "id": "row_on_4",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "no",
         "p": 0.23863747622817755
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "explore_nearby",
         "p": 0.02561922509865982
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "inventory_2",
         "p": 0.027188575384892364
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "inventory_2",
         "p": 0.023371232954527307
        },
        {
         "id": "row_icon_4",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "fast_rewind",
         "p": 0.02608044988059152
        }
@@ -24413,49 +24413,49 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "accent",
         "p": 0.44930536511168534
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "success",
         "p": 0.4524123966610301
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "accent",
         "p": 0.671460139302668
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "warning",
         "p": 0.5676246720309098
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "dashboard",
         "p": 0.031044471107173913
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "skip_next",
         "p": 0.023339034367706363
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "stadia_controller",
         "p": 0.03010998979015866
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "explore_nearby",
         "p": 0.027179279154219884
        }
@@ -24498,13 +24498,13 @@
       "decisions": [
        {
         "id": "stat_news_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "good",
         "p": 0.6046942394256251
        },
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "good",
         "p": 0.7353348523037466
        }
@@ -24714,37 +24714,37 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "danger",
         "p": 0.8970569036312743
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "no",
         "p": 0.059909284580498934
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "train",
         "p": 0.025723417229295567
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "list_alt",
         "p": 0.02626428591075467
        }
@@ -24820,49 +24820,49 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "danger",
         "p": 0.48416560109680207
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "warning",
         "p": 0.7351181385218045
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "danger",
         "p": 0.5114092943844272
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "danger",
         "p": 0.5264792037395599
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "dns",
         "p": 0.030569227916945822
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "directions_walk",
         "p": 0.02637339460891355
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "pending_actions",
         "p": 0.025183991062767384
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "sync",
         "p": 0.025951670397454985
        }
@@ -24913,13 +24913,13 @@
       "decisions": [
        {
         "id": "stat_news_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "neutral",
         "p": 0.6330656465208988
        },
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "good",
         "p": 0.998608938597943
        }
@@ -25036,20 +25036,20 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "train",
         "p": 0.025723417229295567
        }
@@ -25153,73 +25153,73 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "accent",
         "p": 0.7733005390114548
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "accent",
         "p": 0.630629946404292
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "warning",
         "p": 0.9558336851499051
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "neutral",
         "p": 0.9136932349014156
        },
        {
         "id": "item_tone_4",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "warning",
         "p": 0.7907950319892632
        },
        {
         "id": "item_tone_5",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "neutral",
         "p": 0.7569685197001625
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "trending_up",
         "p": 0.02595617455336432
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "storefront",
         "p": 0.026900005188419306
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "fast_forward",
         "p": 0.027974238042901483
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "fast_rewind",
         "p": 0.02517746764212933
        },
        {
         "id": "item_icon_4",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "download",
         "p": 0.02562716640582704
        },
        {
         "id": "item_icon_5",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "category",
         "p": 0.02881956574809509
        }
@@ -25282,19 +25282,19 @@
       "decisions": [
        {
         "id": "stat_news_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "neutral",
         "p": 0.5666140501787947
        },
        {
         "id": "stat_news_3",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "good",
         "p": 0.9544659109042901
        },
        {
         "id": "stat_news_4",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "neutral",
         "p": 0.895890403504131
        }
@@ -25426,38 +25426,38 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "danger",
         "p": 0.8970569036312743
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "no",
         "p": 0.059909284580498934
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "train",
         "p": 0.025723417229295567
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "list_alt",
         "p": 0.02626428591075467
        }
@@ -25519,37 +25519,37 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "warning",
         "p": 0.4588114191101525
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "accent",
         "p": 0.4549939148892612
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "success",
         "p": 0.5249586689432377
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "sports_soccer",
         "p": 0.02549878076350901
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "music_note",
         "p": 0.029846441277656115
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "bar_chart",
         "p": 0.030413416613019488
        }
@@ -25628,31 +25628,31 @@
       "decisions": [
        {
         "id": "stat_news_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "bad",
         "p": 0.6184206292937148
        },
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "good",
         "p": 0.5225718129369894
        },
        {
         "id": "stat_news_2",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "good",
         "p": 0.49365918218291005
        },
        {
         "id": "stat_news_3",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "neutral",
         "p": 0.746392995898043
        },
        {
         "id": "stat_news_4",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "good",
         "p": 0.6991003759466625
        }
@@ -25906,19 +25906,19 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "train",
         "p": 0.025723417229295567
        }
@@ -26014,75 +26014,75 @@
       "decisions": [
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "value",
         "p": 1,
         "note": "a row that has a value is not a switch"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "check",
         "p": 0.467590605308897
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "nav",
         "p": 0.5183410068068149
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "yes",
         "p": 0.5264931137207896
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "no",
         "p": 0.35322900768369436
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "yes",
         "p": 0.6378208086825907
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "explore_nearby",
         "p": 0.02561922509865982
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "inventory_2",
         "p": 0.027188575384892364
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "inventory_2",
         "p": 0.023371232954527307
        }
@@ -26162,37 +26162,37 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "nav",
         "p": 0.7478144766999983
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "danger",
         "p": 0.5561701764734841
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "yes",
         "p": 0.6776544020976871
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "yes",
         "p": 0.6654795978683978
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "science",
         "p": 0.024400707944980185
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "image",
         "p": 0.02758913704762267
        }
@@ -26280,61 +26280,61 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "success",
         "p": 0.5093275289346697
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "success",
         "p": 0.35686803419801794
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "danger",
         "p": 0.7259745803018866
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "success",
         "p": 0.6823082871122114
        },
        {
         "id": "item_tone_4",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "warning",
         "p": 0.4618931840487346
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "power",
         "p": 0.029072005120953197
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "wb_sunny",
         "p": 0.02554600457329939
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "accessibility",
         "p": 0.026599525312018524
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "electric_bolt",
         "p": 0.026720887086458586
        },
        {
         "id": "item_icon_4",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "notifications",
         "p": 0.024533579602912574
        }
@@ -26369,7 +26369,7 @@
       "decisions": [
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "good",
         "p": 0.9162420939893672
        }
@@ -26478,20 +26478,20 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "train",
         "p": 0.025723417229295567
        }
@@ -26562,38 +26562,38 @@
       "decisions": [
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "check",
         "p": 0.467590605308897
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "yes",
         "p": 0.5264931137207896
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "explore_nearby",
         "p": 0.02561922509865982
        }
@@ -26677,56 +26677,56 @@
       "decisions": [
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "value",
         "p": 1,
         "note": "a row that has a value is not a switch"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "nav",
         "p": 0.7478144766999983
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "danger",
         "p": 0.5561701764734841
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "yes",
         "p": 0.6776544020976871
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "yes",
         "p": 0.6654795978683978
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "yes",
         "p": 0.7835744405165315
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "science",
         "p": 0.024400707944980185
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "image",
         "p": 0.02758913704762267
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "terminal",
         "p": 0.02466880727778228
        }
@@ -26810,61 +26810,61 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "success",
         "p": 0.7090499866548254
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "success",
         "p": 0.8940899275469651
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "warning",
         "p": 0.4996034101195905
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "success",
         "p": 0.8135692010331639
        },
        {
         "id": "item_tone_4",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "accent",
         "p": 0.4123960372810723
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "credit_card",
         "p": 0.026483189948826605
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "fast_rewind",
         "p": 0.027293701040328834
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "backup",
         "p": 0.024123333946821417
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "bakery_dining",
         "p": 0.024295329765365935
        },
        {
         "id": "item_icon_4",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "tv",
         "p": 0.023447877005781336
        }
@@ -26907,13 +26907,13 @@
       "decisions": [
        {
         "id": "stat_news_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "good",
         "p": 0.7573311505340007
        },
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "bad",
         "p": 0.991960845571946
        }
@@ -27164,93 +27164,93 @@
       "decisions": [
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "danger",
         "p": 0.8970569036312743
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "check",
         "p": 0.4852926166725342
        },
        {
         "id": "row_control_4",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "nav",
         "p": 0.8548010520805358
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "no",
         "p": 0.059909284580498934
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "yes",
         "p": 0.6841869759373367
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "no",
         "p": 0.38774060271680355
        },
        {
         "id": "row_on_4",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "yes",
         "p": 0.940812289249152
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "train",
         "p": 0.025723417229295567
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "list_alt",
         "p": 0.02626428591075467
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "school",
         "p": 0.024506806344220523
        },
        {
         "id": "row_icon_4",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "savings",
         "p": 0.02404632007127276
        }
@@ -27310,19 +27310,19 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "explore_nearby",
         "p": 0.02561922509865982
        }
@@ -27398,49 +27398,49 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "success",
         "p": 0.44640735110169216
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "accent",
         "p": 0.6322276512680222
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "success",
         "p": 0.6233970702896607
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "neutral",
         "p": 0.40896800012992884
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "monitor_heart",
         "p": 0.021858719063502636
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "logout",
         "p": 0.025301422978207116
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "call",
         "p": 0.02711464999212806
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "emoji_events",
         "p": 0.024463937433848743
        }
@@ -27475,7 +27475,7 @@
       "decisions": [
        {
         "id": "stat_news_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "good",
         "p": 0.5880944964209034
        }
@@ -27645,14 +27645,14 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "hotel",
         "p": 0.025590022292968258
        }
@@ -27726,49 +27726,49 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "danger",
         "p": 0.7133771674393805
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "warning",
         "p": 0.5124815712970656
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "warning",
         "p": 0.6012677242401921
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "neutral",
         "p": 0.5670654883820386
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "sports_esports",
         "p": 0.028076241008602575
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "directions_bike",
         "p": 0.030425073499274487
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "pending_actions",
         "p": 0.025345025426710882
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "ev_station",
         "p": 0.02747908851342055
        }
@@ -27823,19 +27823,19 @@
       "decisions": [
        {
         "id": "stat_news_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "neutral",
         "p": 0.9215771104949715
        },
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "neutral",
         "p": 0.9803230763684418
        },
        {
         "id": "stat_news_2",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "neutral",
         "p": 0.7008644523772969
        }
@@ -28017,38 +28017,38 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "danger",
         "p": 0.8970569036312743
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "no",
         "p": 0.059909284580498934
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "train",
         "p": 0.025723417229295567
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "list_alt",
         "p": 0.02626428591075467
        }
@@ -28116,25 +28116,25 @@
       "decisions": [
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "location_on",
         "p": 0.027636529637567683
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "info",
         "p": 0.028606911337646465
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "hiking",
         "p": 0.02350017819880708
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "key",
         "p": 0.024499007718134087
        }
@@ -28352,14 +28352,14 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "hotel",
         "p": 0.025590022292968258
        }
@@ -28445,37 +28445,37 @@
       "decisions": [
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "school",
         "p": 0.02346468522581087
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "support_agent",
         "p": 0.026619334615983023
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "restaurant",
         "p": 0.026023878289545006
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "delete",
         "p": 0.028186663553809596
        },
        {
         "id": "item_icon_4",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "description",
         "p": 0.02925266040703372
        },
        {
         "id": "item_icon_5",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "hiking",
         "p": 0.02725761530749959
        }
@@ -28696,25 +28696,25 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "nav",
         "p": 0.6977351645801416
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "no",
         "p": 0.49402425484731793
        }
@@ -28771,25 +28771,25 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "nav",
         "p": 0.43614439698408347
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "yes",
         "p": 0.6535708501469344
        }
@@ -28853,25 +28853,25 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "accent",
         "p": 0.5841012617188431
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "accent",
         "p": 0.7767390362067498
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "warning",
         "p": 0.4384696465800518
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "accent",
         "p": 0.4527409730319853
        }
@@ -28914,13 +28914,13 @@
       "decisions": [
        {
         "id": "stat_news_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "neutral",
         "p": 0.5396342833516506
        },
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "good",
         "p": 0.9941867166141916
        }
@@ -29158,93 +29158,93 @@
       "decisions": [
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "danger",
         "p": 0.8970569036312743
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "check",
         "p": 0.4852926166725342
        },
        {
         "id": "row_control_4",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "nav",
         "p": 0.8548010520805358
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "no",
         "p": 0.059909284580498934
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "yes",
         "p": 0.6841869759373367
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "no",
         "p": 0.38774060271680355
        },
        {
         "id": "row_on_4",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "yes",
         "p": 0.940812289249152
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "train",
         "p": 0.025723417229295567
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "list_alt",
         "p": 0.02626428591075467
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "school",
         "p": 0.024506806344220523
        },
        {
         "id": "row_icon_4",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "savings",
         "p": 0.02404632007127276
        }
@@ -29344,57 +29344,57 @@
       "decisions": [
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "value",
         "p": 1,
         "note": "a row that has a value is not a switch"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "check",
         "p": 0.467590605308897
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "yes",
         "p": 0.5264931137207896
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "no",
         "p": 0.35322900768369436
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "explore_nearby",
         "p": 0.02561922509865982
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "inventory_2",
         "p": 0.027188575384892364
        }
@@ -29506,73 +29506,73 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "nav",
         "p": 0.7478144766999983
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "danger",
         "p": 0.5561701764734841
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "switch",
         "p": 0.6084066580166065
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "danger",
         "p": 0.7359028670987993
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "yes",
         "p": 0.6776544020976871
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "yes",
         "p": 0.6654795978683978
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "yes",
         "p": 0.7835744405165315
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "no",
         "p": 0.3865543254651129
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "science",
         "p": 0.024400707944980185
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "image",
         "p": 0.02758913704762267
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "terminal",
         "p": 0.02466880727778228
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "business",
         "p": 0.02714021840555532
        }
@@ -29654,31 +29654,31 @@
       "decisions": [
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "ac_unit",
         "p": 0.02994379695433253
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "battery_full",
         "p": 0.025950039612041582
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "shopping_cart",
         "p": 0.025740147240329383
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "article",
         "p": 0.02750210908669594
        },
        {
         "id": "item_icon_4",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "edit",
         "p": 0.02761351654868947
        }
@@ -29908,7 +29908,7 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "value",
         "p": 0.44557298527945977
        }
@@ -29987,31 +29987,31 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "check",
         "p": 0.45050385170268215
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "check",
         "p": 0.5353888595550481
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "danger",
         "p": 0.5366274038648936
        },
        {
         "id": "row_control_4",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "nav",
         "p": 0.7128505103947264
        }
@@ -30067,19 +30067,19 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "neutral",
         "p": 0.5640118282675637
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "neutral",
         "p": 0.3441044638667721
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "accent",
         "p": 0.523066665005956
        }
@@ -30130,13 +30130,13 @@
       "decisions": [
        {
         "id": "stat_news_0",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "bad",
         "p": 0.6922295785049939
        },
        {
         "id": "stat_news_3",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "bad",
         "p": 0.7514432439967499
        }
@@ -30362,31 +30362,31 @@
       "decisions": [
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "no",
         "p": 0.3921251413412392
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "yes",
         "p": 0.8505931859835982
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "yes",
         "p": 0.684420470148325
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "no",
         "p": 0.4986653965897858
        },
        {
         "id": "row_on_4",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "yes",
         "p": 0.7671982778701931
        }
@@ -30464,31 +30464,31 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "warning",
         "p": 0.7355685900723214
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "warning",
         "p": 0.6475626626085829
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "danger",
         "p": 0.7926200666960723
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "neutral",
         "p": 0.4445443297267163
        },
        {
         "id": "item_tone_4",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "warning",
         "p": 0.8070170212010767
        }
@@ -30551,19 +30551,19 @@
       "decisions": [
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "bad",
         "p": 0.997959235098412
        },
        {
         "id": "stat_news_2",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "good",
         "p": 0.9056096550956676
        },
        {
         "id": "stat_news_3",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "good",
         "p": 0.6487531997899585
        }
@@ -30729,93 +30729,93 @@
       "decisions": [
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "value",
         "p": 0.44557298527945977
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "danger",
         "p": 0.8970569036312743
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "check",
         "p": 0.4852926166725342
        },
        {
         "id": "row_control_4",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "nav",
         "p": 0.8548010520805358
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "no",
         "p": 0.059909284580498934
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "yes",
         "p": 0.6841869759373367
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "no",
         "p": 0.38774060271680355
        },
        {
         "id": "row_on_4",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "yes",
         "p": 0.940812289249152
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "train",
         "p": 0.025723417229295567
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "list_alt",
         "p": 0.02626428591075467
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "school",
         "p": 0.024506806344220523
        },
        {
         "id": "row_icon_4",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "savings",
         "p": 0.02404632007127276
        }
@@ -30905,61 +30905,61 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "warning",
         "p": 0.9408972414172656
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "warning",
         "p": 0.7153121905454383
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "neutral",
         "p": 0.6858348061855636
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "danger",
         "p": 0.5447840987146532
        },
        {
         "id": "item_tone_4",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "danger",
         "p": 0.49471127575099927
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "10 seconds",
         "answer": "fast_forward",
         "p": 0.024124806639403803
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "dashboard",
         "p": 0.025635613240467946
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "shield",
         "p": 0.026581605727260406
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "bakery_dining",
         "p": 0.025879256836029266
        },
        {
         "id": "item_icon_4",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "schedule",
         "p": 0.027581667434558164
        }
@@ -31026,25 +31026,25 @@
       "decisions": [
        {
         "id": "stat_news_0",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "bad",
         "p": 0.994149297034112
        },
        {
         "id": "stat_news_1",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "neutral",
         "p": 0.9157108537509048
        },
        {
         "id": "stat_news_2",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "bad",
         "p": 0.8164801851226133
        },
        {
         "id": "stat_news_3",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "bad",
         "p": 0.8890490101734669
        }
@@ -31235,34 +31235,34 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "value",
         "p": 1,
         "note": "a row that has a value is not a switch"
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "value",
         "p": 1,
         "note": "a row that has a value is not a switch"
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "danger",
         "p": 0.4745445927994478
        },
        {
         "id": "row_control_4",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "danger",
         "p": 0.55987708694061
        }
@@ -31340,31 +31340,31 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "neutral",
         "p": 0.39173549365932575
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "Delayed",
         "answer": "warning",
         "p": 0.7799268634387628
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "danger",
         "p": 0.4046630058028237
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "danger",
         "p": 0.4425769144459002
        },
        {
         "id": "item_tone_4",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "neutral",
         "p": 0.5635173409507487
        }
@@ -31423,19 +31423,19 @@
       "decisions": [
        {
         "id": "stat_news_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "neutral",
         "p": 0.5569902482084006
        },
        {
         "id": "stat_news_2",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "bad",
         "p": 0.5478660087873791
        },
        {
         "id": "stat_news_3",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "good",
         "p": 0.9984293240920685
        }
@@ -31616,27 +31616,27 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "value",
         "p": 1,
         "note": "a row that has a value is not a switch"
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "hotel",
         "p": 0.025590022292968258
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "analytics",
         "p": 0.025965973224531973
        }
@@ -31708,49 +31708,49 @@
       "decisions": [
        {
         "id": "item_tone_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "warning",
         "p": 0.4973314917221755
        },
        {
         "id": "item_tone_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "success",
         "p": 0.5965549755978814
        },
        {
         "id": "item_tone_2",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "accent",
         "p": 0.6491163393670871
        },
        {
         "id": "item_tone_3",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "neutral",
         "p": 0.9670903373227636
        },
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "pets",
         "p": 0.0234736086826706
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "self_improvement",
         "p": 0.025447456855921115
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "check_circle",
         "p": 0.024772246613450597
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "search",
         "p": 0.026142737737611
        }
@@ -31813,19 +31813,19 @@
       "decisions": [
        {
         "id": "stat_news_0",
-        "question": "[object Object]",
+        "question": "High",
         "answer": "bad",
         "p": 0.9208388501021544
        },
        {
         "id": "stat_news_2",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "bad",
         "p": 0.9956410113074071
        },
        {
         "id": "stat_news_4",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "neutral",
         "p": 0.6253246743745821
        }
@@ -32003,76 +32003,76 @@
       "decisions": [
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_3",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "nav",
         "p": 1,
         "note": "a row can only show a value if one was written"
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "danger",
         "p": 0.8970569036312743
        },
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "check",
         "p": 0.4852926166725342
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "yes",
         "p": 0.9446248346939683
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "no",
         "p": 0.059909284580498934
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Autoplay",
         "answer": "yes",
         "p": 0.6841869759373367
        },
        {
         "id": "row_on_3",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "no",
         "p": 0.38774060271680355
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "train",
         "p": 0.025723417229295567
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "list_alt",
         "p": 0.02626428591075467
        },
        {
         "id": "row_icon_3",
-        "question": "[object Object]",
+        "question": "Paid",
         "answer": "school",
         "p": 0.024506806344220523
        }
@@ -32151,38 +32151,38 @@
       "decisions": [
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "none",
         "p": 1,
         "note": "options to pick among are told apart by their words, and a group with any of them has no symbols"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "nav",
         "p": 0.6349312031543686
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "check",
         "p": 0.467590605308897
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "yes",
         "p": 0.5315378569066525
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Downloads",
         "answer": "yes",
         "p": 0.5264931137207896
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Delete account",
         "answer": "explore_nearby",
         "p": 0.02561922509865982
        }
@@ -32273,56 +32273,56 @@
       "decisions": [
        {
         "id": "row_control_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "value",
         "p": 1,
         "note": "a row that has a value is not a switch"
        },
        {
         "id": "row_control_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "nav",
         "p": 0.7478144766999983
        },
        {
         "id": "row_control_1",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "danger",
         "p": 0.5561701764734841
        },
        {
         "id": "row_on_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "yes",
         "p": 0.6776544020976871
        },
        {
         "id": "row_on_1",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "yes",
         "p": 0.6654795978683978
        },
        {
         "id": "row_on_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "yes",
         "p": 0.7835744405165315
        },
        {
         "id": "row_icon_0",
-        "question": "[object Object]",
+        "question": "Notifications",
         "answer": "science",
         "p": 0.024400707944980185
        },
        {
         "id": "row_icon_1",
-        "question": "[object Object]",
+        "question": "Language",
         "answer": "image",
         "p": 0.02758913704762267
        },
        {
         "id": "row_icon_2",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "terminal",
         "p": 0.02466880727778228
        }
@@ -32386,25 +32386,25 @@
       "decisions": [
        {
         "id": "item_icon_0",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "construction",
         "p": 0.02883952799722077
        },
        {
         "id": "item_icon_1",
-        "question": "[object Object]",
+        "question": "Theme",
         "answer": "volume_up",
         "p": 0.02529420321378877
        },
        {
         "id": "item_icon_2",
-        "question": "[object Object]",
+        "question": "About",
         "answer": "child_care",
         "p": 0.030647933151729395
        },
        {
         "id": "item_icon_3",
-        "question": "[object Object]",
+        "question": "Sign out",
         "answer": "explore_nearby",
         "p": 0.02808718026353709
        }

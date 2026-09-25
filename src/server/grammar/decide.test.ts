@@ -62,6 +62,19 @@ test("exactly one option of a picker is chosen, and symbols go down the edge of 
   assert.equal(ragged, 0);
 });
 
+test("in the trace, a decision about a row is labelled by the row's label, whatever else was written for it, in every idiom", () => {
+  const rows = [{ label: "Skip forward", value: "30 seconds" }, { label: "Autoplay" }, { label: "Sign out", detail: "On this device" }];
+  for (const idiom of ["kit", "ios"] as const) {
+    const grammar = IDIOMS[idiom].graph.grammar;
+    const [asked] = decide(grammar, named(grammar, "groups"), [{ title: "Playback", rows }], options());
+    const { decisions } = asked.read(answersTo(asked.questions, random(15)));
+    assert.ok(decisions.length >= rows.length, idiom);
+    assert.deepEqual(new Set(decisions.map((d) => d.question)), new Set(rows.map((row) => row.label)), idiom);
+  }
+  const [asked] = decide(screen, named(screen, "actions"), [{ label: "Subscribe" }, { label: "Share" }], options());
+  assert.deepEqual(new Set(asked.read(answersTo(asked.questions, random(16))).decisions.map((d) => d.question)), new Set(["Subscribe", "Share"]));
+});
+
 test("one button is the main one, and none is asked about when there is only one", () => {
   const rng = random(12);
   for (let n = 0; n < 200; n++) {
