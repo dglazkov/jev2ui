@@ -215,9 +215,8 @@ async function savedApps(load: Load, id: string, req: IncomingMessage, res: Serv
 async function activity(req: IncomingMessage, res: ServerResponse, auth: any) {
   if (req.method !== "POST") return void ((res.statusCode = 405), res.end("Use POST."));
   const body = await readJson(req, LARGEST_ACTIVITY).catch(() => undefined);
-  const id = (sent: unknown) => (typeof sent === "string" && /^[\w-]{8,64}$/.test(sent) ? sent : undefined);
-  const visitor = id(body?.visitor);
-  const visit = id(body?.visit);
+  const visitor = activityId(body?.visitor);
+  const visit = activityId(body?.visit);
   if (!visitor || !visit || !Array.isArray(body.events)) return void ((res.statusCode = 400), res.end("Send a visitor, a visit, and a list of events."));
   const person = auth.firebase ? await auth.whoIs(req.headers.authorization) : undefined;
   for (const sent of body.events.slice(0, 50)) {
@@ -226,6 +225,17 @@ async function activity(req: IncomingMessage, res: ServerResponse, auth: any) {
   }
   res.statusCode = 204;
   res.end();
+}
+
+/** A browser's id or a visit's (web/activity.ts), as the browser sent it, or nothing. */
+const activityId = (sent: unknown) => (typeof sent === "string" && /^[\w-]{8,64}$/.test(sent) ? sent : undefined);
+
+/** Where a request came from, for the activity log: its route, and the browser and visit it named in X-Visitor and X-Visit. */
+function askerOf(req: IncomingMessage, route: string, uid?: string) {
+  const header = (name: string) => activityId(Array.isArray(req.headers[name]) ? req.headers[name]![0] : req.headers[name]);
+  const visitor = header("x-visitor");
+  const visit = header("x-visit");
+  return { route, ...(visitor && visit ? { visitor, visit } : {}), ...(uid ? { uid } : {}) };
 }
 
 /**
@@ -283,15 +293,16 @@ export function api(load: Load) {
     // the request carried; keys of the person's own count only where the list grants nothing (models.ts).
     let asking: Asking | undefined;
     let keys: ReturnType<typeof ownKeysNamed>;
+    let person: Asking["person"] | undefined;
     if (auth.firebase) {
-      const person = await auth.whoIs(req.headers.authorization);
+      person = await auth.whoIs(req.headers.authorization);
       const grant = person && (await auth.access(person));
       // Signed in and on no line of the list is something to tell the person, not an error: /api/me says so.
       if (url.pathname === "/api/me") {
         if (!person) return (res.statusCode = 401), res.end("Sign in to continue."), true;
         return await allowance(res, grant ? { auth, person, grant } : undefined), json({ email: person.email, role: grant?.role ?? null }), true;
       }
-      if (grant) asking = { auth, person, grant };
+      if (grant) asking = { auth, person: person!, grant };
       else if (!(keys = ownKeysNamed(req))) {
         if (!person) return (res.statusCode = 401), res.end("Sign in to continue, or use your own API keys."), true;
         return (res.statusCode = 403), res.end(`${person.email ?? "This account"} isn't on the access list.`), true;
@@ -320,7 +331,7 @@ export function api(load: Load) {
           await allowance(res, asking);
           await turn(load, req, res);
         } else await generate(load, url, req, res, asking);
-      }, keys),
+      }, keys, askerOf(req, url.pathname, person?.uid)),
     );
     return true;
   };

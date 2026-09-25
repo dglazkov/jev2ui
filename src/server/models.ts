@@ -39,7 +39,15 @@ export interface OwnKeys {
   gemini: string;
 }
 
-const asking = new AsyncLocalStorage<{ endpoint: Endpoint; keys?: OwnKeys }>();
+/** Whose request it is, for the activity log: the route, the browser and visit it came from (web/activity.ts), and the person, if their token proved one. */
+export interface Asker {
+  route: string;
+  visitor?: string;
+  visit?: string;
+  uid?: string;
+}
+
+const asking = new AsyncLocalStorage<{ endpoint: Endpoint; keys?: OwnKeys; asker?: Asker }>();
 const KEPT_CLIENTS = 16;
 const ownJev = new Map<string, TypeSafeClient>();
 const ownGemini = new Map<string, GoogleGenAI>();
@@ -80,6 +88,34 @@ function firstLine(error: unknown): string {
   return message.split("\n")[0]!.slice(0, 200);
 }
 
+/**
+ * A model that failed a request someone made, written to the activity log as `model_error` (shared/activity.ts): the
+ * service and model, the status and first line of what it said, after how long, and whose request it was. A request
+ * the person stopped did not fail, and outside a request (a probe, an eval) nothing is written.
+ */
+export function noteFailure(service: string, model: string, error: unknown, start: number, signal?: AbortSignal) {
+  const store = asking.getStore();
+  if (!store || signal?.aborted || (error as Error)?.name === "AbortError") return;
+  const status = (error as { status?: unknown })?.status;
+  const { route, visitor, visit, uid } = store.asker ?? { route: "" };
+  console.log(
+    JSON.stringify({
+      kind: "activity",
+      event: "model_error",
+      at: new Date().toISOString(),
+      service,
+      model,
+      ...(typeof status === "number" ? { status } : {}),
+      message: firstLine(error),
+      ms: Math.round(performance.now() - start),
+      route,
+      keys: Boolean(store.keys),
+      ...(visitor && visit ? { visitor, visit } : {}),
+      ...(uid ? { uid } : {}),
+    }),
+  );
+}
+
 /** What went wrong at Gemini, said so that a person who brought the key knows it was theirs; never the key itself. */
 export function geminiFailed(error: unknown): Error {
   const message = firstLine(error);
@@ -107,8 +143,8 @@ export const endpoints = () => (Object.keys(ENDPOINTS) as Endpoint[]).filter((en
 /** What a browser said it wants, as an endpoint: jev unless it plainly said gev. */
 export const endpointNamed = (said: unknown): Endpoint => (said === "gev" ? "gev" : "jev");
 
-/** Everything `work` sets going asks `endpoint`, however deep and however late; with `keys`, it asks jev with them. */
-export const answeredBy = <T>(endpoint: Endpoint, work: () => T, keys?: OwnKeys): T => asking.run({ endpoint: keys ? "jev" : endpoint, keys }, work);
+/** Everything `work` sets going asks `endpoint`, however deep and however late; with `keys`, it asks jev with them. A model that fails it is put down to `asker`. */
+export const answeredBy = <T>(endpoint: Endpoint, work: () => T, keys?: OwnKeys, asker?: Asker): T => asking.run({ endpoint: keys ? "jev" : endpoint, keys, asker }, work);
 
 /** The endpoint that answers whatever is being worked on now. What is kept of its answers is kept under its name. */
 export const endpoint = (): Endpoint => asking.getStore()?.endpoint ?? "jev";
@@ -130,6 +166,7 @@ export async function askJev(state: unknown, questions: Questions, by: Endpoint 
   const client = keys ? kept(ownJev, keys.jev, () => new TypeSafeClient({ apiKey: keys.jev })) : (clients[by] ??= new TypeSafeClient({ apiKey: requireEnv(key), ...(baseURL ? { baseURL } : {}) }));
   const start = performance.now();
   const response = await client.systemOne({ model: JEV_MODEL, state: state as any, questions }).catch((error: unknown) => {
+    noteFailure(by, JEV_MODEL, error, start);
     // What a proxy in the way has to say can be a page of HTML; its first line is enough.
     const said = (error instanceof Error ? error.message : String(error)).split("\n")[0]!.slice(0, 200);
     throw new Error(keys ? `Jev didn't accept your Jev API key, or the request: ${said}` : `${by} didn't respond: ${said}`);
@@ -193,25 +230,34 @@ export async function streamGeminiJson(
       temperature: 0.4,
       ...(request.signal ? { abortSignal: request.signal } : {}),
     },
-  }).catch((error: unknown) => Promise.reject(geminiFailed(error)));
+  }).catch((error: unknown) => {
+    noteFailure("gemini", GEMINI_MODEL, error, start, request.signal);
+    return Promise.reject(geminiFailed(error));
+  });
   let text = "";
   let firstChunkMs = 0;
   let inputTokens = 0;
   let outputTokens = 0;
-  for await (const chunk of stream) {
-    firstChunkMs ||= performance.now() - start;
-    text += chunk.text ?? "";
-    inputTokens = chunk.usageMetadata?.promptTokenCount ?? inputTokens;
-    outputTokens =
-      (chunk.usageMetadata?.candidatesTokenCount ?? 0) +
-        (chunk.usageMetadata?.thoughtsTokenCount ?? 0) || outputTokens;
-    if (onPartial && text.trim()) {
-      try {
-        onPartial(parsePartial(text));
-      } catch {
-        // Not enough of the document yet to parse; wait for more.
+  try {
+    for await (const chunk of stream) {
+      firstChunkMs ||= performance.now() - start;
+      text += chunk.text ?? "";
+      inputTokens = chunk.usageMetadata?.promptTokenCount ?? inputTokens;
+      outputTokens =
+        (chunk.usageMetadata?.candidatesTokenCount ?? 0) +
+          (chunk.usageMetadata?.thoughtsTokenCount ?? 0) || outputTokens;
+      if (onPartial && text.trim()) {
+        try {
+          onPartial(parsePartial(text));
+        } catch {
+          // Not enough of the document yet to parse; wait for more.
+        }
       }
     }
+  } catch (error) {
+    // A stream can also break halfway.
+    noteFailure("gemini", GEMINI_MODEL, error, start, request.signal);
+    throw error;
   }
   return { text, ms: performance.now() - start, firstChunkMs, inputTokens, outputTokens };
 }
@@ -231,7 +277,10 @@ export async function bakeGeminiJson(request: { system: string; prompt: string; 
       thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
       temperature: 0.6,
     },
-  }).catch((error: unknown) => Promise.reject(geminiFailed(error)));
+  }).catch((error: unknown) => {
+    noteFailure("gemini", BAKER_MODEL, error, start);
+    return Promise.reject(geminiFailed(error));
+  });
   const usage = response.usageMetadata;
   const ms = performance.now() - start;
   return {

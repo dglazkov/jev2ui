@@ -25,6 +25,8 @@ function remembered(): { visitor: string; returning: boolean } {
 
 const { visitor, returning } = remembered();
 const visit = crypto.randomUUID();
+/** Every request says which browser and visit it is from (session.ts), so that what the server logs of it, a model that failed, is theirs too. */
+export const visitHeaders = { "X-Visitor": visitor, "X-Visit": visit };
 let seq = 0;
 let queue: Array<Record<string, Primitive | undefined>> = [];
 let timer: ReturnType<typeof setTimeout> | undefined;
@@ -76,4 +78,6 @@ record("visit", {
   width: innerWidth,
   returning,
   referrer: document.referrer ? new URL(document.referrer).host : "",
+  // A browser driven by a script says so: a test, or a bot.
+  automated: navigator.webdriver,
 });

@@ -7,7 +7,7 @@ import { html, nothing, type ReactiveControllerHost, type TemplateResult } from 
 import type { Endpoint, PipelineEvent } from "../shared/events.js";
 import type { IdiomId } from "../shared/idioms.js";
 import { face, icon, mark } from "./chrome.js";
-import { record, recordWith, sendNow } from "./activity.js";
+import { record, recordWith, sendNow, visitHeaders } from "./activity.js";
 
 type Auth = import("firebase/auth").Auth;
 
@@ -219,7 +219,7 @@ class Session {
     const keys = this.ownKeys ? this.keys! : undefined;
     const response = await fetch(path, {
       ...init,
-      headers: { ...init.headers, "X-System-One": this.endpoint, "X-Idiom": this.idiom, ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(keys ? { "X-Jev-Key": keys.jev, "X-Gemini-Key": keys.gemini } : {}) },
+      headers: { ...init.headers, ...visitHeaders, "X-System-One": this.endpoint, "X-Idiom": this.idiom, ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(keys ? { "X-Jev-Key": keys.jev, "X-Gemini-Key": keys.gemini } : {}) },
     });
     const left = response.headers.get("X-Runs-Left");
     if (left !== null) this.set({ runs: { left, daily: response.headers.get("X-Runs-Daily") ?? "" } });

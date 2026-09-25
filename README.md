@@ -699,6 +699,14 @@ only where the request's token proves the one the action claims; it checks each 
 numbers and yes or no. Anyone may send, as a visitor signs nobody in. On a developer's machine the browser sends
 nothing and writes each action to the console instead.
 
+The server writes lines of its own beside them. When Jev, gev or Gemini fails a request someone made (writing,
+baking or drawing a picture), `src/server/models.ts` writes a `model_error` with the service, the model, the HTTP
+status, the first line of what the service said, and the route. Every request carries `X-Visitor` and `X-Visit`,
+so the error lands in the same visit as the turn it spoiled; that turn's `turn_end` counts the `errors` its screen
+had, since a screen can come out `made` with parts missing. A request the person stopped did not fail, and a probe
+or an eval, outside any request, writes nothing. A visit from a browser a script drives (`navigator.webdriver`: a
+test, or a bot) says `automated: true`.
+
 ```json
 {"kind":"activity","event":"turn_end","at":"2026-09-25T04:49:36.597Z","seq":6,"state":"in","keys":false,"turn":2,"outcome":"changed","act":"paint","ms":286,"visitor":"57ea217f-…","visit":"93f2903c-…","uid":"…"}
 ```

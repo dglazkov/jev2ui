@@ -11,7 +11,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
-import { geminiClient, geminiFailed } from "../models.js";
+import { geminiClient, geminiFailed, noteFailure } from "../models.js";
 import { SUBJECTS, type SubjectName } from "./subjects.js";
 import { tokens, type Photo } from "./library.js";
 
@@ -88,7 +88,11 @@ async function make(id: string, brief: Brief): Promise<Photo> {
       "Realistic and in natural colour. No text, lettering, logos, watermarks, borders or user interface anywhere in the image.",
     ];
     const prompt = (brief.drawn ? drawn : shot).join("\n");
-    const response = await gemini.models.generateContent({ model: IMAGE_MODEL, contents: prompt, config: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: brief.ratio } } }).catch((error: unknown) => Promise.reject(geminiFailed(error)));
+    const start = performance.now();
+    const response = await gemini.models.generateContent({ model: IMAGE_MODEL, contents: prompt, config: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: brief.ratio } } }).catch((error: unknown) => {
+      noteFailure("gemini", IMAGE_MODEL, error, start);
+      return Promise.reject(geminiFailed(error));
+    });
     const image = response.candidates?.[0]?.content?.parts?.find((part) => part.inlineData?.data)?.inlineData;
     if (!image?.data) throw new Error(`${IMAGE_MODEL} returned no image for "${brief.of}"`);
     const ext = image.mimeType === "image/jpeg" ? "jpg" : image.mimeType === "image/webp" ? "webp" : "png";

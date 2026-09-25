@@ -12,8 +12,8 @@ export type How = "typed" | "example" | "suggestion" | "option" | "tap" | "map" 
 
 /** Every action, by the name its line carries in `event`, and what else the line says about it. */
 export interface Activities {
-  /** The page was loaded: at the home page, or from a shared link (`?app=`). `returning` is a browser that has been here before. */
-  visit: { entry: "home" | "link"; page: string; view: string; width: number; returning: boolean; referrer: string };
+  /** The page was loaded: at the home page, or from a shared link (`?app=`). `returning` is a browser that has been here before; `automated`, one a script drives (`navigator.webdriver`): a test, or a bot. */
+  visit: { entry: "home" | "link"; page: string; view: string; width: number; returning: boolean; referrer: string; automated: boolean };
   /** Who the person turned out to be, whenever that changes: signed out, signed in and on no line of the list, on it, or a server that signs nobody in. */
   session: { role: string };
   /** The Google sign-in popup: opened, and then signed in, closed by the person, or failed. */
@@ -27,8 +27,12 @@ export interface Activities {
    * of thing was tapped (item, nav, back, action, …). `first` is a turn with no app yet.
    */
   turn_start: { turn: number; source: "typed" | "tap" | "button"; how: How; length?: number; chip?: string; via?: string; first: boolean; idiom: string; device: string; endpoint: string };
-  /** How it came out: a screen made, something changed, the tool asked instead (`said`), or failed; `act` is what the tool took a message to mean. `reason: "runs"` is a failure for want of runs today. */
-  turn_end: { turn: number; outcome: "made" | "changed" | "said" | "failed"; act?: string; ms: number; reason?: "runs" };
+  /**
+   * How it came out: a screen made, something changed, the tool asked instead (`said`), or failed; `act` is what the tool
+   * took a message to mean. `errors` is how many things went wrong making its screen: a screen can be `made` with parts
+   * missing, when a model failed partway (the server's `model_error` says which). `reason: "runs"` is a failure for want of runs today.
+   */
+  turn_end: { turn: number; outcome: "made" | "changed" | "said" | "failed"; act?: string; ms: number; errors?: number; reason?: "runs" };
   /** A turn was taken back, finished or while it was still being made (the stop button). */
   undo: { turn: number; pending: boolean; ms: number };
   /** Went to a screen that was already made: a tap in the mock (`via` is its kind), a screen's card in the chat or its tab, or the app map. */
@@ -50,6 +54,21 @@ export interface Activities {
   visibility: { to: "private" | "link" };
   copy: { what: "link" | "a2ui" | "css" | "design" };
   delete: Record<string, never>;
+}
+
+/**
+ * What the server writes of its own, beside what browsers send. A browser cannot send these (tidyActivity knows only
+ * the names above); `at` is the server's time, there is no `seq`, and `visitor` and `visit` are there when the request
+ * named them (X-Visitor, X-Visit), `uid` when its token proved one.
+ */
+export interface ServerActivities {
+  /**
+   * A model failed a request someone made (server/models.ts), after whatever retries its client makes: `service` jev or
+   * gev (System One) or gemini (writing, baking, pictures), which `model`, the HTTP `status` if it gave one, the first
+   * line of what it said (the service's words, not the person's), after `ms`, on which `route`, and whether their own
+   * `keys` paid. A turn that failed or came out short near it in the same visit is what it cost the person.
+   */
+  model_error: { service: string; model: string; status?: number; message: string; ms: number; route: string; keys: boolean };
 }
 
 export type ActivityName = keyof Activities;

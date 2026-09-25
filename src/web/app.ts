@@ -394,7 +394,10 @@ export class App extends LitElement {
       if (!this.turns.includes(turn)) this.unsettled.delete(turn);
       else if (turn.outcome !== "pending") {
         this.unsettled.delete(turn);
-        record("turn_end", { turn: tracked.n, outcome: turn.outcome, ...(tracked.act ? { act: tracked.act } : {}), ms: Math.round(performance.now() - tracked.at), ...(turn.outcome === "failed" && /today's runs/.test(turn.text ?? "") ? { reason: "runs" as const } : {}) });
+        // A screen can be made with parts missing, when a model failed partway: the run says how many things went wrong.
+        const screen = turn.screen ? this.made.find((one) => one.id === turn.screen) : undefined;
+        const errors = screen?.log.filter((entry) => entry.kind === "note" && entry.tone === "bad").length ?? 0;
+        record("turn_end", { turn: tracked.n, outcome: turn.outcome, ...(tracked.act ? { act: tracked.act } : {}), ms: Math.round(performance.now() - tracked.at), ...(errors ? { errors } : {}), ...(turn.outcome === "failed" && /today's runs/.test(turn.text ?? "") ? { reason: "runs" as const } : {}) });
       }
     }
     if ((changed.has("view") && changed.get("view") !== undefined) || (changed.has("section") && changed.get("section") !== undefined && this.view === "settings"))
