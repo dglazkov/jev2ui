@@ -7,7 +7,7 @@ import { html, nothing, type ReactiveControllerHost, type TemplateResult } from 
 import type { Endpoint, PipelineEvent } from "../shared/events.js";
 import type { IdiomId } from "../shared/idioms.js";
 import { face, icon, mark } from "./chrome.js";
-import { record, recordWith } from "./activity.js";
+import { record, recordWith, sendNow } from "./activity.js";
 
 type Auth = import("firebase/auth").Auth;
 
@@ -197,7 +197,14 @@ class Session {
 
   async signOut() {
     record("sign_out", {});
+    // What they did goes with their token while there is one.
+    await sendNow();
     if (this.auth) await (await import("firebase/auth")).signOut(this.auth);
+  }
+
+  /** Who is signed in, as Firebase says; nobody is "". */
+  get uid(): string {
+    return this.auth?.currentUser?.uid ?? "";
   }
 
   /** The signed-in person's ID token, which proves who is asking; none for anyone else. */
@@ -287,7 +294,7 @@ class Session {
 }
 
 export const session = new Session();
-recordWith({ token: () => session.token(), context: () => ({ state: session.state, keys: session.ownKeys }) });
+recordWith({ token: () => session.token(), context: () => ({ state: session.state, keys: session.ownKeys, ...(session.uid ? { uid: session.uid } : {}) }) });
 
 /** Server-Sent Events over a POST, which EventSource cannot make (nor can it say who is asking). */
 export async function streamEvents(body: unknown, signal: AbortSignal, onEvent: (event: PipelineEvent) => void) {

@@ -693,8 +693,9 @@ The browser (`src/web/activity.ts`) queues each action with the time, its order 
 thought was there (`state`, `keys`), and sends them to `POST /api/activity` every five seconds, twenty at once, or
 as the page is hidden or left (`fetch` with `keepalive`, which outlives the page and still carries the ID token).
 A browser is an id kept in `localStorage` (`visitor`), so that a visit before signing in and the sign-in after it
-are one person's; a page load is a `visit`. The server writes one line of JSON per action on stdout, adding the
-Firebase `uid` if the request's token proves one; it checks each against the list, and keeps only short strings,
+are one person's; a page load is a `visit`. Each action also says who was signed in when it happened, and a batch
+goes before its sender signs out. The server writes one line of JSON per action on stdout, with the Firebase `uid`
+only where the request's token proves the one the action claims; it checks each against the list, keeps only short strings,
 numbers and yes or no. Anyone may send, as a visitor signs nobody in. On a developer's machine the browser sends
 nothing and writes each action to the console instead.
 

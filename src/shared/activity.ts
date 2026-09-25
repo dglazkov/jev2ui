@@ -60,7 +60,7 @@ const NAMES = {
   view: true, map: true, new_app: true, grammar: true, save: true, open: true, visibility: true, copy: true, delete: true,
 } satisfies Record<ActivityName, true>;
 
-/** What every line says besides its own fields; a browser cannot say these for itself. */
+/** What every line says besides its own fields; a browser cannot say these for itself (a `uid` it claims is kept only where its token proves it, server/http.ts). */
 const RESERVED = new Set(["kind", "event", "at", "seq", "visitor", "visit", "uid"]);
 
 /**

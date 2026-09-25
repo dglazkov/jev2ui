@@ -209,8 +209,9 @@ async function savedApps(load: Load, id: string, req: IncomingMessage, res: Serv
 }
 
 // POST what people did (shared/activity.ts): each action is written as a line of JSON on stdout, which Cloud Logging
-// keeps and a sink copies to a bucket. Anyone may send, since a visitor who signs nobody in does things too; who they are
-// is read off their token, if they sent one, and never taken from what they say.
+// keeps and a sink copies to a bucket. Anyone may send, since a visitor who signs nobody in does things too. Each action
+// says whose it was; a line keeps that uid only where the request's token proves it, so an action from before someone
+// signed in, or someone else's, has none.
 async function activity(req: IncomingMessage, res: ServerResponse, auth: any) {
   if (req.method !== "POST") return void ((res.statusCode = 405), res.end("Use POST."));
   const body = await readJson(req, LARGEST_ACTIVITY).catch(() => undefined);
@@ -221,7 +222,7 @@ async function activity(req: IncomingMessage, res: ServerResponse, auth: any) {
   const person = auth.firebase ? await auth.whoIs(req.headers.authorization) : undefined;
   for (const sent of body.events.slice(0, 50)) {
     const line = tidyActivity(sent);
-    if (line) console.log(JSON.stringify({ kind: "activity", ...line, visitor, visit, ...(person ? { uid: person.uid } : {}) }));
+    if (line) console.log(JSON.stringify({ kind: "activity", ...line, visitor, visit, ...(person && sent.uid === person.uid ? { uid: person.uid } : {}) }));
   }
   res.statusCode = 204;
   res.end();
