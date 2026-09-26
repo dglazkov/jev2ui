@@ -543,6 +543,8 @@ npm run dev        # http://localhost:5173 is the design tool; /compare.html sti
                    # with no sign-in there, ?as=maker (or admin, stranger, out) stands in for one, so the signed-in chrome can be seen
 npm run eval       # comparison table over the built-in prompts, all four pipelines
 npm run eval -- "Book a haircut" -v   # one prompt, printing decisions and messages
+npm run jev-calls                     # every call the app makes to jev, driven in headless Chrome, as a CSV in .cache/
+npm run jev-calls -- --apps 2 --idioms kit --parallel 1   # a few of them
 npm run probe:grammar                 # the graph in grammar/screen.md, run on its own examples and held against readPlan
 npm run probe:grammar -- grammar/examples/email.md   # any graph file
 npm run probe:draw -- grammar/examples/email.md "Your one-time sign-in code"   # any graph file, drawn into out/grammar/
@@ -724,6 +726,26 @@ gcloud storage buckets add-iam-policy-binding gs://jev2ui-3281b2-activity --proj
   --member="$(gcloud logging sinks describe activity --project jev2ui-3281b2 --format='value(writerIdentity)')" --role=roles/storage.objectCreator
 ```
 
+### Jev's calls, written down: data to train a model like it
+
+Every call the app makes to jev can be kept, to train a model like it. With `JEV_CALLS` naming a CSV file,
+`src/server/models.ts` writes each call jev answered as one row of three columns: `request`, the JSON body sent
+to `/v1/systemone` (`model`, `state`, `questions`); `response`, the JSON body that came back (`model`, the
+version that answered, such as `jev-1.13.0`; `answers`, with every probability; `usage`); and `ms`, from sending
+the one to having the whole of the other, for the attempt that succeeded. That is all: jev knows nothing of the
+app that asked, so a row says nothing of it either. A call that failed is not written, nor are gev's.
+
+`npm run jev-calls` makes a set of them. It builds, starts the built server with `JEV_CALLS` set and sign-in
+off, and drives the app in headless Chrome as a person would: it describes an app, then, in an order of the
+seed's, taps what the screen offers, says things to it (the app's own suggestions and one of each other kind of
+change) and mostly answers when the tool asks something back, remixes the design, and now and then pastes one of
+the DESIGN.md files in `src/probe/designs/` first. It does this for each of its 24 apps in each idiom, three at a
+time, and adds the rows to `.cache/jev-calls.csv` (the server's log goes beside it). Jev is asked only by the app,
+as the app asks it, so the set is as wide as what the app does: plans of screens in all three grammars, the
+design mixed and read, messages read, controls and fields chosen, pictures picked, taps resolved, baked
+components reused. It makes no photographs. Two apps in all three idioms came to 132 calls in about a minute.
+Nothing turns `JEV_CALLS` on in the deployed service: what people type there stays theirs.
+
 ## Results so far
 
 One run of `npm run eval` (11 prompts, `gemini-3.5-flash-lite`, `jev-1.13.0`, a paid-tier Gemini key).
@@ -861,6 +883,7 @@ src/web/chrome.ts       what the tool's own chrome is made of: a symbol, the mar
 src/server/main.ts      the deployed server: the routes and the built front end (vite.config.ts mounts them in dev)
 src/web/app.ts          the design tool: the bar, the rail, the conversation, the stage, the library; compare.ts is the old side-by-side page
 src/eval.ts             CLI comparison
+src/jev-calls.ts        the app driven in headless Chrome, so that the server writes down every call jev answers (JEV_CALLS)
 src/probe/jtbd.ts       can Jev see jobs? (docs/jtbd-probe.md)
 src/probe/custom.ts     can Jev tell when a screen needs something the kit cannot draw?
 src/probe/design.ts     how does Jev read a DESIGN.md, and what does it mix? (fixtures in src/probe/designs/)

@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash } from "node:crypto";
+import { appendFileSync, statSync } from "node:fs";
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { TypeSafeClient, noul, type Questions } from "@typesafe-ai/sdk";
 import { parse as parsePartial } from "partial-json";
@@ -25,6 +26,27 @@ const ENDPOINTS: Record<Endpoint, { key: string; baseURL?: string }> = {
   jev: { key: "JEV_API_KEY" },
   gev: { key: "GEV_API_KEY", baseURL: process.env.GEV_BASE_URL ?? "https://gev-huio5ftumq-uc.a.run.app" },
 };
+
+// Every call jev answers can be written down, as it went over the wire, to train a model like it: with JEV_CALLS naming
+// a CSV file, each is a row of the body sent, the body that came back, and the milliseconds from sending one to having
+// the whole of the other (src/jev-calls.ts drives the app to make them). A row is what jev saw and said and nothing of
+// the app that asked. A call that failed is not written, and gev's answers are not jev's.
+const JEV_CALLS = process.env.JEV_CALLS;
+const cell = (text: string) => `"${text.replaceAll('"', '""')}"`;
+const writingCalls = JEV_CALLS
+  ? {
+      async fetch(url: string, init?: RequestInit): Promise<Response> {
+        const start = performance.now();
+        const response = await fetch(url, init);
+        if (!response.ok || init?.method !== "POST" || !url.endsWith("/v1/systemone")) return response;
+        const body = await response.text();
+        const ms = Math.round(performance.now() - start);
+        if (!statSync(JEV_CALLS, { throwIfNoEntry: false })?.size) appendFileSync(JEV_CALLS, "request,response,ms\n");
+        appendFileSync(JEV_CALLS, `${cell(String(init.body))},${cell(body)},${ms}\n`);
+        return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
+      },
+    }
+  : {};
 
 const clients: Partial<Record<Endpoint, TypeSafeClient>> = {};
 let gemini: GoogleGenAI | undefined;
@@ -129,7 +151,7 @@ export function geminiFailed(error: unknown): Error {
 export async function checkKeys(keys: OwnKeys): Promise<{ jev: string; gemini: string }> {
   const said = (error: unknown) => firstLine(error) || "no answer";
   const [jev, geminiSaid] = await Promise.all([
-    new TypeSafeClient({ apiKey: keys.jev })
+    new TypeSafeClient({ apiKey: keys.jev, ...writingCalls })
       .systemOne({ model: JEV_MODEL, state: { message: "hello" } as any, questions: { greets: noul("Is the message a greeting?", { true: "Yes.", false: "No." }) } })
       .then(() => "ok", said),
     new GoogleGenAI({ apiKey: keys.gemini }).models.countTokens({ model: GEMINI_MODEL, contents: "hello" }).then(() => "ok", said),
@@ -163,7 +185,7 @@ export interface JevResult {
 export async function askJev(state: unknown, questions: Questions, by: Endpoint = endpoint()): Promise<JevResult> {
   const { key, baseURL } = ENDPOINTS[by];
   const keys = ownKeys();
-  const client = keys ? kept(ownJev, keys.jev, () => new TypeSafeClient({ apiKey: keys.jev })) : (clients[by] ??= new TypeSafeClient({ apiKey: requireEnv(key), ...(baseURL ? { baseURL } : {}) }));
+  const client = keys ? kept(ownJev, keys.jev, () => new TypeSafeClient({ apiKey: keys.jev, ...writingCalls })) : (clients[by] ??= new TypeSafeClient({ apiKey: requireEnv(key), ...(baseURL ? { baseURL } : {}), ...(by === "jev" ? writingCalls : {}) }));
   const start = performance.now();
   const response = await client.systemOne({ model: JEV_MODEL, state: state as any, questions }).catch((error: unknown) => {
     noteFailure(by, JEV_MODEL, error, start);
